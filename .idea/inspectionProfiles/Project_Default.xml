@@ -1,0 +1,81 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="PyPackageRequirementsInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredPackages">
+        <value>
+          <list size="61">
+            <item index="0" class="java.lang.String" itemvalue="grpcio-tools" />
+            <item index="1" class="java.lang.String" itemvalue="pycryptodome" />
+            <item index="2" class="java.lang.String" itemvalue="pandas" />
+            <item index="3" class="java.lang.String" itemvalue="scipy" />
+            <item index="4" class="java.lang.String" itemvalue="confluent-kafka" />
+            <item index="5" class="java.lang.String" itemvalue="scikit-learn" />
+            <item index="6" class="java.lang.String" itemvalue="lxml" />
+            <item index="7" class="java.lang.String" itemvalue="numpy" />
+            <item index="8" class="java.lang.String" itemvalue="gunicorn" />
+            <item index="9" class="java.lang.String" itemvalue="openpyxl" />
+            <item index="10" class="java.lang.String" itemvalue="crewai_tools" />
+            <item index="11" class="java.lang.String" itemvalue="crewai" />
+            <item index="12" class="java.lang.String" itemvalue="typing_extensions" />
+            <item index="13" class="java.lang.String" itemvalue="bottle" />
+            <item index="14" class="java.lang.String" itemvalue="requests" />
+            <item index="15" class="java.lang.String" itemvalue="gevent-websocket" />
+            <item index="16" class="java.lang.String" itemvalue="arrow" />
+            <item index="17" class="java.lang.String" itemvalue="supervisor" />
+            <item index="18" class="java.lang.String" itemvalue="fschat" />
+            <item index="19" class="java.lang.String" itemvalue="coverage" />
+            <item index="20" class="java.lang.String" itemvalue="transformers" />
+            <item index="21" class="java.lang.String" itemvalue="confluent_kafka" />
+            <item index="22" class="java.lang.String" itemvalue="sseclient-py" />
+            <item index="23" class="java.lang.String" itemvalue="jieba" />
+            <item index="24" class="java.lang.String" itemvalue="Flask-Cors" />
+            <item index="25" class="java.lang.String" itemvalue="torch" />
+            <item index="26" class="java.lang.String" itemvalue="sqlalchemy" />
+            <item index="27" class="java.lang.String" itemvalue="sse_starlette" />
+            <item index="28" class="java.lang.String" itemvalue="fastapi" />
+            <item index="29" class="java.lang.String" itemvalue="faiss_cpu" />
+            <item index="30" class="java.lang.String" itemvalue="zagents_message_bus" />
+            <item index="31" class="java.lang.String" itemvalue="matplotlib" />
+            <item index="32" class="java.lang.String" itemvalue="cachetools" />
+            <item index="33" class="java.lang.String" itemvalue="gevent" />
+            <item index="34" class="java.lang.String" itemvalue="uvicorn" />
+            <item index="35" class="java.lang.String" itemvalue="einops" />
+            <item index="36" class="java.lang.String" itemvalue="inject" />
+            <item index="37" class="java.lang.String" itemvalue="websockets" />
+            <item index="38" class="java.lang.String" itemvalue="zagents_framework" />
+            <item index="39" class="java.lang.String" itemvalue="Flask" />
+            <item index="40" class="java.lang.String" itemvalue="wheel" />
+            <item index="41" class="java.lang.String" itemvalue="python-multipart" />
+            <item index="42" class="java.lang.String" itemvalue="tiktoken" />
+            <item index="43" class="java.lang.String" itemvalue="tree-sitter-python" />
+            <item index="44" class="java.lang.String" itemvalue="python-Levenshtein" />
+            <item index="45" class="java.lang.String" itemvalue="azure-ai-formrecognizer" />
+            <item index="46" class="java.lang.String" itemvalue="streamlit" />
+            <item index="47" class="java.lang.String" itemvalue="nbformat" />
+            <item index="48" class="java.lang.String" itemvalue="setuptools-scm" />
+            <item index="49" class="java.lang.String" itemvalue="pymupdf" />
+            <item index="50" class="java.lang.String" itemvalue="plotly" />
+            <item index="51" class="java.lang.String" itemvalue="st-theme" />
+            <item index="52" class="java.lang.String" itemvalue="tree-sitter" />
+            <item index="53" class="java.lang.String" itemvalue="tables" />
+            <item index="54" class="java.lang.String" itemvalue="kaggle" />
+            <item index="55" class="java.lang.String" itemvalue="seaborn" />
+            <item index="56" class="java.lang.String" itemvalue="fire" />
+            <item index="57" class="java.lang.String" itemvalue="pandarallel" />
+            <item index="58" class="java.lang.String" itemvalue="fuzzywuzzy" />
+            <item index="59" class="java.lang.String" itemvalue="langfuse" />
+            <item index="60" class="java.lang.String" itemvalue="setuptools" />
+          </list>
+        </value>
+      </option>
+    </inspection_tool>
+    <inspection_tool class="PyUnresolvedReferencesInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredIdentifiers">
+        <list>
+          <option value="app.route.domain.entity.classifier.assistant_classifier_show.*" />
+        </list>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>
