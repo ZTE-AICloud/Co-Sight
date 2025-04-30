@@ -21,6 +21,7 @@ from config.config import *
 
 
 def set_model(model_config: dict[str, Optional[str | int | float]]):
+    openai_llm = None
     http_client_kwargs = {
         "headers": {
             'Content-Type': 'application/json',
@@ -32,14 +33,14 @@ def set_model(model_config: dict[str, Optional[str | int | float]]):
 
     if model_config['proxy']:
         http_client_kwargs["proxy"] = model_config['proxy']
-    elif model_config['api_type'] == "azure" and model_config['api_version'] is not None:
+    if model_config['api_type'] == "azure" and model_config['api_version'] is not None:
         openai_llm = AzureOpenAI(
             base_url=model_config['base_url'],
             api_key=model_config['api_key'],
             api_version=model_config['api_version'],
             http_client=httpx.Client(**http_client_kwargs)
         )
-    else:
+    if model_config['api_type'] != "azure":
         openai_llm = OpenAI(
             base_url=model_config['base_url'],
             api_key=model_config['api_key'],
