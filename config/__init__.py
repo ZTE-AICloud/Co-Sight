@@ -12,6 +12,9 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+
+# -*- coding: utf-8 -*-
+# coding=utf-8
 import os
 
 mcp_server_config_dir = os.path.dirname(os.path.abspath(__file__))

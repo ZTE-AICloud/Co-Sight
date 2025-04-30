@@ -1,0 +1,24 @@
+{
+  "eval": {
+    "model": "anthropic/claude-3.7-sonnet",
+    "score": 100.0,
+    "score_level1": 0,
+    "score_level2": 100.0,
+    "score_level3": 0,
+    "date": "2025-04-24 01:23:11"
+  },
+  "detail": [
+    {
+      "input": "Please answer the question below. You should:\n\n- Return only your answer, which should be a number, or a short phrase with as few words as possible, or a comma separated list of numbers and/or strings.\n- If the answer is a number, return only the number without any units unless specified otherwise.\n- If the answer is a string, don't include articles, and don't use abbreviations (e.g. for states).\n- If the answer is a comma separated list, apply the above rules to each element in the list.\n\n\n\nHere is the question:\n\nDuring the first week of August 2015, one of the NASA Astronomy Pictures of the Day shows the lights of a city on the horizon. The namesake of this city also has a landmark building in Chicago named after him. What is the name of the architectural firm that designed this landmark building? Give the first name appearing in the name of the firm as of June 2023.",
+      "task_id": "0a65cb96-cb6e-4a6a-8aae-c1084f613456",
+      "Question": "During the first week of August 2015, one of the NASA Astronomy Pictures of the Day shows the lights of a city on the horizon. The namesake of this city also has a landmark building in Chicago named after him. What is the name of the architectural firm that designed this landmark building? Give the first name appearing in the name of the firm as of June 2023.",
+      "Level": 2,
+      "Final answer": "Holabird",
+      "model_answer": "Holabird",
+      "error": null,
+      "file_name": "",
+      "score": 1,
+      "elapsed time": "0:18:31.380391"
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "eval": {
+    "model": "anthropic/claude-3.7-sonnet",
+    "score": 100.0,
+    "score_level1": 0,
+    "score_level2": 100.0,
+    "score_level3": 0,
+    "date": "2025-04-25 10:53:46"
+  },
+  "detail": [
+    {
+      "input": "Please answer the question below. \n\nF:/gitlab/NAE-Manus-gaia-22/workspace/20250425_104404/54612da3-fd56-4941-80f4-5eb82330de25/54612da3-fd56-4941-80f4-5eb82330de25.xlsx\n\nHere is the question:\n\nThe attached file shows the locomotives in the collection of a North American railroad museum. How many wheels do the listed steam locomotives have in total?",
+      "task_id": "54612da3-fd56-4941-80f4-5eb82330de25",
+      "Question": "The attached file shows the locomotives in the collection of a North American railroad museum. How many wheels do the listed steam locomotives have in total?",
+      "Level": 2,
+      "Final answer": "60",
+      "model_answer": "60",
+      "error": null,
+      "file_name": "54612da3-fd56-4941-80f4-5eb82330de25.xlsx",
+      "score": 1,
+      "elapsed time": "0:09:41.013188"
+    }
+  ]
+}

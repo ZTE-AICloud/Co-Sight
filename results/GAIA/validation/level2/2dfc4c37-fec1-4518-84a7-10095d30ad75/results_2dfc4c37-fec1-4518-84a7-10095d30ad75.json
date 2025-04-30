@@ -1,0 +1,24 @@
+{
+  "eval": {
+    "model": "anthropic/claude-3.7-sonnet",
+    "score": 0.0,
+    "score_level1": 0,
+    "score_level2": 0.0,
+    "score_level3": 0,
+    "date": "2025-04-24 14:41:07"
+  },
+  "detail": [
+    {
+      "input": "Please answer the question below. You should:\n\n- Return only your answer, which should be a number, or a short phrase with as few words as possible, or a comma separated list of numbers and/or strings.\n- If the answer is a number, return only the number without any units unless specified otherwise.\n- If the answer is a string, don't include articles, and don't use abbreviations (e.g. for states).\n- If the answer is a comma separated list, apply the above rules to each element in the list.\n\n\n\nHere is the question:\n\nAccording to Box Office Mojo's 2020 Worldwide Box Office list, how many of the top 10 highest-grossing worldwide movies are also on the top 10 highest-grossing domestic movies? Your answer should be a numerical integer value.",
+      "task_id": "2dfc4c37-fec1-4518-84a7-10095d30ad75",
+      "Question": "According to Box Office Mojo's 2020 Worldwide Box Office list, how many of the top 10 highest-grossing worldwide movies are also on the top 10 highest-grossing domestic movies? Your answer should be a numerical integer value.",
+      "Level": 2,
+      "Final answer": "6",
+      "model_answer": "3",
+      "error": null,
+      "file_name": "",
+      "score": 0,
+      "elapsed time": "0:03:51.351359"
+    }
+  ]
+}

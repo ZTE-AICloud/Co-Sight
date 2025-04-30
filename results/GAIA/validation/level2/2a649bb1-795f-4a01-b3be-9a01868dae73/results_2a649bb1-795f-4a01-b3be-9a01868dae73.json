@@ -1,0 +1,24 @@
+{
+  "eval": {
+    "model": "anthropic/claude-3.7-sonnet",
+    "score": 0.0,
+    "score_level1": 0,
+    "score_level2": 0.0,
+    "score_level3": 0,
+    "date": "2025-04-24 11:52:02"
+  },
+  "detail": [
+    {
+      "input": "Please answer the question below. You should:\n\n- Return only your answer, which should be a number, or a short phrase with as few words as possible, or a comma separated list of numbers and/or strings.\n- If the answer is a number, return only the number without any units unless specified otherwise.\n- If the answer is a string, don't include articles, and don't use abbreviations (e.g. for states).\n- If the answer is a comma separated list, apply the above rules to each element in the list.\n\n\n\nHere is the question:\n\nWhat are the EC numbers of the two most commonly used chemicals for the virus testing method in the paper about SPFMV and SPCSV in the Pearl Of Africa from 2016? Return the semicolon-separated numbers in the order of the alphabetized chemicals.",
+      "task_id": "2a649bb1-795f-4a01-b3be-9a01868dae73",
+      "Question": "What are the EC numbers of the two most commonly used chemicals for the virus testing method in the paper about SPFMV and SPCSV in the Pearl Of Africa from 2016? Return the semicolon-separated numbers in the order of the alphabetized chemicals.",
+      "Level": 2,
+      "Final answer": "3.1.3.1; 1.11.1.7",
+      "model_answer": "2.7.7.49;2.7.7.7",
+      "error": null,
+      "file_name": "",
+      "score": 0,
+      "elapsed time": "0:15:29.761732"
+    }
+  ]
+}

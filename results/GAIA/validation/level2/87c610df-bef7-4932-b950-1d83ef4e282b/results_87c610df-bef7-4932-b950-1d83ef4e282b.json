@@ -1,0 +1,24 @@
+{
+  "eval": {
+    "model": "anthropic/claude-3.7-sonnet",
+    "score": 100.0,
+    "score_level1": 0,
+    "score_level2": 100.0,
+    "score_level3": 0,
+    "date": "2025-04-24 11:56:47"
+  },
+  "detail": [
+    {
+      "input": "Please answer the question below. You should:\n\n- Return only your answer, which should be a number, or a short phrase with as few words as possible, or a comma separated list of numbers and/or strings.\n- If the answer is a number, return only the number without any units unless specified otherwise.\n- If the answer is a string, don't include articles, and don't use abbreviations (e.g. for states).\n- If the answer is a comma separated list, apply the above rules to each element in the list.\n\n\n\nHere is the question:\n\nIn April of 1977, who was the Prime Minister of the first place mentioned by name in the Book of Esther (in the New International Version)?",
+      "task_id": "87c610df-bef7-4932-b950-1d83ef4e282b",
+      "Question": "In April of 1977, who was the Prime Minister of the first place mentioned by name in the Book of Esther (in the New International Version)?",
+      "Level": 2,
+      "Final answer": "Morarji Desai",
+      "model_answer": "Morarji Desai",
+      "error": null,
+      "file_name": "",
+      "score": 1,
+      "elapsed time": "0:04:44.484944"
+    }
+  ]
+}

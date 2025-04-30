@@ -1,0 +1,24 @@
+{
+  "eval": {
+    "model": "anthropic/claude-3.7-sonnet",
+    "score": 100.0,
+    "score_level1": 0,
+    "score_level2": 100.0,
+    "score_level3": 0,
+    "date": "2025-04-29 11:02:30"
+  },
+  "detail": [
+    {
+      "input": "Please answer the question below. \n\n\n\nHere is the question:\n\nThe photograph in the Whitney Museum of American Art's collection with accession number 2022.128 shows a person holding a book. Which military unit did the author of this book join in 1813? Answer without using articles.",
+      "task_id": "b4cc024b-3f5e-480e-b96a-6656493255b5",
+      "Question": "The photograph in the Whitney Museum of American Art's collection with accession number 2022.128 shows a person holding a book. Which military unit did the author of this book join in 1813? Answer without using articles.",
+      "Level": 2,
+      "Final answer": "Russian-German Legion",
+      "model_answer": "Russian-German Legion",
+      "error": null,
+      "file_name": "",
+      "score": 1,
+      "elapsed time": "0:18:12.527084"
+    }
+  ]
+}

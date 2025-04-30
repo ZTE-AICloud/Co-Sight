@@ -1,0 +1,24 @@
+{
+  "eval": {
+    "model": "anthropic/claude-3.7-sonnet",
+    "score": 100.0,
+    "score_level1": 0,
+    "score_level2": 100.0,
+    "score_level3": 0,
+    "date": "2025-04-28 21:12:57"
+  },
+  "detail": [
+    {
+      "input": "Please answer the question below. \n\n\n\nHere is the question:\n\nOn July 15, 2008, Phys.org published an article about a catastrophe. Find the explosive force of this catastrophe according to Encyclopedia Britannica, then find the name of the US nuclear test that had the same yield. Your answer should only be the last word of the name of the test.",
+      "task_id": "ad37a656-079a-49f9-a493-7b739c9167d1",
+      "Question": "On July 15, 2008, Phys.org published an article about a catastrophe. Find the explosive force of this catastrophe according to Encyclopedia Britannica, then find the name of the US nuclear test that had the same yield. Your answer should only be the last word of the name of the test.",
+      "Level": 2,
+      "Final answer": "Bravo",
+      "model_answer": "Bravo",
+      "error": null,
+      "file_name": "",
+      "score": 1,
+      "elapsed time": "0:13:36.731202"
+    }
+  ]
+}

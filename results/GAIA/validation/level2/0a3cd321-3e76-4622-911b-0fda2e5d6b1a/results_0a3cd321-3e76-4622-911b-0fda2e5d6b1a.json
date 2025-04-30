@@ -1,0 +1,24 @@
+{
+  "eval": {
+    "model": "anthropic/claude-3.7-sonnet",
+    "score": 100.0,
+    "score_level1": 0,
+    "score_level2": 100.0,
+    "score_level3": 0,
+    "date": "2025-04-25 14:10:31"
+  },
+  "detail": [
+    {
+      "input": "Please answer the question below. \n\n\n\nHere is the question:\n\nAccording to the World Bank, which countries had gross savings of over 35% of GDP for every year in the period 2001-2010? Give your answer as a comma-separated list of countries in alphabetical order. Use the countries most common names in english when answering.",
+      "task_id": "0a3cd321-3e76-4622-911b-0fda2e5d6b1a",
+      "Question": "According to the World Bank, which countries had gross savings of over 35% of GDP for every year in the period 2001-2010? Give your answer as a comma-separated list of countries in alphabetical order. Use the countries most common names in english when answering.",
+      "Level": 2,
+      "Final answer": "Brunei, China, Morocco, Singapore",
+      "model_answer": "Brunei, China, Morocco, Singapore",
+      "error": null,
+      "file_name": "",
+      "score": 1,
+      "elapsed time": "0:02:58.900105"
+    }
+  ]
+}

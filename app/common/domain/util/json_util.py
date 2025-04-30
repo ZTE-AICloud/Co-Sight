@@ -18,8 +18,8 @@
 
 import json
 import os
-import tempfile
 
+from app.common.infrastructure.utils.log import logger
 
 
 class JsonUtil:
@@ -28,7 +28,7 @@ class JsonUtil:
     def write_data(data, data_path):
         if not os.path.isfile(data_path):
             # Create new file and write content
-            print(f'not find, create new file {data_path}')
+            logger.info(f'not find, create new file {data_path}')
             dst_dir = os.path.dirname(data_path)
             if not os.path.exists(dst_dir):
                 os.makedirs(dst_dir)
@@ -38,7 +38,7 @@ class JsonUtil:
     @staticmethod
     def read_data(data_path):
         if not os.path.isfile(data_path):
-            print(f'not find: {data_path}')
+            logger.info(f'not find: {data_path}')
             return {}
         with open(data_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
@@ -57,42 +57,3 @@ class JsonUtil:
                     else:
                         datas.append(json_data)
         return datas
-
-    # Started by AICoder, pid:h97031bd1495b521424e0b69b0d3f52ded687c6f
-    @staticmethod
-    def create_tmp_json(data_dict, json_path):
-        # 创建一个临时文件用于存储修改后的 JSON 数据
-        with tempfile.NamedTemporaryFile(mode='w+', delete=False, suffix='.json',
-                                         dir=tempfile.mkdtemp()) as tmp_file:
-            # 将修改后的数据写入临时文件
-            json.dump(data_dict, tmp_file, indent=4)
-            temp_json_path = tmp_file.name
-        # 提取出临时文件所在的目录
-        temp_dir = os.path.dirname(temp_json_path)
-        # 获取文件名
-        filename = os.path.basename(json_path)
-        new_file_path = os.path.join(temp_dir, filename)
-        # 重命名临时文件
-        os.rename(temp_json_path, new_file_path)
-        return temp_dir, new_file_path
-
-    @staticmethod
-    def rewrite_template_json(jsonpath, extend_arges: dict[str, list] = None, **kwargs):
-        json_path = fetch_abs_path_from_target(
-            jsonpath)
-        with open(json_path, 'r', encoding="utf-8") as file:
-            data = file.read()
-            for k, v in kwargs.items():
-                data = data.replace(f"{{{k}}}", v)
-        # 将替换后的数据解析成字典
-        data_dict = json.loads(data)
-        if extend_arges and isinstance(extend_arges, dict):
-            for k, v in extend_arges.items():
-                if k in data_dict:
-                    v1 = data_dict.get(k, [])
-                    if isinstance(v1, list):
-                        v1 += v
-                    data_dict[k] = v1
-        return JsonUtil.create_tmp_json(data_dict, json_path)
-
-    # Ended by AICoder, pid:h97031bd1495b521424e0b69b0d3f52ded687c6f

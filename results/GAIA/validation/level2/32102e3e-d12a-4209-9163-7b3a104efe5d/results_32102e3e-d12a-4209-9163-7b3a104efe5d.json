@@ -1,0 +1,24 @@
+{
+  "eval": {
+    "model": "anthropic/claude-3.7-sonnet",
+    "score": 100.0,
+    "score_level1": 0,
+    "score_level2": 100.0,
+    "score_level3": 0,
+    "date": "2025-04-25 16:17:20"
+  },
+  "detail": [
+    {
+      "input": "Please answer the question below. \n\nF:/gitlab/NAE-Manus-gaia-22/workspace/20250425_160535/32102e3e-d12a-4209-9163-7b3a104efe5d/32102e3e-d12a-4209-9163-7b3a104efe5d.xlsx\n\nHere is the question:\n\nThe attached spreadsheet shows the inventory for a movie and video game rental store in Seattle, Washington. What is the title of the oldest Blu-Ray recorded in this spreadsheet? Return it as appearing in the spreadsheet.",
+      "task_id": "32102e3e-d12a-4209-9163-7b3a104efe5d",
+      "Question": "The attached spreadsheet shows the inventory for a movie and video game rental store in Seattle, Washington. What is the title of the oldest Blu-Ray recorded in this spreadsheet? Return it as appearing in the spreadsheet.",
+      "Level": 2,
+      "Final answer": "Time-Parking 2: Parallel Universe",
+      "model_answer": "Time-Parking 2: Parallel Universe",
+      "error": null,
+      "file_name": "32102e3e-d12a-4209-9163-7b3a104efe5d.xlsx",
+      "score": 1,
+      "elapsed time": "0:11:45.431909"
+    }
+  ]
+}

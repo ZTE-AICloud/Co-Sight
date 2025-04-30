@@ -1,0 +1,24 @@
+{
+  "eval": {
+    "model": "anthropic/claude-3.7-sonnet",
+    "score": 0.0,
+    "score_level1": 0,
+    "score_level2": 0,
+    "score_level3": 0.0,
+    "date": "2025-04-28 02:11:11"
+  },
+  "detail": [
+    {
+      "input": "Please answer the question below. \n\n\n\nHere is the question:\n\nEva Draconis has a personal website which can be accessed on her YouTube page. What is the meaning of the only symbol seen in the top banner that has a curved line that isn't a circle or a portion of a circle? Answer without punctuation.",
+      "task_id": "ad2b4d70-9314-4fe6-bfbe-894a45f6055f",
+      "Question": "Eva Draconis has a personal website which can be accessed on her YouTube page. What is the meaning of the only symbol seen in the top banner that has a curved line that isn't a circle or a portion of a circle? Answer without punctuation.",
+      "Level": 3,
+      "Final answer": "War is not here this is a land of peace",
+      "model_answer": "unable to determine the meaning of the symbol due to inaccessibility of the website",
+      "error": null,
+      "file_name": "",
+      "score": 0,
+      "elapsed time": "0:13:34.508998"
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "eval": {
+    "model": "anthropic/claude-3.7-sonnet",
+    "score": 100.0,
+    "score_level1": 0,
+    "score_level2": 100.0,
+    "score_level3": 0,
+    "date": "2025-04-28 15:22:27"
+  },
+  "detail": [
+    {
+      "input": "Please answer the question below. \n\n\n\nHere is the question:\n\nAccording to github, when was Regression added to the oldest closed numpy.polynomial issue that has the Regression label in MM/DD/YY?",
+      "task_id": "7619a514-5fa8-43ef-9143-83b66a43d7a4",
+      "Question": "According to github, when was Regression added to the oldest closed numpy.polynomial issue that has the Regression label in MM/DD/YY?",
+      "Level": 2,
+      "Final answer": "04/15/18",
+      "model_answer": "04/15/18",
+      "error": null,
+      "file_name": "",
+      "score": 1,
+      "elapsed time": "0:20:54.524519"
+    }
+  ]
+}

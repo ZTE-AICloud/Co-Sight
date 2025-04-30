@@ -1,0 +1,24 @@
+{
+  "eval": {
+    "model": "anthropic/claude-3.7-sonnet",
+    "score": 100.0,
+    "score_level1": 0,
+    "score_level2": 100.0,
+    "score_level3": 0,
+    "date": "2025-04-24 16:36:44"
+  },
+  "detail": [
+    {
+      "input": "Please answer the question below. You should:\n\n- Return only your answer, which should be a number, or a short phrase with as few words as possible, or a comma separated list of numbers and/or strings.\n- If the answer is a number, return only the number without any units unless specified otherwise.\n- If the answer is a string, don't include articles, and don't use abbreviations (e.g. for states).\n- If the answer is a comma separated list, apply the above rules to each element in the list.\n\n\n\nHere is the question:\n\nIn the 2015 Metropolitan Museum of Art exhibition titled after the Chinese zodiac animal of 2015, how many of the \"twelve animals of the Chinese zodiac\" have a hand visible?",
+      "task_id": "853c8244-429e-46ca-89f2-addf40dfb2bd",
+      "Question": "In the 2015 Metropolitan Museum of Art exhibition titled after the Chinese zodiac animal of 2015, how many of the \"twelve animals of the Chinese zodiac\" have a hand visible?",
+      "Level": 2,
+      "Final answer": "11",
+      "model_answer": "11",
+      "error": null,
+      "file_name": "",
+      "score": 1,
+      "elapsed time": "0:12:29.039634"
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "eval": {
+    "model": "anthropic/claude-3.7-sonnet",
+    "score": 100.0,
+    "score_level1": 0,
+    "score_level2": 0,
+    "score_level3": 100.0,
+    "date": "2025-04-29 18:07:48"
+  },
+  "detail": [
+    {
+      "input": "Please answer the question below. \n\nF:/project/2025/again/NAE-Manus/workspace/20250429_175547/9b54f9d9-35ee-4a14-b62f-d130ea00317f/9b54f9d9-35ee-4a14-b62f-d130ea00317f.zip\n\nHere is the question:\n\nWhich of the text elements under CATEGORIES in the XML would contain the one food in the spreadsheet that does not appear a second time under a different name?",
+      "task_id": "9b54f9d9-35ee-4a14-b62f-d130ea00317f",
+      "Question": "Which of the text elements under CATEGORIES in the XML would contain the one food in the spreadsheet that does not appear a second time under a different name?",
+      "Level": 3,
+      "Final answer": "Soups and Stews",
+      "model_answer": "Soups and Stews",
+      "error": null,
+      "file_name": "9b54f9d9-35ee-4a14-b62f-d130ea00317f.zip",
+      "score": 1,
+      "elapsed time": "0:12:00.519118"
+    }
+  ]
+}

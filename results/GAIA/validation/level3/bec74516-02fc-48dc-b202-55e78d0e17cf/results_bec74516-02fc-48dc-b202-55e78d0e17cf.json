@@ -1,0 +1,24 @@
+{
+  "eval": {
+    "model": "anthropic/claude-3.7-sonnet",
+    "score": 0.0,
+    "score_level1": 0,
+    "score_level2": 0,
+    "score_level3": 0.0,
+    "date": "2025-04-27 21:40:23"
+  },
+  "detail": [
+    {
+      "input": "Please answer the question below. \n\n/media/vdc/myWorkspace/workspace/coding/gitLab/easy-manus-gaia/NAE-Manus-test/workspace/20250427_212629/bec74516-02fc-48dc-b202-55e78d0e17cf/bec74516-02fc-48dc-b202-55e78d0e17cf.jsonld\n\nHere is the question:\n\nWhat is the average number of pre-2020 works on the open researcher and contributor identification pages of the people whose identification is in this file?",
+      "task_id": "bec74516-02fc-48dc-b202-55e78d0e17cf",
+      "Question": "What is the average number of pre-2020 works on the open researcher and contributor identification pages of the people whose identification is in this file?",
+      "Level": 3,
+      "Final answer": "26.4",
+      "model_answer": "36",
+      "error": null,
+      "file_name": "bec74516-02fc-48dc-b202-55e78d0e17cf.jsonld",
+      "score": 0,
+      "elapsed time": "0:07:34.954816"
+    }
+  ]
+}

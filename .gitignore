@@ -2,6 +2,7 @@
 .idea/
 *.log
 *.swp
+.env
 .coverage
 venv/
 .venv/
@@ -9,12 +10,10 @@ venv/
 .obsidian
 build/
 dist/
-dist - *
 node_modules
 **/.angular
 .vscode
 **/src-tmp
 logs/
 __pycache__
-**/work_space_*
-cosight_server/web
+**/workspace/**

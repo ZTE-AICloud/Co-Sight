@@ -1,0 +1,982 @@
+RESEA RCH ARTICL E
+Mixed Infections ofFour Viruses, the
+Incidence and Phylogenetic Relationships
+ofSweet Potato Chlorotic Fleck Virus
+(Betaflexiviridae) Isolates inWild Species and
+Sweetpotatoes inUganda and Evidence of
+Distinct Isolates inEast Africa
+Arthur K.Tugume1,2*,Settumba B.Mukasa3,Jari P.T.Valkonen1
+1Department ofAgricultural Sciences, Faculty ofAgriculture andForestry, Univers ityofHelsinki, Helsink i,
+Finland ,2Department ofPlant Sciences, Microbiol ogyandBiotechnology ,School ofBioscience s,College of
+Natural Sciences, Makerere University, Kampal a,Uganda, 3Department ofAgricu ltural Produc tion, School
+ofAgricu ltural Sciences ,College ofAgricu ltural andEnviro nmental Sciences, Makerere University ,Kampala,
+Uganda
+*aktugume@ cns.mak.ac. ug
+Abstract
+Viruses infecting wild flora may have asignificant negative impact onnearby crops, and
+vice-versa. Only limited information isavailable onwild species able tohost economicall y
+important viruses thatinfect sweetpotatoes (Ipomoea batatas). Inthisstudy, Sweet potato
+chlorotic fleck virus (SPCFV; Carlavirus, Betaflexiviridae )andSweet potato chlorotic stunt
+virus (SPCSV; Crinivirus, Closteroviridae) were surveyed inwild plants offamily Convo-
+lvulaceae (genera Astripomoea, Ipomoea, Hewittia andLepistemon) inUganda. Plants
+belonging to26wild species, including annuals, biannuals andperennials from four agro-
+ecological zones, were observed forvirus-like symptoms in2004 and2007 andsampled for
+virus testing. SPCFV was detected in84(2.9%) of2864 plants tested from 17species.
+SPCSV was detected in66(5.4%) ofthe1224 plants from 12species sampled in2007.
+Some SPCSV-infected plants were also infected with Sweet potato feathery mottle virus
+(SPFMV; Potyvirus, Potyviridae; 1.3%), Sweet potato mild mottle virus (SPMMV; Ipomo-
+virus, Potyviridae; 0.5%) orboth (0.4%), butnone ofthese three viruses were detected in
+SPCFV-infected plants. Co-infection ofSPFMV with SPMMV was detected in1.2% ofplants
+sampled. Virus-like symptoms were observed in367wild plants (12.8%), ofwhich 42plants
+(11.4%) were negative fortheviruses tested. Almost all(92.4%) the419sweetpotato plants
+sampled from fields close tothetested wild plants displayed virus-like symptoms, and
+87.1% were infected with oneormore ofthefour viruses. Phylogenetic andevolutionary
+analyses ofthe30-proximal genomic region ofSPCFV, including thesilencing suppressor
+(NaBP)- andcoat protein (CP)-coding regions implicated strong purifying selection on
+theCPandNaBP, andthattheSPCFV strains from East Africa aredistinguishable from
+those from other continents .However, thestrains from wild species andsweetpotato were
+PLOS ONE |DOI:10.137 1/journal.po ne.0167 769 December 22,2016 1/27a1111111111
+a1111111111
+a1111111111
+a1111111111
+a1111111111
+OPEN ACCESS
+Citation: Tugume AK,Mukasa SB,Valkonen JPT
+(2016) Mixed Infections ofFour Viruses, the
+Incidence andPhyloge netic Relations hipsofSweet
+Potato Chlorotic Fleck Virus (Betaflexivir idae)
+Isolates inWild Species andSweetpotatoe sin
+Uganda andEvidence ofDistinct Isolates inEast
+Africa. PLoS ONE11(12): e0167769. doi:10.1371 /
+journal.pone .0167769
+Editor: Ulrich Melcher, Oklahoma State Univers ity,
+UNITED STATES
+Received: August 13,2016
+Accepted: November 18,2016
+Published: December 22,2016
+Copyright: ©2016 Tugume etal.Thisisanopen
+access article distributed under theterms ofthe
+Creative Commons Attribution License, which
+permits unrestricte duse,distribu tion,and
+reproduction inanymedium, provided theoriginal
+author andsource arecredited.
+Data Availabilit yStatement: Allnucleic sequence
+datagenerated inthisstudy (for9isolates of
+SPCFV) have been submitted totheGenBank
+database (https://www .ncbi.nlm.n ih.gov/genban k/).
+Their accession numbers areindexed inTable 4in
+themanuscript.
+Funding: Thiswork wasfunded bytheAcademy of
+Finland (1276136 toJPTV) andisgratefully
+acknowledge d.Thefunders hadnoroleinstudy
+indistinguishable, suggesting reciprocal movement ofSPCFV between wild andcultivated
+Convolvulaceae plants inthefield.
+Introduction
+There isevidence that wild flora acts asareservoir ofviruses causing significant losses in
+nearby crops and vice versa [1±7]. However, information about viruses inwild species isstill
+quite limited. This may inpart beduetothefactthat viral infections inwild plants areoften
+symptomless, even when thesame infection may have obvious symptoms incultivated plants
+[8±10]. Whether thesame virus strains caninfect wild and cultivated plants, butarebetter
+adapted towild plants and hence cause nosymptoms, isanissue requiring further study [11,
+12]. The geospatial distribution and genetic variability ofviruses inwild species isalso poorly
+understood [13, 14]. Although some metagenomic surveys have explored virus diversity in
+wild plant communities [14±19], only afewstudies have described thegenetic variability of
+individual virus species inwild plants inrelation toisolates found incultivated plants [20±27].
+Moreover, fewstudies have compared isolates ofplant viruses from wild and cultivated hosts
+across broad geographical areas [22±24, 28±30]. Thus, studies comparing virus populations in
+weeds orwild species and crop species that share anagro-ecological interface areneeded to
+gain insights into theevolutionary and ecological dynamics ofplant virus populations, which
+inturn areneeded tofacilitate plant virus disease management [8,31,32].
+The incidence and impact ofplant viruses attheagro-ecological interface areoften exacer-
+bated inevergreen tropical environments, where susceptible cultivated and wild plants are
+continuously available, providing thenecessary environment forviral replication and vectors
+forviral transmission [30, 33,34]. Plant virus diseases notonly have aneconomic impact but
+also may cause starvation, especially when thecultivated host plant constitutes a`food security'
+crop [35±38]. Anexample isthesweetpotato, IpomoeabasasaS (L.)Lam., theworld's third-
+most-important root crop and acritical food security crop insub-Saharan Africa [38±40].
+Globally, over 30viruses areknown toinfect sweetpotatoes [41±43].
+Sweetpotatoes aregrown asaperennial crop inlocal cropping systems inUganda and else-
+where inEast Africa. Sources ofhealthy planting materials arelimited [44, 45]. Perreniality
+and lack ofhealthy sweetpotato planting materials coupled with theabundance ofinsect vec-
+tors transmitting theviruses promotes yield losses duetovirus diseases [46]. The most severe
+yield losses occur insweetpotato plants co-infected with thewhitefly-transmitte dwceesposaso
+hlrouosnhSsvCsfnuvS (SPCSV; genusyunCnfnuvS, family Closteroviridae) and theaphid-transmit-
+tedwceesposasoPeasleudmossrefnuvS (SPFMV; genus-osdfnuvS, family Potyviridae). Co-infec-
+tion with these viruses results inso-called Sweet potato virus disease (SPVD), characterized by
+leafmalformation, stunted plants and nearly complete lossofyields [47±50]. Similar but
+milder symptoms develop insweetpotato plants co-infected with SPCSV andwceesposaso
+hlrouosnhPrehBfnuvS (SPCFV; genusyaurafnuvS, family Betaflexiviridae), wceesposasomnrgmosA
+srefnuvS (SPMMV; genusIpomofnuvS; family Potyviridae) [49, 51]orsweepoviruses (genus
+HeLomofnuvS, family Geminiviridae) [52]. The frequent co-infection ofsweetpotatoes with
+SPCFV and SPFMV suggests that these viruses may betransmitted byacommon vector [53,
+54], butthevector ofSPCFV remains tobeidentified [55]. Whiteflies transmit sweepoviruses
+and were also initially reported asvectors ofSPMMV [56], butthese results could notbecon-
+firmed inlater studies [55].
+Previous studies inUganda have shown that SPFMV, SPMMV and SPCSV from wild
+plants ofthefamily Convolvulaceae arephylogenetically similar tothose found incultivated
+SPCFV andOther Viruses inWild Plants
+PLOS ONE |DOI:10.137 1/journal.po ne.0167 769 December 22,2016 2/27design, datacollection andanalysis, decision to
+publish, orpreparation ofthemanuscript.
+Competing Interests :Theauthors have declared
+thatnocompeting interests exist.
+sweetpotatoes [22±24]. SPFMV and SPMMV, respectively, were detected in24and 21wild
+plant species and in23and 20districts, respectively, surveyed inthecountry [23, 57]. Further-
+more, 12wild Convolvulaceae species were found tobeinfected with SPCSV [24], butthegeo-
+graphical distribution ofSPCSV inwild vegetation inUganda and thewild host species and
+co-infection ofSPCSV with other viruses inwild plants were notreported. Similarly, informa-
+tion regarding SPCFV infection inwild plants ofConvolulacea islacking, even though SPCFV
+occurs sweetpotatoes inUganda [58] and other East African countries such asKenya [53, 59],
+Tanzania [60] and Rwanda [61], aswell aswestern Africa [62], Asia, Australia, East Timor and
+Latin America [54, 63±66].
+The aimofthisstudy wastodetermine theincidence ofSPCFV andSPCSV andtheir rates of
+co-infection with SPFMV andSPMMV, inwild species interfacing with cultivated sweetpotatoes
+inthemajor agro-ecological zones ofUganda, andtostudy thegenetic variability ofSPCFV.
+Results
+Virus-like symptoms inwild plants
+Atotal of2864 wild plants ofthefamily Convolvulaceae (generaFSsunpomoea, Necnssna, IpoA
+moea andTepnSsemoC) were sampled from their natural habitats infour agro-ecological zones
+inUganda where sweetpotato crops aregrown (Figs 1and 2,S1Table). The natural habitats of
+thewild plants surveyed were inclose proximity (within 500m)tocultivated sweetpotato
+fields. The wild plants were observed totrail into thesweetpotato fields, especially inthewest-
+ern(Fig 2A), central (Fig 2B)and eastern (Fig 2C)zones. Some wild plants grew asweeds in
+sweetpotato fields intheeastern zone (Fig 2D). Volunteer sweetpotato plants were found
+growing among wild plants inthecentral zone (Fig 2E).
+Virus-like symptoms were observed inatotal of367wild plants (12.8%) collected over the
+twosampling years (2004 and 2007); ofthese, 42plants (11.4%) tested negative forallfour
+viruses. Incontrast, 132(5.3%) of2497 symptomless wild plants tested positive foratleast one
+ofthefour viruses. The symptomless butvirus-positive wild plants constituted 15.8% ofall836
+wild plants that tested positive foratleast onevirus. Insweetpotatoes, 5(1.3%) ofthe387
+plants with symptoms tested negative forallfour viruses. Ontheother hand, 10(31.3%) of32
+symptomless plants tested positive foratleast onevirus.
+Leaf chlorosis wasobserved inN.Svbrobasa (Fig 2F)and chlorotic spots were displayed inI.
+seCvnuoSsunS (Fig 2G) andI.ahvmnCasa (Fig 2J)infected with SPCFV. Mild tosevere purpling of
+older leaves wasobserved inplants ofI.SnCeCSnS infected with SPCSV (Fig 2Hand 2I).
+Incidence ofSPCFV inwild plants
+Plants showing aconsistent and unambiguous positive reaction inthree independent NCM-E-
+LISA experiments were deemed SPCFV-infected. SPCFV wasdetected in84(2.9%) of2864
+wild plants tested, including N.Svbrobasa, T.ocauneCSnS and 15ofthe26Ipomoea species tested
+(Table 1,S1Table). Allofthese 17wild species offamily Convolvulaceae represent previously
+unknown natural hosts forSPCFV. Ineleven species (I.ahvmnCasa, I.hanunha,I.eunohaupa, I.
+nCforvhuasa, I.obShvua,I.SnCeCSnS,I.seCvnuoSsunS, I.cnLlsnn,FSsunpomoea ldohdamongeS, N.SvbroA
+basa andT.ocauneCSnS) from which over 40plants were tested, theoverall incidence ofSPCFV
+ranged from 1.8% inI.seCvnuoSsunS andI.cnLlsnn to5.2% inT.ocauneCSnS (Table 1).Notested
+plants ofI.hougoPaCa, I.eunohaupa, I.PnSsvroSa, I.LuaCsnn,I.nCforvhuasa, I.pordmoupla, I.SpaslvA
+rasa,I.fervsnpeS, F.LuaCsnn orF.ldohdamongeS were positive forSPCFV (Table 1).The lowest
+incidence ofSPCFV inwild plants (0.7%) wasrecorded intheMasindi district inwestern
+Uganda, and thehighest incidence (9.0%) wasfound intheKatakwi district ineastern Uganda
+(Table 1).
+SPCFV andOther Viruses inWild Plants
+PLOS ONE |DOI:10.137 1/journal.po ne.0167 769 December 22,2016 3/27
+SPCFV wasalso detected in17(4.1%) of419cultivated sweetpotato plants sampled from
+thefour agro-ecological zones. SPFMV, SPCSV and SPMMV were detected in177(44.6%),
+112(29.5%) and 59(14.0%), respectively, ofthetested sweetpotato plants.
+Toallow later sequence characterization ofitsgenome, SPCFV isolates from wild plants
+and sweetpotato plants were mechanically inoculated onto sweetpotato cv.Tanzania and
+maintained inagreenhouse. Five SPCFV isolates were collected from wild plants, including
+twofromI.ahvmnCasa (Mbale, eastern zone) and oneeach fromI.ahvmnCasa (Bushenyi, west-
+ernzone),I.hanunha (Mbigi, central zone) andI.seCvnuoSsunS (Masindi, western zone). Four
+SPCFV isolates were collected from sweetpotato plants, including twofrom thewestern zone
+and oneeach from thecentral and northern zones.
+Fig1.Map ofUganda showing thedistricts surveyed forwild Convolv ulaceae species and viruses inUganda.
+doi:10.13 71/journal.pone .0167769.g001
+SPCFV andOther Viruses inWild Plants
+PLOS ONE |DOI:10.137 1/journal.po ne.0167 769 December 22,2016 4/27
+Detection andincidence ofSPCSV inwild plants
+Positive reaction with SPCSV antibodies wasobserved in66(5.4%) of1224 wild plants tested
+intriplicate bytriple antibody sadwich-ezyme linked immunosorbent assay (TAS-ELISA)
+(Table 2).Only 27% ofseropositive plants showed virus-like symptoms. SPCSV-infected plants
+belonged to10Ipomoea species plusN.Svbrobasa andT.ocauneCSnS (Table 2).The SPCSV inci-
+dence inspecies from which atleast 51plants were tested was9.3% inI.obShvua, 8.8% inI.hanuA
+nha,7.8% inI.ahvmnCasa, 5.6% inI.SnCeCSnS, 5.5% inI.seCvnuoSsunS and 2.6% inN.Svbrobasa
+(Table 2).Scions from 25SPCSV-seropositive wild plants belonging toeight species were
+grafted ontoI.SesoSa. The grafted plants developed chlorotic mottling symptoms onleaves and
+tested SPCSV-positive byTAS-ELISA at4wkpost-grafting. Noplants ofI.aGvasnha (12plants
+tested),I.huepngnPoumnS (12),I.lnrgeubuaCgsnn (6),I.pvupvuea (14),I.uepeCS (3),F.LuaCsnn (17)
+orF.ldoShdamongeS (14) tested positive forSPCSV (Table 2).
+Among all1224 wild plants tested, SPCSV wasmore frequently detected inplants from the
+western (1.6±11.6%) and eastern (2.7±8.4%) zones than thecentral (2.7±4.2%) zone (Table 2).
+Only twoplants from Arua, oneofthetwonorthern districts, tested positive forSPCSV
+(Table 2).Sixspecies (I.ahvmnCasa, I.hanunha,I.obShvua,I.seCvnuoSsnS, N.Svbrobasa andT.ocauA
+neCSnS) were commonly found intheeastern, central andwestern zones andwere therefore
+Fig2.Example sofwild species ofConvolvul aceae intheir natural habitats inUganda, and some virus-like sympto ms. (A)Ipomoea wightii
+and(B)I.acuminata (inthebackground) trailing intosweet potato field (foregroun d)intheMbarara andMukono districts, respectively .Wild
+vegetation inthese districts isdominate dbytallshrubs. (C)I.sinensis (dotted circle) inclose proximity tosweetpotato field (edge inside solid circle)
+intheSoroti district, which isdominate dbyshort grassland vegetation (backgro und). (D)I.sinensis (white asterisks) growing asweeds ina
+sweetpotat ofield intheKatakwi district. (E)Sweetpota toplant (white o)mixed with plants ofI.wightii (white asterisks) intheMukono district. (F-J)
+Examples ofvirus-li kesymptoms. (F)Leaf chlorosis inH.sublobata .(G)Chlorotic spots onaleafofI.tenuirostris. (H,I)Mild (H)andsevere (I)
+purpling inoldleaves ofI.sinensis. (J)Mild chloroti cspots onaleafofI.acuminata .Plants inF,GandJtested positive forSPCFV; plants inHandI
+tested positive forSPCSV.
+doi:10.137 1/journal.pone. 0167769.g002
+SPCFV andOther Viruses inWild Plants
+PLOS ONE |DOI:10.137 1/journal.po ne.0167 769 December 22,2016 5/27
+Table 1.Incidence ofSweet potato chlorotic fleck virus inwild plants and cultivated sweetpota toplants from different agro-ecologi calzones ofUganda.
+Central zonedNorthern zonedEastern zonedWestern zoned
+Plant species Life
+cycleaTotal no.of
+plantscLUW MKN MSK RKI MPG LIR APC GUL ARU KTK SOR KUM MBL KAP TOR KML IGG RUK KNG KBL BUS MBR KAS MAS HOM
+Ipomoea
+acuminataP 157(4.5) 0
+(16)0(11) 0(9) - 0(36) - - - - - - - 6(35) - - - - 0(9) 0(22) - 1(8) 0(6) - - 0(5)
+I.aquatica P 22(9.1) - - - - - - - - - 2(20) 0(2) - - - - - - - - - - - - - -
+I.blepharophylla P 14(7.1) - - - - - - - - - 1(14) - - - - - - - - - - - - - - -
+I.cairica P 220(4.5) 0(2) 0(6) 1(19) 0(30) 1(19) - - - - - - - 0(3) - 0(5) 3(26) - 1(13) - - 1(25) 3(57) - 0(14) 0(1)
+I.cordofana A 10(0) - - - - - - 0
+(10)- - - - - - - - - - - - - - - - - -
+I.crepidiformis P 30(3.3) - - - - - - - - - - 0(20) 1
+(10)- - - - - - - - - - - - -
+I.eriocarpa A 134(0) - - - - - 0
+(38)0(9) - - - - - - - - - - - - - - 0(7) 0
+(47)0(33) -
+I.®stulosa P 25(0) - 0(25) - - - - - - - - - - - - - - - - - - - - - - -
+I.grantii P 9(0) - 0(9) - - - - - - - - - - - - - - - - - - - - - - -
+I.hederifolia A 47(2.1) - 0(11) 0(5) - - - - - - - 1(4) - - - - 0(8) - 0(9) - - - - - - 0(10)
+I.hildebrandtii P 17(5.9) - - - 0(2) - - - - - - - - 0(3) - - 0(7) 1(2) 0(1) 0(1) - - 0(1) - - -
+I.involucrata P 78(0) - - - - - - - - - - - 0
+(12)- - - - - - 0(10) 0
+(50)0(6) - - - -
+I.obscura P 154(4.5) - 0(6) 0(19) 0(8) 0(6) - 0(8) - - - 1(18) 1
+(10)- 2(32) - - - 0(3) - 0(1) 0(7) 0(14) 1
+(10)0(1) 1(5)
+I.polymorpha BA 10(0) - - - - - - - - - - - - - 0(10) - - - - - - - - - - -
+I.purpurea A 34(5.9) - - 0(6) 0(2) - - - - - - - - - - - - - - - - - 2(16) - - -
+I.repens P 27(11.1) - - - - - - - - - - 2(4) 1
+(14)0(9) - - - - - - - - - - - -
+I.rubens P 37(2.7) - - 0(2) 0(8) - - - - - 1(13) 0(8) - - - 0(1) - 0(5) - - - - - - - -
+I.sinensis A 374(3.5) - - - - - - - 0
+(54)0
+(36)8(64) 2(42) 2
+(31)0(16) 0(7) 0(24) 0(23) 1
+(28)- 0(7) - - - - 0(40) 0(2)
+I.spathulata P 42(0) - - - - - - - - - - - - - 0(42) - - - - - - - - - - -
+I.stenobasis P 23(8.7) - - - - - - - - 0(7) - 1(7) - 0(3) - - 0(6) - - - - - - - - -
+I.tenuirostris P 395(1.8) 0
+(17)0(28) - 0(3) 0(13) 0(2) 0
+(31)- - - 1(7) - 1(44) 0(60) 0(1) 0(6) - 1(65) 0(25) 0
+(18)3(58) 0(8) 0(7) 1(2) -
+I.velutipes A 10(0) - - - - - - - - - - - - 0(2) - - - - - - - - 0(8) - - -
+I.wightii P 113(1.8) 0(9) 0(11) 0(12) 0(26) 0(1) - - - - - - - 0(2) - 1(4) - - 0(5) 1(18) 0(2) 0(6) 0(15) - - 0(2)
+A.grantii P 42(0) - - 0(7) 0(15) - - - - - - - - - - - - - - 0(20) - - - - - -
+A.hyoscyamoides P 64(0) 0
+(12)- - - - - - - - - 0(5) - 0(38) - - 0(5) - 0(4) - - - - - - -
+H.sublobata P 687(2.8) 0
+(28)0(18) 0(45) 0(43) 0(44) 0
+(22)0
+(10)0(2) - - 0(19) - 1(28) 3(12) 5(86) 4(50) 3
+(41)0(22) 1(51) - 1(40) 1(29) 0(8) 0(48) 0(41)
+L.owariensis P 97(5.2) - 0(22) - - 0(3) - - - - - 0(2) - 1(16) - 2(23) 2(25) - - 0(2) - - - - 0(1) 0(3)
+Total no.wild
+plantsb2864(2.9) 0
+(84)0
+(147)1
+(124)0
+(137)1
+(122)0
+(62)0
+(68)0
+(56)0
+(43)12
+(113)8
+(138)5
+(77)9
+(199)5
+(163)8
+(144)9
+(156)5
+(76)2
+(131)2
+(156)0
+(71)6
+(156)8
+(161)1
+(72)1
+(139)1(69)
+SPCFV incidence
+(%)0 0 0.8 0 0.8 0 0 0 0 9.0 5.8 6.5 4.5 3.1 5.6 5.8 6.6 1.5 1.3 0 3.8 4.9 1.4 0.7 1.4
+Sweetpotato P 419(4.1) - 0(19) 3(40) 1(28) 2(23) - - 0
+(14)2
+(21)0(14) 0(17) - 1(33) 0(23) 0(16) 1(32) - 1(26) 2(36) - 1(21) 0(15) - 0(16) 3(25)
+aLifecycle ofspecies :A,annual; BA,biannual ;P,perennial.
+bNumber ofSPCFV-p ositive plants followed (inparenthe ses) bytotal number ofplants tested perdistrict. The number sofplants tested ineach year (2004 and 2007) areshown inS1
+Table.
+cTotal number ofplants tested perspecies followed (inparentheses )bypercentage ofplants ofeach species testing positive forSPCFV .
+dNumber ofSPCFV-p ositive plants followed (inparenthe ses) bynumber ofplants tested perdistrict. `─'indicates that theplant species was notobserved inthat district .Central region
+districts (Lake Victoria basin): LUW =Luwero, MKN =Mukono, MSK =Masaka, RKI =Rakai, MPG =Mpigi. Northern region districts: LIR=Lira, APC =Apac, GUL =Gulu,
+ARU =Arua. Eastern region districts: KTK =Katakwi, SOR =Soroti, KUM =Kumi, MBL =Mbale, KAP =Kapchorwa, TOR =Tororo, KML =Kamuli, IGG =Iganga. Western region
+districts: RUK =Rukungiri, KNG =Kanungu, KBL =Kabale, BUS =Bushenyi, MBR =Mbarara, KAS =Kasese, MAS =Masindi, HOM =Hoima.
+doi:10.1371 /journal.pone. 0167769.t0 01
+SPCFV andOther Viruses inWild Plants
+PLOS ONE |DOI:10.137 1/journal.po ne.0167 769 December 22,2016 6/27
+Table 2.Incidence ofSweet potato chlorotic stunt virus inwild plants and cultivated sweetpota toplants from different agro-ecologi calzones ofUganda.
+Central zonedNorthern zonedEastern zonedWestern zoned
+Plant species Life cycleaTotal no.ofplantscMKN MSK RKI MPG GUL ARU KTK SOR MBL KAP TOR KML RUK KNG BUS MBR MAS HOM
+Ipomoea acuminata P 102(7.8) 0(11) 1(9) - 1(22) - - - - 4(29) - - - - 0(17) 1(4) 0(5) - 1(5)
+I.aquatica P 12(0) - - - - - - 0(10) 0(2) - - - - - - - - - -
+I.cairica P 121(6.6) 0(3) 0(7) 2(20) 1(15) - - - - 0(3) - 0(5) 1(14) 0(5) - 1(19) 1(26) 1(3) 1(1)
+I.crepidiformis P 12(0) - - - - - - - 0(12) - - - - - - - - - -
+I.hederifolia A 34(8.8) 0(11) 0(5) - - - - - - - - - 2(8) - - - - - 1(10)
+I.hildebrandtii P 6(0) - - 0(2) - - - - - 0(3) - - - - - - 0(1) - -
+I.obscura P 75(9.3) 1(5) 1(10) 0(8) 0(6) - - - 2(10) - 1(14) - - - - 0(6) 1(10) 0(1) 1(5)
+I.purpurea A 14(0.0) - 0(6) 0(2) - - - - - - - - - - - - 0(6) - -
+I.repens P 3(0) - - - - - - - - 0(3) - - - - - - - - -
+I.rubens P 10(10.0) - 0(2) - - - - 0(6) 1(1) - - 0(1) - - - - - - -
+I.sinensis A 231(5.6) - - - - 0(54) 1(36) 1(21) 1(25) 1(7) - 2(16) 3(23) - 0(7) - - 3(40) 1(2)
+I.spathulata P 27(3.7) - - - - - - - - - 1(27) - - - - - - - -
+I.stenobasis P 10(10.0) - - - - - 1(7) - - 0(3) - - - - - - - - -
+I.tenuirostris P 165(5.5) 1(11) - - 1(10) - - - - 1(17) 2(44) - - 1(39) 0(4) 2(32) 1(8) - -
+I.wightii P 51(5.9) - 0(1) 1(19) 0(1) - - - - - - - - 1(5) 0(4) 0(5) 1(14) - 0(2)
+Astripomoea granti P 17(0) - 0(7) - - - - - - - - - - - 0(10) - - - -
+A.hyoscyamoides P 14(0) - - - - - - - 0(5) - - - 0(5) 0(4) - - - - -
+Hewittia sublobata P 267(2.6) 0(9) 0(28) 0(21) 0(14) 0(2) - - 0(11) 0(12) - 2(34) 1(21) 0(5) 0(18) 0(19) 0(13) 2(19) 2(41)
+Lepistemon owariensis P 53(9.4) 0(10) - - 0(3) - - - 0(2) 0(3) - 2(18) 0(12) - 1(1) - - 1(1) 1(3)
+Total no.ofwild plantsb1224(5.4) 2(60) 2(75) 3(72) 3(71) 0(56) 2(43) 1(37) 4(68) 6(80) 4(85) 6(74) 7(83) 2(58) 1(61) 4(85) 4(83) 7(64) 8(69)
+SPCSV incidence (%) 3.3 2.7 4.2 4.2 0 4.7 2.7 5.9 7.5 4.7 8.1 8.4 3.4 1.6 4.7 4.8 10.9 11.6
+Sweetpotato P 419(25.1) 4(19) 13(40) 7(28) 5(23) 0(14) 1(21) 2(14) 6(17) 6(33) 2(23) 3(16) 5(32) 10(26) 12(36) 10(21) 7(15) 5(16) 7(25)
+aLifecycle ofspecies :A,annual; P,perennial .
+bNumber ofSPCFV-p ositive plants followed (inparenthe ses) bytotal number ofplants tested perdistrict. Plants were tested forSPCSV only in2007.
+cTotal number ofplants tested perspecies followed (inparentheses )bypercentage ofplants ofeach species testing positive forSPCSV.
+dNumber ofSPCSV-p ositive plants followed (inparentheses )bynumber ofplants tested perdistrict. `─'indicates that theplant species was notobserved inthat district. Central
+region districts (Lake Victoria basin): MKN =Mukono, MSK =Masaka, RKI =Rakai, MPG =Mpigi. Northern region districts: GUL =Gulu, ARU =Arua. Eastern region districts:
+KTK =Katakwi, SOR =Soroti, MBL =Mbale, KAP =Kapchor wa,TOR =Tororo, KML =Kamuli .Western region districts: RUK =Rukungiri ,KNG =Kanungu, BUS =Bushen yi,
+MBR =Mbarara, MAS =Masindi, HOM =Hoima.
+doi:10.1371 /journal.pone. 0167769.t0 02
+SPCFV andOther Viruses inWild Plants
+PLOS ONE |DOI:10.137 1/journal.po ne.0167 769 December 22,2016 7/27
+sampled inthelargest numbers (64% ofallplants tested). Comparison ofvirus incidence across
+these three agro-ecological zones confirmed theaforementioned spatial differences inSPCSV
+incidence (Table 2).SPCSV wasalso detected in105(25%) ofthe419cultivated sweetpotato
+plants tested.
+Mixed viral infections inwild plants
+Mixed infections ofSPCFV with anyofthethree other common sweetpotato viruses, SPCSV,
+SPFMV and SPMMV, wasnotfound inthewild plants tested. However, co-infections involv-
+ingtheother three viruses were found, including SPCSV +SPFMV and SPCSV +SPMMV in
+sixplants each outof1224 plants sampled in2007. Co-infection ofSPFMV and SPMMV was
+detected in35of2864 plants sampled in2004 and 2007. Triple infection bySPCSV, SPFMV
+and SPMMV wasfound in5of1224 plants sampled in2007 (Table 3).Single infections by
+SPFMV and SPMMV inwild plants have been reported elsewhere [23, 57].
+In419sweetpotato plants tested, SPCFV wasfound co-infecting with SPFMV (3plants),
+SPCSV (3plants) orSPMMV (2plants), and with both SPFMV and SPCSV (2plants), SPFMV
+and SPMMV (9plants) orSPMMV and SPCSV (1plant). Allfour viruses were detected inone
+sweetpotato plant (Table 3).
+Molecular variability oftheSPCFV coat protein (CP) andnucleic acid±
+binding protein (NaBP) regions
+The (+)ssRNA genome ofSPCFV (NCBI acc. no.AY461421) is9104 nucleotides (nt) long,
+excluding the30-terminal poly(A) tail,and contains sixopen reading frames (ORFs) [67].
+ORF5 encodes thecoat protein (CP). ORF6 partially overlaps the30end ofORF5 by17ntand
+encodes thenucleic acid±binding protein (NaBP) [67] implicated insuppression ofantiviral
+RNA silencing [68]. The length ofRT-PCR amplicons covering the30-proximal genomic
+region ofSPCFV from fivewild plants and four sweetpotato plants was1578 nt.BLAST
+searches intheNCBI database showed that thesequences were homologous tothe30genomic
+region inthe29SPCFV isolates previously characterized from sweetpotatoes inEast Africa
+(Uganda, Kenya, Tanzania), Asia (China, Taiwan, South Korea), Australia, East Timor, Peru
+orofunknown origin (Table 4).The amplified sequences contained theORFs forSPCFV CP
+(nt242±1138, 299aa)and NaBP (nt1125±1523, 133aa),and also the30-UTR; (nt1527±1578).
+Sequences determined inthisstudy were submitted totheNCBI database under accession
+numbers EF155967, EF155968 and KR086396±KR086402 (Table 4).
+The nucleotide sequences ofthenine SPCFV isolates were 86.1±98.2% (CP; S2Table),
+95.2±99.5% (NaBP; S3Table) and 96.4±100% (30-UTR; S4Table) identical. The fiveisolates
+from wild plants were 86.2±98.2% (CP; S2Table), 95.5±99.2% (NaBP; S3Table), and 96.4±
+100% (30-UTR; S4Table) identical atthenucleotide level with 15isolates from cultivated
+sweetpotato inEast Africa. Among all38CP- and 32NaBP-coding sequences ofSPCFV,
+including those determined inthisstudy and those available intheNCBI database, thenucleo-
+tide sequence identities were 75.0±100% fortheCP(S2Table) and 77.4±100% fortheNaBP
+(S3Table), and thededuced amino acid sequence identities were 88.3±100% fortheCP(S2
+Table) and 75.9±100% fortheNaBP (S3Table). However, identities between SPCFV isolates
+from East Africa and elsewhere were relatively low: 75.0±89.3% and 88.3±95.7% atthenucleo-
+tide and amino acid level, respectively, forCP(S2Table), and 77.4±93.7% and 75.9±96.2% at
+thenucleotide and amino acid level forNaBP (S3Table). NaBP ofSPCFV isacysteine-rich
+protein (CRP) [68] and hasazinc finger±like motif (CX 2CX 4CX 3C)that wasobserved within
+thesame protein region (aa64±98) inallnine SPCFV isolates. The arginine-rich basic motif,
+RRARR, which isinvolved intheRNA silencing suppression activity ofNaBP [68] wasalso
+SPCFV andOther Viruses inWild Plants
+PLOS ONE |DOI:10.137 1/journal.po ne.0167 769 December 22,2016 8/27
+observed inthesame position (aa59±63) inallnine SPCFV isolates. The CPofisolates
+BUSH42 and KINT2 from wild plants hadunique amino acid substitutions (V/G/E/S12A and
+Q119H, respectively), and theNaBP ofKINT2 hadaunique amino acid substitution (I34V).
+Some amino acid sites intheCP(13E, 29E, 41Iand 118A) and NaBP (3S, 7R,23C, 74E and
+95V) were conserved inisolates from East Africa butwere highly variable inisolates from Asia.
+Overall, noconsistent amino acid sequence differences were associated with geographic origin
+orhost species.
+Recombination andphylogenetic relationships inSPCFV isolates
+Noevidence forrecombination wasdetected inthe1109±1761 nt-long NaBP-CP-30-UTR
+region available from 35SPCFV isolates (-=0.999) orinthecomplete genomic sequences of
+theseven SPCFV isolates indicated inTable 4(-=0.071) using thesixprograms included in
+theRDP4 package and thePHI test.
+Using theT92+G+I nucleotide substitution model, phylogenetic clustering ofthe38
+CPsequences showed nocongruence with thehost species (Fig 3A). However, there wasTable 3.Occurrence ofmixed infection swith SPCFV, SPCSV ,SPFMV and/or SPMMV inwild Convolv ulacea species and cultivat edsweetpota to
+plants collected inUganda.
+Virus combinationsd
+Plant speciesaLife
+cyclecCF+FM CF+CS CF+MM FM+MMeFM+MMfFM+MMgCS+FM CS+MM CS+FM+MM CS+FM+CF CS+MM+CF CS+FM+MM+CF
+Ipomoea
+acuminataP - - - 3(55) 1(102) 4(157) 1(102) 0(102) 1(102) - - -
+Ipomoea cairica P - - - 2(99) 2(121) 4/220 2(121) 0(121) 2(121) - - -
+Ipomoea
+hederifoliaP - - - 1(13) 0(34) 1(47) 0(34) 0(34) 0(34) - - -
+Ipomoea
+obscuraP - - - 1(79) 0(75) 1(154) 0(75) 2(75) 1(75) - - -
+Ipomoea repens P - - - 0(24) 0(3) 0(27) 1(3) 0(3) 0(3) - - -
+Ipomoea
+sinensisA - - - 6(143) 2(231) 8(374) 3(231) 0(231) 1(231) - - -
+Ipomoea
+spathulataP - - - 0(15) 0(27) 0(42) 0(27) 1(27) 0(27) - - -
+Ipomoea
+stenobasisP - - - 0(13) 0(10) 0(23) 1(10) 0(10) 0(10) - - -
+Ipomoea
+tenuirostrisP - - - 5(230) 2(165) 7(395) 3(165) 0(165) 0(165) - - -
+Ipomoea wightii P - - - 0(62) 0(51) 0(113) 1(51) 0(51) 0(51) - - -
+Hewittia
+sublobataP - - - 6(420) 1(267) 7(687) 2(267) 2(267) 0(267) - - -
+Lepistemon
+owariensisP - - - 2(44) 1(53) 3(97) 2(53) 1(53) 0(53) - - -
+Total mixed-
+infected wild
+plantsb- - - 27(1640) 8(1224) 35(2864) 16
+(1224)6(1224) 5(1224) - - -
+Sweetpotato P 3(419) 3(419) 2(419) n/a 9(419) n/a 60(419) 15(419) 5(419) 2(419) 1(419) 1(419)
+aLifecycle ofspecies :A,annual; P,perennial .
+bCF=SPCFV ,CS=SPCSV, FM=SPFMV, MM =SPMMV .
+cAllvalues represen tnumber ofco-infecte dplants followed (inparenth eses) bynumber ofplants tested. `─'indicates that theviral combinatio nwas
+consistentl ynotfound inthewild species butwas detected inone ormore sweet potato plants. n/a=notapplicable.
+dThe total number ofwild plants tested was 1640 in2004 and 1224 in2007 (2864 overall ).Virus combinati onFM+MM was detected in2004 and 2007; all
+other virus combinatio nswere detected only in2007. CSwas surveyed only in2007. Noco-infect ions involving CFwere detected.
+e,f,gFM+MM data areshown for2004e,2007fand 2004+200 7g.
+doi:10.137 1/journal.pone. 0167769.t 003
+SPCFV andOther Viruses inWild Plants
+PLOS ONE |DOI:10.137 1/journal.po ne.0167 769 December 22,2016 9/27
+Table 4.Geographi calorigin ofSweet potato chlorot icfleck virus isolates used forcompar ison of
+their 30-terminal genomi cregions.
+IsolateaGeographi cal
+originGeneban kaccessi on
+no.Host Reference
+4MBL Mbale, Uganda EF15596 7 I.acuminat aThis study
+BUSH42 Bushenyi, Uganda KR0863 99 I.acuminat aThis study
+KINT2 Mpigi, Uganda EF15596 8 I.cairica This study
+MAS53 Masindi, Uganda KR0863 97 I.
+tenuirostrisThis study
+MBL86 Mbale, Uganda KR0864 00 I.acuminat aThis study
+ARU91 Arua, Uganda KR0864 02 sweetpotato This study
+HOM40 Hoima, Uganda KR0863 98 sweetpotato This study
+KNG92 Kanungu, Ugand a KR0864 01 sweetpotato This study
+RKI15 Rakai, Ugand a KR0863 96 sweetpotato This study
+007VIIMS Unknow n EU3758 97 sweetpotato [54]
+94-1s Kenya EU3759 00 sweetpotato [54]
+AusCan Australia EF99064 7 sweetpotato [63]
+AusCan Australia KU7074 75 sweetpotato [66]
+B-Guan gdong-
+11-5China KC1301 84 sweetpotato Qiao etal.,2012,
+unpublishe d
+B-Guan gxi-11-1 China KC1301 86 sweetpotato Qiao etal.,2012,
+unpublishe d
+B-Jiangxi-1 1-4 China KC1301 85 sweetpotato Qiao etal.,2012,
+unpublishe d
+G-Sichua n-10-60 China KC1301 83 sweetpotato Qiao etal.,2012,
+unpublishe d
+Gwangzhu 1 China EU3759 01 sweetpotato [54]
+HG176 South Korea KP715159 sweetpotato Kwak etal.,2015,
+unpublishe d
+HN83 South Korea KP115605 sweetpotato Kwak etal.,2014,
+unpublishe d
+Hoima3c Hoima, Uganda EU3759 02 sweetpotato [54]
+KBL38 Kabale, Uganda EU3759 03 sweetpotato [54]
+Kiboga6b Kibonga, Uganda EU3759 08 sweetpotato [54]
+KY5 Kenya EU3759 04 sweetpotato [54]
+Le-97-598 Unknow n EU3759 05 sweetpotato [54]
+Mas Masindi, Uganda AJ78129 5 sweetpotato Mukasa etal.,2004,
+unpublishe d
+Mpigi6b Mpigi, Uganda EU3759 06 sweetpotato [54]
+Njoro5 Kenya EU3759 10 sweetpotato [54]
+Rukungiri 1b Rukungiri ,Uganda EU3759 07 sweetpotato [54]
+SC20 South Korea KP115606 sweetpotato Kwak etal.,2014,
+unpublishe d
+SH1 China KC4146 76 sweetpotato [65]
+SPCFV Hoima, Uganda AY461421 sweetpotato [67]
+SPCFV-CI P Peru EU3758 99 sweetpotato [54]
+Tar Tarime, Tanzania AJ78129 6 sweetpotato Mukasa etal.,2004,
+unpublishe d
+Tm37 East Timor KU7205 65 sweetpotato [66]
+TN340 Taiwan EU3758 98 sweetpotato [54]
+TN399 Unknow n EU3759 09 sweetpotato [54]
+(Continue d)
+SPCFV andOther Viruses inWild Plants
+PLOS ONE |DOI:10.137 1/journal.po ne.0167 769 December 22,2016 10/27
+phylogenetic congruence ofisolates according totheir geographic origin inEast Africa and
+Asia. Allisolates from East Africa (including Uganda, Kenya and Tanzania) were designated
+asSPCFV-EA (Fig 3A,Table 4).Isolates from Asia were clustered into twogroups, designated
+asSPCFV-Asian1 (comprising isolates from Australia, China, South Korea and Taiwan orof
+unknown origin) and SPCFV-Asian2 (comprising afewisolates from China, Taiwan and East
+Timor orofunknown origin) (Fig 3A,Table 4).Anexception wasisolate SPCFV-CIP (acces-
+sion no.EU375899) from Peru, which clustered with isolates from East Africa (Fig 3A). Phylo-
+genetic clustering ofisolates based on32NaBP nucleotide sequences (using thesubstitution
+model T92+G) wassimilar tothat ofCP(Fig 3B). The 30-UTR sequences were tooshort (52
+nt)formeaningful analyses and were notincluded inphylogenetic analyses.Table 4.(Continue d)
+IsolateaGeographi cal
+originGeneban kaccessi on
+no.Host Reference
+UN210 South Korea KP115607 sweetpotato Kwak etal.,2014,
+unpublishe d
+aNames ofseven SPCFV isolates whose complete genome sequences arecurrently available areshown in
+bold.
+doi:10.13 71/journal.pone .0167769.t004
+Fig3.Phylogene ticanalysis ofSPCFV based ontheCPand NaBP nucleotide sequence s.Nine SPCFV isolates from wild plant species (▲)
+orsweetpotatoe s(●)inthisstudy arecompared with 29and23isolates, respectively, from previous studies. (A,B)Sequenc esforCP(A)and
+NaBP (B)were analyzed. Sequenc escluster according tothegeographical origin ofthevirus isolates, i.e.,East Africa (SPCFV-EA )orAsia
+(SPCFV-As ian1 andSPCFV-Asian2 ).The geographical origins areunknown forisolates Le-97-598 _EU3759 05,TN399_EU 375909 and
+007VIIMS _EU3758 97.Numbers atbranche srepresent bootstrap values of1000 replicates .Only bootstrap values of50% areshown. Scale
+indicates nucleotide substitutions persiteaccording toTamura [69].
+doi:10.137 1/journal.pone. 0167769.g003
+SPCFV andOther Viruses inWild Plants
+PLOS ONE |DOI:10.137 1/journal.po ne.0167 769 December 22,2016 11/27
+Nucleotide diversity andselection pressure ontheSPCFV CPandNaBP
+Analysis ofgenetic differentiation between SPCFV populations from East Africa and Asia was
+carried outforboth theCP- and NaBP-coding sequences. RSTvalues forCP(0.30011) and
+NaBP (0.30064) showed evidence ofgenetic differentiation, implying that foreach oftheCP
+and NaBP, 30.0% oftotal variance oftheSPCFV population isexplained bytheorigin ofiso-
+lates inEast Africa orAsia. Between-population diversity wasgreater than within-population
+diversity forCPand NaBP, further suggesting adifferentiated population. Forexample, the
+SPCFV subpopulation from East Africa hasawithin-population diversity of0.05007±0.00590
+(CP) and 0.02934±0.00482 (NaBP). However, between-populati ondiversities with theAsian
+subpopulation wasmore than twotimes higher, both separately (0.11003±0.00751, Asian1
+CP;0.11405±0.01952, Asian2 CP;0.08593±0.00886, Asian1 NaBP; and 0.07018±0.001704,
+Asian2 NaBP) orincombination (0.15861±0.01220 fortheCPand 0.14723±0.01336 forthe
+NaBP). Incontrast, theSPCFV subpopulation from outside East Africa hadwithin-population
+diversities of0.15861±0.01220 (CP) and 0.14723±0.01336 (NaBP), which areonly slightly
+higher than thebetween-population diversities, indicating asubpopulation structuration in
+theAsian isolates. Taken together, thephylogenetic clustering ofisolates (Fig 3Aand 3B), gene
+flow estimates ofRSTand within- and between-population diversity indices demonstrate
+genetic differentiation ofSPCFV according togeographical origin.
+Synonymous codon usage bias wasevaluated based ontheeffective number ofcodons
+(ENC). Forthenuclear universal genetic code, thevalue forENC ranges from 20(ifonly one
+codon isused foreach amino acid, i.e.,codon bias ismaximal) to61(ifallsynonymous codons
+foreach amino acid areequally used, i.e.,there isnocodon bias). Our results showed that CP
+hadahigher ENC value (53.9) than NaBP (50.1), suggesting that, although both coding regions
+hadmoderate bias incodon usage, NaBP hadmore codon bias than CP.This isconsistent
+with thelarger codon bias index (CBI) value found forNaBP (0.432) ascompared with CP
+(0.283). CBI values range from 0(inagene with random codon usage) to1(inagene with
+extreme codon bias). Thus, ourCBI results suggest that codon usage ismore random inCP
+than inNaBP.
+Irrespective ofthehost species from which theSPCFV isolates were characterized, nucleo-
+tide diversity (π)values foreach ofthetwoprotein-coding regions were relatively low(12.1%
+and 8.7% fory-andEaH-, respectively). The non-synonymous nucleotide diversity (πa)was
+2.6% and 4.1% fory-andEaH-, respectively, whereas thesynonymous ntdiversity (πs)was
+45.7%, and 25.2%, respectively. The ratio ofπatoπs(ω=πa/πs)gives ageneralized estimation
+ofω,which isthemeasure ofselection pressure imposed onagiven entire protein. The value
+ofπawas17.5- and 6.1-fold lower than thevalue ofπsfory-andEaH-, respectively, suggest-
+ingtheinfluence ofpurifying selection. Under thebasic assumption that acodon isaunit of
+evolutionary change [70], maximum likelihood (ML) sitemodels treatωforanycodon ina
+protein-coding nucleotide sequence asarandom variable from astatistical distribution. Thus,
+selection pressures suggested bytheaforementioned results and assessed byaMLframework
+ofcodon substitution under model M0, which yieldedωvalues of0.044 and 0.127 fory-and
+EaH-, respectively, indicate purifying selection (Table 5).The heterogeneity ofselective pres-
+sure wasrevealed byalikelihood ratio test(LRT) ofM3vs.M0, which showed that theM3
+model fitthedata significantly better than M0forboth CPand NaBP proteins (Table 5).M3
+forNaBP suggested that 58.0% ofsites were subject tostrong purifying selection (ω=0.011),
+40.5% ofsites were under weak purifying selection (ω=0.278) and only 1.4% ofsites were
+under positive selection (ω=1.598) (Table 5).NaÈiveempirical Bayes inference under M3iden-
+tified oneamino acid (8P) asundergoing positive selection (Table 5).M3forCPshowed that
+allsites were under varying degrees ofpurifying selection asfollows: 82.7% ofsites were
+SPCFV andOther Viruses inWild Plants
+PLOS ONE |DOI:10.137 1/journal.po ne.0167 769 December 22,2016 12/27
+subjected tonearly lethal mutations (ω=0.008), 14.5% were under weak purifying selection (ω
+=0.177) and 2.7% ofsites were under nearly neutral evolution (ω=0.615) (Table 5).Inboth
+CPand NaBP, likelihood ratio tests (LRTs) ofnested models M2a vs.M1a, M8vs.M7and
+M8a vs.M8showed that thepositive selection models (M2a, M8and M8a) didnotfitthedata
+significantly better than therespective null models (M1a, M7and M8; Table 5),which iscon-
+sistent with purifying selection onmany oftheamino acid sites. Parameter estimates under
+each ofthemodels areshown inTable 5.
+Discussion
+Most ofthe26tested wild species ofConvolvulaceae were found tobenatural hosts for
+SPCFV, including N.Svbrobasa, T.ocauneCSnS and 15Ipomoea species. Previously, I.aGvasnha,
+I.pvupvuea andI.cnLlsnn were shown tobeinfectible with SPCFV following experimental
+inoculation [54], butthisstudy showed that these species canbenaturally infected with
+SPCFV. Furthermore, SPCSV wasfound toinfect 12species inthefield, including N.SvbroA
+basa,T.ocauneCSnS and 10wildIpomoea species. These results significantly extend ourknowl-
+edge ofthenatural host ranges ofSPCSV and SPCFV.Table 5.Parameter estimates, log-likeliho od(lnL),ω-ratio (dN/dS),and likeliho odratio test (LRT) statistics under seven different maximum likeli-
+hood models ofcodon substitu tion used toinvestigate selectio npressure sexerted onNaBP and CPofSPCFV.
+Protein ModelaParamete restimatesbω-ratio (dN/
+dS)Log likeliho od
+(lnL)LRT statisticc
+(2×δlnL)Positively selected (amino
+acids) sitesd
+CP M0 ω=0.044 0.044 −6692.464 none
+M3 p0=0.827, p1=0.145 (p2=0.027); ω0=0.008,
+ω1=0.177, ω2=0.6150.049 −6562.318 p<0.0001 (M0 vs.
+M3)none
+M1a p0=0.943 (p1=0.056), ω0=0.024 (ω1=1.000) 0.079 −6615.790 notallowed
+M2a p0=0.943, p1=0.056 (p2=0.000); ω0=0.024,
+ω1=1.000, ω2=35.3210.079 −6615.790 p>0.05 (M1a vs.
+M2a)none
+M7 p=0.136, q=2.240 0.052 −6564.566 notallowed
+M8 p0=0.986 (p1=0.014); p=0.155, q=3.305, ωs
+=1.0000.053 −6563.764 p>0.05 (M7 vs.
+M8)none
+M8a p0=0.981 (p1=0.018); p=0.160, q=3.708, ωs
+=0.8000.052 −6562.619 p>0.05 (M8 vs.
+M8a)none
+NaBP M0 ω=0.127 0.127 −2060.857 none
+M3 p0=0.580, p1=0.405 (p2=0.014); ω0=0.011,
+ω1=0.278, ω2=1.5980.143 −2031.819 p<0.001 (M0 vs.
+M3)8P**
+M1a p0=0.893 (p1=0.107), ω0=0.077 (ω1=1.000) 0.176 −2039.934 notallowed
+M2a p0=0.893, p1=0.074 (p2=0.033); ω0=0.078,
+ω1=1.000, ω2=1.0000.176 −2039.934 p>0.05 (M1a vs.
+M2a)none
+M7 p=0.312, q=1.818 0.143 −2033.003 notallowed
+M8 p0=0.991 (p1=0.009); p=0.368, q=2.431, ωs
+=1.9150.144 −2031.822 p>0.05 (M7 vs.
+M8)8P
+M8a p0=0.958 (p1=0.042), ;p=0.401, q=3.130, ωs
+=0.8000.139 −2032.608 p>0.05 (M8 vs.
+M8a)8P
+aModels areaccording tothedescriptio nsgiven inthemethods.
+bNumbers ofparameters fordifferent models were 1(M0), 2(M1a), 4(M2a), 5(M3), 2(M7), 3(M8a) and 4(M8).
+cLRT statistic sofM3vs.M0aretests ofheterogeneity ofselection pressures among codon sites, while those ofM2a vs.M1a, M8vs.M7and M8vs.M8a
+aretests ofpositive selection, allofwhich assess theLRT statistic (2δlnL) against achi-square distributio nwith degrees offreedom (d.f.) equal tothe
+difference inthenumber ofparameters between thenested models under compariso n.
+dApositive lyselected amino acid sitewith posterior probability P>99(**) isshown. Identi®catio nofamino acid under positive selectio nisbased onnaÈive
+empirical Bayes (NEB) (under M3) orBayes empirical Bayes (BEB) inferen ce(under M2a, M8orM8a).
+doi:10.137 1/journal.pone. 0167769.t 005
+SPCFV andOther Viruses inWild Plants
+PLOS ONE |DOI:10.137 1/journal.po ne.0167 769 December 22,2016 13/27
+Many ofthewild plants tested contained double ortriple infections ofSPFMV, SPMMV and/
+orSPCSV. These mixed infections have notbeen reported previously. However, nowild species
+were co-infected with SPCFV andanyoftheother three viruses. This wasinstriking contrast to
+cultivated sweetpotatoes, which arefrequently co-infected with SPCFV andoneormore ofthe
+other viruses both inouranalysis andinprevious studies inEast Africa [53,58,61].Furthermore,
+ourprevious studies have shown that several wild Convolvulaceae species areco-infected with
+theSPFMV strains EAandCinthefield inUganda [22]. The Cstrain wasproposed tobeanew
+species [71] andwasrecently designated aswceesposasofnuvSy[72]. Insweetpotatoes, theinci-
+dence ofSPFMV andSPCSV infections canbeashigh as70% inUganda [58], which inturn
+increases theincidence ofco-infection, development ofSPVD andsignificant yield losses.
+Perennial host plants and generalist vectors ofviruses could beexpected toenhance mixed
+infection. InEast Africa including Uganda, theperenniality ofsweetpotato inthelocal crop-
+ping system favours accumulation ofviruses and mixed infections arecommon [42, 46]. Also,
+mixed virus infections areknown inperennial wild plants, e.g., [13, 73±75]. However, whether
+high incidence ofmixed virus infections could belinked totheplants' perennial orannual life-
+cycle requires further study. Forexample, anannual grass species with lessresistance tovirus
+infection showed ahigh potential ofacting asareservoir ofageneralist plant virus that also
+infects perennial grass hosts growing inthesame habitat [2,76±79]. Furthermore, co-infection
+byagroup ofvectored viral pathogens ishighest with abundant generalist vectors (which are
+able totransmit multiple virus species/strains), weak cross-protection and co-infection±
+induced mortality [75, 80]. Although itisknown that aphids transmit SPFMV, and whiteflies
+(HemnSna sabahn andUunarevuogeS abvsnroCea) transmit SPCSV, thevectors forSPCFV and
+SPMMV remain tobeconfirmed [55]. This currently limits ourability toelucidate theimpact
+ofvectors onthecontrasting incidences ofmixed viral infections inwild species and sweetpo-
+tatoes. However, cross-protection between anyofthevirus species inourstudy isunlikely,
+because itrequires high sequence homology [81]. Therefore, themost probable explanation of
+ourobserved lowincidences ofmixed infections may beinefficient vector transmission of
+viruses between thewild plants orbetween cultivated and wild plants [31] and/or high levels of
+virus resistance inwild species preventing infection orkeeping virus titers atundetectable lev-
+els[12, 82]. Furthermore, synergistic oradditive effects ofmultiple virus infections causing
+severe disease could have eliminated co-infected plants [1±2, 5,83±86]. These effects canvary
+among populations [12, 87,88], species [89] and environments [75, 90,91].
+Contrasting virus incidences inwild plants may beexplained bycommunity contexts and
+processes [92, 93]. Forexample, intheluteovirus complex (barley and cereal yellow dwarf
+viruses) inCalifornia grasslands, virus prevalence isshaped byinteractions within theplant
+community and among host plants, insect vectors, herbivores and abiotic factors [92, 94±96].
+Although general differences innatural vegetation types have been previously noted inUganda
+[57, 58], empirical data onhost plant community composition needs tobestrengthened to
+warrant testable hypotheses oncontrasting regional virus incidences inwild plants.
+Observation ofdisease symptoms istheinitial step inviral disease diagnosis. Although
+virus-like symptoms were observed, nocharacteristic symptoms could beassociated with a
+particular virus forseveral reasons, including mixed infections and condition ofthehost. Fur-
+thermore, many SPCFV- and SPCSV-infected wild plants remained symptomless, which
+seems common among wild plants [5,8,13,18,89,97]. Inaddition, some symptom-expressing
+plants tested negative forSPCFV, SPCSV, SPMMV and SPFMV, indicating possible infection
+with other viruses that could notbedetected with theantibodies and PCR primers used dueto
+assay specificities. Itseems worthwhile tocontinue these studies using generic methods, such
+assmall-RNA deep sequencing, that require nopresumptions about theviruses present and
+candetect alltypes ofviruses simultaneously [98±102].
+SPCFV andOther Viruses inWild Plants
+PLOS ONE |DOI:10.137 1/journal.po ne.0167 769 December 22,2016 14/27
+They-andEaH- sequences offiveSPCFV isolates from three wild host species and their
+comparison with 11SPCFV isolates from cultivated sweetpotato inUganda revealed nearly
+identical nucleotide diversity indices and nophylogenetic evidence ofdiversification because
+ofthehost species. Negative selection wasimplicated intheevolution ofCPand NaBP. Nega-
+tiveconstraints imposed bymutations onviral CPs may beassociated with multiple functions
+such asgenome encapsidation and protection, cell-to-cell movement, transmission between
+plants and host and/or vector interactions. Chare and Holmes [103] analyzed selection pres-
+sures inCP-coding sequences ofplant RNA viruses and found that vector-borne viruses are
+subjected togreater negative selection than non-vectored viruses. Negative selective pressure is
+usually interpreted asamechanism ofpreserving thestructure and function ofproteins [70,
+104]. The CPofSPCFV and other carlaviruses ismultifunctional [104±106], whereas NaBP is
+acysteine-rich protein (CRP) implicated inRNA silencing suppression, nuclear localization
+and viral pathogenesis [68, 107±109]. InNaBP and CP,different codon positions were sub-
+jected tovarying levels ofpurifying selection, possibly toprovide abalance between theneed
+tomaintain protein structure and function and theeffectiveness ofthese functions. The lack of
+aCRP inthesweet potato C-6carlavirus (SPC6V) [110] may also indicate that CRPs areto
+some extent redundant incarlaviruses.
+Most ofthewild plants inthisstudy were collected from thevicinity ofsweetpotato fields or
+grew asweeds insweetpotato fields. This makes iteasier forputative vectors totransmit viruses
+between wild and cultivated hosts. Indeed, theobserved similarities and lack ofphylogenetic
+congruence with wild and cultivated hosts suggests frequent exchange ofSPCFV isolates
+between thewild plants and sweetpotatoes. Similarly, nophylogenetic association with any
+hosts hasbeen found inthree other carlavirus species (wlarrosraseCsfnuvS,xaurnhraseCsfnuvS
+andyommoC LaurnhraseCsfnuvS) infecting sixdifferent Frrnvm spp. [111]; isolates ofSPMMV,
+SPFMV and SPCSV inUganda [22±24];RnhederrocmossrefnuvS (genuswobemofnuvS) inculti-
+vated riceand wild graminaceous species inEast, Central and West Africa [28, 112] andFPunA
+haChaSSafamoSanhfnuvS andEaSsFPunhaChaSSafamoSanhyameuooC fnuvS (genusHeLomofnuvS,
+family Geminiviridae) incassava and various wild hosts inWest Africa [113].
+Phylogenetic clustering ofSPCFV isolates wascongruent with their geographic origin in
+East Africa orAsia, demonstrating diversification. This hasalso been shown forseveral other
+economically harmful viruses infecting sweetpotato, cassava orrice, suggesting that East Africa
+isacenter ofevolutionary diversification and emergence ofmany new plant viruses and virus
+strains. Forexample, theEast African (EA) strain ofSPFMV (SPFMV-EA) ismainly found in
+East Africa [22, 71,114±117], where itisundergoing rapid molecular adaptation compared
+with other strains ofSPFMV andwceesposasofnuvS C(SPVC) [22]. Until recently, anEAstrain
+ofSPCSV (SPCSV-EA) wasrestricted toEast Africa. The SPCSV-EA isolates vary inthe
+presence orabsence ofacoding region forap22RNA silencing suppressor, whereas SPCSV
+isolates from outside East Africa typically lack thep22[24, 42,118±120]. SPMMV isgeograph-
+ically restricted toEast Africa [23, 71,121], incontrast toSPCFV, which isfound onmany
+continents. Preliminary evidence suggests that SPCFV isolates from East Africa may bedistin-
+guished from those occurring elsewhere byphylogenetic analysis ofy-sequences [54]. How-
+ever, theinclusion ofadditional SPCFV isolates from East Africa and analysis ofy-andEaH-
+sequences inthisstudy clearly showed that SPCFV isolates from East Africa form aunique
+phylogenetic group. Hence, wepropose thename SPCFV-EA forthestrains typical ofEast
+Africa.
+Other plant viruses also seem tohave acenter ofdiversification inEast Africa.yaSSafa
+buocCSsueaBfnuvS andULaCgaC haSSafabuocCSsueaBfnuvS occur inEast Africa, where they
+have amodular distribution inIndian Ocean coastal areas and themainland Lake Victoria
+basin [122±126]. However, they arenow spreading toother areas [127, 128]. Cassava mosaic
+SPCFV andOther Viruses inWild Plants
+PLOS ONE |DOI:10.137 1/journal.po ne.0167 769 December 22,2016 15/27
+geminiviruses, including ahighly virulent recombinant strain, exhibit agradient ofdecreasing
+prevalence (100% to38%) from eastern tosouthern Africa [129, 130].RnhederrocmossrefnuvS
+exhibits phylogenetic congruence with thegeographical origin ofisolates onaneast-to-west
+transect across Africa and showed decreased nucleotide diversity westward across Africa [28,
+112, 131, 132]. The recently emerged strain S4ug ofthevirus inEastern Uganda isthought to
+betheoutcome ofsingular interplay between strains inEast Africa and Madagascar [133].
+Although there arerelatively fewcharacterized isolates ofSPCFV (C=38), thestrong phyloge-
+netic affinity totheir origin inEast Africa isanother piece ofevidence implicating East Africa
+asahotspot fordiversification ofimportant plant viruses.
+Taken together, thecurrent study further highlights wild plants asreservoirs ofviruses in
+agro-ecosystems. The four viruses detected inwild Convolvulaceae plants inUganda cause
+major constraints insweetpotato production inEast Africa. Symptomless viral infections in
+wild plant species were common, which istypical ofviruses inwild plants and reflects adapta-
+tion [8±10, 97]. Plant viruses and their principal hosts often have common centers oforigin
+[134±136]. The sweetpotato originated inCentral and/or South America and wasdispersed to
+Africa and other continents only during thelast300years, although there isevidence ofprehis-
+toric cultivation inAustralasia and theSouth Pacific [137±142]. Ifviruses hadbeen dispersed
+along with thesweetpotato, itwould beexpected that identical isolates ofSPFMV, SPCSV,
+SPMMV and SPCFV would occur worldwide. This seems tobethecase forSPFMV strains
+RC, Oand C(SPVC), butapparently notforSPFMV-EA, SPCSV-EA orSPCFV-EA, which
+arelargely geographically confined toEast Africa [22, 24,57,58,71,114, 143, 144], thisstudy.
+The origin ofSPMMV islikely tobeEast Africa, and thesweetpotato isprobably notitspri-
+mary host [23]. Hence, itseems that these sweetpotato viruses areundergoing unique pro-
+cesses ofevolution and adaptation insweetpotato landraces and wild Convolvulaceae species
+inEast Africa.
+Materials and Materials
+Field surveys andsampling
+Wild plants (family Convolvulaceae; generaFSsunpomoea, Ipomoea, Necnssna andTepnSsemoC)
+including annual, biannual andperennial species were observed forvirus symptoms, andatotal
+of1640 and1224 plants were collected inthefour agro-ecological zones ofUganda (Fig 1)in
+2004 and2007, respectively, asdescribed [57]. Allthesampling sites inallzones were onpri-
+vately owned land andtheowners gave gave permission toconduct thestudy onthese sites. The
+field studies didnotinvolve endangered orprotected species. Five totenleaves (preferably with
+virus-like symptoms) andtwotofivecuttings (length, 10±25 cm) were sampled from each
+plant. Cuttings were planted inaninsect-proof screenhouse attheMakerere University Agricul-
+tural Research Institute, Kabanyolo (MUARIK), Uganda. The plants studied were mainly in
+close proximity tosweetpotato cultivation orgrew asweeds insweetpotato fields. Wild plants
+were identified taxonomically using keys from Verdcourt [145] andbyDNA barcoding (acces-
+sion no.FJ795781-FJ795796) asdescribed [22,57].Inaddition, atotal of419cultivated sweetpo-
+tato plants were sampled from fields inwhose vicinity wild plants were collected.
+Serological detection ofSPCFV andSPCSV inwild plants
+Todetect viruses, leafdiscs (2cmindiameter) were excised from 5±10 leaves ofaplant, com-
+bined and tested bynitrocellulose membrane enzyme-linked immunosorbent assay (NCM-E-
+LISA) using polyclonal antibodies asdescribed [57, 146]. The antibodies were provided bythe
+International Potato Center (CIP), Lima, Peru. Allwild plants and sweetpotatoes were tested
+forSPCFV, butonly wild plants and sweetpotatoes sampled in2007 were tested forSPCSV.
+SPCFV andOther Viruses inWild Plants
+PLOS ONE |DOI:10.137 1/journal.po ne.0167 769 December 22,2016 16/27
+Leaf discs were also excised asabove fortriple antibody sandwich ELISA (TAS-ELISA) for
+serological testing [147] using polyclonal antibodies specific totheEAstrain ofSPCSV (anti-
+bodies provided byCIP). Testing wasrepeated onplants established inthescreenhouse.
+Scions of25wild plants seronegative forSPCFV, 40plants seronegative forSPCSV (but dis-
+playing virus-like symptoms) and 30symptomless plants seronegative forSPCFV and SPCSV
+were grafted onto 2-wk-old plants ofI.SesoSa Kerr., asensitive indicator and nearly universal
+host ofsweetpotato±infect ingviruses [148, 149]. The graftedI.SesoSa plants were observed for
+virus symptoms and tested serologically forSPCFV and SPCSV 3and 4wkafter grafting,
+respectively, asdescribed above.
+The SPCSV isolates detected inwild plants were graft-transmitted tosweetpotato plants of
+cultivar `Tanzania' forease ofmaintenance and further analysis.
+Molecular detection ofSPCFV andSPCSV
+The presence ofSPCFV and SPCSV wasverified in5and 30seropositive samples, respectively,
+byRT-PCR. Total RNA wasextracted from 200mgleaftissue using TRIzol Reagent (Invitro-
+gen) according tothemanufacturer's instructions. First-strand cDNA wassynthesized from
+3μgtotal RNA using anoligo-dT25 primer (for SPCFV) orrandom hexamers (for SPCSV)
+andMoroCedmvunCerevBemna fnuvS reverse transcriptase RNase H−(Finnzymes) according to
+themanufacturer's instructions. The cDNA wasdiluted 10-fold foruseinPCR.
+The 30-proximal part oftheSPCFV genome (1578 ntaccording toAY461421), including
+theCP- and NaBP-coding regions and the30-UTR [67], wasPCR-amplified using primers
+designed inthisstudy (forward primer CFVF: 50-GTCTTTAGR(A/G)TTK(G/T) TR(A/G)
+AGAY(T/C)TTA-30;reverse primer CFVR: 50-GCTCAAAAGTACTTTAAAAC- 30).These
+primers were complementary tont7527±7547 and 9085±9104 inthetriple gene block 3
+(TGB3) protein-coding sequence and 30-UTR genomic region ofSPCFV (AY461421), re-
+spectively. ForSPCSV, the30genomic region ofRNA1 wasamplified using forward primer
+CSVR3-F2 (50-GTGTTTCATACATTGTTTGTGT GCT-30)and reverse primer CSVp22-R2
+(50-AGGTGTATGACTCTAGGG TATAAAC-30)[24]. The PCR mixture and cycling parameters
+were those recommended forPhusion High-Fidelity DNA Polymerase (Finnzymes).
+PCR products were purified using acombination ofexonuclease I(ExoI) and calfintestinal
+alkaline phosphatase (CIAP) (Fermentas) asrecommended bythemanufacturer. ExoI
+degrades excess primers (ssDNA) and CIAP degrades unincorporated dNTPs, both ofwhich
+may inhibit thedideoxy PCR sequencing reaction [150]. Purified products from twoindepen-
+dent PCRs were sequenced directly inboth directions using theBigDye Terminator kitver-
+sion 3.1(Applied Biosystems) onanABI automatic 3130 XLGenetic Analyzer. The sequences
+obtained were compared byBLAST search with existing sequences available intheNational
+Center forBiotechnology Information (NCBI) database.
+Multiple sequence alignments andfitting ofnucleotide substitution
+models
+Nucleotide sequences were aligned using CLUSTALX version 1.83 [151], examined visually
+and translated into amino acid sequences using theEMBOSS web translation tool (http://
+www.ebi.ac.uk/emboss/transe q/index.html). Percent nucleotide and amino acid identities
+between sequences were computed using theCLUSTALW procedure [152] asimplemented in
+theMEGALIGN program oftheDNASTAR software package.
+AMLmethod implemented inMEGA6 [153] wasused tofind thebest nucleotide substitu-
+tion model explaining themode ofevolution. Models with thelowest Bayesian information
+criterion (BIC) scores were considered tobest describe thesubstitution pattern.
+SPCFV andOther Viruses inWild Plants
+PLOS ONE |DOI:10.137 1/journal.po ne.0167 769 December 22,2016 17/27
+Tests forrecombination andphylogenetic relationships between SPCFV
+isolates
+The presence ofrecombination inthesequence data wastested using thepairwise homoplasy
+index test[154] asimplemented inSplitsTree4 version V4.14.2 [155]. Parent-like sequences
+and approximation ofrecombination breakpoints were assessed using theRDP, GENECONV,
+BOOTSCAN, MAXIMUM CHI SQUARE, CHIMAERA and SISTER SCAN methods as
+implemented intheRecombination Detection Program (RDP4) package [156].
+Aphylogenetic tree based onCPsequences was constructed using theneighbor joining
+method [157] and theTamura three-parameter nucleotide substitution model (T92) [69]
+with invariant sites and gamma distribution ofrates across sites (T92+G+I). Initially, the
+general time-reversible (GTR) models [158] with invariant sites and gamma distribution of
+rates across sites (GTR+G+I) orwith variable sites (GTR+G) were themost appropriate
+models fornucleotide substitution fortheCPdata. However, because ofproblems associ-
+ated with implementing theGTR model [159, 160], theT92 model with invariant sites and
+gamma distribution ofrates across sites (T92+G+I) was thus used fortheCP,because itpro-
+vided thenext lowest BIC score. Forconstruction ofphylogenetic tree based onNaBP
+sequences, T92 with gamma distribution across sites (T92+G) was used. Both substitution
+models were deduced bymodel fitting (above), which allowed modeling ofevolutionary
+rate differences among sites. Abootstrapped consensus tree was inferred from 1000 repli-
+cates foreach oftheabove data sets forCPand NaBP. Allphylogenetic analyses were imple-
+mented using MEGA6 [153].
+Nucleotide diversities andpopulation differentiation inSPCFV
+Population genetics parameters with respect totheaverage number ofnucleotide differences
+between tworandom sequences inapopulation (ornucleotide diversity index,π)and theaver-
+agenumber ofnucleotide substitutions pernon-synonymous (πa)and synonymous (πs)sites
+were computed. Synonymous codon usage bias wasmeasured byquantifying thecodon bias
+index (CBI) [161] and theeffective number ofcodons (ENC) [162] used inagene.
+The extent ofgenetic differentiation orlevel ofgene flow between subpopulations waseval-
+uated byestimating RST.RSTmeasures thedegree ofgenetic differentiation between twoputa-
+tivesubpopulations bycomparing theagreement between twohaplotypes drawn atrandom
+from each subpopulation with theagreement obtained when thehaplotypes aretaken from the
+same subpopulation. RSTranges from 0to1forundifferentiated tofully differentiated popula-
+tions, respectively. Population genetics parameters and gene flow estimates were calculated
+using DnaSP version 5[163].
+Analysis ofselection pressure onCPandNaBP
+The ratio ofnon-synonymous (gN)tosynonymous (gS)nucleotide substitution rates (ω=
+gN/gS)provides asensitive measure ofselective constraints attheprotein level. Values of
+ω<1,ω=1andω>1indicate purifying (ornegative) selection, neutral evolution and diver-
+sifying (orpositive) selection, respectively. Based onthis, thedirection and intensity ofselec-
+tion pressure onafunctional protein canbepredicted [70, 164]. The maximum likelihood
+(ML) approach wasapplied totheCP(38sequences) and NaBP (32sequences) used inphylo-
+genetic analysis ofSPCFV using seven sitemodels ofcodon evolution implemented inthe
+CODEML program ofthePAML package (version 4.7) [165]. The models used include M0
+(one-ratio), M1a (nearly neutral), M2a (positive selection), M3(discrete), M7(beta), M8(beta
+&ω)and M8a (beta &ω=1)asdescribed [104, 166, 167]. The probability ofobserving data
+SPCFV andOther Viruses inWild Plants
+PLOS ONE |DOI:10.137 1/journal.po ne.0167 769 December 22,2016 18/27
+wascomputed astheloglikelihood, which isthesum ofprobabilities over allcodons inthe
+sequence. Selection pressure wasexamined byassessing thevalueωand comparing thelog
+likelihoods ofnested models (M0 versus M3, M1a versus M2a, M7versus M8and M8vs.M8a)
+inlikelihood ratio tests (LRTs) asdescribed [166, 168]. Where LRTs were significant, aBayes
+empirical Bayes inference [167] wasused toidentify theamino acid(s) under positive
+selection.
+Supporting Information
+S1Table. Number ofplants sampled from wild species and cultivated sweetpotato for
+detection ofSPCFV indifferent agro-ecological zones ofUganda in2004 and 2007.
+(DOC)
+S2Table. Coat protein (CP) nucleotide sequence (897 nt,upper diagonal) and amino acid
+sequence (299 aa,lower diagonal) identities (%) of38SPCFV isolates.
+(DOC)
+S3Table. Nucleic acid±binding protein (NaBP) nucleotide sequence (399 nt,upper diago-
+nal) and amino acid sequence (133 aa,lower diagonal) identities (%) of32SPCFV isolates.
+(DOC)
+S4Table. 30-untranslated region (30-UTR) nucleotide sequence identities (%) of32SPCFV
+isolates.
+(DOC)
+Acknowledgmen ts
+Wethank Professor Patrick R.Rubaihyo (Makerere University) forsupporting thestudy. We
+also thank Allan Saasi, Joshua Okonya, Irene Yekko and Moses Ocan (Makerere University),
+fortechnical assistance during thefield work. Wearegrateful toanonymous reviewers for
+their constructive comments that greatly improved themanuscript.
+Author Contributions
+Conceptualization: AKT SBM JPTV.
+Data curation: AKT SBM.
+Formal analysis: AKT SBM.
+Funding acquisition: JPTV.
+Investigation: AKT SBM.
+Methodology: AKT SBM JPTV.
+Project administration: AKT SBM JPTV.
+Resources: AKT JPTV.
+Validation: AKT SBM JPTV.
+Visualization: AKT SBM JPTV.
+Writing ±original draft: AKT JPTV.
+SPCFV andOther Viruses inWild Plants
+PLOS ONE |DOI:10.137 1/journal.po ne.0167 769 December 22,2016 19/27
+References
+1. Malmstrom CM, Hughes CC, Newton LA,Stoner CJ.Virus infection inremnan tnative bunchgr asses
+from invaded California grassland s.New Phytol. 2005; 168: 217±230. doi:10.1111/ j.1469-8137 .2005.
+01479.x PMID: 16159335
+2. Malmstrom CM, McCullough AJ,Newton LA,Johnson HA,Borer ET.Invasiv eannual grasses indi-
+rectly increase virus incidence inCaliforni anative perennial bunchgra sses. Oecologia. 2005; 145:
+153±164. doi:10.1007 /s00442-005- 0099-z PMID: 15875144
+3. Borer ET,Hosseini PR,Seabloo mEW, Dodson AP.Pathog en-induced reversal ofnative dominan ce
+inagrassland commu nity. Proc Natl Acad SciUSA. 2007; 104: 5473±5478. doi:10.1073 /pnas.
+0608573104 PMID: 173722 11
+4. HilleRisLam bers J,Yelenik SJ,Colman BP,Levine JM.Californi aannual grass invaders: thedrivers or
+passengers ofchange? JEcol. 2010; 98:1147±1156. doi:10.1111 /j.1365-2745 .2010.01 706.x PMID:
+20852668
+5. Vincent SJ,Coutts BA,Jones RAC. Effects ofintroduc edandindigenous viruses onnative plants:
+Exploring their disease causing potentia lattheagro-ecolog icalinterfa ce.PLoS ONE. 2014; 9(3):
+e91224. doi:10.1371 /journal.pon e.0091224 PMID: 24621926
+6. Jones RAC, Coutts BA.Spread ofintroduced viruses tonew plants innatural ecosystems andthe
+threat thisposes toplant biodiver sity. MolPlant Pathol. 2015; 16:541±545. doi:10.1111 /mpp.1226 8
+PMID: 26146862
+7. Roossinck MJ,Garcia-Arenal F.Ecosystem simplification ,biodivers ityloss andplant virus emer-
+gence. Curr Opin Virol. 2015; 10:56±62. doi:10.1016/ j.coviro.2015 .01.005 PMID: 256385 04
+8. Cooper I,Jones RAC. Wild plants andviruses: under-inv estigated ecosystem s.Adv Virus Res. 2006;
+67:1±47. doi:10.1016 /S0065-352 7(06)6700 1-2PMID: 17027676
+9. Roossinck MJ.Plant virus ecology. PLoS Pathog. 2013; 9:e1003304. doi:10.1371 /journal.ppa t.
+1003304 PMID: 23717199
+10. Stobbe AH,Roossin ckMJ.Plant virus metageno mics: what weknow andwhy weneed toknow more.
+Front Plant Sci.2014; 5:150, doi:10.3389/ fpls.2014.0 0150 PMID: 24795737
+11. Fraile A,Garcõ Âa-Arenal F.Environme ntandevolution modulate plant virus pathogenes is.Curr Opin
+Virol. 2016; 17:50±56. doi:10.1016 /j.coviro.20 16.01.008 PMID: 26827164
+12. Malmstrom CM, Alexander HM. Effects ofcrop viruses onwild plants. Curr Opin Virol. 2016; 19:30±
+36.doi:10.1016/j. coviro.2016. 06.008 PMID: 2739400 1
+13. Prendeville HR, YeX,Morris TJ,Pilson D.Virus infections inwild plant populations areboth frequent
+andoften unapparent. Amer JBot. 2012; 99:1033±1042.
+14. Roossink MJ,Martin DP,Roumagnac P.Plant Virus Metageno mics: Advances invirus discovery. Phy-
+topathology .2015; 105: 716±727. doi:10.1094/PH YTO-12-1 4-0356-RVW PMID: 260568 47
+15. Wren JD,Roossinc kMJ,Nelson RS,Scheets K,Palmer MW, Melcher U.Plant virus biodiversity and
+ecology. PLoS Biol. 2006; 4(3): e80. doi:10.1371/jour nal.pbio .0040080 PMID: 1652434 2
+16. Muthukumar V,Melcher U,Pierce M,Wiley GB, Roe BA,Palmer MW, etal.Non-cultivate dplants of
+thetallgrass prairie preserve ofnortheastern Oklaho mafrequently contain virus-like sequences inpar-
+ticulate fractions. Virus Res. 2009; 141: 169±173. doi:10.1016 /j.virusre s.2008.06.0 16PMID:
+19152821
+17. Roossinck MJ.Plant virus metageno mics: biodiver sityandecology. Annu Rev Genet .2012; 46:357±
+367.
+18. Roossinck MJ,Saha P,Wiley GB, Quan J,White JD,LaiH,etal.Ecogenom ics:using massively paral-
+lelpyrosequ encing tounderstand virus ecology. MolEcol. 2010; 19:81±88. doi:10.1111/j.1365 -
+294X.2009.04 470.x PMID: 20331772
+19. Nagano AJ,Honjo MN, Mihara M,Sato M,Kudoh H.Detection ofplant viruses innatural environment s
+byusing RNA-Seq. In:Uyeda I,Masuta C,editors. Plant Virology Protocols Volume 1236, Methods in
+Molecular Biology ;2015. pp.89±98.
+20. OoiK,Ohshita S,Ishii I,Yahara T.Molecular phyloge nyofgeminivir usinfecting wild plants inJapan. J
+Plant Res. 1997; 110: 247±25 7.
+21. Garcõ Âa-Andre ÂsS,Monci F,Navas-Ca stillo J,Mariones E.Begomovirus genetic diversity inthenative
+plant reservoir Solanum nigrum: evidence forpresence ofanew virus species ofrecombin antnature.
+Virology. 2006; 350: 433±44 2.doi:10.1016/j. virol.2006.02.0 28PMID: 16580040
+22. Tugume AK,CueÂllarWJ, Mukasa SB,Valkonen JPT. Molecular genetic analysis ofvirus isolates from
+wild andcultivated plants demonstra testhatEast Africa isahotspot fortheevolution anddiversifica-
+tionofSweet potato feathery mottle virus. MolEcol. 2010; 19:3139±3 156. doi:10.1111/ j.1365-294X .
+2010.04682.x PMID: 20609081
+SPCFV andOther Viruses inWild Plants
+PLOS ONE |DOI:10.137 1/journal.po ne.0167 769 December 22,2016 20/27

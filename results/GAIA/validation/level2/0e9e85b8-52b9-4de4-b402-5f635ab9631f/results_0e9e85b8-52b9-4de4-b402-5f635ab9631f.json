@@ -1,0 +1,24 @@
+{
+  "eval": {
+    "model": "anthropic/claude-3.7-sonnet",
+    "score": 0.0,
+    "score_level1": 0,
+    "score_level2": 0.0,
+    "score_level3": 0,
+    "date": "2025-04-23 23:14:36"
+  },
+  "detail": [
+    {
+      "input": "Please answer the question below. You should:\n\n- Return only your answer, which should be a number, or a short phrase with as few words as possible, or a comma separated list of numbers and/or strings.\n- If the answer is a number, return only the number without any units unless specified otherwise.\n- If the answer is a string, don't include articles, and don't use abbreviations (e.g. for states).\n- If the answer is a comma separated list, apply the above rules to each element in the list.\n\n\n\nHere is the question:\n\nWhat is the latest chronological year date written in the image on the webpage found when following the first citation reference link on the latest version of Carl Nebel's Wikipedia page as of August 2023?",
+      "task_id": "0e9e85b8-52b9-4de4-b402-5f635ab9631f",
+      "Question": "What is the latest chronological year date written in the image on the webpage found when following the first citation reference link on the latest version of Carl Nebel's Wikipedia page as of August 2023?",
+      "Level": 2,
+      "Final answer": "1927",
+      "model_answer": "1785",
+      "error": null,
+      "file_name": "",
+      "score": 0,
+      "elapsed time": "0:55:12.853115"
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "eval": {
+    "model": "anthropic/claude-3.7-sonnet",
+    "score": 0.0,
+    "score_level1": 0,
+    "score_level2": 0,
+    "score_level3": 0.0,
+    "date": "2025-04-28 03:08:38"
+  },
+  "detail": [
+    {
+      "input": "Please answer the question below. \n\n\n\nHere is the question:\n\nI read a paper about multiwavelength observations of fast radio bursts back in March 2021 on Arxiv, and it had a fascinating diagram of an X-ray time profile. There was a similar burst-1 diagram in another paper from one of the same authors about fast radio bursts back in July 2020, but I can't recall what the difference in seconds in the measured time span was. How many more seconds did one measure than the other? Just give the number.",
+      "task_id": "5f982798-16b9-4051-ab57-cfc7ebdb2a91",
+      "Question": "I read a paper about multiwavelength observations of fast radio bursts back in March 2021 on Arxiv, and it had a fascinating diagram of an X-ray time profile. There was a similar burst-1 diagram in another paper from one of the same authors about fast radio bursts back in July 2020, but I can't recall what the difference in seconds in the measured time span was. How many more seconds did one measure than the other? Just give the number.",
+      "Level": 3,
+      "Final answer": "0.2",
+      "model_answer": "0.536",
+      "error": null,
+      "file_name": "",
+      "score": 0,
+      "elapsed time": "0:37:26.426618"
+    }
+  ]
+}

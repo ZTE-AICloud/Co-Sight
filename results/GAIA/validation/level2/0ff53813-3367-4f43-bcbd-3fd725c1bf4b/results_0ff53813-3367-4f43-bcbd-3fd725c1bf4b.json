@@ -1,0 +1,24 @@
+{
+  "eval": {
+    "model": "anthropic/claude-3.7-sonnet",
+    "score": 100.0,
+    "score_level1": 0,
+    "score_level2": 100.0,
+    "score_level3": 0,
+    "date": "2025-04-28 15:34:30"
+  },
+  "detail": [
+    {
+      "input": "Please answer the question below. \n\n\n\nHere is the question:\n\nWhat two-word type of model did Manash Pratim Kashyap's and PS Fader's studies in customer retention studies published during 2018-2019 have in common (no punctuation)?",
+      "task_id": "0ff53813-3367-4f43-bcbd-3fd725c1bf4b",
+      "Question": "What two-word type of model did Manash Pratim Kashyap's and PS Fader's studies in customer retention studies published during 2018-2019 have in common (no punctuation)?",
+      "Level": 2,
+      "Final answer": "beta geometric",
+      "model_answer": "BetaGeometric",
+      "error": null,
+      "file_name": "",
+      "score": 1,
+      "elapsed time": "1:33:00.003006"
+    }
+  ]
+}

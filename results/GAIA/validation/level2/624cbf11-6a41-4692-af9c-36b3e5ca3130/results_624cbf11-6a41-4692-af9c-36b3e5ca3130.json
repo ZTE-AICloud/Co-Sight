@@ -1,0 +1,24 @@
+{
+  "eval": {
+    "model": "anthropic/claude-3.7-sonnet",
+    "score": 0.0,
+    "score_level1": 0,
+    "score_level2": 0.0,
+    "score_level3": 0,
+    "date": "2025-04-24 12:29:36"
+  },
+  "detail": [
+    {
+      "input": "Please answer the question below. You should:\n\n- Return only your answer, which should be a number, or a short phrase with as few words as possible, or a comma separated list of numbers and/or strings.\n- If the answer is a number, return only the number without any units unless specified otherwise.\n- If the answer is a string, don't include articles, and don't use abbreviations (e.g. for states).\n- If the answer is a comma separated list, apply the above rules to each element in the list.\n\n\n\nHere is the question:\n\nWhat's the last line of the rhyme under the flavor name on the headstone visible in the background of the photo of the oldest flavor's headstone in the Ben & Jerry's online flavor graveyard as of the end of 2022?",
+      "task_id": "624cbf11-6a41-4692-af9c-36b3e5ca3130",
+      "Question": "What's the last line of the rhyme under the flavor name on the headstone visible in the background of the photo of the oldest flavor's headstone in the Ben & Jerry's online flavor graveyard as of the end of 2022?",
+      "Level": 2,
+      "Final answer": "So we had to let it die.",
+      "model_answer": "now I lay me down to sleep",
+      "error": null,
+      "file_name": "",
+      "score": 0,
+      "elapsed time": "0:32:49.764809"
+    }
+  ]
+}

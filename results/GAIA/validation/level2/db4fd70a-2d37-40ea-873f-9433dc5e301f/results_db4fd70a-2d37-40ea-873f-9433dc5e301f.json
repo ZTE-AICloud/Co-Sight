@@ -1,0 +1,24 @@
+{
+  "eval": {
+    "model": "anthropic/claude-3.7-sonnet",
+    "score": 100.0,
+    "score_level1": 0,
+    "score_level2": 100.0,
+    "score_level3": 0,
+    "date": "2025-04-25 00:19:16"
+  },
+  "detail": [
+    {
+      "input": "Please answer the question below. \n\n\n\nHere is the question:\n\nAs of May 2023, how many stops are between South Station and Windsor Gardens on MBTA’s Franklin-Foxboro line (not included)?",
+      "task_id": "db4fd70a-2d37-40ea-873f-9433dc5e301f",
+      "Question": "As of May 2023, how many stops are between South Station and Windsor Gardens on MBTA’s Franklin-Foxboro line (not included)?",
+      "Level": 2,
+      "Final answer": "10",
+      "model_answer": "10",
+      "error": null,
+      "file_name": "",
+      "score": 1,
+      "elapsed time": "0:41:23.322934"
+    }
+  ]
+}

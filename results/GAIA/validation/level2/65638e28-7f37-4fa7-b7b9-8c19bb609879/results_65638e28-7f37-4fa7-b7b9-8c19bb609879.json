@@ -1,0 +1,24 @@
+{
+  "eval": {
+    "model": "anthropic/claude-3.7-sonnet",
+    "score": 100.0,
+    "score_level1": 0,
+    "score_level2": 100.0,
+    "score_level3": 0,
+    "date": "2025-04-24 00:13:36"
+  },
+  "detail": [
+    {
+      "input": "Please answer the question below. You should:\n\n- Return only your answer, which should be a number, or a short phrase with as few words as possible, or a comma separated list of numbers and/or strings.\n- If the answer is a number, return only the number without any units unless specified otherwise.\n- If the answer is a string, don't include articles, and don't use abbreviations (e.g. for states).\n- If the answer is a comma separated list, apply the above rules to each element in the list.\n\n\n\nHere is the question:\n\nThe book with the doi 10.1353/book.24372 concerns a certain neurologist. According to chapter 2 of the book, what author influenced this neurologist’s belief in “endopsychic myths”? Give the last name only.",
+      "task_id": "65638e28-7f37-4fa7-b7b9-8c19bb609879",
+      "Question": "The book with the doi 10.1353/book.24372 concerns a certain neurologist. According to chapter 2 of the book, what author influenced this neurologist’s belief in “endopsychic myths”? Give the last name only.",
+      "Level": 2,
+      "Final answer": "Kleinpaul",
+      "model_answer": "Kleinpaul",
+      "error": null,
+      "file_name": "",
+      "score": 1,
+      "elapsed time": "0:15:43.580421"
+    }
+  ]
+}

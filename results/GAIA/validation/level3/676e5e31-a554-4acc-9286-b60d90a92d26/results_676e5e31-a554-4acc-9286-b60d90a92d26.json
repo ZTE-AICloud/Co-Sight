@@ -1,0 +1,24 @@
+{
+  "eval": {
+    "model": "anthropic/claude-3.7-sonnet",
+    "score": 0.0,
+    "score_level1": 0,
+    "score_level2": 0,
+    "score_level3": 0.0,
+    "date": "2025-04-27 21:32:48"
+  },
+  "detail": [
+    {
+      "input": "Please answer the question below. \n\n\n\nHere is the question:\n\nIn July 2, 1959 United States standards for grades of processed fruits, vegetables, and certain other products listed as dehydrated, consider the items in the \"dried and dehydrated section\" specifically marked as dehydrated along with any items in the Frozen/Chilled section that contain the whole name of the item, but not if they're marked Chilled. As of August 2023, what is the percentage (to the nearest percent) of those standards that have been superseded by a new version since the date given in the 1959 standards?",
+      "task_id": "676e5e31-a554-4acc-9286-b60d90a92d26",
+      "Question": "In July 2, 1959 United States standards for grades of processed fruits, vegetables, and certain other products listed as dehydrated, consider the items in the \"dried and dehydrated section\" specifically marked as dehydrated along with any items in the Frozen/Chilled section that contain the whole name of the item, but not if they're marked Chilled. As of August 2023, what is the percentage (to the nearest percent) of those standards that have been superseded by a new version since the date given in the 1959 standards?",
+      "Level": 3,
+      "Final answer": "86",
+      "model_answer": "45",
+      "error": null,
+      "file_name": "",
+      "score": 0,
+      "elapsed time": "0:06:18.365096"
+    }
+  ]
+}

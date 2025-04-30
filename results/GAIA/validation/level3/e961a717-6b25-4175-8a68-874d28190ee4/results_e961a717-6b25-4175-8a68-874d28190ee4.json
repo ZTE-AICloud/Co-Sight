@@ -1,0 +1,24 @@
+{
+  "eval": {
+    "model": "anthropic/claude-3.7-sonnet",
+    "score": 100.0,
+    "score_level1": 0,
+    "score_level2": 0,
+    "score_level3": 100.0,
+    "date": "2025-04-28 00:58:10"
+  },
+  "detail": [
+    {
+      "input": "Please answer the question below. \n\n\n\nHere is the question:\n\nAccording to wikipedia, how many Asian countries still have a monarchy and access to the sea in 2021?",
+      "task_id": "e961a717-6b25-4175-8a68-874d28190ee4",
+      "Question": "According to wikipedia, how many Asian countries still have a monarchy and access to the sea in 2021?",
+      "Level": 3,
+      "Final answer": "12",
+      "model_answer": "12",
+      "error": null,
+      "file_name": "",
+      "score": 1,
+      "elapsed time": "0:03:47.644036"
+    }
+  ]
+}

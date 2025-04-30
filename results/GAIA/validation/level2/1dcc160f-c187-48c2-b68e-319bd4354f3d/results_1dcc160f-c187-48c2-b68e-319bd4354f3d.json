@@ -1,0 +1,24 @@
+{
+  "eval": {
+    "model": "anthropic/claude-3.7-sonnet",
+    "score": 100.0,
+    "score_level1": 0,
+    "score_level2": 100.0,
+    "score_level3": 0,
+    "date": "2025-04-24 15:57:01"
+  },
+  "detail": [
+    {
+      "input": "Please answer the question below. You should:\n\n- Return only your answer, which should be a number, or a short phrase with as few words as possible, or a comma separated list of numbers and/or strings.\n- If the answer is a number, return only the number without any units unless specified otherwise.\n- If the answer is a string, don't include articles, and don't use abbreviations (e.g. for states).\n- If the answer is a comma separated list, apply the above rules to each element in the list.\n\n\n\nHere is the question:\n\nAccording to Openreview.net, at the NeurIPS 2022 Conference, how many papers by an author named Yuri were accepted with a \"certain\" recommendation?",
+      "task_id": "1dcc160f-c187-48c2-b68e-319bd4354f3d",
+      "Question": "According to Openreview.net, at the NeurIPS 2022 Conference, how many papers by an author named Yuri were accepted with a \"certain\" recommendation?",
+      "Level": 2,
+      "Final answer": "3",
+      "model_answer": "3",
+      "error": null,
+      "file_name": "",
+      "score": 1,
+      "elapsed time": "0:09:35.994096"
+    }
+  ]
+}

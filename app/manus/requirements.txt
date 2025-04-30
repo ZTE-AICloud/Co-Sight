@@ -1,0 +1,3 @@
+browser_use
+camel-ai[all]==0.2.23
+lagent==0.2.4

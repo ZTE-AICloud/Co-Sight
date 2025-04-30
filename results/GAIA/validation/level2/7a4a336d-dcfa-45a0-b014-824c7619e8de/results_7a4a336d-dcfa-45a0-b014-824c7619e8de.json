@@ -1,0 +1,24 @@
+{
+  "eval": {
+    "model": "anthropic/claude-3.7-sonnet",
+    "score": 0.0,
+    "score_level1": 0,
+    "score_level2": 0.0,
+    "score_level3": 0,
+    "date": "2025-04-24 08:03:52"
+  },
+  "detail": [
+    {
+      "input": "Please answer the question below. You should:\n\n- Return only your answer, which should be a number, or a short phrase with as few words as possible, or a comma separated list of numbers and/or strings.\n- If the answer is a number, return only the number without any units unless specified otherwise.\n- If the answer is a string, don't include articles, and don't use abbreviations (e.g. for states).\n- If the answer is a comma separated list, apply the above rules to each element in the list.\n\n\n\nHere is the question:\n\nAt the two-minute mark in the YouTube video uploaded by the channel “GameGrumps” on May 14, 2017 as part of their playthrough of the game Mario Kart 8 Deluxe, the shows’ hosts are competing on one of the game’s racetracks. What was the world record time for that track in the game’s 150cc mode as of June 7, 2023? Express your answer in minutes and seconds, rounding the seconds to the nearest hundredth, e.g. 1:01.001.",
+      "task_id": "7a4a336d-dcfa-45a0-b014-824c7619e8de",
+      "Question": "At the two-minute mark in the YouTube video uploaded by the channel “GameGrumps” on May 14, 2017 as part of their playthrough of the game Mario Kart 8 Deluxe, the shows’ hosts are competing on one of the game’s racetracks. What was the world record time for that track in the game’s 150cc mode as of June 7, 2023? Express your answer in minutes and seconds, rounding the seconds to the nearest hundredth, e.g. 1:01.001.",
+      "Level": 2,
+      "Final answer": "1:41.614",
+      "model_answer": "None",
+      "error": "process question failed: 'NoneType' object is not subscriptable",
+      "file_name": "",
+      "score": 0,
+      "elapsed time": "0:00:01.323998"
+    }
+  ]
+}

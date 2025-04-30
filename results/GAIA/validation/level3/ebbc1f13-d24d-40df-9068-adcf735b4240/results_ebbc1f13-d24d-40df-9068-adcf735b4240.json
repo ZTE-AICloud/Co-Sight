@@ -1,0 +1,24 @@
+{
+  "eval": {
+    "model": "anthropic/claude-3.7-sonnet",
+    "score": 0.0,
+    "score_level1": 0,
+    "score_level2": 0,
+    "score_level3": 0.0,
+    "date": "2025-04-28 00:20:16"
+  },
+  "detail": [
+    {
+      "input": "Please answer the question below. \n\n\n\nHere is the question:\n\nThe Latin root of the Yola word \"gimlie\" shares a spelling with a Spanish word. What is the Google translation of the source title for the 1994 example sentence for that word in the Collins Spanish-to-English dictionary online? Answer in plain text, without punctuation.",
+      "task_id": "ebbc1f13-d24d-40df-9068-adcf735b4240",
+      "Question": "The Latin root of the Yola word \"gimlie\" shares a spelling with a Spanish word. What is the Google translation of the source title for the 1994 example sentence for that word in the Collins Spanish-to-English dictionary online? Answer in plain text, without punctuation.",
+      "Level": 3,
+      "Final answer": "The World of the Twenty First Century",
+      "model_answer": "the world",
+      "error": null,
+      "file_name": "",
+      "score": 0,
+      "elapsed time": "0:23:20.759257"
+    }
+  ]
+}

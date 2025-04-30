@@ -1,0 +1,24 @@
+{
+  "eval": {
+    "model": "anthropic/claude-3.7-sonnet",
+    "score": 0.0,
+    "score_level1": 0,
+    "score_level2": 0,
+    "score_level3": 0.0,
+    "date": "2025-04-28 03:22:44"
+  },
+  "detail": [
+    {
+      "input": "Please answer the question below. \n\n\n\nHere is the question:\n\nIn the YouTube 360 VR video from March 2018 narrated by the voice actor of Lord of the Rings' Gollum, what number was mentioned by the narrator directly after dinosaurs were first shown in the video?",
+      "task_id": "0512426f-4d28-49f0-be77-06d05daec096",
+      "Question": "In the YouTube 360 VR video from March 2018 narrated by the voice actor of Lord of the Rings' Gollum, what number was mentioned by the narrator directly after dinosaurs were first shown in the video?",
+      "Level": 3,
+      "Final answer": "100000000",
+      "model_answer": "I don't have enough information to determine the number.",
+      "error": null,
+      "file_name": "",
+      "score": 0,
+      "elapsed time": "0:14:06.497652"
+    }
+  ]
+}

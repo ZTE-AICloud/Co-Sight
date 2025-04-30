@@ -1,0 +1,24 @@
+{
+  "eval": {
+    "model": "anthropic/claude-3.7-sonnet",
+    "score": 100.0,
+    "score_level1": 0,
+    "score_level2": 100.0,
+    "score_level3": 0,
+    "date": "2025-04-24 01:04:40"
+  },
+  "detail": [
+    {
+      "input": "Please answer the question below. You should:\n\n- Return only your answer, which should be a number, or a short phrase with as few words as possible, or a comma separated list of numbers and/or strings.\n- If the answer is a number, return only the number without any units unless specified otherwise.\n- If the answer is a string, don't include articles, and don't use abbreviations (e.g. for states).\n- If the answer is a comma separated list, apply the above rules to each element in the list.\n\n\n\nHere is the question:\n\nOn the DeepFruits fruit detection graph on Connected Papers from 2016, what feature caused the largest bubble to be the size it is?",
+      "task_id": "708b99c5-e4a7-49cb-a5cf-933c8d46470d",
+      "Question": "On the DeepFruits fruit detection graph on Connected Papers from 2016, what feature caused the largest bubble to be the size it is?",
+      "Level": 2,
+      "Final answer": "Citations",
+      "model_answer": "citations",
+      "error": null,
+      "file_name": "",
+      "score": 1,
+      "elapsed time": "0:51:03.694418"
+    }
+  ]
+}

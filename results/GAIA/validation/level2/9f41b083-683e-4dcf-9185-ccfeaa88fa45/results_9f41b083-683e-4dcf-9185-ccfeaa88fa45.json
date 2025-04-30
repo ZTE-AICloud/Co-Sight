@@ -1,0 +1,24 @@
+{
+  "eval": {
+    "model": "anthropic/claude-3.7-sonnet",
+    "score": 100.0,
+    "score_level1": 0,
+    "score_level2": 100.0,
+    "score_level3": 0,
+    "date": "2025-04-28 20:33:04"
+  },
+  "detail": [
+    {
+      "input": "Please answer the question below. \n\n\n\nHere is the question:\n\nHow many pages if the 2023 IPCC report (85 pages version) mentions nuclear energy?",
+      "task_id": "9f41b083-683e-4dcf-9185-ccfeaa88fa45",
+      "Question": "How many pages if the 2023 IPCC report (85 pages version) mentions nuclear energy?",
+      "Level": 2,
+      "Final answer": "0",
+      "model_answer": "0",
+      "error": null,
+      "file_name": "",
+      "score": 1,
+      "elapsed time": "0:46:13.994637"
+    }
+  ]
+}

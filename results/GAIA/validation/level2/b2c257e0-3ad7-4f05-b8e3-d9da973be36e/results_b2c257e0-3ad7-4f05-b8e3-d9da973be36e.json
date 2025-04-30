@@ -1,0 +1,24 @@
+{
+  "eval": {
+    "model": "google/gemini-2.5-flash-preview",
+    "score": 100.0,
+    "score_level1": 0,
+    "score_level2": 100.0,
+    "score_level3": 0,
+    "date": "2025-04-30 14:30:59"
+  },
+  "detail": [
+    {
+      "input": "Please answer the question below. \n\nF:/gitlab/NAE-Manus-gaia-22/workspace/20250430_142756/b2c257e0-3ad7-4f05-b8e3-d9da973be36e/b2c257e0-3ad7-4f05-b8e3-d9da973be36e.jpg\n\nHere is the question:\n\nIf this whole pint is made up of ice cream, how many percent above or below the US federal standards for butterfat content is it when using the standards as reported by Wikipedia in 2020? Answer as + or - a number rounded to one decimal place.",
+      "task_id": "b2c257e0-3ad7-4f05-b8e3-d9da973be36e",
+      "Question": "If this whole pint is made up of ice cream, how many percent above or below the US federal standards for butterfat content is it when using the standards as reported by Wikipedia in 2020? Answer as + or - a number rounded to one decimal place.",
+      "Level": 2,
+      "Final answer": "+4.6",
+      "model_answer": "+4.6",
+      "error": null,
+      "file_name": "b2c257e0-3ad7-4f05-b8e3-d9da973be36e.jpg",
+      "score": 1,
+      "elapsed time": "0:03:02.557386"
+    }
+  ]
+}

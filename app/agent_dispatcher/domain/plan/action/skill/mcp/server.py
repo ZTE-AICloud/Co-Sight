@@ -15,6 +15,7 @@
 
 import abc
 import asyncio
+import traceback
 from contextlib import AsyncExitStack, AbstractAsyncContextManager
 from typing import Any
 
@@ -22,10 +23,8 @@ from anyio.streams.memory import MemoryObjectReceiveStream, MemoryObjectSendStre
 from mcp import ClientSession, StdioServerParameters, Tool as MCPTool, stdio_client
 from mcp.client.sse import sse_client
 from mcp.types import CallToolResult, JSONRPCMessage
-from app.agent_dispatcher.infrastructure.entity.exception.error_code_consts import MCP_ERROR
 
-from app.agent_dispatcher.infrastructure.entity.exception.ZaeFrameworkException import \
-    NaeFrameworkException
+from app.common.infrastructure.utils.log import logger
 
 
 class MCPServer(abc.ABC):
@@ -111,21 +110,26 @@ class _MCPServerWithClientSession(MCPServer, abc.ABC):
 
     async def connect(self):
         """Connect to the server."""
+        logger.info(f"Connect to the server {self._name} start")
         try:
             transport = await self.exit_stack.enter_async_context(self.create_streams())
+            logger.info(f"Connect to the transport {self._name} ")
             read, write = transport
             session = await self.exit_stack.enter_async_context(ClientSession(read, write))
+            logger.info(f"Connect to the session {self._name}")
             await session.initialize()
+            logger.info(f"initialize the session {self._name}")
             self.session = session
+            logger.info(f"Connect to the server {self._name} end")
         except Exception as e:
+            logger.error(f"Error initializing MCP server: {traceback.format_exc()}")
             await self.cleanup()
             raise
 
     async def list_tools(self) -> list[MCPTool]:
         """List the tools available on the server."""
         if not self.session:
-            raise NaeFrameworkException(MCP_ERROR,
-                                        f"Server {self._name} not initialized. Make sure you call `connect()` first.")
+            raise Exception(f"Server {self._name} not initialized. Make sure you call `connect()` first.")
 
         # Return from cache if caching is enabled, we have tools, and the cache is not dirty
         if self.cache_tools_list and not self._cache_dirty and self._tools_list:
@@ -141,19 +145,19 @@ class _MCPServerWithClientSession(MCPServer, abc.ABC):
     async def call_tool(self, tool_name: str, arguments: dict[str, Any] | None) -> CallToolResult:
         """Invoke a tool on the server."""
         if not self.session:
-            raise NaeFrameworkException(MCP_ERROR,
-                                        f"Server {self._name} not initialized. Make sure you call `connect()` first.")
+            raise Exception(f"Server {self._name} not initialized. Make sure you call `connect()` first.")
 
         return await self.session.call_tool(tool_name, arguments)
 
     async def cleanup(self):
         """Cleanup the server."""
+        logger.info(f"Cleanup the server {self._name}.")
         async with self._cleanup_lock:
             try:
                 await self.exit_stack.aclose()
                 self.session = None
             except Exception as e:
-                print(f"Error cleaning up server: {e}")
+                logger.error(f"Error cleaning up server: {e}")
 
 
 class MCPServerStdio(_MCPServerWithClientSession):
@@ -187,6 +191,7 @@ class MCPServerStdio(_MCPServerWithClientSession):
         ]
     ]:
         """Create the streams for the server."""
+        logger.info(f"{self.config}")
         parameters = StdioServerParameters(
             command=self.config["command"],
             args=self.config.get("args", []),
@@ -241,6 +246,7 @@ class MCPServerSse(_MCPServerWithClientSession):
         ]
     ]:
         """Create the streams for the server."""
+        logger.info(f"{self.config}")
         return sse_client(url=self.config["url"],
                           headers=self.config.get("headers", None),
                           timeout=self.config.get("timeout", 5),

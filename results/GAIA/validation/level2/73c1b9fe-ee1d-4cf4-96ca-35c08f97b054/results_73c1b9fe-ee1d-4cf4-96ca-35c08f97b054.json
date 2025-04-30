@@ -1,0 +1,24 @@
+{
+  "eval": {
+    "model": "anthropic/claude-3.7-sonnet",
+    "score": 100.0,
+    "score_level1": 0,
+    "score_level2": 100.0,
+    "score_level3": 0,
+    "date": "2025-04-24 02:45:17"
+  },
+  "detail": [
+    {
+      "input": "Please answer the question below. You should:\n\n- Return only your answer, which should be a number, or a short phrase with as few words as possible, or a comma separated list of numbers and/or strings.\n- If the answer is a number, return only the number without any units unless specified otherwise.\n- If the answer is a string, don't include articles, and don't use abbreviations (e.g. for states).\n- If the answer is a comma separated list, apply the above rules to each element in the list.\n\n\n\nHere is the question:\n\nAccording to the USGS, in what year was the American Alligator first found west of Texas (not including Texas)?",
+      "task_id": "73c1b9fe-ee1d-4cf4-96ca-35c08f97b054",
+      "Question": "According to the USGS, in what year was the American Alligator first found west of Texas (not including Texas)?",
+      "Level": 2,
+      "Final answer": "1954",
+      "model_answer": "1954",
+      "error": null,
+      "file_name": "",
+      "score": 1,
+      "elapsed time": "1:06:45.363951"
+    }
+  ]
+}

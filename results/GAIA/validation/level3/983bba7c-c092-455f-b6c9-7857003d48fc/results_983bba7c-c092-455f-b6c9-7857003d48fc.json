@@ -1,0 +1,24 @@
+{
+  "eval": {
+    "model": "anthropic/claude-3.7-sonnet",
+    "score": 100.0,
+    "score_level1": 0,
+    "score_level2": 0,
+    "score_level3": 100.0,
+    "date": "2025-04-27 23:08:39"
+  },
+  "detail": [
+    {
+      "input": "Please answer the question below. \n\n\n\nHere is the question:\n\nWhat animals that were mentioned in both Ilias Lagkouvardos's and Olga Tapia's papers on the alvei species of the genus named for Copenhagen outside the bibliographies were also present in the 2021 article cited on the alvei species' Wikipedia page about a multicenter, randomized, double-blind study?",
+      "task_id": "983bba7c-c092-455f-b6c9-7857003d48fc",
+      "Question": "What animals that were mentioned in both Ilias Lagkouvardos's and Olga Tapia's papers on the alvei species of the genus named for Copenhagen outside the bibliographies were also present in the 2021 article cited on the alvei species' Wikipedia page about a multicenter, randomized, double-blind study?",
+      "Level": 3,
+      "Final answer": "mice",
+      "model_answer": "mice",
+      "error": null,
+      "file_name": "",
+      "score": 1,
+      "elapsed time": "0:08:25.461039"
+    }
+  ]
+}
