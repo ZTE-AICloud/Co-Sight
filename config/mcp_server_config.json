@@ -1,1 +1,10 @@
-[]
+[      
+    {
+        "skill_name": "mcp server",
+        "skill_type": "local_mcp",
+        "mcp_server_config": {
+            "type": "sse",
+            "url": "http://localhost:8000/sse"
+          }
+    }
+]
