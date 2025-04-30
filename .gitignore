@@ -1,0 +1,20 @@
+*.pyc
+.idea/
+*.log
+*.swp
+.coverage
+venv/
+.venv/
+*.egg-info
+.obsidian
+build/
+dist/
+dist - *
+node_modules
+**/.angular
+.vscode
+**/src-tmp
+logs/
+__pycache__
+**/work_space_*
+cosight_server/web

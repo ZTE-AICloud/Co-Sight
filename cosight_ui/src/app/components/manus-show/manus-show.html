@@ -1,0 +1,52 @@
+<div class="manus-show">
+    <div class="file-explorer">
+        <div class="explorer-header">
+            <h2>Co-Sight Computer</h2>
+            <div class="explorer-icon">
+                <i class="iconfont iconfont-e6e4"></i>
+            </div>
+        </div>
+        <div class="file-list" [perfectScrollbar]="{wheelSpeed: 0.5, minScrollbarLength: 20, wheelPropagation: true}">
+            <button *ngFor="let file of files" class="file-button" [class.active]="selectedFile == file"
+                (click)="loadFile(file)" [title]="file.name">
+                <i *ngIf="isHtmlFile(file)" class="iconfont iconfont-e92b file-icon"></i>
+                <i *ngIf="isImageFile(file)" class="iconfont iconfont-e7b4 file-icon"></i>
+                <i *ngIf="!isImageFile(file) && !isHtmlFile(file)" class="iconfont iconfont-e3eb file-icon"></i>
+                <span class="file-name">{{ file.name }}</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="file-content" *ngIf="selectedFile">
+        <div class="content-header">
+            <h3>{{ selectedFile.name }}</h3>
+        </div>
+
+        <div class="loading" *ngIf="loading">
+            <div class="spinner"></div>
+            <span>加载中...</span>
+        </div>
+
+        <div class="error" *ngIf="errorMessage">
+            <i class="iconfont iconfont-e1a5 error-icon"></i>
+            <span class="error-message">{{ errorMessage }}</span>
+        </div>
+
+        <div class="markdown-wrapper" *ngIf="!loading && !errorMessage">
+            <!-- 分别处理HTML和图片 -->
+            <iframe *ngIf="isHtmlFile(selectedFile)" [src]="filePath | safe" style="width: 100%; border: none;"></iframe>
+            <img *ngIf="isImageFile(selectedFile)" [src]="filePath | safe" style="width: 100%;">
+            <!-- 非HTML文件使用原有的显示方式 -->
+            <div *ngIf="!isHtmlFile(selectedFile) && !isImageFile(selectedFile) && fileContent"
+                typing-html [typingHtml]="fileContent" [message]="initData">
+            </div>
+        </div>
+    </div>
+
+    <div class="welcome-message" *ngIf="!selectedFile">
+        <div class="welcome-container">
+            <i class="iconfont iconfont-e654 welcome-icon"></i>
+            <p>Please select a file from the left to view its contents</p>
+        </div>
+    </div>
+</div>

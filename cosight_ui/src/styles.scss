@@ -1,0 +1,79 @@
+/* You can add global styles to this file, and also import other style files */
+
+//@include setTableBody(#333, 12px , red, blue );
+//@import "../node_modules/@rdkmaster/jigsaw/prebuilt-themes/copilot-dark.css";
+@import "../node_modules/@rdkmaster/jigsaw/prebuilt-themes/copilot-light.css";
+
+html, body {
+    height: 100%;
+    background: transparent!important;
+}
+
+.chat-window {
+    .chats-box {
+        .title {
+            .jigsaw-input-wrapper {
+                border: none;
+            }
+        }
+
+        .chat-setting {
+            .text-padding-left {
+                padding-left: 6px;
+            }
+        }
+    }
+
+    .messages-box {
+        .input-container {
+            .shortcut-bar {
+                .jigsaw-button-host {
+                    min-width: 40px;
+                    padding: 0 8px;
+                }
+            }
+        }
+    }
+
+    .copilot-top-message-collapse {
+        .jigsaw-collapse-padding {
+            padding: 0 16px 16px 16px !important;
+        }
+    }
+}
+
+.message-human {
+    .multi-modal-renderer {
+        a {
+            color: #224AB9 !important;
+        }
+    }
+}
+
+.ai-search-reference-number {
+    color: #6674d6;
+    font-family: DIN;
+    font-size: 12px;
+    font-style: normal;
+    font-weight: 500;
+    line-height: 14px;
+    position: relative;
+    top: -4px;
+    padding: 0 3px;
+}
+
+
+.editor-widgets {
+    .left {
+        display: flex;
+        align-items: center;
+    }
+}
+
+deep-research-chatbot .chat-window-host.chat-window-full-screen .right-box .chat-box-host .message-box {
+    padding: 45px 10% 0 !important;
+}
+
+deep-research-chatbot .chat-window-host.chat-window-full-screen .right-box .chat-box-host .top-message {
+    margin: 10px 0 !important;
+}

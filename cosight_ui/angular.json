@@ -1,0 +1,148 @@
+{
+    "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
+    "version": 1,
+    "newProjectRoot": "projects",
+    "projects": {
+        "copilot-app-pc": {
+            "projectType": "application",
+            "schematics": {
+                "@schematics/angular:component": {
+                    "style": "scss"
+                }
+            },
+            "root": "",
+            "sourceRoot": "src-tmp",
+            "prefix": "app",
+            "architect": {
+                "build": {
+                    "builder": "@angular-devkit/build-angular:browser",
+                    "options": {
+                        "outputPath": "dist/html",
+                        "index": "src-tmp/index.html",
+                        "main": "src-tmp/main.pc.ts",
+                        "polyfills": "src-tmp/polyfills.ts",
+                        "tsConfig": "src-tmp/tsconfig.pc.json",
+                        "sourceMap": true,
+                        "optimization": false,
+                        "buildOptimizer": false,
+                        "assets": [
+                            "src-tmp/favicon.ico",
+                            {
+                                "glob": "*",
+                                "input": "node_modules/@rdkmaster/lui-sdk/assets/",
+                                "output": "/assets/"
+                            },
+                            "src-tmp/assets",
+                            {
+                                "glob": "*.css",
+                                "input": "node_modules/@rdkmaster/jigsaw/prebuilt-themes/",
+                                "output": "/themes/"
+                            },
+                            {
+                                "glob": "*.css",
+                                "input": "node_modules/@rdkmaster/jigsaw/prebuilt-themes/wings-theme/",
+                                "output": "/themes/wings-theme/"
+                            },
+                            {
+                                "glob": "*",
+                                "input": "node_modules/@rdkmaster/icon-font/",
+                                "output": "/"
+                            },
+                            {
+                                "glob": "no-permission.html",
+                                "input": "../tools",
+                                "output": "/"
+                            }
+                        ],
+                        "styles": [
+                            "node_modules/@rdkmaster/ztree/css/zTreeStyle/zTreeStyle.css",
+                            "node_modules/@rdkmaster/perfect-scrollbar/css/perfect-scrollbar.css",
+                            "node_modules/@rdkmaster/icon-font/iconfont.css",
+                            "node_modules/katex/dist/katex.css",
+                            "src-tmp/styles.scss"
+                        ],
+                        "scripts": [
+                            "node_modules/jquery/dist/jquery.min.js",
+                            "node_modules/moment/min/moment.min.js",
+                            "node_modules/@rdkmaster/ztree/js/jquery.ztree.all.js",
+                            "node_modules/@rdkmaster/ztree/js/jquery.ztree.exhide.js",
+                            "node_modules/@rdkmaster/peity/jquery.peity.min.js",
+                            "node_modules/echarts/dist/echarts.js",
+                            "node_modules/@rdkmaster/marked/lib/marked.js"
+                        ]
+                    },
+                    "configurations": {
+                        "production": {
+                            "outputPath": "dist/html",
+                            "optimization": true,
+                            "outputHashing": "all",
+                            "sourceMap": true,
+                            "namedChunks": false,
+                            "aot": true,
+                            "extractLicenses": true,
+                            "vendorChunk": false,
+                            "buildOptimizer": true,
+                            "budgets": [
+                                {
+                                    "type": "initial",
+                                    "maximumWarning": "4mb",
+                                    "maximumError": "5mb"
+                                }
+                            ]
+                        },
+                        "ume": {
+                            "fileReplacements": [
+                                {
+                                    "replace": "src-tmp/environments/environment.ts",
+                                    "with": "src-tmp/environments/environment.ts"
+                                }
+                            ],
+                            "budgets": [
+                                {
+                                    "type": "initial",
+                                    "maximumWarning": "4mb",
+                                    "maximumError": "15mb"
+                                }
+                            ]
+                        }
+                    }
+                },
+                "serve": {
+                    "builder": "@angular-devkit/build-angular:dev-server",
+                    "options": {
+                        "buildTarget": "copilot-app-pc:build"
+                    },
+                    "configurations": {
+                        "production": {
+                            "buildTarget": "copilot-app-pc:build:production"
+                        },
+                        "ume": {
+                            "buildTarget": "copilot-app-pc:build:ume"
+                        }
+                    }
+                },
+                "extract-i18n": {
+                    "builder": "@angular-devkit/build-angular:extract-i18n",
+                    "options": {
+                        "buildTarget": "copilot-app-pc:build"
+                    }
+                },
+                "lint": {
+                    "builder": "@angular-devkit/build-angular:tslint",
+                    "options": {
+                        "tsConfig": [
+                            "tsconfig.pc.json",
+                            "tsconfig.spec.json"
+                        ],
+                        "exclude": [
+                            "**/node_modules/**"
+                        ]
+                    }
+                }
+            }
+        }
+    },
+    "cli": {
+        "analytics": false
+    }
+}
