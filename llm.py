@@ -14,6 +14,7 @@
 #    under the License.
 import httpx
 from openai import OpenAI, AzureOpenAI
+from openai import OpenAI, AzureOpenAI
 
 from app.cosight.llm.chat_llm import ChatLLM
 from config.config import *
