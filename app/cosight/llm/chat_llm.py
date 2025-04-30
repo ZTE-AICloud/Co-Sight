@@ -13,19 +13,20 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from typing import List, Dict, Any
-from openai import OpenAI
+from typing import List, Dict, Any, Optional, Union
+from openai import OpenAI,AzureOpenAI
 
 from app.cosight.task.time_record_util import time_record
 
 
 class ChatLLM:
-    def __init__(self, base_url: str, api_key: str, model: str, client: OpenAI, max_tokens: int = 4096,
+    def __init__(self, base_url: str, api_key: str, model: str, client: Union[OpenAI,AzureOpenAI],api_version:str = None, max_tokens: int = 4096,
                  temperature: float = 0.0, stream: bool = False,  tools: List[Any] = None):
         self.tools = tools or []
         self.client = client
         self.base_url = base_url
         self.api_key = api_key
+        self.api_version = api_version
         self.model = model
         self.stream = stream
         self.temperature = temperature
