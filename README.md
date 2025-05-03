@@ -69,6 +69,26 @@ pip install -r requirements.txt
 ![](assets/Pasted_image_20250501020936.png)
 
 
+## 🐳docker 方式安装&与使用
+
+1. 下载docker离线镜像：
+https://github.com/ZTE-AICloud/Co-Sight/releases/download/v0.0.1/co-sight-v001.tar
+
+2. 启动docker镜像：
+```shell
+# 加载离线镜像
+docker load -i co-sight-v001.tar
+# 启动docker容器
+docker run -d -p 7788:7788 co-sight
+# 将配置好的.env文件拷贝进容器（后续会将模型、搜索引擎做到Co-Sight界面可配置方式）
+docker cp .env ac39023b3b3fdc3245ec1cc0293afb6b0a5efd4675ee79535ed6663c3e2a2558:/home/Co-Sight
+# 重启镜像生效环境变量
+docker restart ac39023b3b3fdc3245ec1cc0293afb6b0a5efd4675ee79535ed6663c3e2a2558
+```
+
+3. **打开浏览器，访问：**
+`http://localhost:7788/cosight/`
+
 
 ## 🤝 贡献指南
 
