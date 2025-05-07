@@ -72,7 +72,9 @@ class Plan:
         """Update the plan with new title, steps, or dependencies while preserving completed steps."""
         if title:
             self.title = title
-
+        if type(steps) == str:
+            tmep_str = str(steps)
+            steps = tmep_str.split("\n")
         if steps:
             # Preserve all existing steps and their statuses
             new_steps = []
