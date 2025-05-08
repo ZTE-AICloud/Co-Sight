@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# 设置npm registry
-registry="--registry=https://artsh.zte.com.cn/artifactory/api/npm/rnia-npm-virtual/"
-
 # 切换到脚本所在目录
 cd "$(dirname "$0")"
 cd ..

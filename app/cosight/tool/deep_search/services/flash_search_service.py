@@ -28,9 +28,7 @@ from app.cosight.tool.deep_search.common.entity import SearchResult, SearchSourc
 from app.cosight.tool.deep_search.common.prompts import select_example1_cn, select_example2_cn
 from app.cosight.tool.deep_search.actions.web_search import ManusWebSearch
 from app.cosight.tool.deep_search.model.model_service import ModelService
-from cosight_server.sdk.common.logger_util import get_logger
-
-logger = get_logger("ai-search")
+from app.common.logger_util import logger
 
 DEFAULT_SYSTEM_PROMPT = "你是一个专业的知识助手。"
 

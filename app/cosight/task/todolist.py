@@ -26,7 +26,7 @@ subfolder_files_map: Dict[str, List[str]] = {}
 class Plan:
     """Represents a single plan with steps, statuses, and execution details as a DAG."""
 
-    def __init__(self, title: str = "", steps: List[str] = None, dependencies: Dict[int, List[int]] = None):
+    def __init__(self, title: str = "", steps: List[str] = None, dependencies: Dict[int, List[int]] = None, work_space_path: str = ""):
         self.title = title
         self.steps = steps if steps else []
         # 使用步骤内容（中文）作为key存储状态、备注和详细信息
@@ -40,6 +40,7 @@ class Plan:
         else:
             self.dependencies = {i: [i-1] for i in range(1, len(self.steps))} if len(self.steps) > 1 else {}
         self.result = ""
+        self.work_space_path = work_space_path
 
     def set_plan_result(self, plan_result):
         self.result = plan_result
@@ -135,7 +136,7 @@ class Plan:
 
         # Update step notes
         if step_notes is not None:
-            step_notes, file_path_info = process_text_with_workspace(step_notes)
+            step_notes, file_path_info = process_text_with_workspace(step_notes, self.work_space_path)
             self.step_notes[step] = step_notes
             self.step_files[step] = file_path_info
 
@@ -199,21 +200,20 @@ class Plan:
         return any(status == "blocked" for status in self.step_statuses.values())
 
 
-def get_last_folder_name() -> str:
-    workspace_path = os.environ.get('WORKSPACE_PATH')
-    if not workspace_path:
-        raise ValueError("环境变量 'WORKSPACE_PATH' 未设置。")
+def get_last_folder_name(work_space_path: str) -> str:
+    if not work_space_path or not os.path.exists(work_space_path):
+        raise ValueError(f"{work_space_path} 工作空间路径未设置。")
 
     current_os = platform.system()
     if current_os == 'Windows':
-        path_obj = PureWindowsPath(workspace_path)
+        path_obj = PureWindowsPath(work_space_path)
     else:
-        path_obj = PurePosixPath(workspace_path)
+        path_obj = PurePosixPath(work_space_path)
 
     return path_obj.name
 
 
-def extract_and_replace_paths(text: str, folder_name: str) -> Tuple[str, List[Dict[str, str]]]:
+def extract_and_replace_paths(text: str, folder_name: str, work_space_path: str) -> Tuple[str, List[Dict[str, str]]]:
     # 支持的文件扩展名
     valid_extensions = r"(txt|md|pdf|docx|xlsx|csv|json|xml|html|png|jpg|jpeg|svg|py)"
 
@@ -260,12 +260,12 @@ def extract_and_replace_paths(text: str, folder_name: str) -> Tuple[str, List[Di
     new_text = re.sub(path_file_pattern, replace_path_file, text)
     new_text = re.sub(quoted_file_pattern, replace_quoted_file, new_text)
 
+    print(f"extract and replace paths >>>>>>>>>>>>>>>>>>>>>>>>>>>> work_space_path: {work_space_path}")
     # 再次读取工作空间目录下的所有文件
-    workspace_path = os.environ.get('WORKSPACE_PATH')
-    if workspace_path:
+    if work_space_path:
         try:
             # 遍历工作空间目录下的所有文件
-            for filename in os.listdir(workspace_path):
+            for filename in os.listdir(work_space_path):
                 # 如果文件名不在该文件夹的列表中，则添加
                 if filename not in folder_files_map[folder_name]:
                     folder_files_map[folder_name].append(filename)
@@ -275,11 +275,11 @@ def extract_and_replace_paths(text: str, folder_name: str) -> Tuple[str, List[Di
                     })
 
             # 遍历工作空间目录下的所有子目录
-            for root, dirs, files in os.walk(workspace_path):
+            for root, dirs, files in os.walk(work_space_path):
                 print(f"root:{root}")
-                if root != workspace_path:  # 跳过根目录，因为已经在上面处理过了
+                if root != work_space_path:  # 跳过根目录，因为已经在上面处理过了
                     # 获取相对路径
-                    rel_path = os.path.relpath(root, workspace_path)
+                    rel_path = os.path.relpath(root, work_space_path)
                     # 构建文件夹的唯一标识
                     folder_key = f"{folder_name}/{rel_path}"
                     
@@ -305,9 +305,9 @@ def extract_and_replace_paths(text: str, folder_name: str) -> Tuple[str, List[Di
     return new_text, result_list
 
 
-def process_text_with_workspace(text: str) -> Tuple[str, List[Dict[str, str]]]:
-    folder_name = get_last_folder_name()
-    return extract_and_replace_paths(text, folder_name)
+def process_text_with_workspace(text: str, work_space_path: str) -> Tuple[str, List[Dict[str, str]]]:
+    folder_name = get_last_folder_name(work_space_path)
+    return extract_and_replace_paths(text, folder_name, work_space_path)
 
 
 if __name__ == "__main__":

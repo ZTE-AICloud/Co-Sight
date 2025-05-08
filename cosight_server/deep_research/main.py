@@ -127,8 +127,6 @@ logger.info(f"workspace path is >>>>>> {WORKSPACE_PATH}")
 LOGS_PATH = os.path.join(WORKSPACE_PATH, 'logs')
 if not os.path.exists(LOGS_PATH):
     os.makedirs(LOGS_PATH)
-# 设置环境变量供子模块使用
-os.environ['WORKSPACE_PATH'] = os.path.abspath(WORKSPACE_PATH)
 
 # 重要：先设置好环境变量，再导入search模块
 from cosight_server.deep_research.routers.search import searchRouter

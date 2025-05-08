@@ -15,9 +15,6 @@
 
 from app.cosight.tool.deep_search.common.entity import ModelInfo
 from app.cosight.tool.deep_search.model.llm_client import LLMClient
-from cosight_server.sdk.common.logger_util import get_logger
-
-logger = get_logger("ai-search")
 
 
 class ModelService():

@@ -22,7 +22,7 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../../")))
 from llm import llm_for_act
 
-def actor_system_prompt():
+def actor_system_prompt(work_space_path: str):
     # Check if llm_for_act is using OpenRouter Claude
     is_openrouter_claude = False
     if hasattr(llm_for_act, 'model') and isinstance(llm_for_act.model, str):
@@ -109,15 +109,14 @@ You are an assistant helping complete complex tasks. Your goal is to execute tas
 
 # Environment Information
 - Operating System: {platform.platform()}
-- WorkSpace: {os.getenv("WORKSPACE_PATH") or os.getcwd()}
+- WorkSpace: {work_space_path}
 - Encoding: UTF-8 (must be used for all file operations)
 """
     return system_prompt
 
-def actor_execute_task_prompt(task, step_index, plan):
-    workspace_path = os.getenv("WORKSPACE_PATH") or os.getcwd()
+def actor_execute_task_prompt(task, step_index, plan, work_space_path: str):
     try:
-        files_list = "\n".join([f"  - {f}" for f in os.listdir(workspace_path)])
+        files_list = "\n".join([f"  - {f}" for f in os.listdir(work_space_path)])
     except Exception as e:
         files_list = f"  - Error listing files: {str(e)}"
     
@@ -165,7 +164,7 @@ Current Step Index: {step_index}
 Current Step Description: {plan.steps[step_index]}
 
 # Environment Information
-- WorkSpace: {workspace_path}
+- WorkSpace: {work_space_path}
   Files in Workspace:
 {files_list}
 

@@ -18,14 +18,13 @@ from typing import Optional, List, Union
 
 from lagent import tool_api
 from lagent.actions.bing_browser import ContentFetcher
-# GoogleSearch 不能删，作为eval创建searcher
 
+# TavilySearch 不能删，作为eval创建searcher
+from app.cosight.tool.deep_search.searchers.tavily_search import TavilySearch
 from app.cosight.tool.deep_search.actions.web_page_reader import ContentFetcher
 from app.cosight.tool.deep_search.actions.base_action import ManusBaseAction
 from app.cosight.tool.deep_search.common.entity import SearchSource
-from cosight_server.sdk.common.logger_util import get_logger
-
-logger = get_logger("ai-search")
+from app.common.logger_util import logger
 
 
 class ManusWebSearch(ManusBaseAction):

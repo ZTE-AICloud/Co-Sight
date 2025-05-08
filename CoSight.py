@@ -30,9 +30,10 @@ from app.cosight.task.time_record_util import time_record
 
 
 class CoSight:
-    def __init__(self, plan_llm, act_llm, tool_llm, vision_llm):
+    def __init__(self, plan_llm, act_llm, tool_llm, vision_llm, work_space_path: str = None):
+        self.work_space_path = work_space_path or os.getenv("WORKSPACE_PATH") or os.getcwd()
         self.plan_id = f"plan_{int(time.time())}"
-        self.plan = Plan()
+        self.plan = Plan(work_space_path=self.work_space_path)
         TaskManager.set_plan(self.plan_id, self.plan)
         self.task_planner_agent = TaskPlannerAgent(create_planner_instance("task_planner_agent"), plan_llm,
                                                    self.plan_id)
@@ -78,7 +79,7 @@ class CoSight:
                 print(f"Starting execution of step {step_index}")
                 # 每个线程创建独立的TaskActorAgent实例
                 task_actor_agent = TaskActorAgent(create_actor_instance(f"actor_for_step_{step_index}"), self.act_llm,
-                                                  self.vision_llm, self.tool_llm, self.plan_id)
+                                                  self.vision_llm, self.tool_llm, self.plan_id, work_space_path=self.work_space_path)
                 result = task_actor_agent.act(question=question, step_index=step_index)
                 print(f"Completed execution of step {step_index} with result: {result}")
                 result_queue.put((step_index, result))

@@ -23,8 +23,8 @@ DEFAULT_FORMAT: str = ".md"  # Default format for files without extension
 
 
 class FileToolkit:
-    def __init__(self):
-        pass
+    def __init__(self, work_space_path: str = None):
+        self.work_space_path = work_space_path
 
     def file_saver(self, content: str | bytes, file_path: str, mode: str = "a", binary: bool = False) -> str:
         r"""Save content to a file at the specified path. Supports both text and binary files. Default mode is append to preserve existing content.
@@ -52,8 +52,7 @@ class FileToolkit:
             if os.path.exists(file_path):
                 absolute_path = file_path
             else:
-                workspace_path = os.getenv("WORKSPACE_PATH") or os.getcwd()
-                absolute_path = os.path.join(workspace_path, os.path.basename(file_path))
+                absolute_path = os.path.join(self.work_space_path, os.path.basename(file_path))
                 # If file doesn't exist and mode is append, change to write mode
                 if mode == 'a':
                     mode = 'w'
@@ -97,8 +96,7 @@ class FileToolkit:
             if os.path.exists(file):
                 absolute_path = file
             else:
-                workspace_path = os.getenv("WORKSPACE_PATH") or os.getcwd()
-                absolute_path = os.path.join(workspace_path, os.path.basename(file))
+                absolute_path = os.path.join(self.work_space_path, os.path.basename(file))
 
             # Verify file exists
             if not os.path.exists(absolute_path):
@@ -140,8 +138,7 @@ class FileToolkit:
             if os.path.exists(file):
                 absolute_path = file
             else:
-                workspace_path = os.getenv("WORKSPACE_PATH") or os.getcwd()
-                absolute_path = os.path.join(workspace_path, os.path.basename(file))
+                absolute_path = os.path.join(self.work_space_path, os.path.basename(file))
 
             # Verify file exists
             if not os.path.exists(absolute_path):
@@ -183,8 +180,7 @@ class FileToolkit:
             if os.path.exists(file):
                 absolute_path = file
             else:
-                workspace_path = os.getenv("WORKSPACE_PATH") or os.getcwd()
-                absolute_path = os.path.join(workspace_path, os.path.basename(file))
+                absolute_path = os.path.join(self.work_space_path, os.path.basename(file))
 
             # Verify file exists
             if not os.path.exists(absolute_path):
@@ -442,8 +438,7 @@ class FileToolkit:
         if os.path.exists(file_path):
             absolute_path = file_path
         else:
-            workspace_path = os.getenv("WORKSPACE_PATH") or os.getcwd()
-            absolute_path = os.path.join(workspace_path, os.path.basename(file_path))
+            absolute_path = os.path.join(self.work_space_path, os.path.basename(file_path))
             # If file doesn't exist and mode is append, change to write mode
             if mode == 'a':
                 mode = 'w'

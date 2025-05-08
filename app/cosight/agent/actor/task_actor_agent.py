@@ -36,19 +36,21 @@ from app.cosight.tool.scrape_website_toolkit import fetch_website_content
 from app.cosight.tool.deep_search.searchers.tavily_search import TavilySearch
 from app.cosight.tool.audio_toolkit import AudioTool
 from app.cosight.tool.video_analysis_toolkit import VideoTool
+from app.cosight.tool.html_visualization_toolkit import HtmlVisualizationToolkit
 from config.config import get_tavily_config
-from app.cosight.tool.html_visualization_toolkit import create_html_report
 
 class TaskActorAgent(BaseAgent):
     def __init__(self, agent_instance: AgentInstance, llm: ChatLLM,
                  vision_llm: ChatLLM,
                  tool_llm: ChatLLM, plan_id,
-                 functions: Dict = None):
+                 functions: Dict = None,
+                 work_space_path: str = None):
+        self.work_space_path = work_space_path
         self.plan = TaskManager.get_plan(plan_id)
         self.question = None  # Store the question for later use
         act_toolkit = ActToolkit(self.plan)
         terminate_toolkit = TerminateToolkit()
-        file_toolkit = FileToolkit()
+        file_toolkit = FileToolkit(work_space_path)
         web_toolkit = WebToolkit({"base_url": tool_llm.base_url,
                                   "model": tool_llm.model,
                                   "api_key": tool_llm.api_key})
@@ -69,12 +71,12 @@ class TaskActorAgent(BaseAgent):
             "model_name": tool_llm.model,
 
         }, {
-
             # 配置tavily
             "api_key": get_tavily_config()
         })
         code_toolkit = CodeToolkit(sandbox="subprocess")
         tavily_search = TavilySearch()
+        html_toolkit = HtmlVisualizationToolkit(workspace_path=work_space_path)
         code_toolkit = CodeToolkit(sandbox="subprocess")
         all_functions = {"mark_step": act_toolkit.mark_step,
                          # "deep_search": deep_search_toolkit.deep_search,
@@ -95,7 +97,7 @@ class TaskActorAgent(BaseAgent):
                          "ask_question_about_video": video_toolkit.ask_question_about_video,
                          "fetch_website_content": fetch_website_content,
                          "extract_document_content": doc_toolkit.extract_document_content,
-                         "create_html_report": lambda title=None, include_charts=True, chart_types=['all'], output_filename=None: create_html_report(
+                         "create_html_report": lambda title=None, include_charts=True, chart_types=['all'], output_filename=None: html_toolkit.create_html_report(
                              title=title, 
                              include_charts=include_charts, 
                              chart_types=chart_types, 
@@ -106,7 +108,7 @@ class TaskActorAgent(BaseAgent):
         if functions:
             all_functions = functions.update(functions)
         super().__init__(agent_instance, llm, all_functions)
-        self.history.append({"role": "system", "content": actor_system_prompt()})
+        self.history.append({"role": "system", "content": actor_system_prompt(self.work_space_path)})
 
     @time_record
     def act(self, question, step_index):
@@ -114,7 +116,7 @@ class TaskActorAgent(BaseAgent):
         self.plan.mark_step(step_index, step_status="in_progress")
         plan_report_event_manager.publish("plan_process", self.plan)
         self.history.append(
-            {"role": "user", "content": actor_execute_task_prompt(question, step_index, self.plan)})
+            {"role": "user", "content": actor_execute_task_prompt(question, step_index, self.plan, self.work_space_path)})
         try:
             result = self.execute(self.history,step_index=step_index)
             if self.plan.step_statuses.get(self.plan.steps[step_index], "") == "in_progress":
