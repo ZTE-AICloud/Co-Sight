@@ -30,12 +30,12 @@ export class ManusChatbotModule {
         });
         TranslateHelper.initI18n("manus-chatbot", {
             zh: {
-                title: 'Co-Sight',
-                desc: 'Co-Sight intelligent assistant can help you answer questions, analyze data and provide expert advice.'
+                title: 'Co-Sight 超级智能体',
+                desc: 'Co-Sight 超级智能体可以帮助您解答问题、分析数据并提供专家建议'
             },
             en: {
-                title: 'Co-Sight',
-                desc: 'Co-Sight intelligent assistant can help you answer questions, analyze data and provide expert advice.'
+                title: 'Co-Sight 超级智能体',
+                desc: 'Co-Sight 超级智能体可以帮助您解答问题、分析数据并提供专家建议'
             }
         });
 
