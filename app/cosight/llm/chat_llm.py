@@ -61,7 +61,7 @@ class ChatLLM:
             temperature=self.temperature,
             max_tokens=self.max_tokens
         )
-        # print(f"response is {response}")
+        print(f"response is {response}")
         # 去除think标签
         content = response.choices[0].message.content
         if content is not None and '</think>' in content:

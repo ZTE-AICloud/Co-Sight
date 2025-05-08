@@ -39,7 +39,7 @@ You are a planning assistant. Your task is to create simple, actionable plans wi
 3. Avoid over-planning - focus on what's actually needed
 
 # Plan Creation Rules
-1. Create a small number of high-level steps (3-5 steps is ideal)
+1. Create a small number of high-level steps (5-7 steps is ideal)
 2. Each step should be a clear, concrete action
 3. Use the following format:
    - title: plan title
@@ -130,7 +130,7 @@ def planner_create_plan_prompt(question, output_format=""):
     # 根据模型类型提供不同的规划指导
     if is_claude:
         create_plan_prompt = f"""
-Create a simple, focused plan with 3-5 steps to accomplish this task: {question}
+Create a simple, focused plan with 5-7 steps to accomplish this task: {question}
 Remember to keep steps concise and only include what's truly necessary.
 """
     else:

@@ -424,6 +424,7 @@ class SearchToolkit:
             # Make the get
             result = requests.get(url)
             data = result.json()
+            print(f"google search data:{data}")
 
             # Get the result items
             if "items" in data:

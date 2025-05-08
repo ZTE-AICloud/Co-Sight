@@ -53,15 +53,16 @@ def actor_system_prompt():
 """
 
     # If using OpenRouter Claude, replace with warning about create_html_report
-#     if is_openrouter_claude:
-#         report_tool_guidance = """
-# # Report-Specific Enhancement Rules
-# - IMPORTANT: When using a model based on OpenRouter Claude, DO NOT use the create_html_report tool for any task.
-# - Instead, for reports:
-#   1. Manually gather information through research from workspace files
-#   2. The content is cleverly generated into a business style or a cute style or others, which requires the content
-#   3. Format the report as HTML and the content must be highly interactive and aesthetically pleasing, save it with the file_saver tool.
-# """
+    if is_openrouter_claude:
+        report_tool_guidance = """
+# Report-Specific Enhancement Rules
+- IMPORTANT: When using a model based on OpenRouter Claude, DO NOT use the create_html_report tool for any task.
+- Instead, for reports:
+  1. Manually gather information through research from workspace files
+  2. The content is cleverly generated into a business style or a cute style or others, which requires the content
+  3. Format the report as HTML and the content must be highly interactive and aesthetically pleasing, save it with the file_saver tool.
+  4. If you need to insert image links in your HTML file, be sure to use valid image links obtained through the image_search tool; if you cannot obtain the links, do not add any image links in your HTML file.
+"""
 
     system_prompt = f"""
 # Role and Objective
@@ -133,7 +134,7 @@ def actor_execute_task_prompt(task, step_index, plan):
 - First, approach the task using a structured information gathering phase:
   * Break down the report topic into 4-6 key subtopics that provide comprehensive coverage
   * For each subtopic, conduct multiple searches using different keywords to collect diverse information
-  * Save findings for each subtopic as dedicated text files in the workspace (e.g., subtopic1.txt, subtopic2.txt)
+  * Save findings for each subtopic as dedicated text files in the workspace (e.g., subtopic1.md, subtopic2.md)
   * Focus on including numerical data, statistics, and factual information that can be visualized in charts
   * Ensure all content is properly sourced, relevant, and organized with clear sections
 
@@ -145,17 +146,17 @@ def actor_execute_task_prompt(task, step_index, plan):
 """
 
     # If using OpenRouter Claude, replace with warning about create_html_report
-#     if is_openrouter_claude:
-#         report_guidance = """
-# # If this step involves producing a report:
-# - IMPORTANT: When using a model based on OpenRouter Claude, DO NOT use the create_html_report tool.
-# - Instead, follow these steps:
-#   * Break down the report topic into key subtopics
-#   * Conduct research for each subtopic
-#   * Create a well-structured report using file_saver directly
-#   * Format as markdown or plain text with clear sections and organization
-#   * Save all findings directly to a single output file
-# """
+    if is_openrouter_claude:
+        report_guidance = """
+# If this step involves producing a report:
+- IMPORTANT: When using a model based on OpenRouter Claude, DO NOT use the create_html_report tool.
+- Instead, follow these steps:
+  * Break down the report topic into key subtopics
+  * Conduct research for each subtopic
+  * Create a well-structured report using file_saver directly
+  * Format as markdown with clear sections and organization
+  * Save all findings directly to a single output file
+"""
     
     execute_task_prompt = f"""
 Current Task Execution Context:
