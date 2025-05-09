@@ -60,7 +60,7 @@ class Plan:
             dependencies = self.dependencies.get(step_index, [])
 
             # 检查所有依赖是否都已完成
-            if all(self.step_statuses.get(self.steps[dep]) != "not_started" for dep in dependencies):
+            if all(self.step_statuses.get(self.steps[int(dep)]) != "not_started" for dep in dependencies):
                 # 检查步骤本身是否未开始
                 if self.step_statuses.get(self.steps[step_index]) == "not_started":
                     ready_steps.append(step_index)
@@ -144,7 +144,7 @@ class Plan:
         # Validate status if marking as completed
         if step_status == "completed":
             # Check if all dependencies are completed
-            if not all(self.step_statuses[self.steps[dep]] == "completed" for dep in
+            if not all(self.step_statuses[self.steps[int(dep)]] == "completed" for dep in
                        self.dependencies.get(step_index, [])):
                 raise ValueError(f"Cannot complete step {step_index} before its dependencies are completed")
 
