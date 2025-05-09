@@ -1,104 +1,103 @@
 
-## 🚀还在为邀请码发愁？一键部署 Co-Sight，快速搭建专属的类Manus系统！
+## 🚀 Still worried about the invitation code? One-click deployment of Co-Sight to quickly build your own Manus-like system!
 
-自Manus发布之后，一些闭源平台虽具备优秀的用户体验和商业支持，却常面临高成本、访问受限、私有化部署困难等问题；而开源框架虽拥有更高的灵活性与透明度，却在功能完整性、样式丰富性和稳定性方面略显不足。
+[![简体中文](https://img.shields.io/badge/简体中文-点击查看-orange)](README-zh.md)
 
-**Co-Sight** 致力于在成本、质量、稳定性与易用性之间取得最佳平衡。它支持低成本大模型生成媲美 Claude模型 的高质量、美观报告，并可灵活部署于私有环境，助力企业与个人快速构建属于自己的类Manus系统。
+Since the release of Manus, some closed-source platforms have faced problems such as high cost, limited access, and difficulty in privatization deployment, although they have excellent user experience and commercial support. Although open source frameworks have higher flexibility and transparency, they are slightly lacking in terms of functional integrity, style richness, and stability.
 
-## 🔍样例演示
+**Co-Sight** Committed to striking the best balance between cost, quality, stability and ease of use. It supports low-cost large models to generate high-quality and beautiful reports comparable to Claude models, and can be flexibly deployed in private environments, helping enterprises and individuals quickly build their own Manus-like systems.
 
-| 场景       | 示例链接                                                                          | 效果预览                                            |
-| -------- | ----------------------------------------------------------------------------- | ----------------------------------------------- |
-| **行业研究** | [中兴通讯分析报告](https://www.youtube.com/watch?v=SNd8kYPxr3s)                       | ![](assets/Pasted_image_20250501015026.png)     |
-| **个人生活** | [2025年五一上海旅游攻略](https://www.youtube.com/watch?v=IkAGq0e1Lio&feature=youtu.be) | <br>![](assets/Pasted_image_20250501015117.png) |
-| **新闻热点** | [特朗普关税政策全球影响分析](https://www.youtube.com/watch?v=19-BmlHuG_E)                  | ![](assets/Pasted_image_20250501015617.png)     |
-| **...**  |                                                                               |                                                 |
+## 🔍Sample Demo
 
-**欢迎大家在 Lab 中贡献更多示例，丰富我们的案例库！**  
+| Scene                 | Example links                                                                 | Preview of the effect                           |
+|-----------------------|-------------------------------------------------------------------------------|-------------------------------------------------|
+| **Industry Research** | [ZTE analysis report](https://www.youtube.com/watch?v=SNd8kYPxr3s)                       | ![](assets/Pasted_image_20250501015026.png)     |
+| **Personal life**     | [2025 May Day Shanghai Travel Guide](https://www.youtube.com/watch?v=IkAGq0e1Lio&feature=youtu.be) | <br>![](assets/Pasted_image_20250501015117.png) |
+| **Hot news**              | [Analysis of the Global Impact of Trump's Tariff Policy](https://www.youtube.com/watch?v=19-BmlHuG_E)                  | ![](assets/Pasted_image_20250501015617.png)     |
+| **...**               |                                                                               |                                                 |
 
-GitHub 地址：[https://github.com/Co-Sight-Series/Co-Sight-Lab](https://github.com/Co-Sight-Series/Co-Sight-Lab)
+**We welcome you to contribute more examples in the Lab to enrich our case library!**  
 
-## 🛠安装指南
+GitHub Address：[https://github.com/Co-Sight-Series/Co-Sight-Lab](https://github.com/Co-Sight-Series/Co-Sight-Lab)
 
-1. **下载项目**：你可以选择以下任意一种方式下载项目到本地：
+## 🛠Installation Guide
+
+1. **Download the project**：You can choose one of the following methods to download the project to your local computer：
    
-   **方式一：使用 Git 克隆**
-   访问 https://github.com/ZTE-AICloud/Co-Sight ，点击绿色的 `Code` 按钮，
+   **1. Use Git clone**
+   Visit https://github.com/ZTE-AICloud/Co-Sight ，Click on the green 'Code' button,
 
    ```bash
-   # 方式一：选择http协议
+   # 1. Select HTTP protocol
    git clone https://github.com/ZTE-AICloud/Co-Sight.git
    
-   # 方式二：选择ssh协议
+   # 2. Select SSH
    git clone git@github.com:ZTE-AICloud/Co-Sight.git
    
    cd Co-Sight
    ```
 
-   **方式二：下载 ZIP 文件**
-   访问 https://github.com/ZTE-AICloud/Co-Sight ， 点击绿色的 `Code` 按钮，选择 `Download ZIP`，下载后解压并进入项目目录。
+   **2. Download the zip file**
+   Visit https://github.com/ZTE-AICloud/Co-Sight ， Click on the green 'Code' button, select 'Download ZIP', download it and unzip it to enter the project directory.
 
-2. **准备环境**：python版本>=3.11
+2. **Prepare the environment**：python version >= 3.11
   
-3. **安装依赖**：  在项目目录下执行以下命令安装依赖
+3. **Install dependencies**：  Run the following command in the project directory to install dependencies:
 ```shell
 pip install -r requirements.txt
 ```
 
+## ⚙️Configuration
 
-
-## ⚙️配置说明
-
-1. **拷贝模板`.env_template`并生成 `.env`**（该文件已被加入 `.gitignore`，可安全存储私密信息）：
-2. **编辑** `.env` **配置核心参数**：
-	1. 大模型配置：配置相对应的大模型地址，模型名称，API-KEY等，可进一步（可选）对规划、执行、工具、多模态模型做配置；
-	2. 搜索引擎配置（可选）：配置相关搜索引擎的API-KEY；
-		1. Google Search 申请方式：https://developers.google.com/custom-search/v1/overview?hl=zh-cn#api_key
+1. **Copy the template`.env_template`and generated `.env`**（the document has been joined `.gitignore`，securely store private information）：
+2. **edit** `.env` **configure core parameters**：
+	1. Large model configuration: Configure the corresponding large model address, model name, API-KEY, etc., and further (optionally) configure the planning, execution, tools, and multi-modal model;
+	2. Search engine configuration (optional): configure the API-KEY of the relevant search engine;
+		1. Google Search how to apply：https://developers.google.com/custom-search/v1/overview?hl=zh-cn#api_key
 		   ![](assets/Pasted_image_20250502115226.png)	
-		2. Tavily Search 申请方式：https://app.tavily.com/home
+		2. Tavily Search how to apply：https://app.tavily.com/home
 		   ![](assets/Pasted_image_20250502115315.png)
 
+		  
+## ▶️ Quick Start
 
-
-## ▶️ 快速启动
-
-1. **启动服务**：cosight_server/deep_research/main.py
+1. **start the service**：cosight_server/deep_research/main.py
 ![](./assets/Pasted_image_20250430225822.png)
-2. **打开浏览器，访问：**
+2. **open your browser and visit**
 `http://localhost:7788/cosight/`
-3. **在输入框中输入你的第一个任务，体验智能研究引擎的强大能力！**
+3. **Enter your first task in the input box and experience the power of the intelligent research engine!**
 
 ![](assets/Pasted_image_20250501020936.png)
 
 
-## 🐳docker 方式安装&与使用
+## 🐳 Use Docker
 
-1. 下载docker离线镜像：
+1. download the docker offline image
 https://github.com/ZTE-AICloud/Co-Sight/releases/download/v0.0.1/co-sight-v001.tar
 
-2. 启动docker镜像：
+2. start the docker image
 ```shell
-# 加载离线镜像
+# load an offline image
 docker load -i co-sight-v001.tar
-# 启动docker容器
+# start the docker container
 docker run -d -p 7788:7788 co-sight
-# 将配置好的.env文件拷贝进容器（后续会将模型、搜索引擎做到Co-Sight界面可配置方式）
+# copy the configured .env file into the container (the model and search engine will be configured in a Co-Sight interface)
 docker cp .env ac39023b3b3fdc3245ec1cc0293afb6b0a5efd4675ee79535ed6663c3e2a2558:/home/Co-Sight
-# 重启镜像生效环境变量
+# Restart the image to take effect environment variables
 docker restart ac39023b3b3fdc3245ec1cc0293afb6b0a5efd4675ee79535ed6663c3e2a2558
 ```
 
-3. **打开浏览器，访问：**
+3. **open your browser and visit**
 `http://localhost:7788/cosight/`
 
 
-## 🤝 贡献指南
+## 🤝 Contribution Guidelines
 
-非常欢迎 PR、Issue！如果你有任何想法或建议：
+PRs and Issues are very welcome! If you have any ideas or suggestions:
 
-- 提交 Issue：描述你的想法与问题。
+- file an issue describe your idea and issue
   
-- 发起 PR：完善文档、添加示例或优化功能。
+- Initiate a PR: Improve documentation, add examples, or refine features.
   
 
-一起让 Co Sight Agent 更加强大。
+Together, we make the Co Sight Agent even more powerful.
