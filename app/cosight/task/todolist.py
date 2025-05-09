@@ -60,7 +60,7 @@ class Plan:
             dependencies = self.dependencies.get(step_index, [])
 
             # 检查所有依赖是否都已完成
-            if all(self.step_statuses.get(self.steps[dep]) != "not_started" for dep in dependencies):
+            if all(self.step_statuses.get(self.steps[int(dep)]) != "not_started" for dep in dependencies):
                 # 检查步骤本身是否未开始
                 if self.step_statuses.get(self.steps[step_index]) == "not_started":
                     ready_steps.append(step_index)
@@ -144,7 +144,7 @@ class Plan:
         # Validate status if marking as completed
         if step_status == "completed":
             # Check if all dependencies are completed
-            if not all(self.step_statuses[self.steps[dep]] == "completed" for dep in
+            if not all(self.step_statuses[self.steps[int(dep)]] == "completed" for dep in
                        self.dependencies.get(step_index, [])):
                 raise ValueError(f"Cannot complete step {step_index} before its dependencies are completed")
 
@@ -227,7 +227,7 @@ def extract_and_replace_paths(text: str, folder_name: str) -> Tuple[str, List[Di
     quoted_file_pattern = rf'《([^《》\s]+?\.{valid_extensions})》'
 
     result_list: List[Dict[str, str]] = []
-    
+
     # 初始化该文件夹的文件列表（如果不存在）
     if folder_name not in folder_files_map:
         folder_files_map[folder_name] = []
@@ -236,7 +236,7 @@ def extract_and_replace_paths(text: str, folder_name: str) -> Tuple[str, List[Di
         full_path = match.group(1)
         filename = os.path.basename(full_path.replace("\\", "/"))  # 把反斜杠变成斜杠后再提取
         new_path = f"{folder_name}/{filename}"
-        
+
         # 如果文件名不在该文件夹的列表中，则添加
         # if filename not in folder_files_map[folder_name]:
         #     folder_files_map[folder_name].append(filename)
@@ -249,7 +249,7 @@ def extract_and_replace_paths(text: str, folder_name: str) -> Tuple[str, List[Di
     def replace_quoted_file(match):
         filename = match.group(1)
         new_path = f"{folder_name}/{filename}"
-        
+
         # 如果文件名不在该文件夹的列表中，则添加
         # if filename not in folder_files_map[folder_name]:
         #     folder_files_map[folder_name].append(filename)
@@ -284,12 +284,12 @@ def extract_and_replace_paths(text: str, folder_name: str) -> Tuple[str, List[Di
                     rel_path = os.path.relpath(root, workspace_path)
                     # 构建文件夹的唯一标识
                     folder_key = f"{folder_name}/{rel_path}"
-                    
+
                     # 初始化该文件夹的文件列表（如果不存在）
                     if folder_key not in subfolder_files_map:
                         subfolder_files_map[folder_key] = []
                         print(f"subfolder_files_map: {subfolder_files_map}")
-                    
+
                     for filename in files:
                         # 如果文件名不在该文件夹的列表中，则添加
                         if filename not in subfolder_files_map[folder_key]:
