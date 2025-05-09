@@ -157,7 +157,7 @@ async def _send_resp(websocket, cookie, topic, message, lang):
         else:
             await _no_stream_handler(params, url, headers, topic, websocket)
     except Exception as e:
-        logger.error(f"response websocket error: {e}")
+        logger.error(f"response websocket error: {e}", exc_info=True)
 
 
 # Ended by AICoder, pid:wb967gf743u19051414d0be1f088122a49b62acf

@@ -49,7 +49,7 @@ def get_local_ip():
         return local_ip
     except Exception as e:
         # 如果出现异常，返回一个默认的回环地址
-        logger.error(f"get server ip error: {e}")
+        logger.error(f"get server ip error: {e}", exc_info=True)
         return '127.0.0.1'
 
 

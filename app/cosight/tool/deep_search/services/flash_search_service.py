@@ -376,7 +376,7 @@ async def rewrite_question(query: str, llm, chat_history) -> list:
         # 清理响应文本,去除引号和多余空格
         return clear_model_response(response)
     except Exception as e:
-        logger.error(f"提取关键词失败: {e}")
+        logger.error(f"提取关键词失败: {e}", exc_info=True)
         return query
 
 
@@ -409,7 +409,7 @@ async def analyze_search_results(query: str, search_results: dict, llm) -> list:
         indices = [int(idx.strip()) for idx in cleaned_response.split(',')] if cleaned_response else []
         return indices
     except Exception as e:
-        logger.error(f"分析搜索结果失败: {e}")
+        logger.error(f"分析搜索结果失败: {e}", exc_info=True)
         return [0, 1, 2]  # 发生错误时返回默认值
 
 
@@ -457,7 +457,7 @@ async def extract_search_keywords(query: str, llm) -> list:
         keywords = [kw.strip() for kw in cleaned_response.split(',')]
         return [query, *keywords]
     except Exception as e:
-        logger.error(f"提取关键词失败: {e}")
+        logger.error(f"提取关键词失败: {e}", exc_info=True)
         return [query]  # 发生错误时返回原始查询词
 
 
@@ -489,7 +489,7 @@ async def select_search_source(query: str, search_sources: list, llm) -> dict:
 
         return selected_search_source if selected_search_source else search_sources[0]
     except Exception as e:
-        logger.error(f"选择搜索源失败: {e}")
+        logger.error(f"选择搜索源失败: {e}", exc_info=True)
         return search_sources[0]  # 发生错误时返回默认值
 
 def create_chat_messages(query: str, context: str = "", system_prompt: str = DEFAULT_SYSTEM_PROMPT) -> list:

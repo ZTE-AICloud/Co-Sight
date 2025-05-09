@@ -1708,7 +1708,7 @@ def generate_html_report_with_apple_theme(outline, sections, visualizations, use
     all_content = ""
     for section in sections:
         for subsection in section.get('subsections', []):
-            all_content += subsection.get('content', '') + "\n\n"
+            all_content += str(subsection.get('content') or '') + "\n\n"
     
     # 提取关键指标
     metrics = extract_key_metrics(all_content, user_query)

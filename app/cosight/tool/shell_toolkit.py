@@ -115,7 +115,7 @@ class ShellTool(BaseTool):  # type: ignore[override, override]
                 return self.process.run(commands)
 
         except Exception as e:
-            logger.error(f"Error during command execution: {e}")
+            logger.error(f"Error during command execution: {e}", exc_info=True)
             return None  # type: ignore[return-value]
 
     def execute(self, command: str) -> str:

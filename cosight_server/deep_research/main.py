@@ -191,7 +191,7 @@ if not os.path.exists(web_dir):
             f.write("<html><body><h1>开发模式</h1><p>这是一个自动创建的临时页面。</p></body></html>")
         logger.info(f"已创建临时web目录和index.html文件: {web_dir}")
     except Exception as e:
-        logger.error(f"创建web目录失败: {str(e)}")
+        logger.error(f"创建web目录失败: {str(e)}", exc_info=True)
         logger.info(f"当前工作目录: {os.getcwd()}")
         logger.info(f"尝试查找web目录...")
         # 打印当前目录下有哪些文件夹
@@ -221,7 +221,7 @@ async def global_exception_handler(request: Request, call_next):
     try:
         return await call_next(request)
     except Exception as e:
-        logger.error(f"Unhandled exception: {e}")
+        logger.error(f"Unhandled exception: {e}", exc_info=True)
         return JSONResponse(status_code=500, content={"message": "An unexpected error occurred.", "details": str(e)})
 
 if __name__ == '__main__':

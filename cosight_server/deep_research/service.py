@@ -79,7 +79,7 @@ def _sync_extract_entity(task_name, content) -> dict:
         logger.info(f"extract_entity: 提取实体数据：{content}")
         return content
     except (json.JSONDecodeError, KeyError) as e:
-        logger.error(f"extract_entity: 提取实体数据失败，错误信息：{e}，响应数据：{data}")
+        logger.error(f"extract_entity: 提取实体数据失败，错误信息：{e}，响应数据：{data}", exc_info=True)
         return {}
 
 
@@ -122,7 +122,7 @@ async def get_icenter_space_ids(space_names: list[str], icenter_token: IcenterTo
             logger.info(f"查询到的icenter空间：{space_id}, {space_ch_name}")
             space_ids.append(space_id)
         except (json.JSONDecodeError, KeyError, IndexError) as e:
-            logger.error(f"get_icenter_space_ids: 查询 {space_name} 空间ID失败，错误信息：{e}")
+            logger.error(f"get_icenter_space_ids: 查询 {space_name} 空间ID失败，错误信息：{e}", exc_info=True)
             continue
 
     return space_ids

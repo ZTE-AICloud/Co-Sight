@@ -83,7 +83,7 @@ def append_create_plan(data: Any):
             try:
                 content = json.dumps(data, ensure_ascii=False, indent=2) + "\n"
             except TypeError as e:
-                logger.error(f"JSON序列化失败，尝试转换对象: {e}")
+                logger.error(f"JSON序列化失败，尝试转换对象: {e}", exc_info=True)
                 # 尝试将复杂对象转换为字符串
                 if isinstance(data, dict):
                     serializable_data = {k: str(v) for k, v in data.items()}
@@ -111,11 +111,11 @@ def append_create_plan(data: Any):
                 asyncio.run_coroutine_threadsafe(plan_queue.put(data), main_loop)
 
     except json.JSONDecodeError as e:
-        logger.error(f"JSON序列化失败: {e}")
+        logger.error(f"JSON序列化失败: {e}", exc_info=True)
     except IOError as e:
-        logger.error(f"文件写入失败: {e}")
+        logger.error(f"文件写入失败: {e}", exc_info=True)
     except Exception as e:
-        logger.error(f"未知错误: {e}")
+        logger.error(f"未知错误: {e}", exc_info=True)
 
 
 def validate_search_input(params: dict) -> dict | None:
@@ -181,7 +181,7 @@ async def search(request: Request, params: Any = Body(None)):
                 logger.info(f"final result is {result}")
 
             except Exception as e:
-                logger.error(f"CoSight执行错误: {e}")
+                logger.error(f"CoSight执行错误: {e}", exc_info=True)
 
         # 启动子线程执行CoSight
         import threading
@@ -216,7 +216,7 @@ async def search(request: Request, params: Any = Body(None)):
                 else:
                     yield {"plan": {"title": "等待任务执行", "status_text": "等待计划更新...", "steps": []}}
             except Exception as e:
-                logger.error(f"生成响应错误: {e}")
+                logger.error(f"生成响应错误: {e}", exc_info=True)
                 # 发送错误状态，但保留最新plan
                 if latest_plan:
                     latest_plan["status_text"] = f"生成响应出错: {str(e)}"
@@ -229,7 +229,6 @@ async def search(request: Request, params: Any = Body(None)):
         try:
             async for response_data in generator_func():
                 response_json = {
-                    "model": "qwen2-7b-int4",
                     "contentType": "lui-message-manus-step",
                     "sessionInfo": params.get("sessionInfo", {}),
                     "code": 0,
@@ -246,7 +245,6 @@ async def search(request: Request, params: Any = Body(None)):
             error_msg = "生成回复时发生错误。"
             logger.exception(error_msg)
             error_response = json.dumps({
-                "model": "qwen2-7b-int4",
                 "contentType": "lui-message-manus-step",
                 "content": {"intro": error_msg, "steps": []},
                 "sessionInfo": params.get("sessionInfo", {}),

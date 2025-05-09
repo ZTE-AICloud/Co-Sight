@@ -108,10 +108,10 @@ class TavilySearch(DuckDuckGoSearch):
                 }
         except httpx.HTTPError as e:
             logger.error(
-                f"Tavily HTTP请求失败: {str(e)}, 状态码: {getattr(e.response, 'status_code', 'N/A')}, 响应内容: {getattr(e.response, 'text', 'N/A')}")
+                f"Tavily HTTP请求失败: {str(e)}, 状态码: {getattr(e.response, 'status_code', 'N/A')}, 响应内容: {getattr(e.response, 'text', 'N/A')}", exc_info=True)
             return []
         except Exception as e:
-            logger.error(f"Tavily搜索失败，详细错误: {str(e)}")
+            logger.error(f"Tavily搜索失败，详细错误: {str(e)}", exc_info=True)
             return []
 
     def _parse_response(self, response: dict) -> dict:

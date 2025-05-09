@@ -76,7 +76,7 @@ class LLMClient:
                     return result["choices"][0]["message"]["content"]
 
         except Exception as e:
-            logger.error(f"Error in chat: {str(e)}")
+            logger.error(f"Error in chat: {str(e)}", exc_info=True)
             raise
 
     async def stream_chat(self, messages: List[Dict[str, str]], **kwargs) -> AsyncGenerator[tuple, None]:
@@ -118,7 +118,7 @@ class LLMClient:
                                 logger.warning(f"Failed to decode JSON: {line}, error: {str(e)}")
                                 continue
                             except Exception as e:
-                                logger.error(f"Error processing stream chunk: {str(e)}")
+                                logger.error(f"Error processing stream chunk: {str(e)}", exc_info=True)
                                 yield ModelStatusCode.SESSION_INVALID_ARG, str(e), None
                                 return
 
