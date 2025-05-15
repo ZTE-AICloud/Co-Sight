@@ -12,6 +12,7 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+import datetime
 from app.cosight.agent.actor.instance.actor_agent_instance import create_actor_instance
 from llm import llm_for_plan, llm_for_act, llm_for_tool, llm_for_vision
 from app.cosight.task.plan_report_manager import plan_report_event_manager
@@ -26,6 +27,7 @@ from app.cosight.agent.planner.task_plannr_agent import TaskPlannerAgent
 from app.cosight.task.task_manager import TaskManager
 from app.cosight.task.todolist import Plan
 from app.cosight.task.time_record_util import time_record
+import work_space
 
 
 class CoSight:
@@ -106,11 +108,15 @@ class CoSight:
 
 if __name__ == '__main__':
     # 配置工作区
-    os.makedirs(WORKSPACE_PATH, exist_ok=True)
-    os.environ['WORKSPACE_PATH'] = WORKSPACE_PATH
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    # 获取当前时间并格式化
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
+    # 构造路径：/xxx/xxx/work_space/work_space_时间戳
+    work_space_path = os.path.join(BASE_DIR, 'work_space', f'work_space_{timestamp}')
+    os.makedirs(work_space_path, exist_ok=True)
 
     # 配置CoSight
-    cosight = CoSight(llm_for_plan, llm_for_act, llm_for_tool, llm_for_vision)
+    cosight = CoSight(llm_for_plan, llm_for_act, llm_for_tool, llm_for_vision, work_space_path)
 
     # 运行CoSight
     result = cosight.execute("帮我写一篇中兴通讯的分析报告")
