@@ -14,7 +14,6 @@
 #    under the License.
 from app.cosight.agent.actor.instance.actor_agent_instance import create_actor_instance
 from llm import llm_for_plan, llm_for_act, llm_for_tool, llm_for_vision
-from work_space import WORKSPACE_PATH
 from app.cosight.task.plan_report_manager import plan_report_event_manager
 
 
