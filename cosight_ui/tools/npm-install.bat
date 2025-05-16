@@ -1,6 +1,5 @@
 @echo off
 
-set registry="--registry=https://artsh.zte.com.cn/artifactory/api/npm/rnia-npm-virtual/"
 set scriptDir=%~dp0
 cd ..
 del /f package-lock.json
