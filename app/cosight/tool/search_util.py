@@ -13,13 +13,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import os
 from baidusearch.baidusearch import search
-from requests.exceptions import RequestException
 from typing import List, Dict, Any
 from bs4 import BeautifulSoup
 import random
 import asyncio
 import aiohttp
+
+from app.common.logger_util import logger
 
 async def fetch_url_content(url: str) -> str:
     """Fetch and parse content from a given URL"""
@@ -34,7 +36,7 @@ async def fetch_url_content(url: str) -> str:
             'Accept-Language': 'en-US,en;q=0.5',
             'Connection': 'keep-alive'
         }
-
+        proxy = os.environ.get("PROXY")
         timeout = aiohttp.ClientTimeout(total=10)
         async with aiohttp.ClientSession(timeout=timeout) as session:
             async with session.get(url, headers=headers, proxy=proxy) as response:
@@ -70,7 +72,7 @@ async def fetch_url_content(url: str) -> str:
 def search_baidu(
         query: str
     ) -> List[Dict[str, Any]]:
-    print(f'starting search content {query} use baidu')
+    logger.info(f'starting search content {query} use baidu')
     """Use Baidu search engine to search information for the given query.
 
     This function queries the Baidu API for related topics to the given search term.
@@ -84,7 +86,7 @@ def search_baidu(
         List[Dict[str, Any]]: A list of dictionaries where each dictionary
             represents a search result.
     """
-    print(f"search baidu for {query}")
+    logger.info(f"search baidu for {query}")
     responses: List[Dict[str, Any]] = []
     max_retries = 3
     
@@ -123,7 +125,7 @@ def search_baidu(
                 responses.append({"error": f"Baidu search failed after {max_retries} attempts: {e}"})
             continue
             
-    print(f"search baidu for response: {responses}")
+    logger.info(f"search baidu for response: {responses}")
     return responses
 
 
@@ -133,9 +135,9 @@ def main():
     results = search_baidu(query)
     
     # Print the results
-    print(f"Search results for '{query}':")
+    logger.info(f"Search results for '{query}':")
     for result in results:
-        print(result)
+        logger.info(result)
 
 if __name__ == "__main__":
     main()

@@ -43,6 +43,8 @@ import concurrent.futures
 import threading 
 import io  
 
+from app.common.logger_util import logger
+
 # 字体配置函数
 def configure_matplotlib_fonts():
     """配置matplotlib字体，确保中文显示正确"""
@@ -55,7 +57,7 @@ def configure_matplotlib_fonts():
         try:
             # 从网络下载开源中文字体
             font_url = "https://github.com/StellarCN/scp_zh/raw/master/fonts/SimHei.ttf"
-            print(f"正在下载中文字体...")
+            logger.info(f"正在下载中文字体...")
             response = requests.get(font_url, stream=True, proxies=proxies)
             
             # 确保目录存在
@@ -67,9 +69,9 @@ def configure_matplotlib_fonts():
                     if chunk:
                         f.write(chunk)
                         
-            print(f"字体下载完成，保存到: {font_path}")
+            logger.info(f"字体下载完成，保存到: {font_path}")
         except Exception as e:
-            print(f"下载字体时出错: {str(e)}")
+            logger.error(f"下载字体时出错: {str(e)}")
             # 使用系统默认字体作为后备
             font_path = None
     
@@ -122,7 +124,7 @@ class HtmlVisualizationToolkit:
                 self.llm_base_url = self.llm_base_url.rstrip('/')
             self.llm_api_url = self.llm_base_url + '/chat/completions'
         except Exception as e:
-            print(f"初始化LLM配置时出错: {str(e)}")
+            logger.error(f"初始化LLM配置时出错: {str(e)}")
             self.llm_base_url = "https://api.deepseek.ai.com/v1"
             self.llm_api_key = ""
             self.llm_model = "deepseek-chat"
@@ -136,7 +138,7 @@ class HtmlVisualizationToolkit:
         workspace_path = self.get_workspace_path()
         text_files = []
         
-        print(f"正在扫描工作区: {workspace_path}")
+        logger.info(f"正在扫描工作区: {workspace_path}")
         
         for ext in ['*.txt', '*.md', '*.json', '*.csv']:
             file_paths = glob.glob(os.path.join(workspace_path, ext))
@@ -149,17 +151,17 @@ class HtmlVisualizationToolkit:
                             'filename': os.path.basename(file_path),
                             'content': content
                         })
-                        print(f"已读取文件: {os.path.basename(file_path)}")
+                        logger.info(f"已读取文件: {os.path.basename(file_path)}")
                 except Exception as e:
-                    print(f"读取文件 {file_path} 时出错: {str(e)}")
+                    logger.error(f"读取文件 {file_path} 时出错: {str(e)}")
         
-        print(f"共找到 {len(text_files)} 个文本文件")
+        logger.info(f"共找到 {len(text_files)} 个文本文件")
         return text_files
     
     def ask_llm(self, prompt, temperature=0.3, max_tokens=4096):
         """通过LLM获取回答"""
         try:
-            print("正在向LLM发送请求...", end='', flush=True)
+            logger.info("正在向LLM发送请求...")
             headers = {
                 "Content-Type": "application/json",
                 "Authorization": f"Bearer {self.llm_api_key}"
@@ -180,7 +182,7 @@ class HtmlVisualizationToolkit:
             )
             
             if response.status_code == 200:
-                print(" 成功")
+                logger.info(" 成功")
                 content = response.json()["choices"][0]["message"]["content"]
                 if content is not None:
                     # 处理带有'</think>'标签的模型
@@ -190,12 +192,12 @@ class HtmlVisualizationToolkit:
                     return content
                 return content
             else:
-                print(f" 失败: {response.status_code}")
-                print(f"LLM调用失败: {response.status_code} - {response.text}")
+                logger.error(f" 失败: {response.status_code}")
+                logger.error(f"LLM调用失败: {response.status_code} - {response.text}")
                 return None
         except Exception as e:
-            print(f" 错误")
-            print(f"调用LLM时出错: {str(e)}")
+            logger.error(f" 错误")
+            logger.error(f"调用LLM时出错: {str(e)}")
             return None
     
     def save_html_report(self, html_content, report_name="report"):
@@ -209,14 +211,14 @@ class HtmlVisualizationToolkit:
         filename = f"{safe_report_name}_{timestamp}.html"
         filepath = os.path.join(workspace_path, filename)
         
-        print(f"正在保存HTML报告到: {filepath}")
+        logger.info(f"正在保存HTML报告到: {filepath}")
         try:
             with open(filepath, 'w', encoding='utf-8') as f:
                 f.write(html_content)
-            print(f"HTML报告保存成功")
+            logger.info(f"HTML报告保存成功")
             return filepath
         except Exception as e:
-            print(f"保存HTML报告时出错: {str(e)}")
+            logger.error(f"保存HTML报告时出错: {str(e)}")
             return None
     
     def create_html_report(self, title=None, include_charts=True, chart_types=['all'], output_filename=None, user_query="", interactive_toc=True, animated=True, data_download=True):
@@ -236,12 +238,12 @@ class HtmlVisualizationToolkit:
             包含生成结果的字典
         """
         try:
-            print("=" * 50)
-            print("开始创建HTML报告")
-            print("=" * 50)
-            print(user_query)
+            logger.info("=" * 50)
+            logger.info("开始创建HTML报告")
+            logger.info("=" * 50)
+            logger.info(user_query)
             # 步骤1: 读取工作区文件
-            print("\n[步骤1/6] 读取工作区文件")
+            logger.info("\n[步骤1/6] 读取工作区文件")
             text_files = self.read_text_files_from_workspace()
             if not text_files:
                 return {
@@ -250,7 +252,7 @@ class HtmlVisualizationToolkit:
                 }
             
             # 步骤2: 生成报告大纲
-            print("\n[步骤2/6] 生成报告大纲")
+            logger.info("\n[步骤2/6] 生成报告大纲")
             outline = self.generate_outline(text_files, user_query)
             if outline is None:
                 return {
@@ -261,12 +263,12 @@ class HtmlVisualizationToolkit:
             # 如果提供了标题，覆盖大纲中的标题
             if title:
                 outline['title'] = title
-                print(f"使用自定义标题: {title}")
+                logger.info(f"使用自定义标题: {title}")
             else:
-                print(f"使用生成的标题: {outline['title']}")
+                logger.info(f"使用生成的标题: {outline['title']}")
             
             # 步骤3: 根据大纲重新组织内容
-            print("\n[步骤3/6] 根据大纲重新组织内容")
+            logger.info("\n[步骤3/6] 根据大纲重新组织内容")
             sections = self.reorganize_content(text_files, outline, user_query)
             if not sections:
                 return {
@@ -275,7 +277,7 @@ class HtmlVisualizationToolkit:
                 }
             
             # 步骤4: 分析每个子章节，判断是否适合生成图表
-            print("\n[步骤4/6] 分析内容并生成可视化")
+            logger.info("\n[步骤4/6] 分析内容并生成可视化")
             visualizations = {}
             chart_templates = {}
             
@@ -284,7 +286,7 @@ class HtmlVisualizationToolkit:
                 if 'all' in chart_types:
                     chart_types = ['line', 'bar', 'pie', 'scatter', 'radar', 'heatmap', 'bubble', 'treemap', 'sankey']
                     
-                print(f"包含图表类型: {', '.join(chart_types)}")
+                logger.info(f"包含图表类型: {', '.join(chart_types)}")
                 
                 # 创建线程安全的字典用于存储可视化结果
                 viz_lock = threading.Lock()
@@ -295,7 +297,7 @@ class HtmlVisualizationToolkit:
                 processed_count = 0
                 progress_lock = threading.Lock()
                 
-                print(f"总共需要处理 {total_subsections} 个子章节")
+                logger.info(f"总共需要处理 {total_subsections} 个子章节")
                 
                 # 处理可视化的内部函数
                 def process_visualization(i, section, j, subsection):
@@ -306,7 +308,7 @@ class HtmlVisualizationToolkit:
                         
                         with progress_lock:
                             processed_count += 1
-                            print(f"\n处理小节 ({processed_count}/{total_subsections}): {subsection['title']}")
+                            logger.info(f"\n处理小节 ({processed_count}/{total_subsections}): {subsection['title']}")
                         
                         # 分析内容是否适合生成图表
                         viz_info = self.analyze_content_for_visualization(subsection['content'], user_query)
@@ -355,7 +357,7 @@ class HtmlVisualizationToolkit:
                         }
                         
                         with progress_lock:
-                            print(f"已为小节 '{subsection['title']}' 生成图表")
+                            logger.info(f"已为小节 '{subsection['title']}' 生成图表")
                         
                         # 安全地将结果添加到共享字典中
                         with viz_lock:
@@ -377,7 +379,7 @@ class HtmlVisualizationToolkit:
                 
                 # 确定线程池大小，避免创建过多线程
                 max_workers = min(10, max(1, min(os.cpu_count() or 4, total_subsections)))
-                print(f"将使用 {max_workers} 个线程并行处理可视化")
+                logger.info(f"将使用 {max_workers} 个线程并行处理可视化")
                 
                 # 使用线程池并行处理所有可视化任务
                 with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -388,20 +390,20 @@ class HtmlVisualizationToolkit:
                         try:
                             result = future.result()
                         except Exception as e:
-                            print(f"获取可视化结果时出错: {str(e)}")
+                            logger.info(f"获取可视化结果时出错: {str(e)}")
                 
-                print(f"所有 {total_subsections} 个子章节的可视化处理完成")
-                print(f"共生成了 {len(visualizations)} 个图表")
+                logger.info(f"所有 {total_subsections} 个子章节的可视化处理完成")
+                logger.info(f"共生成了 {len(visualizations)} 个图表")
                 
             else:
-                print("生成内容不包含可视化数据，跳过图表生成")
+                logger.info("生成内容不包含可视化数据，跳过图表生成")
             
             # 步骤5: 使用商务风格主题生成HTML报告
-            print(f"\n[步骤5/6] 生成HTML报告")
+            logger.info(f"\n[步骤5/6] 生成HTML报告")
             html_content = self.generate_html_report_with_apple_theme(outline, sections, visualizations, user_query)
             
             # 步骤6: 保存HTML报告
-            print(f"\n[步骤6/6] 保存HTML报告")
+            logger.info(f"\n[步骤6/6] 保存HTML报告")
             if output_filename:
                 filename_prefix = output_filename
             else:
@@ -416,20 +418,20 @@ class HtmlVisualizationToolkit:
                     # 确保模板文件名也不含无效字符
                     safe_filename_prefix = re.sub(r'[\\/:*?"<>|]', '_', filename_prefix)
                     templates_path = os.path.join(self.get_workspace_path(), f"{safe_filename_prefix}_chart_templates.py")
-                    print(f"保存图表模板到: {templates_path}")
+                    logger.info(f"保存图表模板到: {templates_path}")
                     with open(templates_path, 'w', encoding='utf-8') as f:
                         f.write("# 图表生成模板\n\n")
                         for viz_id, template_info in chart_templates.items():
                             f.write(f"# {template_info['title']} - {template_info['chart_type']}\n")
                             f.write(template_info['template'])
                             f.write("\n\n")
-                    print(f"图表模板保存成功")
+                    logger.info(f"图表模板保存成功")
                 
-                print("\n" + "=" * 50)
-                print(f"HTML报告生成完成: {report_path}")
+                logger.info("\n" + "=" * 50)
+                logger.info(f"HTML报告生成完成: {report_path}")
                 if chart_templates:
-                    print(f"图表模板已保存: {templates_path}")
-                print("=" * 50)
+                    logger.info(f"图表模板已保存: {templates_path}")
+                logger.info("=" * 50)
                 
                 return {
                     "status": "success",
@@ -444,8 +446,8 @@ class HtmlVisualizationToolkit:
                 }
                 
         except Exception as e:
-            print(f"\n报告生成失败: {str(e)}")
-            print(f"详细错误: {traceback.format_exc()}")
+            logger.error(f"\n报告生成失败: {str(e)}")
+            logger.error(f"详细错误: {traceback.format_exc()}")
             return {
                 "status": "error",
                 "message": f"创建HTML报告时发生错误: {str(e)}"
@@ -454,7 +456,7 @@ class HtmlVisualizationToolkit:
     # 以下是原始函数改写为类方法的部分，将在后续实现
     def generate_outline(self, text_files, user_query=""):
         """根据工作区中的文本文件生成报告大纲"""
-        print("正在生成报告大纲...")
+        logger.info("正在生成报告大纲...")
         all_content = ""
         for file in text_files:
             all_content += f"文件名: {file['filename']}\n内容预览: {file['content'][:500]}...\n\n"
@@ -544,8 +546,8 @@ Note: content_from should indicate which files the content for that subsection s
                 try:
                     outline = json.loads(json_str)
                 except json.JSONDecodeError as e:
-                    print(f"JSON解析错误: {str(e)}")
-                    print(f"JSON字符串: {json_str}")
+                    logger.info(f"JSON解析错误: {str(e)}")
+                    logger.info(f"JSON字符串: {json_str}")
                     # 提供错误信息并返回空结构
                     return None
                 
@@ -559,12 +561,12 @@ Note: content_from should indicate which files the content for that subsection s
                 
                 return outline
             except Exception as e:
-                print(f"解析大纲JSON时出错: {str(e)}")
-                print(f"原始响应: {response}")
+                logger.error(f"解析大纲JSON时出错: {str(e)}")
+                logger.error(f"原始响应: {response}")
                 traceback.print_exc()  # 打印完整堆栈
                 return None
         else:
-            print("从LLM获取大纲响应失败")
+            logger.error("从LLM获取大纲响应失败")
             return None
     
     # 其他方法将转换为类方法，保持接口不变
@@ -590,7 +592,7 @@ Note: content_from should indicate which files the content for that subsection s
             html = markdown.markdown(text, extensions=['extra', 'nl2br', 'sane_lists', 'tables'])
             return html
         except Exception as e:
-            print(f"转换Markdown到HTML时出错: {str(e)}")
+            logger.error(f"转换Markdown到HTML时出错: {str(e)}")
             # 如果转换失败，返回原始文本，但将基本的Markdown标题和格式转换为HTML
             try:
                 # 转换标题
@@ -620,7 +622,7 @@ Note: content_from should indicate which files the content for that subsection s
     
     def reorganize_content(self, text_files, outline, user_query=""):
         """根据大纲重新组织内容，使用多线程并行处理LLM请求"""
-        print("正在根据大纲重新组织内容...")
+        logger.info("正在根据大纲重新组织内容...")
         filename_to_content = {file['filename']: file['content'] for file in text_files}
         reorganized_sections = []
         
@@ -632,7 +634,7 @@ Note: content_from should indicate which files the content for that subsection s
         processed_count = 0
         progress_lock = threading.Lock()
         
-        print(f"总共需要处理 {total_subsections} 个子章节")
+        logger.info(f"总共需要处理 {total_subsections} 个子章节")
         
         # 判断用户查询的语言
         is_chinese = bool(re.search(r'[\u4e00-\u9fff]', user_query)) if user_query else True
@@ -699,7 +701,7 @@ Note: Start writing directly from the body content, and you must write the conte
 """
                 
                 with progress_lock:
-                    print(f"处理子章节 [{section_idx+1}.{subsection_idx+1}]: {subsection['title']} ({processed_count+1}/{total_subsections})")
+                    logger.info(f"处理子章节 [{section_idx+1}.{subsection_idx+1}]: {subsection['title']} ({processed_count+1}/{total_subsections})")
                 
                 subsection_content = self.ask_llm(prompt)
                 result = {
@@ -711,11 +713,11 @@ Note: Start writing directly from the body content, and you must write the conte
                 
                 with progress_lock:
                     processed_count += 1
-                    print(f"完成子章节 [{section_idx+1}.{subsection_idx+1}]: {subsection['title']} ({processed_count}/{total_subsections})")
+                    logger.info(f"完成子章节 [{section_idx+1}.{subsection_idx+1}]: {subsection['title']} ({processed_count}/{total_subsections})")
                 
                 return result
             except Exception as e:
-                print(f"处理子章节 {subsection['title']} 时出错: {str(e)}")
+                logger.error(f"处理子章节 {subsection['title']} 时出错: {str(e)}")
                 return {
                     'title': subsection['title'],
                     'content': f"<p>内容生成失败: {str(e)}</p>",
@@ -726,7 +728,7 @@ Note: Start writing directly from the body content, and you must write the conte
         # 准备所有任务
         tasks = []
         for section_idx, section in enumerate(outline.get('sections', [])):
-            print(f"准备章节 {section_idx+1}/{len(outline.get('sections', []))}: {section['title']}")
+            logger.info(f"准备章节 {section_idx+1}/{len(outline.get('sections', []))}: {section['title']}")
             section_data = {
                 'title': section['title'],
                 'subsections': [None] * len(section.get('subsections', []))  # 预分配空间
@@ -741,7 +743,7 @@ Note: Start writing directly from the body content, and you must write the conte
         # 确定线程池大小，避免创建过多线程
         # 根据CPU数量和任务总数动态调整，但不超过10个线程
         max_workers = min(10, max(1, min(os.cpu_count() or 4, total_subsections)))
-        print(f"将使用 {max_workers} 个线程并行处理LLM请求")
+        logger.info(f"将使用 {max_workers} 个线程并行处理LLM请求")
         
         # 使用线程池并行处理所有任务
         with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -768,14 +770,14 @@ Note: Start writing directly from the body content, and you must write the conte
                             }
                 except Exception as e:
                     section_idx, section, subsection_idx, subsection = task
-                    print(f"获取子章节 {section['title']} - {subsection['title']} 的结果时出错: {str(e)}")
+                    logger.error(f"获取子章节 {section['title']} - {subsection['title']} 的结果时出错: {str(e)}")
                     with section_lock:
                         reorganized_sections[section_idx]['subsections'][subsection_idx] = {
                             'title': subsection['title'],
                             'content': f"<p>内容生成失败: {str(e)}</p>"
                         }
         
-        print(f"所有 {total_subsections} 个子章节处理完成")
+        logger.info(f"所有 {total_subsections} 个子章节处理完成")
         return reorganized_sections
     
     def analyze_content_for_visualization(self, section_content, user_query=""):
@@ -962,7 +964,7 @@ If the content is not suitable for visualization, then return:
     
     def generate_sample_data(self, visualization_info):
         """从提取的真实数据生成可视化数据集"""
-        print("处理可视化数据...", end='', flush=True)
+        logger.info("处理可视化数据...")
         try:
             # 获取图表类型并确保它是字符串
             chart_type_value = visualization_info.get('chart_type', '')
@@ -1035,7 +1037,7 @@ If the content is not suitable for visualization, then return:
             if df.shape[0] == 0 or df.shape[1] == 0:
                 return None
                 
-            print(" 成功")
+            logger.info(" 成功")
             return df
         
         except Exception as e:
@@ -1052,7 +1054,7 @@ If the content is not suitable for visualization, then return:
         if 'extracted_data' not in visualization_info or not visualization_info['extracted_data']:
             return None
         
-        print(f"创建{visualization_info.get('chart_type', '')}类型的可视化图表...", end='', flush=True)
+        logger.info(f"创建{visualization_info.get('chart_type', '')}类型的可视化图表...")
         
         # 获取图表类型并确保它是字符串
         chart_type_value = visualization_info.get('chart_type', '')
@@ -1094,7 +1096,7 @@ If the content is not suitable for visualization, then return:
             return None
         
         # 打印数据预览，以便验证
-        print(f"\n数据预览 (前5行):\n{sample_data.head().to_string()}\n")
+        logger.info(f"\n数据预览 (前5行):\n{sample_data.head().to_string()}\n")
         
         # 创建可视化
         try:
@@ -1146,9 +1148,9 @@ If the content is not suitable for visualization, then return:
                 else:
                     # 非时间序列数据
                     # 转置数据以便更好地展示
-                    df_melted = sample_data.reset_index().melt(id_vars='index')
-                    fig = px.line(df_melted, x='index', y='value', color='variable',
-                                title=title, labels={'index': 'Category', 'value': 'Value', 'variable': 'Metric'},
+                    df_melted = sample_data.reset_index().melt(id_vars='index', value_name='val')
+                    fig = px.line(df_melted, x='index', y='val', color='variable',
+                                title=title, labels={'index': 'Category', 'val': 'Value', 'variable': 'Metric'},
                                 color_discrete_sequence=custom_palette)
                     
                 fig.update_layout(
@@ -1167,17 +1169,17 @@ If the content is not suitable for visualization, then return:
             
             elif chart_type in ['柱状图', '条形图', 'bar chart', 'bar graph', 'histogram']:
                 # 柱状图
-                df_melted = sample_data.reset_index().melt(id_vars='index')
+                df_melted = sample_data.reset_index().melt(id_vars='index', value_name='val')
                 
                 if 'variable' in df_melted.columns:
                     # 使用variable分组，为每个组分配不同颜色
-                    fig = px.bar(df_melted, x='index', y='value', color='variable',
-                                title=title, labels={'index': 'Category', 'value': 'Value', 'variable': 'Metric'},
+                    fig = px.bar(df_melted, x='index', y='val', color='variable',
+                                title=title, labels={'index': 'Category', 'val': 'Value', 'variable': 'Metric'},
                                 barmode='group', color_discrete_sequence=custom_palette)
                 else:
                     # 为每个柱子分配不同颜色
-                    fig = px.bar(df_melted, x='index', y='value',
-                                title=title, labels={'index': 'Category', 'value': 'Value'},
+                    fig = px.bar(df_melted, x='index', y='val',
+                                title=title, labels={'index': 'Category', 'val': 'Value'},
                                 color='index', color_discrete_sequence=custom_palette)
                 
                 fig.update_layout(
@@ -1375,11 +1377,11 @@ If the content is not suitable for visualization, then return:
             
             elif chart_type in ['树状图', 'treemap', 'tree map']:
                 # 树状图
-                df_melted = sample_data.reset_index().melt(id_vars='index')
+                df_melted = sample_data.reset_index().melt(id_vars='index', value_name='val')
                 fig = px.treemap(
                     df_melted, 
                     path=['variable', 'index'], 
-                    values='value',
+                    values='val',
                     title=title,
                     color_discrete_sequence=extended_palette
                 )
@@ -1451,7 +1453,7 @@ If the content is not suitable for visualization, then return:
             
             # 如果没有创建图表，返回None
             if fig is None:
-                print(" 失败：不支持的图表类型")
+                logger.info(" 失败：不支持的图表类型")
                 return None
             
             # 设置通用布局属性
@@ -1475,7 +1477,7 @@ If the content is not suitable for visualization, then return:
             img_bytes = fig.to_image(format="png", width=800, height=500, scale=2)
             img_base64 = base64.b64encode(img_bytes).decode('utf-8')
             
-            print(" 成功")
+            logger.info(" 成功")
             
             # 准备返回数据
             result = {
@@ -1894,13 +1896,13 @@ If there are no suitable quantitative metrics in the content, please return:
                     
                 return metrics_data['metrics']
             except json.JSONDecodeError as e:
-                print(f"解析指标JSON时出错: {str(e)}")
+                logger.error(f"解析指标JSON时出错: {str(e)}")
                 return []
             except Exception as e:
-                print(f"处理指标时出错: {str(e)}")
+                logger.error(f"处理指标时出错: {str(e)}")
                 return []
         except Exception as e:
-            print(f"提取关键指标时出错: {str(e)}")
+            logger.error(f"提取关键指标时出错: {str(e)}")
             return []
     
     def create_metric_cards_html(self, metrics):
@@ -1973,7 +1975,7 @@ If there are no suitable quantitative metrics in the content, please return:
     
     def generate_html_report_with_apple_theme(self, outline, sections, visualizations, user_query=""):
         """使用类Apple设计风格生成HTML报告"""
-        print("生成HTML报告...")
+        logger.info("生成HTML报告...")
         
         # 获取主题样式
         apple_theme = self.get_apple_theme()
@@ -2092,6 +2094,8 @@ If there are no suitable quantitative metrics in the content, please return:
             box-sizing: border-box;
             margin: 0;
             padding: 0;
+            scrollbar-width: thin;
+            scrollbar-color: #C2C8CB transparent;
         }}
         
         @keyframes fadeIn {{
@@ -2118,6 +2122,27 @@ If there are no suitable quantitative metrics in the content, please return:
             min-height: 100vh;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
+        }}
+        
+        ::-webkit-scrollbar {{
+            width: 11px;
+            background: transparent;
+        }}
+
+        ::-webkit-scrollbar-thumb {{
+            background: #C2C8CB;
+            border-radius: 6px;
+            min-height: 40px;
+            border: 2px solid transparent;
+            background-clip: padding-box;
+        }}
+
+        ::-webkit-scrollbar-thumb:hover {{
+            background: #A1A2A3;
+        }}
+
+        ::-webkit-scrollbar-track {{
+            background: transparent;
         }}
         
         #toc {{
@@ -2848,31 +2873,31 @@ def main(params=None):
     try:
         toolkit = HtmlVisualizationToolkit()
         
-        print("\n" + "=" * 60)
-        print("HTML可视化报告生成工具")
-        print("=" * 60)
+        logger.info("\n" + "=" * 60)
+        logger.info("HTML可视化报告生成工具")
+        logger.info("=" * 60)
         
         # 从参数中获取用户查询（如果有的话）
         user_query = ""
         if params and isinstance(params, dict) and 'user_query' in params:
             user_query = params['user_query']
         
-        print("\n正在与模型交互获取报告参数...")
+        logger.info("\n正在与模型交互获取报告参数...")
         
         # 与大模型交互获取参数
         user_params = toolkit.ask_model_for_parameters(user_query)
         
-        print("\n获取到的参数:")
+        logger.info("\n获取到的参数:")
         if user_params.get('report_title'):
-            print(f"- 报告标题: {user_params.get('report_title')}")
+            logger.info(f"- 报告标题: {user_params.get('report_title')}")
         if 'include_charts' in user_params:
-            print(f"- 包含图表: {'是' if user_params.get('include_charts', True) else '否'}")
+            logger.info(f"- 包含图表: {'是' if user_params.get('include_charts', True) else '否'}")
         if user_params.get('chart_types'):
-            print(f"- 图表类型: {', '.join(user_params.get('chart_types', ['all']))}")
+            logger.info(f"- 图表类型: {', '.join(user_params.get('chart_types', ['all']))}")
         if user_params.get('output_filename'):
-            print(f"- 输出文件名: {user_params.get('output_filename')}")
+            logger.info(f"- 输出文件名: {user_params.get('output_filename')}")
             
-        print("\n开始生成HTML报告...")
+        logger.info("\n开始生成HTML报告...")
         
         # 使用获取到的参数创建报告
         result = toolkit.create_html_report(
@@ -2884,13 +2909,13 @@ def main(params=None):
         )
         
         if result["status"] == "success":
-            print(f"报告生成成功: {result['report_path']}")
+            logger.info(f"报告生成成功: {result['report_path']}")
         else:
-            print(f"报告生成失败: {result['message']}")
+            logger.info(f"报告生成失败: {result['message']}")
             
         return result
     except Exception as e:
-        print(f"执行HTML报告生成工具时出错: {traceback.format_exc()}")
+        logger.error(f"执行HTML报告生成工具时出错: {traceback.format_exc()}")
         return {
             "status": "error",
             "message": f"执行出错: {str(e)}"
@@ -2898,5 +2923,5 @@ def main(params=None):
 
 if __name__ == "__main__":
     result = main()
-    print(json.dumps(result, ensure_ascii=False, indent=2))
+    logger.info(json.dumps(result, ensure_ascii=False, indent=2))
 

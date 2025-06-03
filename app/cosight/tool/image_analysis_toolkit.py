@@ -23,6 +23,7 @@ import numpy as np
 import soundfile as sf
 import asyncio
 
+from app.common.logger_util import logger
 
 class VisionTool():
     def __init__(self, llm_config):
@@ -99,5 +100,5 @@ class VisionTool():
         return full_response
 
     def ask_question_about_image(self, image_path_url, task_prompt):
-        print(f"Using Tool: {self.name}")
+        logger.info(f"Using Tool: {self.name}")
         return asyncio.run(self._run(image_path_url, task_prompt))

@@ -14,23 +14,20 @@
 #    under the License.
 
 from docx2markdown._docx_to_markdown import docx_to_markdown
-import openai
 import requests
 import mimetypes
 import json
 from retry import retry
-from typing import List, Dict, Any, Optional, Tuple, Literal
-from PIL import Image
-from io import BytesIO
-from bs4 import BeautifulSoup
-import asyncio
-from urllib.parse import urlparse, urljoin
+from typing import List, Optional, Tuple
+from urllib.parse import urlparse
 import os
 import subprocess
 import xmltodict
-import asyncio
 import nest_asyncio
+
 from app.cosight.tool.excel_toolkit import extract_excel_content
+from app.common.logger_util import logger
+
 nest_asyncio.apply()
 
 
@@ -44,6 +41,9 @@ class DocumentProcessingToolkit:
         self.cache_dir = "tmp/"
         if cache_dir:
             self.cache_dir = cache_dir
+            
+        proxy = os.environ.get("PROXY")
+        self.proxies = {"http": proxy, "https": proxy} if proxy else None
 
     @retry((requests.RequestException))
     def extract_document_content(self, document_path: str) -> Tuple[bool, str]:
@@ -56,7 +56,7 @@ class DocumentProcessingToolkit:
         Returns:
             Tuple[bool, str]: A tuple containing a boolean indicating whether the document was processed successfully, and the content of the document (if success).
         """
-        print(f"Calling extract_document_content function with document_path=`{document_path}`")
+        logger.info(f"Calling extract_document_content function with document_path=`{document_path}`")
         if any(document_path.endswith(ext) for ext in ['txt', 'html', 'md']):
             with open(document_path, 'r', encoding='utf-8') as f:
                 content = f.read()
@@ -91,11 +91,11 @@ class DocumentProcessingToolkit:
 
             try:
                 data = xmltodict.parse(content)
-                print(f"The extracted xml data is: {data}")
+                logger.info(f"The extracted xml data is: {data}")
                 return data
 
             except Exception as e:
-                print(f"The raw xml data is: {content}")
+                logger.error(f"The raw xml data is: {content}")
                 return content
 
         if self._is_webpage(document_path):
@@ -143,7 +143,7 @@ class DocumentProcessingToolkit:
 
                     return extracted_text
                 except Exception as ex:
-                    print(f'parse document error : {str(ex)}')
+                    logger.error(f'parse document error : {str(ex)}')
             return ""
 
     def _is_webpage(self, url: str) -> bool:
@@ -159,7 +159,7 @@ class DocumentProcessingToolkit:
             if 'text/html' in file_type:
                 return True
 
-            response = requests.head(url, allow_redirects=True, timeout=10)
+            response = requests.head(url, allow_redirects=True, timeout=10, proxies=self.proxies)
             content_type = response.headers.get("Content-Type", "").lower()
 
             if "text/html" in content_type:
@@ -169,7 +169,7 @@ class DocumentProcessingToolkit:
 
         except requests.exceptions.RequestException as e:
             # raise RuntimeError(f"Error while checking the URL: {e}")
-            print(f"Error while checking the URL: {e}")
+            logger.error(f"Error while checking the URL: {e}")
             return False
 
         except TypeError:
@@ -178,7 +178,7 @@ class DocumentProcessingToolkit:
     def _download_file(self, url: str):
         r"""Download a file from a URL and save it to the cache directory."""
         try:
-            response = requests.get(url, stream=True)
+            response = requests.get(url, stream=True, proxies=self.proxies)
             response.raise_for_status()
             file_name = url.split("/")[-1]
 
@@ -191,7 +191,7 @@ class DocumentProcessingToolkit:
             return file_path
 
         except requests.exceptions.RequestException as e:
-            print(f"Error downloading the file: {e}")
+            logger.error(f"Error downloading the file: {e}")
 
     def _get_formatted_time(self) -> str:
         import time

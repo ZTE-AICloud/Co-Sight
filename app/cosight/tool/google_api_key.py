@@ -18,6 +18,8 @@ import os
 import datetime
 from pathlib import Path
 
+from app.common.logger_util import logger
+
 file_timestamp = datetime.datetime.today().strftime('%Y%m%d')
 
 PROJECT_ROOT_PATH = Path(__file__).parent.parent.parent.parent.parent
@@ -32,7 +34,7 @@ def load_josn(file_path: str):
         with open(file_path, 'r', encoding='utf-8') as file:
             return json.load(file)
     except Exception as e:
-        print(f"load {file_path} error: {e}")
+        logger.error(f"load {file_path} error: {e}")
         return {}
 
 def load_key_count(api_key_file: str , api_key_count_file: str):
@@ -57,9 +59,9 @@ def save_key_count(file_path: str, api_key_count: dict):
     try:
         with open(file_path, 'w', encoding='utf-8') as file:
             json.dump(api_key_count, file, ensure_ascii=False, indent=2)
-        print(f"save {API_KEY_COUNT.as_posix()}")
+        logger.info(f"save {API_KEY_COUNT.as_posix()}")
     except Exception as e:
-        print(f"save {API_KEY_COUNT.as_posix()} error: {e}")
+        logger.error(f"save {API_KEY_COUNT.as_posix()} error: {e}")
 
 class APIKEYS:
     def __init__(self, api_key_file, api_key_count_file):
@@ -86,7 +88,7 @@ class APIKEYS:
                 if count < self.limit:
                     self.api_key_count[name] = count + 1
                     save_key_count(self.api_key_count_file, self.api_key_count)
-                    print(f'GOOGLE_API_KEY use {name} {count + 1}')
+                    logger.info(f'GOOGLE_API_KEY use {name} {count + 1}')
                     return self.account[name]['GOOGLE_API_KEY'], self.account[name]['SEARCH_ENGINE_ID']
         return GOOGLE_API_KEY, SEARCH_ENGINE_ID
 

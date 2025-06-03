@@ -191,7 +191,7 @@ class ManusBaseAction(BaseAction):
         return new_search_results
 
     def open_url(self, url: str) -> dict:
-        # print(f'Start Browsing: {url}')
+        # logger.info(f'Start Browsing: {url}')
         web_success, web_content = self.fetcher.fetch(url)
         if web_success:
             return {'type': 'text', 'content': web_content}

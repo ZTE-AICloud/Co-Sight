@@ -93,7 +93,7 @@ class CompressedRotatingFileHandler(RotatingFileHandler):
             self.stream = self._open()
 
 
-def get_logger(name="manus"):
+def get_logger(name="co-sight"):
     log = origin_logging.getLogger(name)
     log.setLevel(origin_logging.INFO)
 

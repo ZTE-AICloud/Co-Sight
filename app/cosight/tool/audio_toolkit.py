@@ -24,6 +24,7 @@ import soundfile as sf
 import asyncio
 from urllib.parse import urlparse
 
+from app.common.logger_util import logger
 
 class AudioTool:
     def __init__(self, llm_config):
@@ -116,5 +117,5 @@ class AudioTool:
         return full_response
 
     def speech_to_text(self, audio_path: str, task_prompt: str, ):
-        print(f"Using Tool: {self.name}")
+        logger.info(f"Using Tool: {self.name}")
         return asyncio.run(self.audio_recognition(audio_path, task_prompt))

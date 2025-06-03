@@ -15,7 +15,6 @@ browser-use==0.1.41
 xmltodict==0.14.2
 soundfile==0.13.1
 wikipedia==1.4.0
-soundfile==0.13.1
 seaborn==0.13.2
 markdown==3.8
 plotly==6.0.1

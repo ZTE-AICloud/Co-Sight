@@ -15,11 +15,13 @@
 
 import shlex
 import sys
+import threading
 from functools import partial
 from typing import List, Literal, Optional, Union
+
 from app.cosight.tool.interpreters.internal_python_interpreter import InternalPythonInterpreter
 from app.cosight.tool.interpreters.subprocess_interpreter import SubprocessInterpreter
-import threading
+from app.common.logger_util import logger
 
 if sys.platform == 'win32':
     print('win32 replace shlex.split')
@@ -87,7 +89,7 @@ class CodeToolkit:
         # ruff: noqa: E501
         content = f"Executed the code below:\n```py\n{code}\n```\n> Executed Results:\n{output}"
         if self.verbose:
-            print(content)
+            logger.info(content)
         return content
 
 

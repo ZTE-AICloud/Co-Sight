@@ -20,6 +20,7 @@ import json
 import os
 import tempfile
 
+from app.common.logger_util import logger
 
 
 class JsonUtil:
@@ -28,7 +29,7 @@ class JsonUtil:
     def write_data(data, data_path):
         if not os.path.isfile(data_path):
             # Create new file and write content
-            print(f'not find, create new file {data_path}')
+            logger.info(f'not find, create new file {data_path}')
             dst_dir = os.path.dirname(data_path)
             if not os.path.exists(dst_dir):
                 os.makedirs(dst_dir)
@@ -38,7 +39,7 @@ class JsonUtil:
     @staticmethod
     def read_data(data_path):
         if not os.path.isfile(data_path):
-            print(f'not find: {data_path}')
+            logger.info(f'not find: {data_path}')
             return {}
         with open(data_path, 'r', encoding='utf-8') as f:
             data = json.load(f)

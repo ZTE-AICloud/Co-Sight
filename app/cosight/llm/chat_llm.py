@@ -17,6 +17,7 @@ from typing import List, Dict, Any
 from openai import OpenAI
 
 from app.cosight.task.time_record_util import time_record
+from app.common.logger_util import logger
 
 
 class ChatLLM:
@@ -61,7 +62,7 @@ class ChatLLM:
             temperature=self.temperature,
             max_tokens=self.max_tokens
         )
-        # print(f"response is {response}")
+        logger.info(f"response is {response}")
         # 去除think标签
         content = response.choices[0].message.content
         if content is not None and '</think>' in content:
@@ -79,7 +80,7 @@ class ChatLLM:
             temperature=self.temperature,
             max_tokens=self.max_tokens
         )
-        # print(f"response is {response}")
+        logger.info(f"response is {response}")
         # 去除think标签
         content = response.choices[0].message.content
         if content is not None and '</think>' in content:

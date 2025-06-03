@@ -18,6 +18,7 @@ from typing import List, Optional, Dict
 
 from app.cosight.task.plan_report_manager import plan_report_event_manager
 from app.cosight.task.todolist import Plan
+from app.common.logger_util import logger
 
 
 class PlanToolkit:
@@ -38,13 +39,13 @@ class PlanToolkit:
         Returns:
             str: Success message with plan details
         """
-        print(f"create plan, title is {title}, steps is {steps}, dependencies({type(dependencies)}) is {dependencies}")
+        logger.info(f"create plan, title is {title}, steps is {steps}, dependencies({type(dependencies)}) is {dependencies}")
 
         if dependencies and isinstance(dependencies, str):
             try:
                 dependencies = ast.literal_eval(dependencies)
             except Exception as e:
-                print(f"Plan Warning: not literal_eval('{dependencies}') to dict")
+                logger.info(f"Plan Warning: not literal_eval('{dependencies}') to dict")
                 dependencies = None
 
         # Generate sequential dependencies if None
@@ -54,7 +55,7 @@ class PlanToolkit:
         self.plan.update(title,steps,dependencies)
         result = f"Plan created successfully\n\n{self.plan.format()}"
         plan_report_event_manager.publish("plan_created", self.plan)
-        print(result)
+        logger.info(result)
         return result
 
     def update_plan(self, title: Optional[str] = None, steps: Optional[List[str]] = None,
@@ -72,17 +73,17 @@ class PlanToolkit:
         if self.plan is None:
             return "No plan exists. Create a plan with the 'create' command."
 
-        print(f"update plan, title is {title}, steps is {steps}, dependencies({type(dependencies)}) is {dependencies}")
+        logger.info(f"update plan, title is {title}, steps is {steps}, dependencies({type(dependencies)}) is {dependencies}")
 
         if dependencies and isinstance(dependencies, str):
             try:
                 dependencies = ast.literal_eval(dependencies)
             except Exception as e:
-                print(f"Plan Warning: not literal_eval('{dependencies}') to dict")
+                logger.info(f"Plan Warning: not literal_eval('{dependencies}') to dict")
                 dependencies = None
 
         self.plan.update(title, steps, dependencies)
         result = f"Plan updated successfully\n\n{self.plan.format()}"
         plan_report_event_manager.publish("plan_updated", self.plan)
-        print(f"update result is {result}")
+        logger.info(f"update result is {result}")
         return result

@@ -17,6 +17,7 @@ import os
 import requests
 from tqdm import tqdm
 
+from app.common.logger_util import logger
 
 def download_file(url, dest_path):
     chunk_size = 1024
@@ -25,10 +26,12 @@ def download_file(url, dest_path):
     headers = {"Range": f"bytes={resume_byte_pos}-"}
     # 如果文件存在，直接覆盖（删除再下）
     if os.path.exists(dest_path):
-        print(f"⚠️ 文件已存在，正在覆盖: {dest_path}")
+        logger.info(f"⚠️ 文件已存在，正在覆盖: {dest_path}")
         os.remove(dest_path)
         # 发起请求，获取文件大小
-    with requests.get(url, stream=True) as response:
+    proxy = os.environ.get("PROXY")
+    proxies = {"http": proxy, "https": proxy} if proxy else None
+    with requests.get(url, stream=True, proxies=proxies) as response:
         response.raise_for_status()
         total_size = int(response.headers.get('Content-Length', 0))
 
@@ -44,5 +47,5 @@ def download_file(url, dest_path):
                     f.write(chunk)
                     bar.update(len(chunk))
 
-    print(f"\n✅ 下载完成: {dest_path}")
+    logger.info(f"\n✅ 下载完成: {dest_path}")
     return f"\n✅ 下载完成: {dest_path}"

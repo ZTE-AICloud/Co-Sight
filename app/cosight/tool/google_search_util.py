@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import os
 from typing import List, Dict, Any
 
 from googlesearch import search
@@ -20,6 +21,8 @@ from bs4 import BeautifulSoup
 import random
 import asyncio
 import aiohttp
+
+from app.common.logger_util import logger
 
 async def fetch_url_content(url: str) -> str:
     """Fetch and parse content from a given URL"""
@@ -34,8 +37,7 @@ async def fetch_url_content(url: str) -> str:
             'Accept-Language': 'en-US,en;q=0.5',
             'Connection': 'keep-alive'
         }
-        
-
+        proxy = os.environ.get("PROXY")
         timeout = aiohttp.ClientTimeout(total=10)
         async with aiohttp.ClientSession(timeout=timeout) as session:
             async with session.get(url, headers=headers, proxy=proxy) as response:
@@ -79,7 +81,7 @@ def search_google(query: str, max_results: int = 5) -> List[Dict[str, Any]]:
         List[Dict[str, Any]]: A list of dictionaries where each dictionary
             represents a search result.
     """
-    print(f"search google for {query}")
+    logger.info(f"search google for {query}")
     responses: List[Dict[str, Any]] = []
     
     max_retries = 3
@@ -115,28 +117,5 @@ def search_google(query: str, max_results: int = 5) -> List[Dict[str, Any]]:
         except Exception as e:
             if attempt == max_retries - 1:  # Last attempt failed
                 responses.append({"error": f"Google search failed after {max_retries} attempts: {e}"})
-    # print(f"search google for {responses}")
+    # logger.info(f"search google for {responses}")
     return responses
-
-
-def main():
-    # Test search query
-    query = "中兴通讯"
-    results = search_google(query)
-    
-    # Print results
-    print("\nSearch Results:")
-    for result in results:
-        if "error" in result:
-            print(f"Error: {result['error']}")
-        else:
-            print(f"{result}")
-
-if __name__ == "__main__":
-    main()
-    # googleTrendsUrl = 'https://www.google.com/search'
-    # response = requests.get(googleTrendsUrl)
-    # if response.status_code == 200:
-    #     g_cookies = response.cookies.get_dict()
-    #     print(g_cookies)
-

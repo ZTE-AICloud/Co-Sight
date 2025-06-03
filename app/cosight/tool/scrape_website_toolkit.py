@@ -20,6 +20,8 @@ from typing import Any, Optional, Type
 import requests
 from bs4 import BeautifulSoup
 
+from app.common.logger_util import logger
+
 
 class ScrapeWebsiteTool:
     name: str = "Read website content"
@@ -40,6 +42,9 @@ class ScrapeWebsiteTool:
             website_url: str,
             cookies: Optional[dict] = None
     ):
+        proxy = os.environ.get("PROXY")
+        self.proxies = {"http": proxy, "https": proxy} if proxy else None
+
         if website_url is not None:
             self.website_url = website_url
             self.description = (
@@ -59,6 +64,7 @@ class ScrapeWebsiteTool:
             timeout=15,
             headers=self.headers,
             cookies=self.cookies if self.cookies else {},
+            proxies=self.proxies
         )
 
         page.encoding = page.apparent_encoding
@@ -72,6 +78,6 @@ class ScrapeWebsiteTool:
 
 def fetch_website_content(website_url):
     scrapeWebsiteTool = ScrapeWebsiteTool(website_url)
-    print(f'starting fetch {website_url} Content')
+    logger.info(f'starting fetch {website_url} Content')
     return asyncio.run(scrapeWebsiteTool._run(website_url))
 

@@ -13,8 +13,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import logging
-import os
 import platform
 import warnings
 from typing import Any, List, Optional, Type, Union
@@ -25,7 +23,7 @@ from langchain_core.callbacks import (
 from langchain_core.tools import BaseTool
 from pydantic import BaseModel, Field, model_validator
 
-logger = logging.getLogger(__name__)
+from app.common.logger_util import logger
 
 
 class ShellInput(BaseModel):
@@ -101,7 +99,7 @@ class ShellTool(BaseTool):  # type: ignore[override, override]
     ) -> str:
         """Run commands and return final output."""
 
-        print(f"Executing command:\n {commands}")  # noqa: T201
+        logger.info(f"Executing command:\n {commands}")  # noqa: T201
 
         try:
             if self.ask_human_input:
@@ -152,8 +150,8 @@ if __name__=="__main__":
     shell_tool = ShellTool()
     # 执行简单命令（无需确认）
     output = shell_tool.execute("playwright install")
-    print(output)
+    logger.info(output)
 
     # 处理错误情况
     output = shell_tool.execute("invalid_command")
-    print(output)
+    logger.info(output)

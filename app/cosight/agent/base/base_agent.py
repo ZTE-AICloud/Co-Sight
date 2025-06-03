@@ -25,6 +25,7 @@ from app.agent_dispatcher.infrastructure.entity.AgentInstance import AgentInstan
 from app.cosight.agent.base.skill_to_tool import convert_skill_to_tool
 from app.cosight.llm.chat_llm import ChatLLM
 from app.cosight.task.time_record_util import time_record
+from app.common.logger_util import logger
 
 
 class BaseAgent:
@@ -50,14 +51,14 @@ class BaseAgent:
     def execute(self, messages: List[Dict[str, Any]], step_index=None, max_iteration=10):
         for i in range(max_iteration):
             response = self.llm.create_with_tools(messages, self.tools)
-            print(f"index: {i}, response:{response}")
+            logger.info(f"index: {i}, response:{response}")
             
             # Process initial response
             result = self._process_response(response, messages, step_index)
             if result:
                 return result
 
-            print(f"iter {i} for {self.agent_instance.instance_name}")
+            logger.info(f"iter {i} for {self.agent_instance.instance_name}")
 
         if max_iteration > 1:
             return self._handle_max_iteration(messages, step_index)
@@ -123,7 +124,7 @@ class BaseAgent:
         messages.append({"role": "user", "content": "Summarize the above conversation, use mark_step to mark the step"})
         mark_step_tools = [tool for tool in self.tools if tool['function']['name'] == 'mark_step']
         response = self.llm.create_with_tools(messages, mark_step_tools)
-        print(f"max_iteration response:{response}")
+        logger.info(f"max_iteration response:{response}")
         
         result = self._process_response(response, messages, step_index)
         if result:

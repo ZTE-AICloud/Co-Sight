@@ -15,6 +15,7 @@
 
 import time
 from functools import wraps
+from app.common.logger_util import logger
 
 def time_record(func):
     """
@@ -31,6 +32,6 @@ def time_record(func):
             end_time = time.time()
             elapsed_time = end_time - start_time
             current_time = time.strftime("%H:%M:%S", time.localtime())
-            print(f"[{current_time}] Function '{func.__name__}' called with args: {kwargs.get('function_name','') or kwargs.get('step_index','')}: executed in {elapsed_time:.4f} seconds")
+            logger.info(f"[{current_time}] Function '{func.__name__}' called with args: {kwargs.get('function_name','') or kwargs.get('step_index','')}: executed in {elapsed_time:.4f} seconds")
         return result
     return wrapper

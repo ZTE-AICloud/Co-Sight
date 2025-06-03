@@ -19,6 +19,9 @@ import os
 import platform
 from pathlib import PureWindowsPath, PurePosixPath
 
+from app.common.logger_util import logger
+
+
 # 在文件开头添加全局字典
 folder_files_map: Dict[str, List[str]] = {}
 subfolder_files_map: Dict[str, List[str]] = {}
@@ -54,7 +57,7 @@ class Plan:
         返回:
             List[int]: 可立即执行的步骤索引列表（返回所有符合条件的步骤）
         """
-        print(f"get_ready_steps dependencies: {self.dependencies}")
+        logger.info(f"get_ready_steps dependencies: {self.dependencies}")
         ready_steps = []
         for step_index in range(len(self.steps)):
             # 获取该步骤的所有依赖
@@ -106,14 +109,14 @@ class Plan:
             self.step_statuses = new_statuses
             self.step_notes = new_notes
             self.step_details = new_details
-        print(f"before update dependencies: {self.dependencies}")
+        logger.info(f"before update dependencies: {self.dependencies}")
         if dependencies:
             self.dependencies.clear()
             dependencies = {int(k): v for k, v in dependencies.items()}
             self.dependencies.update(dependencies)
         else:
             self.dependencies = {i: [i-1] for i in range(1, len(steps))} if len(steps) > 1 else {}
-        print(f"after update dependencies: {self.dependencies}")
+        logger.info(f"after update dependencies: {self.dependencies}")
 
 
     def mark_step(self, step_index: int, step_status: Optional[str] = None, step_notes: Optional[str] = None) -> None:
@@ -127,7 +130,7 @@ class Plan:
         # Validate step index
         if step_index < 0 or step_index >= len(self.steps):
             raise ValueError(f"Invalid step_index: {step_index}. Valid indices range from 0 to {len(self.steps) - 1}.")
-        print(f"step_index: {step_index}, step_status is {step_status},step_notes is {step_notes}")
+        logger.info(f"step_index: {step_index}, step_status is {step_status},step_notes is {step_notes}")
         step = self.steps[step_index]
 
         # Update step status
@@ -260,7 +263,7 @@ def extract_and_replace_paths(text: str, folder_name: str, work_space_path: str)
     new_text = re.sub(path_file_pattern, replace_path_file, text)
     new_text = re.sub(quoted_file_pattern, replace_quoted_file, new_text)
 
-    print(f"extract and replace paths >>>>>>>>>>>>>>>>>>>>>>>>>>>> work_space_path: {work_space_path}")
+    logger.info(f"extract and replace paths >>>>>>>>>>>>>>>>>>>>>>>>>>>> work_space_path: {work_space_path}")
     # 再次读取工作空间目录下的所有文件
     if work_space_path:
         try:
@@ -276,7 +279,7 @@ def extract_and_replace_paths(text: str, folder_name: str, work_space_path: str)
 
             # 遍历工作空间目录下的所有子目录
             for root, dirs, files in os.walk(work_space_path):
-                print(f"root:{root}")
+                logger.info(f"root:{root}")
                 if root != work_space_path:  # 跳过根目录，因为已经在上面处理过了
                     # 获取相对路径
                     rel_path = os.path.relpath(root, work_space_path)
@@ -286,7 +289,7 @@ def extract_and_replace_paths(text: str, folder_name: str, work_space_path: str)
                     # 初始化该文件夹的文件列表（如果不存在）
                     if folder_key not in subfolder_files_map:
                         subfolder_files_map[folder_key] = []
-                        print(f"subfolder_files_map: {subfolder_files_map}")
+                        logger.info(f"subfolder_files_map: {subfolder_files_map}")
                     
                     for filename in files:
                         # 如果文件名不在该文件夹的列表中，则添加
@@ -298,9 +301,9 @@ def extract_and_replace_paths(text: str, folder_name: str, work_space_path: str)
                                 "name": filename,
                                 "path": full_rel_path
                             })
-                            print(f"dirs_result_list:{result_list}")
+                            logger.info(f"dirs_result_list:{result_list}")
         except Exception as e:
-            print(f"Error reading workspace directory: {e}")
+            logger.error(f"Error reading workspace directory: {e}")
 
     return new_text, result_list
 
