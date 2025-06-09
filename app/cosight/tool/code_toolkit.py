@@ -15,12 +15,12 @@
 
 import shlex
 import sys
+import threading
 from functools import partial
 from typing import List, Literal, Optional, Union
 from app.cosight.tool.interpreters.internal_python_interpreter import InternalPythonInterpreter
 from app.cosight.tool.interpreters.subprocess_interpreter import SubprocessInterpreter
-import threading
-from cosight_server.sdk.common.logger_util import logger
+from app.common.logger_util import logger
 
 if sys.platform == 'win32':
     logger.info('win32 replace shlex.split')

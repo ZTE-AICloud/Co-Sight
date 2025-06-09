@@ -17,8 +17,9 @@ from threading import Lock
 from typing import Callable, Dict, List, Any, Optional
 from concurrent.futures import ThreadPoolExecutor
 
+
 from app.cosight.task.todolist import Plan
-from cosight_server.sdk.common.logger_util import logger
+from app.common.logger_util import logger
 
 
 class EventManager:

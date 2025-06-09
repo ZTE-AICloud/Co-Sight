@@ -16,7 +16,7 @@
 from fastapi import APIRouter
 
 from cosight_server.sdk.common.api_result import json_result
-from cosight_server.sdk.common.logger_util import logger
+from app.common.logger_util import logger
 
 feedbackRouter = APIRouter()
 

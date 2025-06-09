@@ -26,6 +26,7 @@ FORMATTER = origin_logging.Formatter(
     "%Y-%m-%d %H:%M:%S")
 
 
+
 class CompressedRotatingFileHandler(RotatingFileHandler):
 
     def __init__(self, filename, max_bytes, backup_count):
@@ -107,12 +108,12 @@ class CompressedRotatingFileHandler(RotatingFileHandler):
             self.stream = self._open()
 
 
-def get_logger(name="common", dir="logs"):
+def get_logger(name="core-sight"):
     log = origin_logging.getLogger(name)
     log.setLevel(origin_logging.INFO)
 
     if not log.handlers:
-        log.addHandler(get_file_handler(name, dir))
+        log.addHandler(get_file_handler(name))
 
         # 可选：同时输出到控制台
         stream_handler = origin_logging.StreamHandler()
@@ -123,8 +124,9 @@ def get_logger(name="common", dir="logs"):
     return log
 
 
-def get_file_handler(suffix, log_dir):
+def get_file_handler(suffix):
     # 创建 logs 目录，如果不存在的话
+    log_dir = "logs"
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
 
@@ -137,7 +139,7 @@ def get_file_handler(suffix, log_dir):
     return fh
 
 
-logger = get_logger("cosight","../../logs")
+logger = get_logger()
 
 
 def new_exception(msg, *args, **kwargs):
@@ -150,5 +152,5 @@ logger.exception = new_exception
 
 def raise_if(condition: bool, message: str = ""):
     if condition:
-        logger.error("traffic-ops error: " + message)
+        logger.error("co-sight error: " + message)
         raise Exception(message)

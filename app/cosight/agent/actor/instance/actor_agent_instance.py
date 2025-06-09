@@ -18,7 +18,7 @@ from app.agent_dispatcher.infrastructure.entity.AgentTemplate import AgentTempla
 from app.cosight.agent.actor.instance.actor_agent_skill import *
 
 
-def create_actor_instance(agent_instance_name):
+def create_actor_instance(agent_instance_name, work_space_path):
     agent_params = {
         'instance_id': f"actor_{agent_instance_name}",
         'instance_name': f"Actor {agent_instance_name}",
@@ -30,12 +30,12 @@ def create_actor_instance(agent_instance_name):
         'description_en': 'Specialized assistant for task execution and operations',
         "service_name": 'execution_service',
         "service_version": 'v1',
-        "template": create_actor_template("actor_agent_template")
+        "template": create_actor_template("actor_agent_template", work_space_path)
     }
     return AgentInstance(**agent_params)
 
 
-def create_actor_template(template_name):
+def create_actor_template(template_name, work_space_path):
     template_content = {
         'template_name': template_name,
         'template_version': 'v1',
@@ -50,7 +50,7 @@ def create_actor_template(template_name):
         'default_replay_zh': '任务执行专家',
         'default_replay_en': 'Task Execution Expert',
         "icon": "",
-        'skills': [execute_code_skill(),
+        'skills': [execute_code_skill(work_space_path),
                    search_baidu_skill(),
                    mark_step_skill(),
                    browser_use_skill(),

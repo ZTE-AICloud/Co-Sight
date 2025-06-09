@@ -25,7 +25,7 @@ from fastapi.responses import StreamingResponse
 
 from llm import llm_for_plan, llm_for_act, llm_for_tool, llm_for_vision
 from cosight_server.deep_research.services.i18n_service import i18n
-from cosight_server.sdk.common.logger_util import logger
+from app.common.logger_util import logger
 
 # 引入CoSight所需的依赖
 from app.cosight.task.plan_report_manager import plan_report_event_manager
@@ -35,11 +35,14 @@ from CoSight import CoSight
 searchRouter = APIRouter()
 
 # 使用从环境变量获取的WORKSPACE_PATH
-WORKSPACE_PATH = os.environ.get('WORKSPACE_PATH')
-logger.info(f"Using WORKSPACE_PATH: {WORKSPACE_PATH}")
+work_space_path = os.environ.get('WORKSPACE_PATH')
+work_space_path = os.path.join(work_space_path, "work_space") if work_space_path else os.path.join(os.getcwd(), "work_space")
+logger.info(f"Using work_space_path: {work_space_path}")
+if not os.path.exists(work_space_path):
+    os.makedirs(work_space_path)
 
 # 确保logs目录存在
-LOGS_PATH = os.path.join(WORKSPACE_PATH, 'plans')
+LOGS_PATH = os.path.join(work_space_path, 'plans')
 if not os.path.exists(LOGS_PATH):
     os.makedirs(LOGS_PATH)
 
@@ -169,13 +172,14 @@ async def search(request: Request, params: Any = Body(None)):
 
                 # 构造路径：/xxx/xxx/work_space/work_space_时间戳
                 timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
-                WORKSPACE_PATH_TIME = os.path.join(WORKSPACE_PATH, f'work_space_{timestamp}')
-                print(f":WORKSPACE_PATH_TIME:{WORKSPACE_PATH_TIME}")
-                os.makedirs(WORKSPACE_PATH_TIME, exist_ok=True)
-                os.environ['WORKSPACE_PATH'] = WORKSPACE_PATH_TIME
+                work_space_path_time = os.path.join(work_space_path, f'work_space_{timestamp}')
+                print(f"work_space_path_time:{work_space_path_time}")
+                os.makedirs(work_space_path_time, exist_ok=True)
+                os.environ['WORKSPACE_PATH'] = work_space_path_time
 
                 # 初始化CoSight并执行
-                cosight = CoSight(llm_for_plan, llm_for_act, llm_for_tool, llm_for_vision)
+                logger.info(f"llm is {llm_for_plan.model}, {llm_for_plan.base_url}, {llm_for_plan.api_key}")
+                cosight = CoSight(llm_for_plan, llm_for_act, llm_for_tool, llm_for_vision, work_space_path=work_space_path_time)
                 result = cosight.execute(query_content)
                 logger.info(f"final result is {result}")
 

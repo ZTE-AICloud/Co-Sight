@@ -18,7 +18,7 @@ from fastapi import Request, Response
 from cosight_server.sdk.common.config import custom_config
 from cosight_server.sdk.common.api_result import json_result
 from cosight_server.sdk.common.cache import Cache
-from cosight_server.sdk.common.logger_util import logger
+from app.common.logger_util import logger
 from cosight_server.sdk.common.singleton import SingletonMetaCls
 from cosight_server.sdk.common.utils import async_request
 from cosight_server.sdk.services.session_manager import SessionManagerBase

@@ -22,7 +22,7 @@ from lagent import JsonParser, BaseAction, BaseParser, ActionReturn, ActionStatu
 from lagent.actions.parser import ParseError
 
 from app.cosight.tool.deep_search.common.prompts import select_example1_cn, select_example2_cn
-from cosight_server.sdk.common.logger_util import logger
+from app.common.logger_util import logger
 
 class ZTEActionParser(JsonParser):
     model_format: str = ''

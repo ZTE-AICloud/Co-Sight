@@ -23,8 +23,7 @@ from colorama import Fore
 
 from app.cosight.tool.interpreters.base import BaseInterpreter
 from app.cosight.tool.interpreters.interpreter_error import InterpreterError
-
-from cosight_server.sdk.common.logger_util import logger
+from app.common.logger_util import logger
 
 class SubprocessInterpreter(BaseInterpreter):
     r"""SubprocessInterpreter is a class for executing code files or code

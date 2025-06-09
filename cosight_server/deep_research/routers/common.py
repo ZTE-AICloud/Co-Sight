@@ -20,7 +20,7 @@ from fastapi.params import Body
 
 from cosight_server.sdk.common.api_result import json_result
 from cosight_server.sdk.common.cache import Cache
-from cosight_server.sdk.common.logger_util import logger
+from app.common.logger_util import logger
 
 commonRouter = APIRouter()
 

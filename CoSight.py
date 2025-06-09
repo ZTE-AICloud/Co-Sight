@@ -12,9 +12,9 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+from datetime import datetime
 from app.cosight.agent.actor.instance.actor_agent_instance import create_actor_instance
 from llm import llm_for_plan, llm_for_act, llm_for_tool, llm_for_vision
-from work_space import WORKSPACE_PATH
 from app.cosight.task.plan_report_manager import plan_report_event_manager
 
 
@@ -27,13 +27,13 @@ from app.cosight.agent.planner.task_plannr_agent import TaskPlannerAgent
 from app.cosight.task.task_manager import TaskManager
 from app.cosight.task.todolist import Plan
 from app.cosight.task.time_record_util import time_record
-from cosight_server.sdk.common.logger_util import logger
-
+from app.common.logger_util import logger
 
 class CoSight:
-    def __init__(self, plan_llm, act_llm, tool_llm, vision_llm):
+    def __init__(self, plan_llm, act_llm, tool_llm, vision_llm, work_space_path: str = None):
+        self.work_space_path = work_space_path or os.getenv("WORKSPACE_PATH") or os.getcwd()
         self.plan_id = f"plan_{int(time.time())}"
-        self.plan = Plan()
+        self.plan = Plan(work_space_path=self.work_space_path)
         TaskManager.set_plan(self.plan_id, self.plan)
         self.task_planner_agent = TaskPlannerAgent(create_planner_instance("task_planner_agent"), plan_llm,
                                                    self.plan_id)
@@ -78,8 +78,14 @@ class CoSight:
             try:
                 logger.info(f"Starting execution of step {step_index}")
                 # 每个线程创建独立的TaskActorAgent实例
-                task_actor_agent = TaskActorAgent(create_actor_instance(f"actor_for_step_{step_index}"), self.act_llm,
-                                                  self.vision_llm, self.tool_llm, self.plan_id)
+                task_actor_agent = TaskActorAgent(
+                    create_actor_instance(f"actor_for_step_{step_index}", self.work_space_path),
+                    self.act_llm,
+                    self.vision_llm,
+                    self.tool_llm,
+                    self.plan_id,
+                    work_space_path=self.work_space_path
+                )
                 result = task_actor_agent.act(question=question, step_index=step_index)
                 logger.info(f"Completed execution of step {step_index} with result: {result}")
                 result_queue.put((step_index, result))
@@ -107,11 +113,15 @@ class CoSight:
 
 if __name__ == '__main__':
     # 配置工作区
-    os.makedirs(WORKSPACE_PATH, exist_ok=True)
-    os.environ['WORKSPACE_PATH'] = WORKSPACE_PATH
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    # 获取当前时间并格式化
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
+    # 构造路径：/xxx/xxx/work_space/work_space_时间戳
+    work_space_path = os.path.join(BASE_DIR, 'work_space', f'work_space_{timestamp}')
+    os.makedirs(work_space_path, exist_ok=True)
 
     # 配置CoSight
-    cosight = CoSight(llm_for_plan, llm_for_act, llm_for_tool, llm_for_vision)
+    cosight = CoSight(llm_for_plan, llm_for_act, llm_for_tool, llm_for_vision, work_space_path)
 
     # 运行CoSight
     result = cosight.execute("帮我写一篇中兴通讯的分析报告")

@@ -17,7 +17,8 @@ import json
 import os
 import datetime
 from pathlib import Path
-from cosight_server.sdk.common.logger_util import logger
+
+from app.common.logger_util import logger
 
 file_timestamp = datetime.datetime.today().strftime('%Y%m%d')
 

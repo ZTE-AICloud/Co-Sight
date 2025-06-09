@@ -20,14 +20,14 @@ from config import mcp_server_config_dir
 from app.common.domain.util.json_util import JsonUtil
 
 
-def execute_code_skill():
+def execute_code_skill(work_space_path):
     return {
         'skill_name': 'execute_code',
         'skill_type': "function",
         'display_name_zh': '执行代码',
         'display_name_en': 'Execute Code',
-        'description_zh': f'执行给定的代码片段并返回结果,若要处理本地文件，必须在工作区: {os.getenv("WORKSPACE_PATH") or os.getcwd()}',
-        'description_en': f'Execute a given code snippet and return the result. To process the local file, it must be in the working area: {os.getenv("WORKSPACE_PATH") or os.getcwd()}',
+        'description_zh': f'执行给定的代码片段并返回结果,若要处理本地文件，必须在工作区: {work_space_path or os.getenv("WORKSPACE_PATH") or os.getcwd()}',
+        'description_en': f'Execute a given code snippet and return the result. To process the local file, it must be in the working area: {work_space_path or os.getenv("WORKSPACE_PATH") or os.getcwd()}',
         'semantic_apis': ["api_code_execution"],
         'function': SkillFunction(
             id='4c44f9ad-be5c-4e6c-a9d8-1426b23828a9',

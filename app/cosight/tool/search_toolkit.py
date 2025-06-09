@@ -18,8 +18,8 @@ import xml.etree.ElementTree as ET
 from typing import Any, Dict, List, Literal, Optional, TypeAlias, Union
 
 import requests
-from cosight_server.sdk.common.logger_util import logger
 
+from app.common.logger_util import logger
 
 class SearchToolkit:
     r"""A class representing a toolkit for web search.
@@ -27,6 +27,10 @@ class SearchToolkit:
     This class provides methods for searching information on the web using
     search engines like Google, DuckDuckGo, Wikipedia and Wolfram Alpha, Brave.
     """
+
+    def __init__(self):
+        proxy = os.environ.get("PROXY")
+        self.proxies = {"http": proxy, "https": proxy} if proxy else None
 
     def search_wiki(self, entity: str) -> str:
         r"""Search the entity in WikiPedia and return the summary of the
@@ -362,7 +366,7 @@ class SearchToolkit:
             "summary": summary,
         }
 
-        response = requests.get(url, headers=headers, params=params)
+        response = requests.get(url, headers=headers, params=params, proxies=self.proxies)
         data = response.json()["web"]
         return data
 
@@ -424,7 +428,7 @@ class SearchToolkit:
         # Fetch the results given the URL
         try:
             # Make the get
-            result = requests.get(url)
+            result = requests.get(url, proxies=self.proxies)
             data = result.json()
 
             # Get the result items
@@ -611,7 +615,7 @@ class SearchToolkit:
         }
 
         # Send the request
-        response = requests.get(url, params=params)
+        response = requests.get(url, params=params, proxies=self.proxies)
         root = ET.fromstring(response.text)
 
         # Extracting step-by-step steps, including 'SBSStep' and 'SBSHintStep'

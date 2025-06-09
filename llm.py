@@ -15,9 +15,9 @@
 import httpx
 from openai import OpenAI
 
+from app.common.logger_util import logger
 from app.cosight.llm.chat_llm import ChatLLM
 from config.config import *
-from cosight_server.sdk.common.logger_util import logger
 
 
 def set_model(model_config: dict[str, Optional[str | int | float]]):

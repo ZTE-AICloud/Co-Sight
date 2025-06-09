@@ -18,7 +18,7 @@ from typing import List, Optional, Dict
 
 from app.cosight.task.plan_report_manager import plan_report_event_manager
 from app.cosight.task.todolist import Plan
-from cosight_server.sdk.common.logger_util import logger
+from app.common.logger_util import logger
 
 
 class PlanToolkit:

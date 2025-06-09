@@ -19,7 +19,8 @@ import re
 from typing import Any, Optional, Type
 import requests
 from bs4 import BeautifulSoup
-from cosight_server.sdk.common.logger_util import logger
+
+from app.common.logger_util import logger
 
 
 class ScrapeWebsiteTool:
@@ -33,6 +34,9 @@ class ScrapeWebsiteTool:
             website_url: str,
             cookies: Optional[dict] = None
     ):
+        proxy = os.environ.get("PROXY")
+        self.proxies = {"http": proxy, "https": proxy} if proxy else None
+
         if website_url is not None:
             self.website_url = website_url
             self.description = (
@@ -61,6 +65,7 @@ class ScrapeWebsiteTool:
             verify=False,
             headers=self.headers,
             cookies=self.cookies if self.cookies else {},
+            proxies=self.proxies
         )
 
         page.encoding = page.apparent_encoding

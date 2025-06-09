@@ -23,7 +23,7 @@ from app.agent_dispatcher.infrastructure.entity.Profile import Profile
 from app.agent_dispatcher.infrastructure.entity.RagWorkFlow import RagWorkFlow
 from app.agent_dispatcher.infrastructure.entity.Skill import Skill
 from app.agent_dispatcher.infrastructure.entity.SkillsOrchestration import SkillsOrchestration
-from cosight_server.sdk.common.logger_util import logger
+from app.common.logger_util import logger
 
 
 class AgentTemplate(BaseModel):

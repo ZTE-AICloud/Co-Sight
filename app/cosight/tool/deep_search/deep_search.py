@@ -20,11 +20,14 @@ from app.cosight.tool.deep_search.common.entity import ModelInfo, SearchResult, 
 from app.cosight.tool.deep_search.model.model_service import ModelService
 from app.cosight.tool.deep_search.services.flash_search_service import flash_search_handler
 from app.cosight.tool.deep_search.common.i18n_service import i18n
-from cosight_server.sdk.common.logger_util import logger
+from app.common.logger_util import logger
 
 class DeepSearchToolkit:
     def __init__(self, model_info: ModelInfo, web_search_info: WebSearchInfo):
-        api_url = model_info.get('base_url') + '/chat/completions' if model_info.get('base_url') else model_info.get('api_url')
+        base_url = model_info.get('base_url')
+        if base_url and base_url.endswith('/'):
+            base_url = base_url.rstrip('/')
+        api_url = base_url + '/chat/completions' if base_url else model_info.get('api_url')
         model_info['api_url'] = api_url
         self.model_info = model_info
         self.web_search_info = web_search_info

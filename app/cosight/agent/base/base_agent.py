@@ -25,7 +25,7 @@ from app.agent_dispatcher.infrastructure.entity.AgentInstance import AgentInstan
 from app.cosight.agent.base.skill_to_tool import convert_skill_to_tool
 from app.cosight.llm.chat_llm import ChatLLM
 from app.cosight.task.time_record_util import time_record
-from cosight_server.sdk.common.logger_util import logger
+from app.common.logger_util import logger
 
 
 class BaseAgent:

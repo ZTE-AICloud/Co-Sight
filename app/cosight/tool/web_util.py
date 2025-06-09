@@ -22,7 +22,7 @@ from browser_use.browser.context import BrowserContext
 from langchain_openai import ChatOpenAI
 from browser_use.browser.context import BrowserContextConfig
 from browser_use import BrowserConfig
-from cosight_server.sdk.common.logger_util import logger
+from app.common.logger_util import logger
 
 
 class WebToolkit:

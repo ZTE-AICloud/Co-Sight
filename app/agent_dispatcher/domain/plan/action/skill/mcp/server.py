@@ -26,7 +26,7 @@ from app.agent_dispatcher.infrastructure.entity.exception.error_code_consts impo
 
 from app.agent_dispatcher.infrastructure.entity.exception.ZaeFrameworkException import \
     NaeFrameworkException
-from cosight_server.sdk.common.logger_util import logger
+from app.common.logger_util import logger
 
 
 class MCPServer(abc.ABC):

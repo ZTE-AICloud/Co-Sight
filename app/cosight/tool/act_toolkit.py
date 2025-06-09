@@ -16,7 +16,7 @@
 from typing import Optional
 
 from app.cosight.task.todolist import Plan
-from cosight_server.sdk.common.logger_util import logger
+from app.common.logger_util import logger
 
 
 class ActToolkit:
@@ -56,6 +56,6 @@ class ActToolkit:
 
         self.plan.mark_step(step_index, step_status, step_notes)
         result = f"Step {step_index}: step_status is {step_status}, step_notes is {step_notes} "
-        logger.info(result)
-        logger.info(self.plan.format(True))
+        logger.info(f"ActToolkit mark_step result: {result}")
+        logger.info(f"ActToolkit plan: {self.plan.format(True)}")
         return result

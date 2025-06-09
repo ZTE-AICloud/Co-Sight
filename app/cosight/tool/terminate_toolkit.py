@@ -13,7 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from cosight_server.sdk.common.logger_util import logger
+from app.common.logger_util import logger
 class TerminateToolkit:
     r"""A class representing a toolkit for terminating interactions when the request is met OR if the assistant cannot proceed further with the task."""
 

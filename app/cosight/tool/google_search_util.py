@@ -21,7 +21,7 @@ import random
 import asyncio
 import aiohttp
 from .scrape_website_toolkit import is_valid_url
-from cosight_server.sdk.common.logger_util import logger
+from app.common.logger_util import logger
 
 
 async def fetch_url_content(url: str) -> str:
@@ -37,11 +37,12 @@ async def fetch_url_content(url: str) -> str:
             'Accept-Language': 'en-US,en;q=0.5',
             'Connection': 'keep-alive'
         }
+        proxy = os.environ.get("PROXY")
         if not is_valid_url(url):
             return f'current url is valid {url}'
         timeout = aiohttp.ClientTimeout(total=180)
         async with aiohttp.ClientSession(timeout=timeout) as session:
-            async with session.get(url, headers=headers) as response:
+            async with session.get(url, headers=headers, proxy=proxy) as response:
                 if response.status == 200:
                     # Check content type
                     content_type = response.headers.get('Content-Type', '')
@@ -89,10 +90,11 @@ def search_google(query: str, max_results: int = 5) -> List[Dict[str, Any]]:
     responses: List[Dict[str, Any]] = []
 
     max_retries = 3
+    proxy = os.environ.get("PROXY")
     for attempt in range(max_retries):
         try:
 
-            links = list(search(query, num_results=max_results, advanced=True))
+            links = list(search(query, num_results=max_results, proxy=proxy, advanced=True))
 
             # Create a new event loop for the current thread
             loop = asyncio.new_event_loop()

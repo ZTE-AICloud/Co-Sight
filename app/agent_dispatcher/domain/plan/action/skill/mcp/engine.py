@@ -20,7 +20,7 @@ from app.agent_dispatcher.infrastructure.entity.exception.ZaeFrameworkException 
     NaeFrameworkException
 
 from app.agent_dispatcher.domain.plan.action.skill.mcp.server import MCPServerStdio, MCPServerSse
-from cosight_server.sdk.common.logger_util import logger
+from app.common.logger_util import logger
 
 mcp_servers = []
 

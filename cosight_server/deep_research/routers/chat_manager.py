@@ -18,7 +18,7 @@ from typing import Optional
 from fastapi import APIRouter, Header
 
 from cosight_server.sdk.common.api_result import json_result
-from cosight_server.sdk.common.logger_util import logger
+from app.common.logger_util import logger
 from cosight_server.sdk.entities.chat import Chat
 
 chatRouter = APIRouter()

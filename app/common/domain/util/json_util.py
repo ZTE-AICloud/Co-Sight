@@ -19,8 +19,8 @@
 import json
 import os
 import tempfile
-from cosight_server.sdk.common.logger_util import logger
 
+from app.common.logger_util import logger
 
 
 class JsonUtil:

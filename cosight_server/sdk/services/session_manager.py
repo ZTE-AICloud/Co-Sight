@@ -18,7 +18,7 @@ import re
 from fastapi import Request, Response
 
 from cosight_server.sdk.common.singleton import SingletonMetaCls
-from cosight_server.sdk.common.logger_util import logger
+from app.common.logger_util import logger
 
 
 class SessionManagerBase(metaclass=SingletonMetaCls):

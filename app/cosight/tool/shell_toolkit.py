@@ -26,7 +26,7 @@ from langchain_core.callbacks import (
 from langchain_core.tools import BaseTool
 from pydantic import BaseModel, Field, model_validator
 
-from cosight_server.sdk.common.logger_util import logger
+from app.common.logger_util import logger
 
 
 class ShellInput(BaseModel):

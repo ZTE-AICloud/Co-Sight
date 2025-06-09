@@ -17,13 +17,13 @@ import os
 import platform
 import inspect
 import sys
-from cosight_server.sdk.common.logger_util import logger
+from app.common.logger_util import logger
 
 # Add path to import llm.py
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../../")))
 from llm import llm_for_act
 
-def actor_system_prompt():
+def actor_system_prompt(work_space_path: str):
     # Check if llm_for_act is using OpenRouter Claude
     is_openrouter_claude = False
     if hasattr(llm_for_act, 'model') and isinstance(llm_for_act.model, str):
@@ -110,13 +110,13 @@ You are an assistant helping complete complex tasks. Your goal is to execute tas
 
 # Environment Information
 - Operating System: {platform.platform()}
-- WorkSpace: {os.getenv("WORKSPACE_PATH") or os.getcwd()}
+- WorkSpace: {work_space_path or os.getenv("WORKSPACE_PATH") or os.getcwd()}
 - Encoding: UTF-8 (must be used for all file operations)
 """
     return system_prompt
 
-def actor_execute_task_prompt(task, step_index, plan):
-    workspace_path = os.getenv("WORKSPACE_PATH") or os.getcwd()
+def actor_execute_task_prompt(task, step_index, plan, workspace_path: str):
+    workspace_path = workspace_path if workspace_path else os.environ.get("WORKSPACE_PATH") or os.getcwd()
     try:
         files_list = "\n".join([f"  - {f}" for f in os.listdir(workspace_path)])
     except Exception as e:
@@ -219,7 +219,7 @@ Follow the general task execution rules above.
     return execute_task_prompt
 
 
-def actor_system_prompt_zh():
+def actor_system_prompt_zh(work_space_path):
     # 检查 llm_for_act 是否使用 OpenRouter Claude
     is_openrouter_claude = False
     if hasattr(llm_for_act, 'model') and isinstance(llm_for_act.model, str):
@@ -306,14 +306,14 @@ def actor_system_prompt_zh():
 
 # 环境信息
 - 操作系统: {platform.platform()}
-- 工作区: {os.getenv("WORKSPACE_PATH") or os.getcwd()}
+- 工作区: {work_space_path or os.getenv("WORKSPACE_PATH") or os.getcwd()}
 - 编码: UTF-8（所有文件操作必须使用该编码）
 """
     return system_prompt
 
 
-def actor_execute_task_prompt_zh(task, step_index, plan):
-    workspace_path = os.getenv("WORKSPACE_PATH") or os.getcwd()
+def actor_execute_task_prompt_zh(task, step_index, plan, workspace_path):
+    workspace_path = workspace_path if workspace_path else os.environ.get("WORKSPACE_PATH") or os.getcwd()
     try:
         files_list = "\n".join([f"  - {f}" for f in os.listdir(workspace_path)])
     except Exception as e:

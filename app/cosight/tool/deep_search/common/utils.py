@@ -19,7 +19,7 @@ from pathlib import Path
 import re
 import uuid
 
-from cosight_server.sdk.common.logger_util import logger
+from app.common.logger_util import logger
 
 
 def parse_content_properties(params: dict) -> dict:

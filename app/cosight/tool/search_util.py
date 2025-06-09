@@ -21,7 +21,7 @@ import random
 import asyncio
 import aiohttp
 import os
-from cosight_server.sdk.common.logger_util import logger
+from app.common.logger_util import logger
 from .scrape_website_toolkit import is_valid_url
 
 async def fetch_url_content(url: str) -> str:
@@ -37,11 +37,12 @@ async def fetch_url_content(url: str) -> str:
             'Accept-Language': 'en-US,en;q=0.5',
             'Connection': 'keep-alive'
         }
+        proxy = os.environ.get("PROXY")
         if not is_valid_url(url):
             return f'current url is valid {url}'
         timeout = aiohttp.ClientTimeout(total=180)
         async with aiohttp.ClientSession(timeout=timeout) as session:
-            async with session.get(url, headers=headers) as response:
+            async with session.get(url, headers=headers, proxy=proxy) as response:
                 if response.status == 200:
                     # Check content type
                     content_type = response.headers.get('Content-Type', '')

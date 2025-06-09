@@ -19,8 +19,7 @@ from jupyter_server.auth import passwd
 from openai import OpenAI
 
 from app.cosight.task.time_record_util import time_record
-
-from cosight_server.sdk.common.logger_util import logger
+from app.common.logger_util import logger
 
 
 class ChatLLM:

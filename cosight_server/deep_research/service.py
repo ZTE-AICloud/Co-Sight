@@ -21,7 +21,7 @@ from typing import Optional
 from cosight_server.deep_research.services.i18n_service import i18n
 from cosight_server.sdk.common.cache import Cache
 from cosight_server.sdk.common.config import custom_config
-from cosight_server.sdk.common.logger_util import logger
+from app.common.logger_util import logger
 from cosight_server.sdk.common.utils import async_request, extract_and_clean_tags, sync_request
 
 from cosight_server.deep_research.entity import IcenterToken, SearchSource

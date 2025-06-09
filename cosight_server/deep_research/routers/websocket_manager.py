@@ -22,7 +22,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
 
 from cosight_server.deep_research.services.i18n_service import i18n
 from cosight_server.sdk.common.config import custom_config
-from cosight_server.sdk.common.logger_util import logger
+from app.common.logger_util import logger
 from cosight_server.sdk.common.utils import get_timestamp
 
 wsRouter = APIRouter()

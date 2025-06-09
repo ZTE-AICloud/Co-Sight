@@ -20,7 +20,7 @@ sys.path.insert(1, os.path.abspath(os.path.join(os.path.dirname(__file__), "..",
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
-from cosight_server.sdk.common.logger_util import logger
+from app.common.logger_util import logger
 
 # 添加这段代码来加载.env文件
 try:
@@ -127,8 +127,6 @@ logger.info(f"workspace path is >>>>>> {WORKSPACE_PATH}")
 LOGS_PATH = os.path.join(WORKSPACE_PATH, 'plans')
 if not os.path.exists(LOGS_PATH):
     os.makedirs(LOGS_PATH)
-# 设置环境变量供子模块使用
-os.environ['WORKSPACE_PATH'] = os.path.abspath(WORKSPACE_PATH)
 
 # 重要：先设置好环境变量，再导入search模块
 from cosight_server.deep_research.routers.search import searchRouter

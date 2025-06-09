@@ -20,7 +20,7 @@ from typing import Optional, List
 from lagent.actions.bing_browser import DuckDuckGoSearch
 from app.cosight.tool.deep_search.common.entity import SearchSource
 from config.config import get_tavily_config
-from cosight_server.sdk.common.logger_util import logger
+from app.common.logger_util import logger
 
 
 class TavilySearch(DuckDuckGoSearch):

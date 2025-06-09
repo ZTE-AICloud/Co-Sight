@@ -15,7 +15,7 @@
 
 import time
 from functools import wraps
-from cosight_server.sdk.common.logger_util import logger
+from app.common.logger_util import logger
 
 def time_record(func):
     """

@@ -18,8 +18,8 @@ import os
 from typing import List, Optional
 
 import pandas as pd
-from cosight_server.sdk.common.logger_util import logger
 
+from app.common.logger_util import logger
 
 def extract_excel_content(document_path: str):
     result = extract_excel_content(document_path)

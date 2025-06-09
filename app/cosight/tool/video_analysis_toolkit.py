@@ -22,7 +22,7 @@ import base64
 import numpy as np
 import soundfile as sf
 import asyncio
-from cosight_server.sdk.common.logger_util import logger
+from app.common.logger_util import logger
 
 
 class VideoTool:

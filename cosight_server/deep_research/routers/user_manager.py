@@ -18,7 +18,7 @@ from typing import Optional
 from fastapi import APIRouter, Header
 from starlette.responses import Response
 
-from cosight_server.sdk.common.logger_util import logger
+from app.common.logger_util import logger
 from cosight_server.sdk.services.session_manager import session_manager
 
 userRouter = APIRouter()

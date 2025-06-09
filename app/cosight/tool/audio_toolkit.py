@@ -23,8 +23,8 @@ import numpy as np
 import soundfile as sf
 import asyncio
 from urllib.parse import urlparse
-from cosight_server.sdk.common.logger_util import logger
 
+from app.common.logger_util import logger
 
 class AudioTool:
     def __init__(self, llm_config):

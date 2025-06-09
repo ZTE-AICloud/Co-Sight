@@ -31,7 +31,7 @@ import xmltodict
 import asyncio
 import nest_asyncio
 from app.cosight.tool.excel_toolkit import extract_excel_content
-from cosight_server.sdk.common.logger_util import logger
+from app.common.logger_util import logger
 
 nest_asyncio.apply()
 
@@ -46,6 +46,9 @@ class DocumentProcessingToolkit:
         self.cache_dir = "tmp/"
         if cache_dir:
             self.cache_dir = cache_dir
+
+        proxy = os.environ.get("PROXY")
+        self.proxies = {"http": proxy, "https": proxy} if proxy else None
 
     @retry((requests.RequestException))
     def extract_document_content(self, document_path: str) -> Tuple[bool, str]:
@@ -161,7 +164,7 @@ class DocumentProcessingToolkit:
             if 'text/html' in file_type:
                 return True
 
-            response = requests.head(url, allow_redirects=True, timeout=10)
+            response = requests.head(url, allow_redirects=True, timeout=10, proxies=self.proxies)
             content_type = response.headers.get("Content-Type", "").lower()
 
             if "text/html" in content_type:
@@ -180,7 +183,7 @@ class DocumentProcessingToolkit:
     def _download_file(self, url: str):
         r"""Download a file from a URL and save it to the cache directory."""
         try:
-            response = requests.get(url, stream=True)
+            response = requests.get(url, stream=True, proxies=self.proxies)
             response.raise_for_status()
             file_name = url.split("/")[-1]
 

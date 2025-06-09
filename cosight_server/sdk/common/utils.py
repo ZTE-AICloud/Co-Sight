@@ -26,7 +26,7 @@ from aiohttp import ClientConnectorError
 import requests
 
 from cosight_server.sdk.common.cache import Cache
-from cosight_server.sdk.common.logger_util import logger
+from app.common.logger_util import logger
 from cosight_server.sdk.entities.config_info import ConfigSetInfo
 
 
