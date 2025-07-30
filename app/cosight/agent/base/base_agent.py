@@ -22,7 +22,7 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from app.agent_dispatcher.domain.plan.action.skill.mcp.engine import MCPEngine
 from app.agent_dispatcher.infrastructure.entity.AgentInstance import AgentInstance
-from app.cosight.agent.base.skill_to_tool import convert_skill_to_tool
+from app.cosight.agent.base.skill_to_tool import convert_skill_to_tool,get_mcp_tools,convert_mcp_tools
 from app.cosight.llm.chat_llm import ChatLLM
 from app.cosight.task.time_record_util import time_record
 from app.common.logger_util import logger
@@ -34,10 +34,10 @@ class BaseAgent:
         self.llm = llm
         self.tools = []
         self.mcp_tools = []
-        # self.tools = [convert_skill_to_tool(skill.model_dump(), 'en') for skill in self.agent_instance.template.skills]
+        self.mcp_tools = get_mcp_tools(self.agent_instance.template.skills)
         for skill in self.agent_instance.template.skills:
             self.tools.extend(convert_skill_to_tool(skill.model_dump(), 'en'))
-        # self.tools.extend(convert_mcp_tools(self.mcp_tools))
+        self.tools.extend(convert_mcp_tools(self.mcp_tools))
         self.functions = functions
         self.history = []
 
@@ -198,9 +198,6 @@ class BaseAgent:
                         args_dict
                     )
                 )
-                # result = asyncio.run(
-                #     MCPEngine.invoke_mcp_tool(mcp_tool['mcp_name'], mcp_tool['mcp_config'], tool_name,
-                #                               args_dict))
                 return {
                     "role": "tool",
                     "name": function_name,

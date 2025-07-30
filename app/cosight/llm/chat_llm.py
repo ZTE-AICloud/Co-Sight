@@ -12,12 +12,16 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+import json
+import time
+from json import JSONDecodeError
 
 from typing import List, Dict, Any
 
 from jupyter_server.auth import passwd
 from openai import OpenAI
 
+from app.agent_dispatcher.infrastructure.entity.exception.ZaeFrameworkException import ZaeFrameworkException
 from app.cosight.task.time_record_util import time_record
 from app.common.logger_util import logger
 
@@ -54,8 +58,6 @@ class ChatLLM:
         """
         Create a chat completion with support for function/tool calls
         """
-        import time
-        import json
         # 清洗提示词，去除None
         messages = ChatLLM.clean_none_values(messages)
         max_retries = 2
@@ -69,12 +71,15 @@ class ChatLLM:
                     temperature=self.temperature
                 )
                 logger.info(f"LLM with tools chat completions response is {response}")
+                self.check_and_fix_tool_call_params(response)
                 break
             except Exception as e:
                 logger.warning(f"JSON decode error: {e} on attempt {attempt + 1}, retrying...", exc_info=True)
-                if attempt == max_retries:
+                if "TPM limit reached"  in str(e):
+                    time.sleep(60)
+                if attempt == max_retries-1:
                     logger.error(f"Failed to create after {max_retries + 1} attempts.")
-                    raise
+                    raise ZaeFrameworkException(400, f"chat with LLM failed, please check LLM config. reason：{e}")
                 time.sleep(3)  # 增加等待时间，避免频繁重试
 
         # 去除think标签
@@ -84,6 +89,17 @@ class ChatLLM:
 
         return response.choices[0].message
 
+    def check_and_fix_tool_call_params(self, response):
+        if response.choices[0].message.tool_calls:
+            for attempt in range(3):
+                try:
+                    tool_call = response.choices[0].message.tool_calls[0].function
+                    json.loads(tool_call.arguments)
+                    break
+                except JSONDecodeError as jsone:
+                    tool_call.arguments = self.chat_to_llm([{"role": "user",
+                                                             "content": f"下面的json字符串格式有错误，请帮忙修正。重要：仅输出修正的字符串。\\n{tool_call.arguments}"}])
+
     @time_record
     def chat_to_llm(self, messages: List[Dict[str, Any]]):
         # 清洗提示词，去除None
@@ -91,8 +107,7 @@ class ChatLLM:
         response = self.client.chat.completions.create(
             model=self.model,
             messages=messages,
-            temperature=self.temperature,
-            max_tokens=self.max_tokens
+            temperature=self.temperature
         )
         logger.info(f"LLM chat completions response is {response}")
         # 去除think标签

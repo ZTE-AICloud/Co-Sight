@@ -71,9 +71,12 @@ def append_create_plan(data: Any):
                 "step_statuses": data.step_statuses if hasattr(data, 'step_statuses') else {},
                 "step_notes": data.step_notes if hasattr(data, 'step_notes') else {},
                 "step_details": data.step_details if hasattr(data, 'step_details') else {},
-                "dependencies": {str(k): v for k, v in data.dependencies.items()} if hasattr(data, 'dependencies') else {},
-                "progress": data.get_progress() if hasattr(data, 'get_progress') and callable(data.get_progress) else {},
-                "result": data.get_plan_result() if hasattr(data, 'get_plan_result') and callable(data.get_plan_result) else ""
+                "dependencies": {str(k): v for k, v in data.dependencies.items()} if hasattr(data,
+                                                                                             'dependencies') else {},
+                "progress": data.get_progress() if hasattr(data, 'get_progress') and callable(
+                    data.get_progress) else {},
+                "result": data.get_plan_result() if hasattr(data, 'get_plan_result') and callable(
+                    data.get_plan_result) else ""
             }
             logger.info(f"step_files:{data.step_files}")
 
@@ -90,7 +93,9 @@ def append_create_plan(data: Any):
                 if isinstance(data, dict):
                     serializable_data = {k: str(v) for k, v in data.items()}
                 elif isinstance(data, list):
-                    serializable_data = [str(item) if not isinstance(item, (dict, list, str, int, float, bool, type(None))) else item for item in data]
+                    serializable_data = [
+                        str(item) if not isinstance(item, (dict, list, str, int, float, bool, type(None))) else item for
+                        item in data]
                 content = json.dumps(serializable_data, ensure_ascii=False, indent=2) + "\n"
         else:
             content = str(data) + "\n"

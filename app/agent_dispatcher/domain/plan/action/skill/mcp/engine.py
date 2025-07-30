@@ -14,13 +14,15 @@
 #    under the License.
 
 from mcp import Tool as MCPTool
-from app.agent_dispatcher.infrastructure.entity.exception.error_code_consts import MCP_ERROR
-
-from app.agent_dispatcher.infrastructure.entity.exception.ZaeFrameworkException import \
-    NaeFrameworkException
 
 from app.agent_dispatcher.domain.plan.action.skill.mcp.server import MCPServerStdio, MCPServerSse
+from app.agent_dispatcher.infrastructure.entity.exception.ZaeFrameworkException import \
+    NaeFrameworkException
+from app.agent_dispatcher.infrastructure.entity.exception.error_code_consts import MCP_ERROR
 from app.common.logger_util import logger
+from config import mcp_server_config_dir
+from app.common.domain.util.json_util import JsonUtil
+from app.agent_dispatcher.infrastructure.entity.Skill import Skill
 
 mcp_servers = []
 
@@ -46,7 +48,7 @@ class MCPEngine:
             tools = await server.list_tools()
             return tools
         except Exception as e:
-            logger.error(f"Error invoking MCP tool {name}: {e}",exc_info=True)
+            logger.error(f"Error invoking MCP tool {name}: {e}")
             return []
         finally:
             if server:
@@ -55,17 +57,19 @@ class MCPEngine:
     @staticmethod
     async def invoke_mcp_tool(name, config, tool_name, input_json: dict = {}):
         """Invoke an MCP tool and return the result as a string."""
+        logger.info(f"Invoke MCP tool {tool_name}, {input_json}")
         server = None
         try:
             server = MCPEngine.get_server(name, config)
             await server.connect()
             result = await server.call_tool(tool_name, input_json)
         except Exception as e:
-            logger.error(f"Error invoking MCP tool {tool_name}: {e}",exc_info=True)
+            print(f"Error invoking MCP tool {tool_name}: {e}")
             raise NaeFrameworkException(MCP_ERROR, f"Error invoking MCP tool {tool_name}")
         finally:
             if server:
                 await server.cleanup()
+        logger.info(f"MCP tool {tool_name} returned {result}")
 
         # The MCP tool result is a list of content items, whereas OpenAI tool outputs are a single
         # string. We'll try to convert.
@@ -83,3 +87,4 @@ class MCPEngine:
             tool_output = "Error running tool."
 
         return tool_output
+

@@ -57,7 +57,26 @@ pip install -r requirements.txt
 		   ![](assets/Pasted_image_20250916105315.png)	
 		2. Tavily Search how to apply：https://app.tavily.com/home
 		   ![](assets/Pasted_image_20250502115315.png)
-
+3. **Configure MCP tool**
+```python
+# 在工程根路径下的config/mcp_server_config.json按需配置如下信息,支持配置多个
+[
+  {
+    "skill_name": "MCP技能名称",
+    "skill_type": "local_mcp",
+    "display_name_zh": "MCP工具中文名称",
+    "display_name_en": "MCP工具英文名称",
+    "description_zh": "MCP工具中文描述",
+    "description_en": "MCP工具中文描述",
+    "mcp_server_config": {
+      "command": "python",
+      "args": [
+        "mcp_server.py"
+      ]
+    }
+  }
+]
+```
 		  
 ## ▶️ Quick Start
 

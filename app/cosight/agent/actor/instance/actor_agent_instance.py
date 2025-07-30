@@ -66,7 +66,6 @@ def create_actor_template(template_name, work_space_path):
                    search_wiki_skill(),
                    audio_recognition_skill(),
                    ask_question_about_video_skill()],
-        # , terminate_skill(), browser_use_skill()
         "organizations": [],
         'knowledge': [],
         'max_iteration': 20,
