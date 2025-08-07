@@ -50,7 +50,7 @@ class DocumentProcessingToolkit:
         proxy = os.environ.get("PROXY")
         self.proxies = {"http": proxy, "https": proxy} if proxy else None
 
-    @retry((requests.RequestException))
+    @retry((requests.exceptions.RequestException))
     def extract_document_content(self, document_path: str) -> Tuple[bool, str]:
         r"""Extract the content of a given document (or url) and return the processed text.
         It may filter out some information, resulting in inaccurate content.

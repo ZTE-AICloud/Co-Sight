@@ -199,64 +199,6 @@ def search_image_skill():
     }
 
 
-def browser_use_skill():
-    return {
-        'skill_name': 'browser_use',
-        'skill_type': "function",
-        'display_name_zh': '浏览器交互模拟',
-        'display_name_en': 'Browser Interaction Simulation',
-        'description_zh': '模拟浏览器交互以解决需要多步操作的任务',
-        'description_en': 'Simulate browser interaction to solve tasks requiring multi-step actions',
-        'semantic_apis': ["api_browser_simulation"],
-        'function': SkillFunction(
-            id='2c44f9ad-be5c-4e6c-a9d8-1426b23828a1',
-            name='app.cosight.browser_toolkit.browser_use',
-            description_zh='通过模拟浏览器交互解决复杂任务',
-            description_en='Solve complex tasks by simulating browser interactions',
-            parameters={
-                "type": "object",
-                "properties": {
-                    "task_prompt": {
-                        "type": "string",
-                        "description_zh": "需要解决的任务描述",
-                        "description_en": "Task description to be solved"
-                    }
-                },
-                "required": ["task_prompt"]
-            }
-        )
-    }
-
-
-def fetch_website_content_skill():
-    return {
-        'skill_name': 'fetch_website_content',
-        'skill_type': "function",
-        'display_name_zh': '网页内容爬取',
-        'display_name_en': 'Fetch Website Content',
-        'description_zh': '网页内容爬取',
-        'description_en': 'Fetch Website Content',
-        'semantic_apis': ["api_browser_simulation"],
-        'function': SkillFunction(
-            id='2c44f9ad-be5c-4e6c-a9d8-1426b23828a1',
-            name='app.cosight.browser_toolkit.browser_use',
-            description_zh='网页内容爬取',
-            description_en='Fetch Website Content',
-            parameters={
-                "type": "object",
-                "properties": {
-                    "website_url": {
-                        "type": "string",
-                        "description_zh": "页面链接",
-                        "description_en": "Website Url"
-                    }
-                },
-                "required": ["website_url"]
-            }
-        )
-    }
-
-
 def mark_step_skill():
     return {
         'skill_name': 'mark_step',
