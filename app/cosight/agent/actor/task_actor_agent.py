@@ -48,7 +48,8 @@ class TaskActorAgent(BaseAgent):
                  vision_llm: ChatLLM,
                  tool_llm: ChatLLM, plan_id,
                  functions: Dict = None,
-                 work_space_path: str = None):
+                 work_space_path: str = None,
+                 search_sources: list = None):
         self.work_space_path = work_space_path if work_space_path else os.environ.get("WORKSPACE_PATH") or os.getcwd()
         self.plan = TaskManager.get_plan(plan_id)
         self.question = None  # Store the question for later use
@@ -112,7 +113,7 @@ class TaskActorAgent(BaseAgent):
                          }
         if functions:
             all_functions = functions.update(functions)
-        super().__init__(agent_instance, llm, all_functions)
+        super().__init__(agent_instance, llm, all_functions, search_sources)
         is_chinese = bool(re.search(r'[\u4e00-\u9fff]', self.plan.title)) if self.plan.title else True
         if is_chinese:
             sys_prompt = actor_system_prompt_zh(self.work_space_path)

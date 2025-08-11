@@ -145,7 +145,6 @@ def validate_search_input(params: dict) -> dict | None:
 @searchRouter.post("/deep-research/search")
 async def search(request: Request, params: Any = Body(None)):
     logger.info(f"=====params:{params}")
-
     # if not await session_manager.authority(request):
     #     raise HTTPException(status_code=403, detail="Forbidden")
 
@@ -156,6 +155,34 @@ async def search(request: Request, params: Any = Body(None)):
     content_array = params.get('content', [])
     query_content = content_array[0]['value'] if content_array and isinstance(
         content_array, list) and len(content_array) > 0 and 'value' in content_array[0] else ""
+
+    # search_sources = [
+    #     {
+    #         "id": 44,
+    #         "type": "WebSearch",
+    #         "name": "互联网",
+    #         "sub_name": "全网",
+    #         "description": "系统默认的互联网搜索",
+    #         "source_from": "system_preset",
+    #         "config": {
+    #             "url": "",
+    #             "spaces": None,
+    #             "workflow_id": ""
+    #         }
+    #     },
+    #     {
+    #         "id": 46,
+    #         "type": "RAGKnowledgeLibrary",
+    #         "name": "知识库",
+    #         "sub_name": "demo",
+    #         "description": "用户上传文件创建 demo 知识库",
+    #         "source_from": "user_defined",
+    #         "config": {
+    #             "url": "http://172.20.0.76:8093/query",
+    #             "workflow_id": "RAG_Workflow_nae_product_manual"
+    #         }
+    #     }
+    # ]
 
     async def generator_func():
         # 清空之前可能存在的队列数据并保存当前事件循环
@@ -182,9 +209,12 @@ async def search(request: Request, params: Any = Body(None)):
                 os.makedirs(work_space_path_time, exist_ok=True)
                 os.environ['WORKSPACE_PATH'] = work_space_path_time
 
-                # 初始化CoSight并执行
+                # 初始化CoSight并执行，传递 search_sources
                 logger.info(f"llm is {llm_for_plan.model}, {llm_for_plan.base_url}, {llm_for_plan.api_key}")
-                cosight = CoSight(llm_for_plan, llm_for_act, llm_for_tool, llm_for_vision, work_space_path=work_space_path_time)
+                cosight = CoSight(llm_for_plan, llm_for_act, llm_for_tool, llm_for_vision, 
+                                work_space_path=work_space_path_time, 
+                                # search_sources=search_sources
+                                )
                 result = cosight.execute(query_content)
                 logger.info(f"final result is {result}")
 

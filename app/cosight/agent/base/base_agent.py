@@ -29,17 +29,48 @@ from app.common.logger_util import logger
 
 
 class BaseAgent:
-    def __init__(self, agent_instance: AgentInstance, llm: ChatLLM, functions: {}):
+    def __init__(self, agent_instance: AgentInstance, llm: ChatLLM, functions: {}, search_sources: list = None):
         self.agent_instance = agent_instance
         self.llm = llm
         self.tools = []
         self.mcp_tools = []
         self.mcp_tools = get_mcp_tools(self.agent_instance.template.skills)
-        for skill in self.agent_instance.template.skills:
+        
+        # 根据 search_sources 过滤技能
+        filtered_skills = self._filter_skills_by_search_sources(self.agent_instance.template.skills, search_sources)
+        
+        for skill in filtered_skills:
             self.tools.extend(convert_skill_to_tool(skill.model_dump(), 'en'))
         self.tools.extend(convert_mcp_tools(self.mcp_tools))
         self.functions = functions
         self.history = []
+        self.search_sources = search_sources
+
+    def _filter_skills_by_search_sources(self, skills, search_sources):
+        """根据 search_sources 过滤技能"""
+        if not search_sources:
+            return skills
+        
+        # 检查是否包含 type: 'WebSearch'
+        enable_search = any(source.get('type') == 'WebSearch' for source in search_sources)
+        print(f"Filtering skills with search_sources: {search_sources}")
+        print(f"Search tools enabled: {enable_search}")
+        
+        if enable_search:
+            return skills  # 启用搜索，返回所有技能
+        else:
+            # 禁用搜索，过滤掉搜索相关技能
+            filtered_skills = []
+            search_skill_names = ['search_baidu', 'search_google', 'tavily_search', 'image_search', 'search_wiki', 'search_duckgo']
+            
+            for skill in skills:
+                if skill.skill_name not in search_skill_names:
+                    filtered_skills.append(skill)
+                    print(f"Kept skill: {skill.skill_name}")
+                else:
+                    print(f"Filtered out search skill: {skill.skill_name}")
+            
+            return filtered_skills
 
     def find_mcp_tool(self, tool_name):
         for tool in self.mcp_tools:

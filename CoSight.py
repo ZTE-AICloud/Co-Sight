@@ -30,7 +30,7 @@ from app.cosight.task.time_record_util import time_record
 from app.common.logger_util import logger
 
 class CoSight:
-    def __init__(self, plan_llm, act_llm, tool_llm, vision_llm, work_space_path: str = None):
+    def __init__(self, plan_llm, act_llm, tool_llm, vision_llm, work_space_path: str = None, search_sources: list = None):
         self.work_space_path = work_space_path or os.getenv("WORKSPACE_PATH") or os.getcwd()
         self.plan_id = f"plan_{int(time.time())}"
         self.plan = Plan(work_space_path=self.work_space_path)
@@ -40,6 +40,7 @@ class CoSight:
         self.act_llm = act_llm  # Store llm for later use
         self.tool_llm = tool_llm
         self.vision_llm = vision_llm
+        self.search_sources = search_sources
 
     @time_record
     def execute(self, question, output_format=""):
@@ -84,8 +85,11 @@ class CoSight:
                     self.vision_llm,
                     self.tool_llm,
                     self.plan_id,
-                    work_space_path=self.work_space_path
+                    work_space_path=self.work_space_path,
+                    search_sources=self.search_sources
                 )
+                search_tools = [tool for tool in task_actor_agent.tools if 'search' in tool['function']['name'].lower()]
+                logger.info(f"TaskActorAgent Search tools============>: {search_tools}")
                 result = task_actor_agent.act(question=question, step_index=step_index)
                 logger.info(f"Completed execution of step {step_index} with result: {result}")
                 result_queue.put((step_index, result))
