@@ -662,3 +662,65 @@ def create_html_report_skill():
         )
     }
 
+
+# 新增：RAG 知识库搜索 skill 定义
+
+def rag_search_skill():
+    return {
+        'skill_name': 'rag_search',
+        'skill_type': 'function',
+        'display_name_zh': 'RAG知识库搜索',
+        'display_name_en': 'RAG Knowledge Library Search',
+        'description_zh': '在配置的RAG知识库中进行检索并返回相关内容',
+        'description_en': 'Search within configured RAG knowledge library and return relevant content',
+        'semantic_apis': ["api_search"],
+        'function': SkillFunction(
+            id='a3e9e6b7-6a7a-4a6a-9e2b-1f3d9f1e2c01',
+            name='app.cosight.agent.actor.task_actor_agent.TaskActorAgent.rag_search',
+            description_zh='在RAG知识库中检索指定问题',
+            description_en='Search question in RAG knowledge library',
+            parameters={
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description_zh": "要搜索的查询内容",
+                        "description_en": "Query to be searched"
+                    }
+                },
+                "required": ["query"]
+            }
+        )
+    }
+
+
+# 新增：自定义搜索 skill 定义
+
+def custom_search_skill():
+    return {
+        'skill_name': 'custom_search',
+        'skill_type': 'function',
+        'display_name_zh': '自定义搜索',
+        'display_name_en': 'Custom Search',
+        'description_zh': '使用前端/配置提供的自定义搜索源（URL/解析函数等）进行检索',
+        'description_en': 'Search using custom-configured web source with parser function',
+        'semantic_apis': ["api_search"],
+        'function': SkillFunction(
+            id='b7f5f2d0-4b6f-4c1a-a2b9-7f5a1a9b3c02',
+            name='app.cosight.agent.actor.task_actor_agent.TaskActorAgent.custom_search',
+            description_zh='使用自定义搜索源进行检索',
+            description_en='Search using custom source',
+            parameters={
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description_zh": "要搜索的查询内容",
+                        "description_en": "Query to be searched"
+                    }
+                },
+                "required": ["query"]
+            }
+        )
+    }
+

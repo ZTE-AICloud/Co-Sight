@@ -52,6 +52,8 @@ def create_actor_template(template_name, work_space_path):
         "icon": "",
         'skills': [execute_code_skill(work_space_path),
                    search_baidu_skill(),
+                   rag_search_skill(),
+                   custom_search_skill(),
                    mark_step_skill(),
                 #    browser_use_skill(),
                    file_saver_skill(),

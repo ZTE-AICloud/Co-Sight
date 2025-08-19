@@ -31,8 +31,8 @@ from app.common.logger_util import logger
 
 class CoSight:
     def __init__(self, plan_llm, act_llm, tool_llm, vision_llm, work_space_path: str = None, search_sources: list = None):
-        self.work_space_path = work_space_path or os.getenv("WORKSPACE_PATH") or os.getcwd()
         self.plan_id = f"plan_{int(time.time())}"
+        self.work_space_path = work_space_path or os.getenv("WORKSPACE_PATH") or os.getcwd()
         self.plan = Plan(work_space_path=self.work_space_path)
         TaskManager.set_plan(self.plan_id, self.plan)
         self.task_planner_agent = TaskPlannerAgent(create_planner_instance("task_planner_agent"), plan_llm,

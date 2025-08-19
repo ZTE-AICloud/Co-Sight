@@ -41,6 +41,8 @@ from app.cosight.tool.video_analysis_toolkit import VideoTool
 from app.cosight.tool.html_visualization_toolkit import HtmlVisualizationToolkit
 from config.config import get_tavily_config
 from app.common.logger_util import logger
+from app.cosight.tool.deep_search.common.entity import SearchSourceType
+from app.cosight.tool.integrated_search_service import IntegratedSearchService
 
 
 class TaskActorAgent(BaseAgent):
@@ -53,6 +55,10 @@ class TaskActorAgent(BaseAgent):
         self.work_space_path = work_space_path if work_space_path else os.environ.get("WORKSPACE_PATH") or os.getcwd()
         self.plan = TaskManager.get_plan(plan_id)
         self.question = None  # Store the question for later use
+        
+        # 初始化集成搜索服务
+        self.integrated_search_service = IntegratedSearchService(search_sources)
+        
         act_toolkit = ActToolkit(self.plan)
         terminate_toolkit = TerminateToolkit()
         file_toolkit = FileToolkit(work_space_path)
@@ -87,6 +93,8 @@ class TaskActorAgent(BaseAgent):
         all_functions = {"mark_step": act_toolkit.mark_step,
                          # "deep_search": deep_search_toolkit.deep_search,
                          "search_baidu": search_baidu,
+                         "rag_search": self.rag_search,
+                         "custom_search": self.custom_search,
                          "search_google": search_toolkit.search_google,
                          "search_wiki": search_toolkit.search_wiki,
                          "tavily_search": search_toolkit.tavily_search,
@@ -120,6 +128,31 @@ class TaskActorAgent(BaseAgent):
         else:
             sys_prompt = actor_system_prompt(self.work_space_path)
         self.history.append({"role": "system", "content": sys_prompt})
+
+    def _pick_source(self, source_type: str):
+        try:
+            for s in (self.search_sources or []):
+                if s.get('type') == source_type:
+                    return s
+        except Exception:
+            return None
+        return None
+
+    def rag_search(self, query: str) -> dict:
+        """RAG检索：使用集成搜索服务，不依赖deepsearch"""
+        try:
+            return self.integrated_search_service.rag_search(query)
+        except Exception as e:
+            logger.error(f"RAG搜索失败: {e}")
+            raise ValueError(f'RAG搜索失败: {str(e)}')
+
+    def custom_search(self, query: str) -> dict:
+        """自定义搜索：使用集成搜索服务，不依赖deepsearch"""
+        try:
+            return self.integrated_search_service.custom_search(query)
+        except Exception as e:
+            logger.error(f"自定义搜索失败: {e}")
+            raise ValueError(f'自定义搜索失败: {str(e)}')
 
     @time_record
     def act(self, question, step_index):

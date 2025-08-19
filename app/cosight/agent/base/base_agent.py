@@ -51,26 +51,39 @@ class BaseAgent:
         if not search_sources:
             return skills
         
-        # 检查是否包含 type: 'WebSearch'
-        enable_search = any(source.get('type') == 'WebSearch' for source in search_sources)
-        print(f"Filtering skills with search_sources: {search_sources}")
-        print(f"Search tools enabled: {enable_search}")
+        # 识别可用的搜索源类型
+        available_types = set()
+        try:
+            for source in search_sources:
+                source_type = source.get('type') if isinstance(source, dict) else None
+                if source_type:
+                    available_types.add(source_type)
+        except Exception:
+            pass
         
-        if enable_search:
-            return skills  # 启用搜索，返回所有技能
-        else:
-            # 禁用搜索，过滤掉搜索相关技能
-            filtered_skills = []
-            search_skill_names = ['search_baidu', 'search_google', 'tavily_search', 'image_search', 'search_wiki', 'search_duckgo']
-            
-            for skill in skills:
-                if skill.skill_name not in search_skill_names:
+        enable_web = 'WebSearch' in available_types
+        enable_rag = 'RAGKnowledgeLibrary' in available_types
+        print(f"Filtering skills with search_sources: {search_sources}")
+        print(f"Search tools - web: {enable_web}, rag: {enable_rag}")
+        
+        # 定义所有搜索类技能名称
+        web_search_skills = {'search_baidu', 'search_google', 'tavily_search', 'image_search', 'search_wiki', 'search_duckgo', 'custom_search'}
+        rag_search_skills = {'rag_search'}
+        all_search_skills = web_search_skills | rag_search_skills
+        
+        filtered_skills = []
+        for skill in skills:
+            name = getattr(skill, 'skill_name', None)
+            if name in all_search_skills:
+                # 仅保留已启用源类型对应的技能
+                if (name in web_search_skills and enable_web) or (name in rag_search_skills and enable_rag):
                     filtered_skills.append(skill)
-                    print(f"Kept skill: {skill.skill_name}")
                 else:
-                    print(f"Filtered out search skill: {skill.skill_name}")
-            
-            return filtered_skills
+                    print(f"Filtered out search skill: {name}")
+            else:
+                filtered_skills.append(skill)
+        
+        return filtered_skills
 
     def find_mcp_tool(self, tool_name):
         for tool in self.mcp_tools:
@@ -96,6 +109,18 @@ class BaseAgent:
         return messages[-1].get("content")
 
     def _process_response(self, response, messages, step_index):
+        logger.info(f"_process_response called with response: {response}")
+        logger.info(f"Response type: {type(response)}")
+        logger.info(f"Response is None: {response is None}")
+        
+        if response is not None:
+            logger.info(f"Response has content: {hasattr(response, 'content')}")
+            logger.info(f"Response has tool_calls: {hasattr(response, 'tool_calls')}")
+            if hasattr(response, 'content'):
+                logger.info(f"Response content: {response.content}")
+            if hasattr(response, 'tool_calls'):
+                logger.info(f"Response tool_calls: {response.tool_calls}")
+        
         if not response.tool_calls:
             messages.append({"role": "assistant", "content": response.content})
             return response.content
@@ -116,10 +141,27 @@ class BaseAgent:
         return None
 
     def _execute_tool_calls(self, tool_calls, step_index):
+        logger.info(f"_execute_tool_calls called with tool_calls: {tool_calls}")
+        logger.info(f"Tool calls type: {type(tool_calls)}")
+        logger.info(f"Tool calls is None: {tool_calls is None}")
+        logger.info(f"Tool calls length: {len(tool_calls) if tool_calls else 0}")
+        
         results = []
         with ThreadPoolExecutor() as executor:
             futures = []
-            for tool_call in tool_calls:
+            for i, tool_call in enumerate(tool_calls):
+                logger.info(f"Processing tool call {i}: {tool_call}")
+                logger.info(f"Tool call type: {type(tool_call)}")
+                logger.info(f"Tool call has function: {hasattr(tool_call, 'function')}")
+                
+                if hasattr(tool_call, 'function'):
+                    logger.info(f"Function has name: {hasattr(tool_call.function, 'name')}")
+                    logger.info(f"Function has arguments: {hasattr(tool_call.function, 'arguments')}")
+                    if hasattr(tool_call.function, 'name'):
+                        logger.info(f"Function name: {tool_call.function.name}")
+                    if hasattr(tool_call.function, 'arguments'):
+                        logger.info(f"Function arguments: {tool_call.function.arguments}")
+                
                 function_name = tool_call.function.name
                 function_args = tool_call.function.arguments
 
