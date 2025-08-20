@@ -19,6 +19,7 @@ class SearchSourceType:
     ICENTER = "ZTEICenterDocument"
     RAG = "RAGKnowledgeLibrary"
     WEB = "ManusWebSearch"
+    CUSTOM = "custom"
 
 class SearchSource(TypedDict):
     id: Union[int, str]

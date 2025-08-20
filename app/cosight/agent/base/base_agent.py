@@ -61,22 +61,26 @@ class BaseAgent:
         except Exception:
             pass
         
-        enable_web = 'WebSearch' in available_types
+        enable_web = 'ManusWebSearch' in available_types
         enable_rag = 'RAGKnowledgeLibrary' in available_types
+        enable_custom = 'custom' in available_types
         print(f"Filtering skills with search_sources: {search_sources}")
-        print(f"Search tools - web: {enable_web}, rag: {enable_rag}")
+        print(f"Search tools - web: {enable_web}, rag: {enable_rag}, custom: {enable_custom}")
         
         # 定义所有搜索类技能名称
-        web_search_skills = {'search_baidu', 'search_google', 'tavily_search', 'image_search', 'search_wiki', 'search_duckgo', 'custom_search'}
+        web_search_skills = {'search_baidu', 'search_google', 'tavily_search', 'image_search', 'search_wiki', 'search_duckgo'}
         rag_search_skills = {'rag_search'}
-        all_search_skills = web_search_skills | rag_search_skills
+        custom_search_skills = {'custom_search'}
+        all_search_skills = web_search_skills | rag_search_skills | custom_search_skills
         
         filtered_skills = []
         for skill in skills:
             name = getattr(skill, 'skill_name', None)
             if name in all_search_skills:
                 # 仅保留已启用源类型对应的技能
-                if (name in web_search_skills and enable_web) or (name in rag_search_skills and enable_rag):
+                if (name in web_search_skills and enable_web) or \
+                   (name in rag_search_skills and enable_rag) or \
+                   (name in custom_search_skills and enable_custom):
                     filtered_skills.append(skill)
                 else:
                     print(f"Filtered out search skill: {name}")

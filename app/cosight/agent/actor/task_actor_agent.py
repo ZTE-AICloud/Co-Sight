@@ -139,17 +139,57 @@ class TaskActorAgent(BaseAgent):
         return None
 
     def rag_search(self, query: str) -> dict:
-        """RAG检索：使用集成搜索服务，不依赖deepsearch"""
+        """RAG检索：根据搜索源数量自动选择单个搜索或并发搜索"""
         try:
-            return self.integrated_search_service.rag_search(query)
+            # 检查RAG搜索源数量
+            rag_sources = [s for s in (self.search_sources or []) if s.get('type') == SearchSourceType.RAG]
+            
+            if len(rag_sources) <= 1:
+                # 只有一个或没有RAG搜索源，使用单个搜索
+                logger.info(f"检测到 {len(rag_sources)} 个RAG搜索源，使用单个搜索模式")
+                return self.integrated_search_service.rag_search(query)
+            else:
+                # 有多个RAG搜索源，使用并发搜索
+                logger.info(f"检测到 {len(rag_sources)} 个RAG搜索源，使用并发搜索模式")
+                import asyncio
+                # 创建新的事件循环来运行异步方法
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                try:
+                    result = loop.run_until_complete(
+                        self.integrated_search_service.rag_search_concurrent(query)
+                    )
+                    return result
+                finally:
+                    loop.close()
         except Exception as e:
             logger.error(f"RAG搜索失败: {e}")
             raise ValueError(f'RAG搜索失败: {str(e)}')
 
     def custom_search(self, query: str) -> dict:
-        """自定义搜索：使用集成搜索服务，不依赖deepsearch"""
+        """自定义搜索：根据搜索源数量自动选择单个搜索或并发搜索"""
         try:
-            return self.integrated_search_service.custom_search(query)
+            # 检查自定义搜索源数量
+            custom_sources = [s for s in (self.search_sources or []) if s.get('type') == SearchSourceType.CUSTOM]
+            
+            if len(custom_sources) <= 1:
+                # 只有一个或没有自定义搜索源，使用单个搜索
+                logger.info(f"检测到 {len(custom_sources)} 个自定义搜索源，使用单个搜索模式")
+                return self.integrated_search_service.custom_search(query)
+            else:
+                # 有多个自定义搜索源，使用并发搜索
+                logger.info(f"检测到 {len(custom_sources)} 个自定义搜索源，使用并发搜索模式")
+                import asyncio
+                # 创建新的事件循环来运行异步方法
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                try:
+                    result = loop.run_until_complete(
+                        self.integrated_search_service.custom_search_concurrent(query)
+                    )
+                    return result
+                finally:
+                    loop.close()
         except Exception as e:
             logger.error(f"自定义搜索失败: {e}")
             raise ValueError(f'自定义搜索失败: {str(e)}')

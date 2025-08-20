@@ -64,80 +64,121 @@ class IntegratedSearchService:
         """根据类型选择多个搜索源"""
         try:
             sources = []
-            for source in self.search_sources:
-                if source.get('type') == source_type:
+            logger.info(f"开始选择类型为 '{source_type}' 的搜索源")
+            logger.info(f"当前配置的搜索源总数: {len(self.search_sources)}")
+            
+            for i, source in enumerate(self.search_sources):
+                source_type_actual = source.get('type')
+                source_name = source.get('name', 'Unknown')
+                source_sub_name = source.get('sub_name', 'Unknown')
+                logger.info(f"搜索源 {i+1}: type='{source_type_actual}', name='{source_name}', sub_name='{source_sub_name}'")
+                
+                if source_type_actual == source_type:
                     sources.append(source)
+                    logger.info(f"✓ 匹配到搜索源: {source_name}:{source_sub_name}")
+            
+            logger.info(f"类型 '{source_type}' 的搜索源选择完成，共找到 {len(sources)} 个")
             return sources
         except Exception as e:
             logger.error(f"选择搜索源时出错: {e}")
         return []
     
-    async def rag_search_concurrent(self, query: str) -> Dict:
-        """RAG并发检索：在所有RAG搜索源中并发搜索，自动选择前3条内容输出"""
+    async def rag_search_concurrent(self, query: str, max_concurrent: int = 6) -> Dict:
+        """RAG并发检索：在所有RAG搜索源中并发搜索，返回所有内容"""
         rag_sources = self._pick_sources_by_type(SearchSourceType.RAG)
         if not rag_sources:
             raise ValueError('RAG搜索源未配置')
         
-        logger.info(f"执行RAG并发搜索，查询: {query}，搜索源数量: {len(rag_sources)}")
+        logger.info(f"执行RAG并发搜索，查询: {query}，搜索源数量: {len(rag_sources)}，最大并发数: {max_concurrent}")
         
-        # 创建并发任务
-        search_tasks = []
-        for source in rag_sources:
-            search_tasks.append(self._rag_search_single_source(query, source))
+        # 显示所有RAG搜索源的详细信息
+        for i, source in enumerate(rag_sources):
+            source_name = source.get('name', 'RAG')
+            source_sub_name = source.get('sub_name', 'default')
+            source_id = source.get('id', 'unknown')
+            logger.info(f"RAG搜索源 {i+1}: ID={source_id}, 名称={source_name}:{source_sub_name}")
         
-        # 并发执行所有搜索任务
-        start_time = time.time()
-        search_results_list = await asyncio.gather(*search_tasks, return_exceptions=True)
-        total_search_time = time.time() - start_time
-        logger.info(f"RAG并发搜索完成，耗时: {total_search_time:.2f}s")
+        # 分批执行搜索任务
+        all_results = []
+        for i in range(0, len(rag_sources), max_concurrent):
+            batch_sources = rag_sources[i:i + max_concurrent]
+            
+            logger.info(f"执行第 {i//max_concurrent + 1} 批RAG搜索，包含 {len(batch_sources)} 个搜索源")
+            
+            # 显示当前批次的搜索源
+            for j, source in enumerate(batch_sources):
+                source_name = source.get('name', 'RAG')
+                source_sub_name = source.get('sub_name', 'default')
+                logger.info(f"  批次搜索源 {j+1}: {source_name}:{source_sub_name}")
+            
+            # 创建当前批次的搜索任务
+            search_tasks = []
+            for source in batch_sources:
+                search_tasks.append(self._rag_search_single_source(query, source))
+            
+            # 并发执行当前批次
+            batch_start_time = time.time()
+            search_results_list = await asyncio.gather(*search_tasks, return_exceptions=True)
+            batch_time = time.time() - batch_start_time
+            
+            logger.info(f"第 {i//max_concurrent + 1} 批RAG搜索完成，耗时: {batch_time:.2f}s")
+            
+            # 处理当前批次的搜索结果
+            for j, search_result in enumerate(search_results_list):
+                source = batch_sources[j]
+                source_name = f"{source.get('name', 'RAG')}:{source.get('sub_name', 'default')}"
+                
+                # 处理异常情况
+                if isinstance(search_result, Exception):
+                    logger.error(f"RAG搜索源 {source_name} 搜索失败: {search_result}")
+                    continue
+                    
+                if not search_result:
+                    logger.warning(f"RAG搜索源 {source_name} 未返回结果")
+                    continue
+                
+                logger.info(f"RAG搜索源 {source_name} 返回了 {len(search_result)} 条结果")
+                
+                # 合并搜索结果
+                for key, item in search_result.items():
+                    all_results.append({
+                        'key': key,
+                        'item': item,
+                        'source_name': source_name,
+                        'source_type': SearchSourceType.RAG
+                    })
         
         # 合并所有搜索结果
-        all_results = {}
+        merged_results = {}
         result_offset = 0
         
-        for i, search_result in enumerate(search_results_list):
-            source = rag_sources[i]
-            source_name = f"{source.get('name', 'RAG')}:{source.get('sub_name', 'default')}"
-            
-            # 处理异常情况
-            if isinstance(search_result, Exception):
-                logger.error(f"RAG搜索源 {source_name} 搜索失败: {search_result}")
-                continue
-                
-            if not search_result:
-                logger.warning(f"RAG搜索源 {source_name} 未返回结果")
-                continue
-            
-            # 合并搜索结果
-            for key, item in search_result.items():
-                new_key = str(int(key) + result_offset)
-                all_results[new_key] = item
-                # 添加源信息
-                all_results[new_key]['source_name'] = source_name
-                all_results[new_key]['source_type'] = SearchSourceType.RAG
-            
-            result_offset = len(all_results)
+        for result_info in all_results:
+            new_key = str(int(result_info['key']) + result_offset)
+            merged_results[new_key] = result_info['item']
+            merged_results[new_key]['source_name'] = result_info['source_name']
+            merged_results[new_key]['source_type'] = result_info['source_type']
+            result_offset = len(merged_results)
         
-        # 选择最多前三条
-        try:
-            if all_results:
-                select_ids = list(all_results.keys()) if isinstance(list(all_results.keys())[0], int) else [int(k) for k in list(all_results.keys())]
-                select_ids = select_ids[:3]
-                detailed = await self._rag_select_concurrent(select_ids, all_results)
-                return detailed or all_results
-        except Exception as e:
-            logger.error(f"RAG搜索结果处理失败: {e}")
-            
-        return all_results
+        # 直接返回所有搜索结果，不进行筛选
+        logger.info(f"RAG并发搜索完成，共返回 {len(merged_results)} 条结果")
+        return merged_results
     
     async def _rag_search_single_source(self, query: str, source: Dict) -> Dict:
         """在单个RAG搜索源中搜索"""
         try:
-            logger.info(f"在RAG搜索源 {source.get('name', 'RAG')}:{source.get('sub_name', 'default')} 中搜索")
+            source_name = source.get('name', 'RAG')
+            source_sub_name = source.get('sub_name', 'default')
+            source_id = source.get('id', 'unknown')
+            logger.info(f"开始搜索RAG搜索源: ID={source_id}, 名称={source_name}:{source_sub_name}")
+            
             results = await self.rag_toolkit.search_by_source_async(query, source)
+            
+            logger.info(f"RAG搜索源 {source_name}:{source_sub_name} 搜索完成，返回 {len(results)} 条结果")
             return results
         except Exception as e:
-            logger.error(f"RAG搜索源 {source.get('name', 'RAG')} 搜索失败: {e}")
+            source_name = source.get('name', 'RAG')
+            source_sub_name = source.get('sub_name', 'default')
+            logger.error(f"RAG搜索源 {source_name}:{source_sub_name} 搜索失败: {e}")
             return {}
     
     async def _rag_select_concurrent(self, select_ids: List[int], all_results: Dict) -> Dict:
@@ -173,136 +214,174 @@ class IntegratedSearchService:
             logger.error(f"RAG选择结果失败: {e}")
             return {}
     
-    async def custom_search_concurrent(self, query: str) -> Dict:
-        """自定义并发搜索：在所有类型为WebSearch的自定义源中并发执行搜索"""
-        web_sources = self._pick_sources_by_type(SearchSourceType.WEB)
-        if not web_sources:
+    async def custom_search_concurrent(self, query: str, max_concurrent: int = 6) -> Dict:
+        """自定义并发搜索：在所有类型为custom的自定义源中并发执行搜索"""
+        custom_sources = self._pick_sources_by_type(SearchSourceType.CUSTOM)
+        if not custom_sources:
             raise ValueError('自定义搜索源未配置')
         
-        logger.info(f"执行自定义并发搜索，查询: {query}，搜索源数量: {len(web_sources)}")
+        logger.info(f"执行自定义并发搜索，查询: {query}，搜索源数量: {len(custom_sources)}，最大并发数: {max_concurrent}")
         
-        # 创建并发任务
-        search_tasks = []
-        for source in web_sources:
-            search_tasks.append(self._custom_search_single_source(query, source))
-        
-        # 并发执行所有搜索任务
-        start_time = time.time()
-        search_results_list = await asyncio.gather(*search_tasks, return_exceptions=True)
-        total_search_time = time.time() - start_time
-        logger.info(f"自定义并发搜索完成，耗时: {total_search_time:.2f}s")
+        # 分批执行搜索任务
+        all_results = []
+        for i in range(0, len(custom_sources), max_concurrent):
+            batch_sources = custom_sources[i:i + max_concurrent]
+            
+            logger.info(f"执行第 {i//max_concurrent + 1} 批自定义搜索，包含 {len(batch_sources)} 个搜索源")
+            
+            # 创建当前批次的搜索任务
+            search_tasks = []
+            for source in batch_sources:
+                search_tasks.append(self._custom_search_single_source(query, source))
+            
+            # 并发执行当前批次
+            batch_start_time = time.time()
+            search_results_list = await asyncio.gather(*search_tasks, return_exceptions=True)
+            batch_time = time.time() - batch_start_time
+            
+            logger.info(f"第 {i//max_concurrent + 1} 批自定义搜索完成，耗时: {batch_time:.2f}s")
+            
+            # 处理当前批次的搜索结果
+            for j, search_result in enumerate(search_results_list):
+                source = batch_sources[j]
+                source_name = f"{source.get('name', 'Custom')}:{source.get('sub_name', 'default')}"
+                
+                # 处理异常情况
+                if isinstance(search_result, Exception):
+                    logger.error(f"自定义搜索源 {source_name} 搜索失败: {search_result}")
+                    continue
+                    
+                if not search_result:
+                    logger.warning(f"自定义搜索源 {source_name} 未返回结果")
+                    continue
+                
+                # 合并搜索结果
+                for key, item in search_result.items():
+                    all_results.append({
+                        'key': key,
+                        'item': item,
+                        'source_name': source_name,
+                        'source_type': SearchSourceType.CUSTOM
+                    })
         
         # 合并所有搜索结果
-        all_results = {}
+        merged_results = {}
         result_offset = 0
         
-        for i, search_result in enumerate(search_results_list):
-            source = web_sources[i]
-            source_name = f"{source.get('name', 'Web')}:{source.get('sub_name', 'default')}"
-            
-            # 处理异常情况
-            if isinstance(search_result, Exception):
-                logger.error(f"自定义搜索源 {source_name} 搜索失败: {search_result}")
-                continue
-                
-            if not search_result:
-                logger.warning(f"自定义搜索源 {source_name} 未返回结果")
-                continue
-            
-            # 合并搜索结果
-            for key, item in search_result.items():
-                new_key = str(int(key) + result_offset)
-                all_results[new_key] = item
-                # 添加源信息
-                all_results[new_key]['source_name'] = source_name
-                all_results[new_key]['source_type'] = SearchSourceType.WEB
-            
-            result_offset = len(all_results)
+        for result_info in all_results:
+            new_key = str(int(result_info['key']) + result_offset)
+            merged_results[new_key] = result_info['item']
+            merged_results[new_key]['source_name'] = result_info['source_name']
+            merged_results[new_key]['source_type'] = result_info['source_type']
+            result_offset = len(merged_results)
         
-        return all_results
+        return merged_results
     
     async def _custom_search_single_source(self, query: str, source: Dict) -> Dict:
         """在单个自定义搜索源中搜索"""
         try:
-            logger.info(f"在自定义搜索源 {source.get('name', 'Web')}:{source.get('sub_name', 'default')} 中搜索")
+            logger.info(f"在自定义搜索源 {source.get('name', 'Custom')}:{source.get('sub_name', 'default')} 中搜索")
             results = await self.custom_toolkit.search_by_source_async(query, source)
             return results
         except Exception as e:
-            logger.error(f"自定义搜索源 {source.get('name', 'Web')} 搜索失败: {e}")
+            logger.error(f"自定义搜索源 {source.get('name', 'Custom')} 搜索失败: {e}")
             return {}
     
-    async def search_all_concurrent(self, query: str) -> Dict:
-        """并发执行所有可用的搜索"""
+    async def search_all_concurrent(self, query: str, max_concurrent: int = 6) -> Dict:
+        """并发执行所有可用的搜索，限制并发数量"""
         results = {}
         
-        # 创建所有搜索任务
-        search_tasks = []
+        # 收集所有搜索源
+        all_sources = []
+        source_types = []
         
-        # RAG搜索任务
+        # RAG搜索源
         rag_sources = self._pick_sources_by_type(SearchSourceType.RAG)
-        if rag_sources:
-            for source in rag_sources:
-                search_tasks.append(self._rag_search_single_source(query, source))
+        for source in rag_sources:
+            all_sources.append(('rag', source))
+            source_types.append(SearchSourceType.RAG)
         
-        # 自定义搜索任务
-        web_sources = self._pick_sources_by_type(SearchSourceType.WEB)
-        if web_sources:
-            for source in web_sources:
-                search_tasks.append(self._custom_search_single_source(query, source))
+        # 自定义搜索源
+        custom_sources = self._pick_sources_by_type(SearchSourceType.CUSTOM)
+        for source in custom_sources:
+            all_sources.append(('custom', source))
+            source_types.append(SearchSourceType.CUSTOM)
         
-        if not search_tasks:
+        if not all_sources:
             logger.warning("没有可用的搜索源")
             return results
         
-        # 并发执行所有搜索任务
-        logger.info(f"开始并发搜索，总共 {len(search_tasks)} 个搜索任务")
+        logger.info(f"开始并发搜索，总共 {len(all_sources)} 个搜索源，最大并发数: {max_concurrent}")
         start_time = time.time()
-        search_results_list = await asyncio.gather(*search_tasks, return_exceptions=True)
-        total_search_time = time.time() - start_time
-        logger.info(f"所有并发搜索完成，耗时: {total_search_time:.2f}s")
         
-        # 处理搜索结果
+        # 分批执行搜索任务
+        all_results = []
+        for i in range(0, len(all_sources), max_concurrent):
+            batch_sources = all_sources[i:i + max_concurrent]
+            batch_types = source_types[i:i + max_concurrent]
+            
+            logger.info(f"执行第 {i//max_concurrent + 1} 批搜索，包含 {len(batch_sources)} 个搜索源")
+            
+            # 创建当前批次的搜索任务
+            batch_tasks = []
+            for (source_type, source) in batch_sources:
+                if source_type == 'rag':
+                    batch_tasks.append(self._rag_search_single_source(query, source))
+                elif source_type == 'custom':
+                    batch_tasks.append(self._custom_search_single_source(query, source))
+            
+            # 并发执行当前批次
+            batch_start_time = time.time()
+            batch_results = await asyncio.gather(*batch_tasks, return_exceptions=True)
+            batch_time = time.time() - batch_start_time
+            
+            logger.info(f"第 {i//max_concurrent + 1} 批搜索完成，耗时: {batch_time:.2f}s")
+            
+            # 处理当前批次的搜索结果
+            for j, (source_type, source) in enumerate(batch_sources):
+                result = batch_results[j]
+                source_name = f"{source.get('name', source_type.title())}:{source.get('sub_name', 'default')}"
+                
+                if isinstance(result, Exception):
+                    logger.error(f"{source_type.title()}搜索源 {source_name} 搜索失败: {result}")
+                    continue
+                    
+                if result:
+                    all_results.append({
+                        'type': source_type,
+                        'source': source,
+                        'source_name': source_name,
+                        'results': result
+                    })
+        
+        total_search_time = time.time() - start_time
+        logger.info(f"所有批次搜索完成，总耗时: {total_search_time:.2f}s")
+        
+        # 合并所有搜索结果
         all_rag_results = {}
         all_custom_results = {}
         rag_offset = 0
         custom_offset = 0
         
-        # 处理RAG搜索结果
-        for i, search_result in enumerate(rag_sources):
-            if i < len(search_results_list):
-                result = search_results_list[i]
-                source = rag_sources[i]
-                source_name = f"{source.get('name', 'RAG')}:{source.get('sub_name', 'default')}"
-                
-                if isinstance(result, Exception):
-                    logger.error(f"RAG搜索源 {source_name} 搜索失败: {result}")
-                    continue
-                    
-                if result:
-                    for key, item in result.items():
-                        new_key = str(int(key) + rag_offset)
-                        all_rag_results[new_key] = item
-                        all_rag_results[new_key]['source_name'] = source_name
-                        all_rag_results[new_key]['source_type'] = SearchSourceType.RAG
-                    rag_offset = len(all_rag_results)
-        
-        # 处理自定义搜索结果
-        for i, search_result in enumerate(search_results_list[len(rag_sources):]):
-            if i < len(web_sources):
-                source = web_sources[i]
-                source_name = f"{source.get('name', 'Web')}:{source.get('sub_name', 'default')}"
-                
-                if isinstance(search_result, Exception):
-                    logger.error(f"自定义搜索源 {source_name} 搜索失败: {search_result}")
-                    continue
-                    
-                if search_result:
-                    for key, item in search_result.items():
-                        new_key = str(int(key) + custom_offset)
-                        all_custom_results[new_key] = item
-                        all_custom_results[new_key]['source_name'] = source_name
-                        all_custom_results[new_key]['source_type'] = SearchSourceType.WEB
-                    custom_offset = len(all_custom_results)
+        for result_info in all_results:
+            source_type = result_info['type']
+            source_name = result_info['source_name']
+            result = result_info['results']
+            
+            if source_type == 'rag':
+                for key, item in result.items():
+                    new_key = str(int(key) + rag_offset)
+                    all_rag_results[new_key] = item
+                    all_rag_results[new_key]['source_name'] = source_name
+                    all_rag_results[new_key]['source_type'] = SearchSourceType.RAG
+                rag_offset = len(all_rag_results)
+            elif source_type == 'custom':
+                for key, item in result.items():
+                    new_key = str(int(key) + custom_offset)
+                    all_custom_results[new_key] = item
+                    all_custom_results[new_key]['source_name'] = source_name
+                    all_custom_results[new_key]['source_type'] = SearchSourceType.CUSTOM
+                custom_offset = len(all_custom_results)
         
         # 合并结果
         if all_rag_results:
@@ -314,7 +393,7 @@ class IntegratedSearchService:
     
     # 保留原有的单源搜索方法以保持向后兼容
     def rag_search(self, query: str) -> Dict:
-        """RAG检索：优先使用传入的RAG搜索源，自动选择前3条内容输出"""
+        """RAG检索：优先使用传入的RAG搜索源，返回所有内容"""
         source = self._pick_source(SearchSourceType.RAG)
         if not source:
             raise ValueError('RAG搜索源未配置')
@@ -322,21 +401,13 @@ class IntegratedSearchService:
         logger.info(f"执行RAG搜索，查询: {query}")
         results = self.rag_toolkit.search_by_source(query, source)
         
-        try:
-            if results:
-                # 选择最多前三条
-                select_ids = list(results.keys()) if isinstance(list(results.keys())[0], int) else [int(k) for k in list(results.keys())]
-                select_ids = select_ids[:3]
-                detailed = self.rag_toolkit.select(select_ids)
-                return detailed or results
-        except Exception as e:
-            logger.error(f"RAG搜索结果处理失败: {e}")
-            
+        # 直接返回所有搜索结果，不进行筛选
+        logger.info(f"RAG搜索完成，共返回 {len(results)} 条结果")
         return results
     
     def custom_search(self, query: str) -> Dict:
-        """自定义搜索：使用类型为WebSearch的自定义源执行搜索"""
-        source = self._pick_source(SearchSourceType.WEB)
+        """自定义搜索：使用类型为custom的自定义源执行搜索"""
+        source = self._pick_source(SearchSourceType.CUSTOM)
         if not source:
             raise ValueError('自定义搜索源未配置')
         
