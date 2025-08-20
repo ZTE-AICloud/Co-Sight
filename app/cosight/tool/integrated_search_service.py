@@ -98,55 +98,65 @@ class IntegratedSearchService:
             source_id = source.get('id', 'unknown')
             logger.info(f"RAG搜索源 {i+1}: ID={source_id}, 名称={source_name}:{source_sub_name}")
         
-        # 分批执行搜索任务
+        # 使用信号量控制并发数
+        semaphore = asyncio.Semaphore(max_concurrent)
+        logger.info(f"限制最大并发数为{max_concurrent}")
+        
+        # 使用共享计数器跟踪完成的任务数量
+        completed_counter = 0
+        total_tasks = len(rag_sources)
+        counter_lock = asyncio.Lock()
+        
+        # 存储所有搜索结果
         all_results = []
-        for i in range(0, len(rag_sources), max_concurrent):
-            batch_sources = rag_sources[i:i + max_concurrent]
+        
+        async def process_rag_source(source_info):
+            nonlocal completed_counter
+            source = source_info
+            source_name = f"{source.get('name', 'RAG')}:{source.get('sub_name', 'default')}"
             
-            logger.info(f"执行第 {i//max_concurrent + 1} 批RAG搜索，包含 {len(batch_sources)} 个搜索源")
-            
-            # 显示当前批次的搜索源
-            for j, source in enumerate(batch_sources):
-                source_name = source.get('name', 'RAG')
-                source_sub_name = source.get('sub_name', 'default')
-                logger.info(f"  批次搜索源 {j+1}: {source_name}:{source_sub_name}")
-            
-            # 创建当前批次的搜索任务
-            search_tasks = []
-            for source in batch_sources:
-                search_tasks.append(self._rag_search_single_source(query, source))
-            
-            # 并发执行当前批次
-            batch_start_time = time.time()
-            search_results_list = await asyncio.gather(*search_tasks, return_exceptions=True)
-            batch_time = time.time() - batch_start_time
-            
-            logger.info(f"第 {i//max_concurrent + 1} 批RAG搜索完成，耗时: {batch_time:.2f}s")
-            
-            # 处理当前批次的搜索结果
-            for j, search_result in enumerate(search_results_list):
-                source = batch_sources[j]
-                source_name = f"{source.get('name', 'RAG')}:{source.get('sub_name', 'default')}"
-                
-                # 处理异常情况
-                if isinstance(search_result, Exception):
-                    logger.error(f"RAG搜索源 {source_name} 搜索失败: {search_result}")
-                    continue
+            async with semaphore:
+                logger.info(f"开始处理RAG搜索源: {source_name}")
+                try:
+                    result = await self._rag_search_single_source(query, source)
                     
-                if not search_result:
-                    logger.warning(f"RAG搜索源 {source_name} 未返回结果")
-                    continue
-                
-                logger.info(f"RAG搜索源 {source_name} 返回了 {len(search_result)} 条结果")
-                
-                # 合并搜索结果
-                for key, item in search_result.items():
-                    all_results.append({
-                        'key': key,
-                        'item': item,
-                        'source_name': source_name,
-                        'source_type': SearchSourceType.RAG
-                    })
+                    # 安全地更新计数器
+                    async with counter_lock:
+                        completed_counter += 1
+                        current_completed = completed_counter
+                    
+                    logger.info(f"完成处理RAG搜索源: {source_name} (已完成: {current_completed} / {total_tasks})")
+                    
+                    if result:
+                        logger.info(f"RAG搜索源 {source_name} 返回了 {len(result)} 条结果")
+                        # 合并搜索结果
+                        for key, item in result.items():
+                            all_results.append({
+                                'key': key,
+                                'item': item,
+                                'source_name': source_name,
+                                'source_type': SearchSourceType.RAG
+                            })
+                    else:
+                        logger.warning(f"RAG搜索源 {source_name} 未返回结果")
+                        
+                except Exception as e:
+                    # 安全地更新计数器
+                    async with counter_lock:
+                        completed_counter += 1
+                        current_completed = completed_counter
+                    
+                    logger.error(f"RAG搜索源 {source_name} 搜索失败: {e} (已完成: {current_completed} / {total_tasks})")
+        
+        # 创建所有搜索任务
+        search_tasks = [process_rag_source(source) for source in rag_sources]
+        
+        # 并发执行所有任务
+        start_time = time.time()
+        await asyncio.gather(*search_tasks, return_exceptions=True)
+        total_time = time.time() - start_time
+        
+        logger.info(f"RAG并发搜索完成，总耗时: {total_time:.2f}s")
         
         # 合并所有搜索结果
         merged_results = {}
@@ -222,47 +232,65 @@ class IntegratedSearchService:
         
         logger.info(f"执行自定义并发搜索，查询: {query}，搜索源数量: {len(custom_sources)}，最大并发数: {max_concurrent}")
         
-        # 分批执行搜索任务
+        # 使用信号量控制并发数
+        semaphore = asyncio.Semaphore(max_concurrent)
+        logger.info(f"限制最大并发数为{max_concurrent}")
+        
+        # 使用共享计数器跟踪完成的任务数量
+        completed_counter = 0
+        total_tasks = len(custom_sources)
+        counter_lock = asyncio.Lock()
+        
+        # 存储所有搜索结果
         all_results = []
-        for i in range(0, len(custom_sources), max_concurrent):
-            batch_sources = custom_sources[i:i + max_concurrent]
+        
+        async def process_custom_source(source_info):
+            nonlocal completed_counter
+            source = source_info
+            source_name = f"{source.get('name', 'Custom')}:{source.get('sub_name', 'default')}"
             
-            logger.info(f"执行第 {i//max_concurrent + 1} 批自定义搜索，包含 {len(batch_sources)} 个搜索源")
-            
-            # 创建当前批次的搜索任务
-            search_tasks = []
-            for source in batch_sources:
-                search_tasks.append(self._custom_search_single_source(query, source))
-            
-            # 并发执行当前批次
-            batch_start_time = time.time()
-            search_results_list = await asyncio.gather(*search_tasks, return_exceptions=True)
-            batch_time = time.time() - batch_start_time
-            
-            logger.info(f"第 {i//max_concurrent + 1} 批自定义搜索完成，耗时: {batch_time:.2f}s")
-            
-            # 处理当前批次的搜索结果
-            for j, search_result in enumerate(search_results_list):
-                source = batch_sources[j]
-                source_name = f"{source.get('name', 'Custom')}:{source.get('sub_name', 'default')}"
-                
-                # 处理异常情况
-                if isinstance(search_result, Exception):
-                    logger.error(f"自定义搜索源 {source_name} 搜索失败: {search_result}")
-                    continue
+            async with semaphore:
+                logger.info(f"开始处理自定义搜索源: {source_name}")
+                try:
+                    result = await self._custom_search_single_source(query, source)
                     
-                if not search_result:
-                    logger.warning(f"自定义搜索源 {source_name} 未返回结果")
-                    continue
-                
-                # 合并搜索结果
-                for key, item in search_result.items():
-                    all_results.append({
-                        'key': key,
-                        'item': item,
-                        'source_name': source_name,
-                        'source_type': SearchSourceType.CUSTOM
-                    })
+                    # 安全地更新计数器
+                    async with counter_lock:
+                        completed_counter += 1
+                        current_completed = completed_counter
+                    
+                    logger.info(f"完成处理自定义搜索源: {source_name} (已完成: {current_completed} / {total_tasks})")
+                    
+                    if result:
+                        logger.info(f"自定义搜索源 {source_name} 返回了 {len(result)} 条结果")
+                        # 合并搜索结果
+                        for key, item in result.items():
+                            all_results.append({
+                                'key': key,
+                                'item': item,
+                                'source_name': source_name,
+                                'source_type': SearchSourceType.CUSTOM
+                            })
+                    else:
+                        logger.warning(f"自定义搜索源 {source_name} 未返回结果")
+                        
+                except Exception as e:
+                    # 安全地更新计数器
+                    async with counter_lock:
+                        completed_counter += 1
+                        current_completed = completed_counter
+                    
+                    logger.error(f"自定义搜索源 {source_name} 搜索失败: {e} (已完成: {current_completed} / {total_tasks})")
+        
+        # 创建所有搜索任务
+        search_tasks = [process_custom_source(source) for source in custom_sources]
+        
+        # 并发执行所有任务
+        start_time = time.time()
+        await asyncio.gather(*search_tasks, return_exceptions=True)
+        total_time = time.time() - start_time
+        
+        logger.info(f"自定义并发搜索完成，总耗时: {total_time:.2f}s")
         
         # 合并所有搜索结果
         merged_results = {}
@@ -312,50 +340,70 @@ class IntegratedSearchService:
             return results
         
         logger.info(f"开始并发搜索，总共 {len(all_sources)} 个搜索源，最大并发数: {max_concurrent}")
-        start_time = time.time()
         
-        # 分批执行搜索任务
+        # 使用信号量控制并发数
+        semaphore = asyncio.Semaphore(max_concurrent)
+        logger.info(f"限制最大并发数为{max_concurrent}")
+        
+        # 使用共享计数器跟踪完成的任务数量
+        completed_counter = 0
+        total_tasks = len(all_sources)
+        counter_lock = asyncio.Lock()
+        
+        # 存储所有搜索结果
         all_results = []
-        for i in range(0, len(all_sources), max_concurrent):
-            batch_sources = all_sources[i:i + max_concurrent]
-            batch_types = source_types[i:i + max_concurrent]
-            
-            logger.info(f"执行第 {i//max_concurrent + 1} 批搜索，包含 {len(batch_sources)} 个搜索源")
-            
-            # 创建当前批次的搜索任务
-            batch_tasks = []
-            for (source_type, source) in batch_sources:
-                if source_type == 'rag':
-                    batch_tasks.append(self._rag_search_single_source(query, source))
-                elif source_type == 'custom':
-                    batch_tasks.append(self._custom_search_single_source(query, source))
-            
-            # 并发执行当前批次
-            batch_start_time = time.time()
-            batch_results = await asyncio.gather(*batch_tasks, return_exceptions=True)
-            batch_time = time.time() - batch_start_time
-            
-            logger.info(f"第 {i//max_concurrent + 1} 批搜索完成，耗时: {batch_time:.2f}s")
-            
-            # 处理当前批次的搜索结果
-            for j, (source_type, source) in enumerate(batch_sources):
-                result = batch_results[j]
-                source_name = f"{source.get('name', source_type.title())}:{source.get('sub_name', 'default')}"
-                
-                if isinstance(result, Exception):
-                    logger.error(f"{source_type.title()}搜索源 {source_name} 搜索失败: {result}")
-                    continue
-                    
-                if result:
-                    all_results.append({
-                        'type': source_type,
-                        'source': source,
-                        'source_name': source_name,
-                        'results': result
-                    })
         
+        async def process_search_source(source_info):
+            nonlocal completed_counter
+            source_type, source = source_info
+            source_name = f"{source.get('name', source_type.title())}:{source.get('sub_name', 'default')}"
+            
+            async with semaphore:
+                logger.info(f"开始处理{source_type.title()}搜索源: {source_name}")
+                try:
+                    if source_type == 'rag':
+                        result = await self._rag_search_single_source(query, source)
+                    elif source_type == 'custom':
+                        result = await self._custom_search_single_source(query, source)
+                    else:
+                        logger.error(f"未知的搜索源类型: {source_type}")
+                        return
+                    
+                    # 安全地更新计数器
+                    async with counter_lock:
+                        completed_counter += 1
+                        current_completed = completed_counter
+                    
+                    logger.info(f"完成处理{source_type.title()}搜索源: {source_name} (已完成: {current_completed} / {total_tasks})")
+                    
+                    if result:
+                        logger.info(f"{source_type.title()}搜索源 {source_name} 返回了 {len(result)} 条结果")
+                        all_results.append({
+                            'type': source_type,
+                            'source': source,
+                            'source_name': source_name,
+                            'results': result
+                        })
+                    else:
+                        logger.warning(f"{source_type.title()}搜索源 {source_name} 未返回结果")
+                        
+                except Exception as e:
+                    # 安全地更新计数器
+                    async with counter_lock:
+                        completed_counter += 1
+                        current_completed = completed_counter
+                    
+                    logger.error(f"{source_type.title()}搜索源 {source_name} 搜索失败: {e} (已完成: {current_completed} / {total_tasks})")
+        
+        # 创建所有搜索任务
+        search_tasks = [process_search_source(source_info) for source_info in all_sources]
+        
+        # 并发执行所有任务
+        start_time = time.time()
+        await asyncio.gather(*search_tasks, return_exceptions=True)
         total_search_time = time.time() - start_time
-        logger.info(f"所有批次搜索完成，总耗时: {total_search_time:.2f}s")
+        
+        logger.info(f"所有并发搜索完成，总耗时: {total_search_time:.2f}s")
         
         # 合并所有搜索结果
         all_rag_results = {}
