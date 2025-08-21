@@ -814,7 +814,7 @@ class CustomSearchToolkit(ManusBaseAction):
                     raw_response = self._handle_get_request(url, template_str, keyword, headers, cookies, proxies, self.timeout)
                     parsed_results = parse_func(raw_response)
 
-                result_count = self._parse_and_validate_results(raw_response, parse_func, all_results, result_count)
+                result_count = self._parse_and_validate_results(parsed_results, parse_func, all_results, result_count)
 
             except Exception as e:
                 logger.error(f"处理关键词 '{keyword}' 时出错: {str(e)}", exc_info=True)
@@ -886,7 +886,7 @@ class CustomSearchToolkit(ManusBaseAction):
                     raw_response = await self._handle_get_request_async(url, template_str, keyword, headers, cookies, proxies, self.timeout)
                     parsed_results = parse_func(raw_response)
 
-                result_count = self._parse_and_validate_results(raw_response, parse_func, all_results, result_count)
+                result_count = self._parse_and_validate_results(parsed_results, parse_func, all_results, result_count)
 
             except Exception as e:
                 logger.error(f"处理关键词 '{keyword}' 时出错: {str(e)}", exc_info=True)
@@ -912,7 +912,7 @@ class CustomSearchToolkit(ManusBaseAction):
         if not url:
             raise ValueError("URL不能为空")
 
-        parse_function_str = config.get('parse_function')
+        parse_function_str = config.get('parseFunction')
         if not parse_function_str:
             raise ValueError("解析函数不能为空")
 
@@ -929,7 +929,7 @@ class CustomSearchToolkit(ManusBaseAction):
             return parse_func
         except Exception as e:
             logger.error(f"解析函数字符串失败: {e}")
-            raise
+            raise ValueError("解析函数格式无效") from e
 
     def _prepare_headers(self, config_headers: dict) -> dict:
         """准备请求头"""
@@ -1040,11 +1040,9 @@ class CustomSearchToolkit(ManusBaseAction):
         else:
             return template
 
-    def _parse_and_validate_results(self, raw_response: str, parse_func, all_results: dict, result_count: int) -> int:
+    def _parse_and_validate_results(self, parsed_results: list, parse_func, all_results: dict, result_count: int) -> int:
         """解析和验证搜索结果"""
         try:
-            parsed_results = parse_func(raw_response)
-            
             if isinstance(parsed_results, list):
                 for result in parsed_results:
                     if isinstance(result, dict) and result.get('title') and result.get('content'):
