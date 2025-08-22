@@ -23,6 +23,12 @@ import hashlib
 import os
 from lagent.actions import tool_api
 from lagent.actions.parser import BaseParser
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+import socket
+import threading
+from bs4 import BeautifulSoup
+from urllib.parse import quote
 
 from app.common.logger_util import logger
 from app.cosight.tool.deep_search.common.entity import SearchSource, SearchSourceType
@@ -744,11 +750,113 @@ class CustomSearchToolkit(ManusBaseAction):
                  **kwargs):
         self.search_results = None
         self.timeout = kwargs.get('timeout', 30)
+        self.max_retries = kwargs.get('max_retries', 2)
+        self.retry_delay = kwargs.get('retry_delay', 1)
+        self.max_concurrent = kwargs.get('max_concurrent', 3)  # 限制并发数
+        
+        # 创建线程锁和信号量
+        self._lock = threading.Lock()
+        self._semaphore = asyncio.Semaphore(self.max_concurrent)
+        
+        # 创建会话并配置连接池
+        self.session = self._create_session_with_pool()
+        
         super().__init__(description=description,
                          parser=parser,
                          enable=enable,
                          model_format=model_format,
                          **kwargs)
+    
+    def _create_session_with_pool(self):
+        """创建带有连接池的会话"""
+        session = requests.Session()
+        
+        # 配置连接池
+        adapter = HTTPAdapter(
+            pool_connections=5,      # 连接池大小
+            pool_maxsize=10,         # 最大连接数
+            max_retries=0,           # 禁用urllib3的重试，我们自己处理
+            pool_block=False         # 不阻塞
+        )
+        
+        session.mount("http://", adapter)
+        session.mount("https://", adapter)
+        
+        return session
+    
+    def cleanup(self):
+        """清理资源"""
+        if hasattr(self, 'session'):
+            self.session.close()
+    
+    def __del__(self):
+        """析构函数，确保资源被清理"""
+        self.cleanup()
+
+    def _make_post_request(self, url: str, data: dict, headers: dict, cookies: dict, proxies: dict, timeout: int):
+        """执行POST请求"""
+        try:
+            return self.session.post(
+                url=url,
+                json=data,
+                headers=headers,
+                cookies=cookies,
+                proxies=proxies,
+                timeout=timeout,
+                verify=False
+            )
+        except Exception as e:
+            logger.error(f"POST请求执行失败: {e}")
+            raise
+
+    def _make_get_request(self, url: str, headers: dict, cookies: dict, proxies: dict, timeout: int):
+        """执行GET请求"""
+        try:
+            return self.session.get(
+                url=url,
+                headers=headers,
+                cookies=cookies,
+                proxies=proxies,
+                timeout=timeout,
+                verify=False
+            )
+        except Exception as e:
+            logger.error(f"GET请求执行失败: {e}")
+            raise
+
+    def _is_connection_error(self, exception):
+        """判断是否为连接相关错误"""
+        connection_errors = (
+            requests.exceptions.ConnectionError,
+            requests.exceptions.ConnectTimeout,
+            requests.exceptions.ReadTimeout,
+            socket.error,
+            OSError
+        )
+        return isinstance(exception, connection_errors) or (
+            hasattr(exception, '__cause__') and 
+            exception.__cause__ and 
+            isinstance(exception.__cause__, connection_errors)
+        )
+
+    def _check_network_connectivity(self, host: str = "8.8.8.8", port: int = 53, timeout: int = 3):
+        """检查网络连接性"""
+        try:
+            socket.setdefaulttimeout(timeout)
+            socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect((host, port))
+            return True
+        except socket.error:
+            return False
+        finally:
+            socket.setdefaulttimeout(None)
+
+    @tool_api
+    def search(self, query: str) -> dict:
+        """Custom Search API
+        Args:
+            query (str): question string for search
+        """
+        return super().search(query)
 
     @tool_api
     def search_by_source(self, query: str, source: SearchSource) -> dict:
@@ -775,6 +883,7 @@ class CustomSearchToolkit(ManusBaseAction):
         proxy = config.get('proxy')
         proxies = {'http': proxy, 'https': proxy} if proxy else None
         params = config.get('params', {})
+        selectors = config.get('selectors')
         template_str = params.get('template') if params else None
         
         if isinstance(template_str, str) and method == 'GET':
@@ -804,20 +913,53 @@ class CustomSearchToolkit(ManusBaseAction):
                     logger.info(f"关键词: {keyword}")
                     logger.info(f"请求自带的cookie为: {cookies}")
 
-                    raw_response = self._handle_post_request(url, template_str, keyword, headers, cookies, proxies, self.timeout)
+                    raw_response = self._handle_post_request_with_template(url, template_str, keyword, headers, cookies, proxies, self.timeout)
 
                     if isinstance(raw_response, list):
                         parsed_results = raw_response
                     else:
                         parsed_results = parse_func(raw_response)
                 else:
-                    raw_response = self._handle_get_request(url, template_str, keyword, headers, cookies, proxies, self.timeout)
-                    parsed_results = parse_func(raw_response)
+                    # 使用带解析的GET请求处理
+                    parsed_results = self._handle_get_request_with_parsing(url, keyword, template_str, selectors, headers, cookies, proxies, self.timeout, parse_func)
+                    logger.info(f"解析结果类型: {type(parsed_results)}")
 
-                result_count = self._parse_and_validate_results(parsed_results, parse_func, all_results, result_count)
+                # 验证并添加结果
+                if isinstance(parsed_results, list):
+                    for result in parsed_results:
+                        if isinstance(result, dict) and all(k in result for k in ['url', 'title']):
+                            # 确保结果格式正确
+                            formatted_result = {
+                                'result_id': result_count + 1,
+                                'title': result.get('title', ''),
+                                'description': result.get('content', result.get('summ', ''))[:500],
+                                'url': result.get('url', ''),
+                                'content': result.get('content', result.get('summ', ''))
+                            }
+                            all_results[str(result_count)] = formatted_result
+                            result_count += 1
+                        else:
+                            logger.warning(f"跳过格式不正确的结果: {result}")
+                else:
+                    logger.warning(f"解析结果不是列表: {type(parsed_results)}")
+                    # 尝试使用原始解析方法
+                    result_count = self._parse_and_validate_results(parsed_results, parse_func, all_results, result_count)
 
+            except requests.exceptions.ConnectionError as e:
+                logger.error(f"网络连接错误，处理关键词 '{keyword}' 时出错: {str(e)}")
+                continue
+            except requests.exceptions.Timeout as e:
+                logger.error(f"请求超时，处理关键词 '{keyword}' 时出错: {str(e)}")
+                continue
+            except requests.exceptions.RequestException as e:
+                logger.error(f"HTTP请求错误，处理关键词 '{keyword}' 时出错: {str(e)}")
+                continue
             except Exception as e:
                 logger.error(f"处理关键词 '{keyword}' 时出错: {str(e)}", exc_info=True)
+                continue
+
+        if not all_results:
+            raise ValueError("未找到任何搜索结果")
 
         logger.info(f"自定义搜索完成，共获得 {len(all_results)} 条结果")
         self.search_results = all_results
@@ -847,6 +989,7 @@ class CustomSearchToolkit(ManusBaseAction):
         proxy = config.get('proxy')
         proxies = {'http': proxy, 'https': proxy} if proxy else None
         params = config.get('params', {})
+        selectors = config.get('selectors')
         template_str = params.get('template') if params else None
         
         if isinstance(template_str, str) and method == 'GET':
@@ -871,25 +1014,71 @@ class CustomSearchToolkit(ManusBaseAction):
 
         for keyword in keywords:
             try:
-                if method == 'POST':
-                    logger.info(f"请求URL: {url}")
-                    logger.info(f"关键词: {keyword}")
-                    logger.info(f"请求自带的cookie为: {cookies}")
+                async with self._semaphore:  # 限制并发数
+                    if method == 'POST':
+                        logger.info(f"请求URL: {url}")
+                        logger.info(f"关键词: {keyword}")
+                        logger.info(f"请求自带的cookie为: {cookies}")
 
-                    raw_response = await self._handle_post_request_async(url, template_str, keyword, headers, cookies, proxies, self.timeout)
+                        raw_response = await asyncio.wait_for(
+                            asyncio.to_thread(
+                                self._handle_post_request_with_template,
+                                url, template_str, keyword, headers, cookies, proxies, self.timeout
+                            ),
+                            timeout=self.timeout + 5
+                        )
 
-                    if isinstance(raw_response, list):
-                        parsed_results = raw_response
+                        if isinstance(raw_response, list):
+                            parsed_results = raw_response
+                        else:
+                            parsed_results = parse_func(raw_response)
                     else:
-                        parsed_results = parse_func(raw_response)
-                else:
-                    raw_response = await self._handle_get_request_async(url, template_str, keyword, headers, cookies, proxies, self.timeout)
-                    parsed_results = parse_func(raw_response)
+                        # 使用带解析的GET请求处理
+                        parsed_results = await asyncio.wait_for(
+                            asyncio.to_thread(
+                                self._handle_get_request_with_parsing,
+                                url, keyword, template_str, selectors, headers, cookies, proxies, self.timeout, parse_func
+                            ),
+                            timeout=self.timeout + 5
+                        )
+                        logger.info(f"解析结果类型: {type(parsed_results)}")
 
-                result_count = self._parse_and_validate_results(parsed_results, parse_func, all_results, result_count)
+                    # 验证并添加结果
+                    if isinstance(parsed_results, list):
+                        for result in parsed_results:
+                            if isinstance(result, dict) and all(k in result for k in ['url', 'title']):
+                                # 确保结果格式正确
+                                formatted_result = {
+                                    'result_id': result_count + 1,
+                                    'title': result.get('title', ''),
+                                    'description': result.get('content', result.get('summ', ''))[:500],
+                                    'url': result.get('url', ''),
+                                    'content': result.get('content', result.get('summ', ''))
+                                }
+                                all_results[str(result_count)] = formatted_result
+                                result_count += 1
+                            else:
+                                logger.warning(f"跳过格式不正确的结果: {result}")
+                    else:
+                        logger.warning(f"解析结果不是列表: {type(parsed_results)}")
+                        # 尝试使用原始解析方法
+                        result_count = self._parse_and_validate_results(parsed_results, parse_func, all_results, result_count)
 
+            except requests.exceptions.ConnectionError as e:
+                logger.error(f"网络连接错误，处理关键词 '{keyword}' 时出错: {str(e)}")
+                continue
+            except requests.exceptions.Timeout as e:
+                logger.error(f"请求超时，处理关键词 '{keyword}' 时出错: {str(e)}")
+                continue
+            except requests.exceptions.RequestException as e:
+                logger.error(f"HTTP请求错误，处理关键词 '{keyword}' 时出错: {str(e)}")
+                continue
             except Exception as e:
                 logger.error(f"处理关键词 '{keyword}' 时出错: {str(e)}", exc_info=True)
+                continue
+
+        if not all_results:
+            raise ValueError("未找到任何搜索结果")
 
         logger.info(f"自定义搜索完成，共获得 {len(all_results)} 条结果")
         self.search_results = all_results
@@ -918,17 +1107,50 @@ class CustomSearchToolkit(ManusBaseAction):
 
         return config, method, url, parse_function_str
 
-    def _parse_function_from_string(self, function_str: str):
-        """从字符串解析函数"""
+    def _parse_function_from_string(self, func_str: str) -> callable:
+        """将字符串形式的解析函数转换为可执行函数，并自动注入json模块"""
+        # 允许的安全 builtins
+        allowed_builtins = {
+            "len": len,
+            "range": range,
+            "min": min,
+            "max": max,
+            "sum": sum,
+            "sorted": sorted,
+            "map": map,
+            "filter": filter,
+            "str": str,
+            "int": int,
+            "float": float,
+            "bool": bool,
+            "list": list,
+            "dict": dict,
+            "set": set,
+            "tuple": tuple,
+            "enumerate": enumerate,
+            "zip": zip,
+            "abs": abs,
+            "print": print,
+            "json": json
+        }
+
+        # 禁止 import
+        def fake_import(*args, **kwargs):
+            raise ImportError("import is disabled in this environment")
+
+        safe_globals = {
+            "__builtins__": allowed_builtins,
+            "__import__": fake_import
+        }
+
+        local_dict = {}
         try:
-            # 这里可以根据需要实现更复杂的函数解析逻辑
-            # 目前返回一个简单的解析函数
-            def parse_func(response_text):
-                # 简单的解析逻辑，可以根据需要扩展
-                return [{"title": "解析结果", "content": response_text[:500]}]
-            return parse_func
+            exec(func_str, safe_globals, local_dict)
+            if 'parse_response' not in local_dict:
+                raise ValueError("必须定义一个名为 parse_response 的函数")
+            return local_dict['parse_response']
         except Exception as e:
-            logger.error(f"解析函数字符串失败: {e}")
+            logger.error(f"解析函数转换失败: {str(e)}")
             raise ValueError("解析函数格式无效") from e
 
     def _prepare_headers(self, config_headers: dict) -> dict:
@@ -945,7 +1167,7 @@ class CustomSearchToolkit(ManusBaseAction):
             # 替换模板中的占位符
             data = self._replace_template_placeholders(template, keyword)
             
-            response = requests.post(
+            response = self.session.post(
                 url=url,
                 json=data,
                 headers=headers,
@@ -960,6 +1182,42 @@ class CustomSearchToolkit(ManusBaseAction):
             logger.error(f"POST请求失败: {e}")
             raise
 
+    def _handle_post_request_with_template(self, url: str, template_str: str, keyword: str,
+                                          headers: dict, cookies: dict, proxies: dict, timeout: int) -> str:
+        """处理POST请求（带模板字符串）"""
+        try:
+            # 先替换模板字符串中的 $keyword
+            template_str = template_str.replace("$keyword", keyword)
+            data = json.loads(template_str)
+            logger.info(f"POST数据: {data}")
+            logger.info(f"proxies数据: {proxies}")
+
+            response = self.session.post(
+                url, json=data, headers=headers, cookies=cookies, proxies=proxies, verify=False, timeout=timeout
+            )
+
+            if response.status_code != 200:
+                logger.error(f"POST请求失败: {response.status_code}")
+                return []
+            logger.info(f"POST返回的数据: {response.text}")
+
+            if not response.text:
+                # 返回一个默认的 JSON 字符串，内容为一个包含默认字段的列表
+                default_result = [{
+                    "url": "",
+                    "title": "未获取到内容",
+                    "content": "未获取到内容"
+                }]
+                return json.dumps(default_result)
+
+            return response.text
+
+        except json.JSONDecodeError:
+            raise ValueError("POST请求模板格式无效")
+        except UnicodeEncodeError as e:
+            logger.error(f"编码错误: {str(e)}")
+            raise ValueError(f"编码处理失败: {str(e)}")
+
     async def _handle_post_request_async(self, url: str, template: dict, keyword: str, headers: dict, cookies: dict, proxies: dict, timeout: int) -> str:
         """异步处理POST请求"""
         try:
@@ -968,31 +1226,40 @@ class CustomSearchToolkit(ManusBaseAction):
             
             response = await asyncio.wait_for(
                 asyncio.to_thread(
-                    requests.post,
+                    self._make_post_request,
                     url=url,
-                    json=data,
+                    data=data,
                     headers=headers,
                     cookies=cookies,
                     proxies=proxies,
-                    timeout=timeout,
-                    verify=False
+                    timeout=timeout
                 ),
                 timeout=timeout + 5
             )
             response.raise_for_status()
             return response.text
+            
+        except asyncio.TimeoutError:
+            logger.error(f"POST请求超时: {url}")
+            raise
+        except requests.exceptions.ConnectionError as e:
+            logger.error(f"POST请求连接错误: {url}, 错误: {e}")
+            raise
+        except requests.exceptions.RequestException as e:
+            logger.error(f"POST请求失败: {url}, 错误: {e}")
+            raise
         except Exception as e:
-            logger.error(f"异步POST请求失败: {e}")
+            logger.error(f"POST请求未知错误: {url}, 错误: {e}")
             raise
 
     def _handle_get_request(self, url: str, template: dict, keyword: str, headers: dict, cookies: dict, proxies: dict, timeout: int) -> str:
         """处理GET请求"""
         try:
             # 替换URL中的占位符
-            url = self._replace_template_placeholders(url, keyword)
+            processed_url = self._replace_template_placeholders(url, keyword)
             
-            response = requests.get(
-                url=url,
+            response = self.session.get(
+                url=processed_url,
                 headers=headers,
                 cookies=cookies,
                 proxies=proxies,
@@ -1004,6 +1271,107 @@ class CustomSearchToolkit(ManusBaseAction):
         except Exception as e:
             logger.error(f"GET请求失败: {e}")
             raise
+
+    def _handle_get_request_with_parsing(self, url: str, keyword: str, params: dict,
+                                        selectors: dict, headers: dict, cookies: dict, proxies: dict,
+                                        timeout: int, parse_func=None) -> list:
+        """处理GET请求并解析结果"""
+        logger.info(f"keyword: {keyword}")
+        logger.info(f"params (before replace): {params}")
+        logger.info(f"请求用到的headers: {headers}")
+
+        # 替换 params 中的 $keyword 占位符
+        replaced_params = {}
+        for k, v in params.items():
+            if isinstance(v, str):
+                replaced_params[k] = v.replace("$keyword", keyword)
+            else:
+                replaced_params[k] = v
+
+        query_params = []
+        for key, value in replaced_params.items():
+            param_key = quote(key)
+            param_value = quote(value) if isinstance(value, str) else quote(str(value))
+            query_params.append(f"{param_key}={param_value}")
+
+        search_url = f"{url}?{'&'.join(query_params)}"
+
+        try:
+            response = self.session.get(
+                search_url, headers=headers, cookies=cookies, proxies=proxies, verify=False, timeout=timeout
+            )
+            response.raise_for_status()
+        except Exception as e:
+            logger.error(f"GET请求失败: {e}")
+            return []
+
+        soup = BeautifulSoup(response.text, 'html.parser')
+
+        # 如果提供了解析函数，使用它来解析结果
+        if parse_func:
+            try:
+                logger.info("使用前端提供的解析函数处理结果")
+                results = parse_func(soup)
+                logger.info(f"解析完成，获取到 {len(results) if results else 0} 条结果")
+                return results
+            except Exception as e:
+                logger.error(f"解析函数执行失败: {str(e)}", exc_info=True)
+                # 如果解析失败，可以尝试使用默认解析逻辑
+                logger.info("尝试使用默认解析逻辑")
+
+        # 默认解析逻辑（当没有提供解析函数或解析函数执行失败时使用）
+        if not selectors:
+            selectors = {
+                'result': 'li.b_algo',
+                'title': 'h2 a',
+                'snippet': 'div.b_caption',
+                'url': 'h2 a'
+            }
+
+        result_elements = soup.select(selectors['result'])
+        if not result_elements:
+            return []
+
+        results = []
+        for result in result_elements:
+            try:
+                title_elem = result.select_one(selectors['title'])
+                if not title_elem:
+                    continue
+
+                title = title_elem.get_text(strip=True)
+
+                # 获取URL
+                if selectors['url'] == selectors['title']:
+                    url = title_elem.get('href', '')
+                else:
+                    url_elem = result.select_one(selectors['url'])
+                    url = url_elem.get('href', '') if url_elem else ''
+
+                if not (title and url):
+                    continue
+
+                # 获取摘要
+                snippet_elem = result.select_one(selectors['snippet'])
+                snippet = snippet_elem.get_text(strip=True) if snippet_elem else "unknown"
+
+                # 处理相对URL
+                if url.startswith('/'):
+                    base_url = url.split('?')[0]
+                    url = f"{base_url}{url}"
+
+                results.append({
+                    "url": url,
+                    "title": title,
+                    "content": snippet[:1000] if snippet else "unknown"
+                })
+            except Exception as e:
+                logger.error(f"处理搜索结果时出错: {str(e)}", exc_info=True)
+                continue
+
+        # 添加日志，查看处理后的结果
+        logger.info(f"GET请求处理后的结果: {results}")
+        return results
 
     async def _handle_get_request_async(self, url: str, template: dict, keyword: str, headers: dict, cookies: dict, proxies: dict, timeout: int) -> str:
         """异步处理GET请求"""
@@ -1043,19 +1411,30 @@ class CustomSearchToolkit(ManusBaseAction):
     def _parse_and_validate_results(self, parsed_results: list, parse_func, all_results: dict, result_count: int) -> int:
         """解析和验证搜索结果"""
         try:
-            if isinstance(parsed_results, list):
-                for result in parsed_results:
-                    if isinstance(result, dict) and result.get('title') and result.get('content'):
-                        # 修改返回格式，与百度搜索保持一致
-                        all_results[result_count] = {
-                            'result_id': result_count + 1,  # 添加result_id字段
-                            'title': result['title'],  # 标题
-                            'description': result['content'][:500] if result.get('content') else '',  # 描述（摘要）
-                            'url': result.get('url', ''),  # URL
-                            'content': result['content'],  # 完整内容
-                            'summ': result['content'][:500]  # 保留summ字段以兼容现有代码
-                        }
-                        result_count += 1
+            logger.info(f"parse_func: {parse_func}")
+            logger.info(f"parsed_results: {parsed_results}")
+            
+            if isinstance(parsed_results, str):
+                # 如果是字符串，尝试使用解析函数处理
+                parsed_results = parse_func(parsed_results)
+            
+            if not isinstance(parsed_results, list):
+                raise ValueError("解析函数返回值必须是列表（list）")
+
+            for result in parsed_results:
+                if isinstance(result, dict) and all(k in result for k in ['url', 'title']):
+                    # 确保结果格式正确
+                    formatted_result = {
+                        'result_id': result_count + 1,
+                        'title': result.get('title', ''),
+                        'description': result.get('content', result.get('summ', ''))[:500],
+                        'url': result.get('url', ''),
+                        'content': result.get('content', result.get('summ', ''))
+                    }
+                    all_results[str(result_count)] = formatted_result
+                    result_count += 1
+                else:
+                    logger.warning(f"跳过格式不正确的结果: {result}")
                         
         except Exception as e:
             logger.error(f"解析函数执行失败: {str(e)}", exc_info=True)
