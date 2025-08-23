@@ -2108,8 +2108,13 @@ If there are no suitable quantitative metrics in the content, please return:
             min-height: 100vh;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
+            flex-direction: column;
         }}
-        
+        footer {{
+            margin-top: auto;
+            text-align: center;
+            padding: 20px;
+        }}        
         ::-webkit-scrollbar {{
             width: 11px;
             background: transparent;
@@ -2736,7 +2741,7 @@ If there are no suitable quantitative metrics in the content, please return:
         
         {content_html}
     </main>
-    
+    <footer>以上内容由 AI 生成，请仔细甄别</footer>    
     <script>
         // 菜单切换功能
         function toggleMenu() {{
