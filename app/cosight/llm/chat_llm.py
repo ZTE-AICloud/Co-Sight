@@ -60,7 +60,8 @@ class ChatLLM:
         """
         # 清洗提示词，去除None
         messages = ChatLLM.clean_none_values(messages)
-        max_retries = 2
+        max_retries = 5
+        response = None
         for attempt in range(max_retries):
             try:
                 response = self.client.chat.completions.create(
@@ -82,12 +83,14 @@ class ChatLLM:
                     raise ZaeFrameworkException(400, f"chat with LLM failed, please check LLM config. reason：{e}")
                 time.sleep(3)  # 增加等待时间，避免频繁重试
 
-        # 去除think标签
-        content = response.choices[0].message.content
-        if content is not None and '</think>' in content:
-            response.choices[0].message.content = content.split('</think>')[-1].strip('\n')
-
-        return response.choices[0].message
+        if response and isinstance(response, ChatCompletion):
+            # 去除think标签
+            content = response.choices[0].message.content
+            if content is not None and '</think>' in content:
+                response.choices[0].message.content = content.split('</think>')[-1].strip('\n')
+            return response.choices[0].message
+        else:
+            raise ZaeFrameworkException(400, f"chat with LLM failed, LLM response：{response}")
 
     def check_and_fix_tool_call_params(self, response):
         if response.choices[0].message.tool_calls:
