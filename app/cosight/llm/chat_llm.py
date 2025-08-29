@@ -72,10 +72,15 @@ class ChatLLM:
                     temperature=self.temperature
                 )
                 logger.info(f"LLM with tools chat completions response is {response}")
-                self.check_and_fix_tool_call_params(response)
+                if hasattr(response, 'choices') and response.choices and len(response.choices) > 0:
+                    self.check_and_fix_tool_call_params(response)
+                elif hasattr(response, 'message') and response.message:
+                    raise Exception(response.message)
+                else:
+                    raise Exception(response)
                 break
             except Exception as e:
-                logger.warning(f"JSON decode error: {e} on attempt {attempt + 1}, retrying...", exc_info=True)
+                logger.warning(f"chat with LLM error: {e} on attempt {attempt + 1}, retrying...", exc_info=True)
                 if "TPM limit reached"  in str(e):
                     time.sleep(60)
                 if attempt == max_retries-1:
