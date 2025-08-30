@@ -88,7 +88,7 @@ class TaskActorAgent(BaseAgent):
         })
         code_toolkit = CodeToolkit(sandbox="subprocess")
         tavily_search = TavilySearch()
-        html_toolkit = HtmlVisualizationToolkit(workspace_path=work_space_path)
+        html_toolkit = HtmlVisualizationToolkit(workspace_path=work_space_path, tool_llm=tool_llm)
         code_toolkit = CodeToolkit(sandbox="subprocess")
         all_functions = {"mark_step": act_toolkit.mark_step,
                          # "deep_search": deep_search_toolkit.deep_search,

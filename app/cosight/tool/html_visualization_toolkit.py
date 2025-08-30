@@ -98,37 +98,19 @@ sns.set_style("whitegrid")
 class HtmlVisualizationToolkit:
     """HTML可视化工具包，用于生成可视化HTML报告"""
     
-    def __init__(self, workspace_path=None):
+    def __init__(self, workspace_path=None, tool_llm=None):
         """初始化HTML可视化工具包
         
         Args:
             workspace_path: 工作区路径，如果不提供则使用环境变量或当前目录
         """
         self.workspace_path = workspace_path if workspace_path else os.environ.get("WORKSPACE_PATH") or os.getcwd()
-        proxy = os.environ.get("PROXY")
-        self.proxies = {"http": proxy, "https": proxy} if proxy else None
-        
-        # 初始化LLM配置
-        try:
-            self.llm_base_url = llm_for_tool.base_url if hasattr(llm_for_tool, 'base_url') else None
-            self.llm_api_key = llm_for_tool.api_key if hasattr(llm_for_tool, 'api_key') else None
-            self.llm_model = llm_for_tool.model if hasattr(llm_for_tool, 'model') else "deepseek-chat"
-            
-            # 如果无法从对象获取，则使用环境变量或默认值
-            if not self.llm_base_url:
-                self.llm_base_url = os.environ.get("DEEPSEEK_BASE_URL", "https://api.deepseek.ai.com/v1")
-            if not self.llm_api_key:
-                self.llm_api_key = os.environ.get("DEEPSEEK_API_KEY", "")
-                
-            if self.llm_base_url.endswith('/'):
-                self.llm_base_url = self.llm_base_url.rstrip('/')
-            self.llm_api_url = self.llm_base_url + '/chat/completions'
-        except Exception as e:
-            logger.error(f"初始化LLM配置时出错: {str(e)}", exc_info=True)
-            self.llm_base_url = "https://api.deepseek.ai.com/v1"
-            self.llm_api_key = ""
-            self.llm_model = "deepseek-chat"
-    
+
+        if tool_llm:
+            self.llm_for_tool = tool_llm
+        else:
+            self.llm_for_tool = llm_for_tool
+
     def get_workspace_path(self):
         """获取工作区路径"""
         return self.workspace_path or os.getenv("WORKSPACE_PATH") or os.getcwd()
@@ -164,12 +146,12 @@ class HtmlVisualizationToolkit:
             logger.info("正在向LLM发送请求...")
             messages = [{"role": "user", "content": prompt}]
             logger.info(f"调用LLM请求: {messages}")
-            result = llm_for_tool.chat_to_llm(messages)
+            result = self.llm_for_tool.chat_to_llm(messages)
             logger.info(f"调用LLM返回响应: {result}")
             return result
         except Exception as e:
             logger.error(f" 错误")
-            logger.error(f"调用LLM时出错: {str(e)}")
+            logger.error(f"调用LLM时出错: {str(e)}", exc_info=True)
             return None
     
     def save_html_report(self, html_content, report_name="report"):
