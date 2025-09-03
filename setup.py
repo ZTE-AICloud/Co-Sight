@@ -18,7 +18,7 @@ from setuptools import setup, find_packages
 ### 修改版本号的时候，表示要外发的版本，那么请同步修改deploy_pypi.sh中的auto为true，然后在提交一次代码，将auto改成false
 setup(
     name="Core_Sight",
-    version="1.0.5",
+    version="1.0.6",
     author='',
     packages=find_packages(include=['app', 'config', 'app.*', 'config.*']),
     py_modules=['llm', 'CoSight'],
