@@ -20,7 +20,6 @@ from typing import List, Dict, Any
 
 from jupyter_server.auth import passwd
 from openai import OpenAI
-from openai.types.chat import ChatCompletion
 
 from app.agent_dispatcher.infrastructure.entity.exception.ZaeFrameworkException import ZaeFrameworkException
 from app.cosight.task.time_record_util import time_record
