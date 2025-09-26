@@ -50,6 +50,7 @@ body {
     margin-bottom: 16px;
     color: white;
     position: relative;
+    z-index: 2001;
 }
 
 .header h1 {
