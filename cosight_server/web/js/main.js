@@ -652,7 +652,7 @@ function calculateOptimalPanelTop(panel, nodeRect) {
 function findNodeElement(nodeId) {
     const nodeTexts = document.querySelectorAll('.node-text');
     for (let textElement of nodeTexts) {
-        if (textElement.textContent.includes(`Step ${nodeId}`)) {
+        if (textElement.id == nodeId) {
             return textElement.closest('.node');
         }
     }
@@ -1373,7 +1373,7 @@ function checkAndRestoreDAGData() {
         const lastManusStep = getLastManusStepMessage();
         if (lastManusStep) {
             console.log('发现保存的DAG数据，开始恢复...');
-            
+
             // 恢复DAG图
             const result = createDag({ data: lastManusStep.data, topic: 'restored' });
             if (result) {
@@ -1381,10 +1381,10 @@ function checkAndRestoreDAGData() {
                 if (lastManusStep.data.initData && lastManusStep.data.initData.title) {
                     updateDynamicTitle(lastManusStep.data.initData.title);
                 }
-                
+
                 // 显示主界面
                 hideInitialInputAndShowMain('');
-                
+
                 console.log('DAG数据恢复完成');
             }
         }
@@ -1955,12 +1955,12 @@ function resetUICaches() {
             });
             if (nodeToolPanels.clear) nodeToolPanels.clear();
         }
-        
+
         // 清理MessageService的tool events
         if (window.messageService && typeof window.messageService.clearStepToolEvents === 'function') {
             window.messageService.clearStepToolEvents();
         }
-        
+
         // 右侧内容与资源清理
         try { cleanupAllResources(); } catch (_) {}
 
@@ -1969,7 +1969,7 @@ function resetUICaches() {
         if (container) {
             container.innerHTML = '';
         }
-        
+
         console.log('[UI] 缓存已重置（保留localStorage数据）');
     } catch (e) {
         console.warn('重置UI缓存时发生异常:', e);

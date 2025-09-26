@@ -258,6 +258,7 @@ function initDAG() {
     // 添加节点文本
     node.append("text")
         .attr("class", "node-text")
+        .attr("id", d => d.id)
         .text(d => d.name);
 
     // 添加状态图标
@@ -523,7 +524,7 @@ function createDag(messageData) {
     try {
         // 解析消息数据
         const initData = messageData.data.initData;
-        
+
         // 新会话检测：当 changeType=replace 或 话题/uuid 变化时，重置缓存
         // try {
         //     const changeType = messageData.data && messageData.data.changeType;
@@ -535,7 +536,7 @@ function createDag(messageData) {
         //     const currentKey = `${topic || ''}__${uuid || ''}`;
         //     const lastSessionKey = localStorage.getItem(lastKey);
 
-        //     const isNewSession = changeType === 'replace' || 
+        //     const isNewSession = changeType === 'replace' ||
         //         (currentKey && lastSessionKey !== currentKey && topic !== 'restored');
 
         //     if (isNewSession && typeof window !== 'undefined' && typeof window.resetSessionCaches === 'function') {
@@ -568,25 +569,25 @@ function createDag(messageData) {
                 arr.forEach(v => depValues.push(parseInt(v)));
             }
         });
-        
+
         const minKey = depKeys.length ? Math.min(...depKeys) : 1;
         const minVal = depValues.length ? Math.min(...depValues.filter(Number.isInteger)) : 1;
         const isKeyZeroBased = minKey === 0;
         const isValZeroBased = minVal === 0;
-        
+
         // 构建节点数据
         const nodes = initData.steps.map((step, index) => {
             const stepId = index + 1; // 步骤ID始终是1-based
-            
+
             // 查找这个步骤的依赖关系
             let dependencies = [];
-            
+
             // 遍历dependencies，找到以当前步骤为目标的依赖关系
             Object.keys(initData.dependencies || {}).forEach(targetKey => {
                 const targetIndex = parseInt(targetKey);
                 // 目标ID：若键或值任一为0基，则+1；否则保持不变（1基）
                 const actualTargetId = (isKeyZeroBased || isValZeroBased) ? targetIndex + 1 : targetIndex;
-                
+
                 if (actualTargetId === stepId) {
                     // 找到了以当前步骤为目标的依赖
                     const sourceDeps = initData.dependencies[targetKey];
@@ -604,9 +605,9 @@ function createDag(messageData) {
                     }
                 }
             });
-            
+
             console.log(`步骤${stepId}的依赖:`, dependencies);
-            
+
             return {
                 id: stepId,
                 name: `step${stepId}`,
