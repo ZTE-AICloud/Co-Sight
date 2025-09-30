@@ -41,11 +41,11 @@ def planner_system_prompt(question):
 
 # 计划创建规则
 1. 创建少量高层步骤（3-5 步为最佳）
-2. 每个步骤应为清晰、具体的行动项
+2. 每个步骤应为清晰、具体的行动项和当前步骤需要达成的目标
 3. 使用以下格式：
-   - 标题：计划标题
-   - 步骤：[步骤1, 步骤2, 步骤3, ...]
-   - 依赖项：{步骤索引: [依赖步骤索引1, 依赖步骤索引2, ...]}
+    - 标题：计划标题
+    - 步骤：[步骤1（行动 + 目标），步骤2（行动 + 目标），步骤3（行动 + 目标）, ...]
+    - 依赖项：{步骤索引: [依赖步骤索引1, 依赖步骤索引2, ...]}
 4. 对于报告创建任务，聚焦于：
    - 信息收集（仅需 1-2 步）
    - 分析（1 步）
@@ -92,11 +92,11 @@ You are a planning assistant. Your task is to create simple, actionable plans wi
 
 # Plan Creation Rules
 1. Create a small number of high-level steps (3-5 steps is ideal)
-2. Each step should be a clear, concrete action
+2. Each step should combine a clear, concrete action and the specific goal that step must achieve
 3. Use the following format:
-   - title: plan title
-   - steps: [step1, step2, step3, ...]
-   - dependencies: {step_index: [dependent_step_index1, dependent_step_index2, ...]}
+    - title: plan title
+    - steps: [step1 (action + goal), step2 (action + goal), step3 (action + goal), ...]
+    - dependencies: {step_index: [dependent_step_index1, dependent_step_index2, ...]}
 4. For report creation tasks, focus on:
    - Information gathering (just 1-2 steps)
    - Analysis (1 step)
@@ -125,13 +125,14 @@ You are a planning assistant. Your task is to create simple, actionable plans wi
 
 # 计划创建规则
 1. 创建清晰的高层步骤列表，每个步骤代表一个具有可衡量结果的重要独立工作单元
-2. 仅在步骤需要其他步骤的特定输出或结果时，指定步骤间的依赖关系
-3. 使用以下格式：
-   - 标题：计划标题
-   - 步骤：[步骤1, 步骤2, 步骤3, ...]
-   - 依赖项：{步骤索引: [依赖步骤索引1, 依赖步骤索引2, ...]}
-4. 不要在计划步骤中使用编号列表，仅使用纯文本描述
-5. 对于信息收集任务，确保计划包含全面的搜索和分析步骤，最终生成详细报告。
+2. 每个步骤应为清晰、具体的行动项和当前步骤需要达成的目标
+3. 仅在步骤需要其他步骤的特定输出或结果时，指定步骤间的依赖关系
+4. 使用以下格式：
+    - 标题：计划标题
+    - 步骤：[步骤1（行动 + 目标），步骤2（行动 + 目标），步骤3（行动 + 目标）, ...]
+    - 依赖项：{步骤索引: [依赖步骤索引1, 依赖步骤索引2, ...]}
+5. 不要在计划步骤中使用编号列表，仅使用纯文本描述
+6. 对于信息收集任务，确保计划包含全面的搜索和分析步骤，最终生成详细报告。
 
 # 重新规划规则
 1. 首先评估计划的可行性：
@@ -175,13 +176,14 @@ You are a planning assistant. Your task is to create, adjust, and finalize detai
 
 # Plan Creation Rules
 1. Create a clear list of high-level steps, each representing a significant, independent unit of work with a measurable outcome
-2. Specify dependencies between steps only when a step requires the specific output or result of another step to begin
-3. Use the following format:
-   - title: plan title
-   - steps: [step1, step2, step3, ...]
-   - dependencies: {step_index: [dependent_step_index1, dependent_step_index2, ...]}
-4. Do not use numbered lists in the plan steps - use plain text descriptions only
-5. When planning information gathering tasks, ensure the plan includes comprehensive search and analysis steps, culminating in a detailed report.
+2. Make sure every step description couples the action to perform with the concrete goal that step needs to accomplish
+3. Specify dependencies between steps only when a step requires the specific output or result of another step to begin
+4. Use the following format:
+    - title: plan title
+    - steps: [step1 (action + goal), step2 (action + goal), step3 (action + goal), ...]
+    - dependencies: {step_index: [dependent_step_index1, dependent_step_index2, ...]}
+5. Do not use numbered lists in the plan steps - use plain text descriptions only
+6. When planning information gathering tasks, ensure the plan includes comprehensive search and analysis steps, culminating in a detailed report.
 
 
 # Replanning Rules
@@ -234,19 +236,22 @@ def planner_create_plan_prompt(question, output_format=""):
         create_plan_prompt = f"""
 创建一个包含 3-5 个步骤的简洁且聚焦的计划以完成此任务：{question}
 请记住保持步骤简洁，并仅包含真正必要的内容。
+确保每个步骤都写明需要执行的行动以及该行动要达成的目标。
 """
     elif is_claude and not contains_chinese:
         create_plan_prompt = f"""
 Create a simple, focused plan with 3-5 steps to accomplish this task: {question}
-Remember to keep steps concise and only include what's truly necessary.
+Make each step pair the action to do with the goal that must be reached, keep everything concise, and include only what's truly necessary.
 """
     elif not is_claude and contains_chinese:
         create_plan_prompt = f"""
 使用 create_plan 工具，制定一个详细的计划以完成此任务: {question}
+请确保每个步骤都清楚写出要做的行动以及该行动所要实现的目标。
 """
     else:
         create_plan_prompt = f"""
 Using the create_plan tool, create a detailed plan to accomplish this task: {question}
+Ensure every step ties a concrete action to the goal that step should fulfill.
 """
 
     if contains_chinese:
@@ -295,7 +300,7 @@ def planner_re_plan_prompt(question, plan, output_format=""):
 
 检查是否需要调整计划。只有在绝对必要时才进行修改。
 保持简单——如果计划有效，只需说“计划无需修改，继续执行”
-如果需要调整，仅关注必要的修改。
+如果需要调整，仅关注必要的修改，并确保每个步骤同时描述行动与目标。
     """
         else:
             replan_prompt += f"""
@@ -303,6 +308,7 @@ def planner_re_plan_prompt(question, plan, output_format=""):
 {plan}
 
 根据系统提示中的重新规划规则评估并调整当前计划。
+确保每个步骤继续同时描述行动和需要达成的目标。
     """
     else:
         replan_prompt = f"""
@@ -321,7 +327,7 @@ Current plan status:
 
 Check if the plan needs adjustment. Only make changes if absolutely necessary.
 Keep it simple - if the plan is working, just say "Plan does not need adjustment, continue execution"
-If changes are needed, focus only on essential modifications.
+If changes are needed, focus only on essential modifications and keep each step paired with the goal it must achieve.
     """
         else:
             replan_prompt += f"""
@@ -329,6 +335,7 @@ Current plan status:
 {plan}
 
 Evaluate and adjust the current plan according to the replanning rules in the system prompt.
+Keep every step described as an action plus the goal it must deliver.
     """
 
     return replan_prompt
