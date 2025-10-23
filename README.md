@@ -1,3 +1,13 @@
+## Scores on benchmarks
+![ ](./images/HLE_performance_comparison.png)
+> Performance Comparison on the HLE Benchmark.
+
+![ ](./images/GAIA_results.png)
+>  Performance comparison on the GAIA test benchmark.
+
+![ ](./images/CSQA_performance_comparison.png)
+>  Performance comparison on the Chinese SimpleQA benchmark.
+
 ## Installation Guide
 
 ### Method 1: Using conda
@@ -106,5 +116,6 @@ if __name__ == '__main__':
 
 ## PS
 Different requirements demand distinct entry points and result processing methods: cosight_evals.py corresponds to GAIA, cosight_evals_hle.py to HLE, and cosight_evals_ChineseSimpleQA.py to Chinese SimpleQA.
+
 
 
