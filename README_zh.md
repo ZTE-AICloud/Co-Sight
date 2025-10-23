@@ -1,3 +1,16 @@
+![英文版说明]("README.md")
+
+## 基准测试得分
+![ ](./images/HLE_performance_comparison.png)
+> 在HLE基准上的性能比较.
+
+![ ](./images/GAIA_results.png)
+>  GAIA测试集基准上的性能比较.
+
+![ ](./images/CSQA_performance_comparison.png)
+>  在Chinese SimpleQA基准上的性能比较.
+
+
 ## 安装指南
 
 
