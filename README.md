@@ -1,3 +1,5 @@
+查看[中文版说明](README_zh.md)
+
 ## Scores on benchmarks
 ![ ](./images/HLE_performance_comparison.png)
 > Performance Comparison on the HLE Benchmark.
@@ -116,6 +118,7 @@ if __name__ == '__main__':
 
 ## PS
 Different requirements demand distinct entry points and result processing methods: cosight_evals.py corresponds to GAIA, cosight_evals_hle.py to HLE, and cosight_evals_ChineseSimpleQA.py to Chinese SimpleQA.
+
 
 
 
