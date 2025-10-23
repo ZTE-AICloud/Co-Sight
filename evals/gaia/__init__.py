@@ -20,6 +20,9 @@ from .gaia import (
     gaia_level2,
     gaia_level3,
 )
+from .hle import hle, pre_judge_hle, post_judge_hle, post_judge_hle_four_route, post_judge_hle_one_route, simple_judge_hle_four_route
+from .ChineseSimpleQA import chinesesimpleqa, chinesesimpleqa_multi_route
+from .simpleQA import simpleqa
 from .scorer import question_scorer
 
 __all__ = [
@@ -29,4 +32,13 @@ __all__ = [
     "gaia_level3",
     "question_scorer",
     "gaia_dataset",
+    "hle",
+    "pre_judge_hle",
+    "post_judge_hle_one_route",
+    "post_judge_hle",
+    "post_judge_hle_four_route",
+    "simple_judge_hle_four_route",
+    "chinesesimpleqa",
+    "chinesesimpleqa_multi_route",
+    "simpleqa",
 ]

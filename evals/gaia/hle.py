@@ -1,0 +1,443 @@
+# Copyright 2025 ZTE Corporation.
+# All Rights Reserved.
+#
+#    Licensed under the Apache License, Version 2.0 (the "License"); you may
+#    not use this file except in compliance with the License. You may obtain
+#    a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#    License for the specific language governing permissions and limitations
+#    under the License.
+
+from pathlib import Path
+from typing import Any, Literal, Callable
+from urllib import response
+
+from .dataset import gaia_dataset
+from .scorer import question_scorer
+import datetime
+import shutil
+import traceback
+import os
+import pandas as pd
+import re
+import pyarrow.parquet as pq
+from pathlib import Path
+from typing import List, Union
+from llm import llm_for_judge
+from openai import OpenAI
+
+
+def get_parquet_columns(file_path: str) -> List[str]:
+    """获取Parquet文件的所有列名（仅读元数据）"""
+    file = Path(file_path)
+    if not file.exists():
+        raise FileNotFoundError(f"文件不存在: {file.absolute()}")
+
+    try:
+        schema = pq.read_schema(file_path)
+        return [field.name for field in schema]
+    except Exception as e:
+        raise RuntimeError(f"获取列名失败: {str(e)}")
+
+
+def filter_by_single_id(
+        file_path: str,
+        target_id: str,  # 仅支持单个字符串ID
+        columns: List[str] = ["question", "image", "answer", "category"]
+) -> pd.DataFrame:
+    """
+    按单个字符串ID筛选数据，仅返回指定列
+
+    参数:
+        file_path: Parquet文件路径
+        target_id: 单个字符串类型的目标ID（必须是字符串）
+        columns: 要返回的列名列表
+    """
+    # 验证文件存在
+    file = Path(file_path)
+    if not file.exists():
+        raise FileNotFoundError(f"文件不存在: {file.absolute()}")
+
+    # 强制检查target_id是否为字符串
+    if not isinstance(target_id, str):
+        raise TypeError(f"target_id必须是字符串类型，当前传入: {type(target_id).__name__}")
+
+    try:
+        # 检查必要的列是否存在
+        all_columns = get_parquet_columns(file_path)
+
+        if "id" not in all_columns:
+            raise KeyError(f"数据中不存在 'id' 列，可用列名: {all_columns}")
+
+        missing_cols = [col for col in columns if col not in all_columns]
+        if missing_cols:
+            raise KeyError(f"以下列不存在: {missing_cols}，可用列名: {all_columns}")
+
+        # 读取数据（只加载需要的列 + id列）
+        required_columns = columns + ["id"]
+        table = pq.read_table(file_path, columns=required_columns)
+        df = table.to_pandas()
+
+        # 单个字符串ID筛选（使用==精确匹配）
+        df_filtered = df[df["id"] == target_id].reset_index(drop=True)
+
+        return df_filtered[columns]
+
+    except Exception as e:
+        raise RuntimeError(f"筛选数据失败: {str(e)}")
+
+
+def call_pre_judge_model(messages):
+    k = 3
+    output = ""
+    while k > 0:
+        k -= 1
+        try:
+            client = OpenAI(
+                api_key=llm_for_judge.api_key,
+                base_url=llm_for_judge.base_url,
+            )
+            # 构建正确的消息格式，分离系统提示和用户内容
+            completion = client.chat.completions.create(
+                model=llm_for_judge.model,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": """
+                        You are an **honest and helpful evaluator** whose core responsibility is to screen options in accordance with the specific requirements of a given question. Your task is to exclude the option(s) that clearly fail to meet the question’s requirements and return the only remaining valid option. If neither Option A nor Option B is clearly incorrect, please respond with: 'I cannot determine the correct choice'.
+                        
+                        # Critical Note
+                        - Your sole goal is to eliminate options that **clearly do not align with the question’s requirements**—nothing more.
+                        - DO NOT attempt to rule out the correct option by interpreting specialized terminology in the question or solving the problem itself.
+                        - Given the potential high difficulty of the question, you **DO NOT need to actually solve the problem** to verify the accuracy of each option. Your only task is to fully grasp the question’s requirements and assess whether each option complies with these requirements.
+                        - If neither Option A nor Option B is clearly incorrect, please respond with: "I cannot determine the correct choice".
+                        - You only need to return your judgment outcome—**DO NOT include your thought process**.
+                        - Format errors can be ignored
+                        
+                        # Mandatory Response Structure  
+                        - `thinking`: Enclosed by <thinking> </thinking>, this section must contain a **detailed analysis of your reasoning process**. Explain how you identified the question’s core requirements, evaluated whether each option aligns with these requirements, and why you excluded (or did not exclude) specific options.
+                        - `final_answer`: Enclosed by <final_answer> </final_answer>, this section must present the **final judgment result** (e.g., the remaining valid option, or "I cannot determine the correct choice").
+                        
+                        # Examples of Judgment Logic
+                        - If a question explicitly requires the answer to be a **number** (e.g., "What is the value of 2+3?"), any option that is a **noun** (e.g., "apple," "book") is definitely incorrect and must be excluded.
+                        - If a question requires the answer to be a **function or formula** (e.g., "What is the quadratic function representing this parabola?"), any option that is a **single number** (e.g., "5," "10.2") is definitely incorrect and must be excluded.
+                        - For example: Raw Question: '1+3=?\nA. 2\nB. 3\nC. 4'\n\nYou MUST make a choice from:\nA. 5\nB. C\n\nObviously, Option A here is incorrect, as it is not provided in the raw question.
+
+                        Please strictly adhere to this logic when completing the option-screening task.
+                        """
+                    },
+                    {
+                        "role": "user",
+                        "content": f"{messages}"
+                    }
+                ],
+                temperature=llm_for_judge.temperature
+            )
+            output = completion.choices[0].message.content
+            if output and output.strip() != "":
+                break
+        except Exception as e:
+            print(f"调用模型出错: {e}")
+            continue
+    return output
+
+
+def extract_final_answer(input_str):
+    # 定义正则模式：匹配 <final_answer> 和 </final_answer> 之间的内容
+    pattern = r'<final_answer>(.*?)</final_answer>'
+
+    # 执行匹配：search() 会找到第一个符合模式的结果
+    match = re.search(pattern, input_str, re.DOTALL)  # re.DOTALL 让 "." 匹配换行符（若答案含换行）
+
+    if match:
+        # 提取捕获组 1 的内容（即标签间的文本），并去除前后多余空格（可选，按需求调整）
+        return match.group(1).strip()
+    else:
+        # 若未找到标签，返回 None 或自定义提示（避免报错）
+        return None  # 或 return "未找到 final_answer 标签"
+
+
+def simple_judge_hle_four_route(process_message, question: str, answer1: str, answer2: str, answer3: str, answer4: str, analysis1: str, analysis2: str, analysis3: str, analysis4: str) -> str:
+    # 四路参考时的元验证函数
+    message = f"""
+    You must base on reference options to  confirm the correct result.   
+
+    The 'raw question' is the original question. Reference options are results generated by four large models after processing the raw question:
+
+    Raw Question: '{question}'
+
+    Reference options:  
+    A. {answer1}  
+    B. {answer2}
+    C. {answer3}
+    D. {answer4}
+    """
+
+    real_answer = None
+    try:
+        real_answer, raw_answer = process_message(message)
+        print(f'\n')
+    except Exception as e:
+        error_result = f'process question failed: {e}'
+        print(traceback.format_exc())
+
+    real_answer = 'None' if real_answer is None else real_answer
+
+    return real_answer
+
+def pre_judge_hle(question: str, answer1: str, answer2: str) -> str:
+    template = f"""
+    Please evaluate the following content. The 'raw question' is the original question. **Final options A and B are results generated by two large models after processing the raw question**. Your task is to identify and exclude the incorrect option, then select the correct one.
+    
+    Note that the answers MUST be '**{answer1}**', '**{answer2}**' or '**I cannot determine the right choice**'.
+    
+    Raw Question: '{question}'
+    
+    You MUST choose the correct result from these final options:  
+    A. {answer1}  
+    B. {answer2}
+    """
+    full_response = call_pre_judge_model(template)
+    print('response of pre judge model:', full_response)
+    response = extract_final_answer(full_response)
+    return response
+
+
+def post_judge_hle(process_message, question: str, answer1: str, answer2: str, analysis1: str, analysis2: str) -> str:
+    # 两路参考时的元验证函数
+    message = f"""
+    You are to base on two reference options and their corresponding analyses, incorporate valid insights and consistent intermediate results, eliminate the incorrect option(s), and thereby confirm the correct result. Should you identify that both results are incorrect, you must still generate and return the correct answer.  
+
+    The 'raw question' is the original question. Reference options A and B are results generated by two large models after processing the raw question:
+
+    Raw Question: '{question}'
+
+    Reference options (Note: It may not include the correct result):  
+    A. {answer1}  
+    B. {answer2}
+
+    The following is the analysis of the two options respectively. Please refer to these analyses when judging options A and B:
+    Analysis of option A: '{analysis1}'
+    Analysis of option B: '{analysis2}'
+
+    Please adhere to these critical problem-solving principles (Non-negotiable):
+    ### Result Reuse
+    Intermediate results consistent between Option A and Option B may be directly adopted as given facts.
+
+    ### Conflict Point Analysis
+    First, locate the positions of conflicting intermediate results between Option A and Option B, eliminate the erroneous intermediate result and its corresponding option, and return the remaining option as the correct result.
+
+    ### Idea Reference
+    Please thoroughly consult the analysis of the two options and absorb useful insights
+
+    ### Handling of Special Cases
+    Even if all candidate solutions are incorrect, you must still derive the correct answer based on the reference material.
+
+    ### Method Priority
+    Given the high difficulty level of the questions, please **give priority to the elimination method** when solving them — that is, falsify incorrect options by verifying intermediate results, and thereby lock in the correct answer.
+    """
+
+    real_answer = None
+    try:
+        real_answer, raw_answer = process_message(message)
+        print(f'\n')
+    except Exception as e:
+        error_result = f'process question failed: {e}'
+        print(traceback.format_exc())
+
+    real_answer = 'None' if real_answer is None else real_answer
+
+    return real_answer
+
+
+def post_judge_hle_four_route(process_message, question: str, answer1: str, answer2: str, answer3: str, answer4: str, analysis1: str, analysis2: str, analysis3: str, analysis4: str) -> str:
+    # 四路参考时的元验证函数
+    message = f"""
+    You are to base on four reference options and their corresponding analyses, incorporate valid insights and consistent intermediate results, eliminate the incorrect option(s), and thereby confirm the correct result. Should you identify that both results are incorrect, you must still generate and return the correct answer.  
+
+    The 'raw question' is the original question. Reference options A, B, C and D are results generated by four large models after processing the raw question:
+
+    Raw Question: '{question}'
+
+    Reference options (Note: It may not include the correct result):  
+    A. {answer1}  
+    B. {answer2}
+    C. {answer3}
+    D. {answer4}
+
+    The following is the analysis of the four options respectively. Please refer to these analyses when judging options:
+    Analysis of option A: '{analysis1}'
+    Analysis of option B: '{analysis2}'
+    Analysis of option C: '{analysis3}'
+    Analysis of option D: '{analysis4}'
+
+    Please adhere to these critical problem-solving principles (Non-negotiable):
+    ### Result Reuse
+    Intermediate results consistent among four options may be directly adopted as given facts.
+
+    ### Conflict Point Analysis
+    First, locate the positions of conflicting intermediate results among four options, eliminate the erroneous intermediate result and its corresponding option, and return the remaining option as the correct result.
+
+    ### Idea Reference
+    Please thoroughly consult the analysis of the four options and absorb useful insights
+
+    ### Handling of Special Cases
+    Even if all candidate solutions are incorrect, you must still derive the correct answer based on the reference material.
+
+    ### Method Priority
+    Given the high difficulty level of the questions, please **give priority to the elimination method** when solving them — that is, falsify incorrect options by verifying intermediate results, and thereby lock in the correct answer.
+    """
+
+    real_answer = None
+    try:
+        real_answer, raw_answer = process_message(message)
+        print(f'\n')
+    except Exception as e:
+        error_result = f'process question failed: {e}'
+        print(traceback.format_exc())
+
+    real_answer = 'None' if real_answer is None else real_answer
+
+    return real_answer
+
+
+def post_judge_hle_one_route(process_message, question: str, answer1: str, analysis1: str) -> str:
+    # 四路参考时的元验证函数
+    message = f"""
+    You are to base on the reference option and its corresponding analyses, incorporate valid insights and consistent intermediate results, eliminate the incorrect option(s), and thereby confirm the correct result. Should you identify that both results are incorrect, you must still generate and return the correct answer.  
+
+    The 'raw question' is the original question. Reference option is the result generated by a large model after processing the raw question:
+
+    Raw Question: '{question}'
+
+    Reference option (Note: It may not include the correct result):  
+    {answer1}  
+
+    The following is the analysis of the four options respectively. Please refer to these analyses when judging the option:
+    Analysis of reference option: '{analysis1}'
+
+    Please adhere to these critical problem-solving principles (Non-negotiable):
+    ### Idea Reference
+    Please thoroughly consult the analysis of the option and absorb useful insights
+
+    ### Handling of Special Cases
+    Even if all candidate solutions are incorrect, you must still derive the correct answer based on the reference material.
+
+    ### Method Priority
+    Given the high difficulty level of the questions, please **give priority to the elimination method** when solving them — that is, falsify incorrect options by verifying intermediate results, and thereby lock in the correct answer.
+    """
+
+    real_answer = None
+    try:
+        real_answer, raw_answer = process_message(message)
+        print(f'\n')
+    except Exception as e:
+        error_result = f'process question failed: {e}'
+        print(traceback.format_exc())
+
+    real_answer = 'None' if real_answer is None else real_answer
+
+    return real_answer
+
+
+
+def hle(
+    process_message,
+    task_id: str  = "66e8d4736299517dd7a5da8c",
+    parquet_file: str  = "data_hle/data/hle_text_only.parquet",
+    first_task_id: str = None,
+    postcall: Callable = None
+) -> dict:
+    # 这个需要换一下
+    # read dataset
+    data = filter_by_single_id(
+        file_path=parquet_file,
+        target_id=task_id
+    )
+    total_time = []
+
+    work_space_location = (
+        Path(os.environ['WORKSPACE_PATH'])
+    )
+
+
+    # task_work_space = (work_space_location / task_id)
+    task_work_space = work_space_location
+    os.makedirs(task_work_space, exist_ok=True)
+    os.environ['WORKSPACE_PATH'] = task_work_space.as_posix()
+    work_space_file = (task_work_space / data["image"].tolist()[0]).as_posix() if data["image"].tolist()[0] != '' else ''
+
+    copy_to_workspace(data["image"].tolist()[0], work_space_file)
+    # message = data['prompt'].format(file=work_space_file, question=data['question'].tolist()[0])
+
+    prompt = "Please answer the question below.\n\n{file}\n\nHere is the question:\n\n{question}"
+    message = prompt.format(file=work_space_file, question=data['question'].tolist()[0])
+
+    real_answer = None
+    raw_answer = None
+    error_result = None
+    timestr = datetime.datetime.today().strftime('%Y-%m-%d %H:%M:%S')
+    start_time = datetime.datetime.today()
+    print(f'{timestr} start task {task_id}')
+    try:
+        real_answer, raw_answer = process_message(message)
+        print(f'\n')
+    except Exception as e:
+        error_result = f'process question failed: {e}'
+        print(traceback.format_exc())
+
+    real_answer = 'None' if real_answer is None else real_answer
+
+    score, explanation = question_scorer(
+        model_answer=real_answer, ground_truth=data["answer"].tolist()[0]
+    )
+
+    timestr = datetime.datetime.today().strftime('%Y-%m-%d %H:%M:%S')
+    end_time = datetime.datetime.today()
+    time_diff = end_time - start_time
+    total_time.append(time_diff)
+    print(f'{timestr} end task {task_id} time_diff: {time_diff}')
+    result = {
+        "input": message,
+        "task_id": task_id,
+        "question": data['question'].tolist()[0],
+        "answer": data['answer'].tolist()[0],
+        "model_answer": real_answer,
+        "error": error_result,
+        "file_name": data['image'].tolist()[0],
+        "category": data['category'].tolist()[0],
+        "score": 1 if score else 0,
+        "elapsed time": str(time_diff)
+    }
+
+    if postcall:
+        result_path = (task_work_space / f'results_{task_id}.json').as_posix()
+        postcall([result], result_path)
+
+    return result, raw_answer
+
+
+def copy_to_workspace(source_file, destination_file):
+    if not source_file and not destination_file:
+        return
+
+    try:
+        # 复制文件
+        shutil.copy(source_file, destination_file)
+        print(f"文件 {source_file} 已成功复制到 {destination_file}")
+    except FileNotFoundError:
+        print(f"源文件 {source_file} 未找到")
+    except PermissionError:
+        print(f"没有权限复制文件 {source_file}")
+    except shutil.SameFileError:
+        print(f"源文件和目标文件相同")
+    except Exception as e:
+        print(f"复制文件时发生错误: {e}")
+
+
+
