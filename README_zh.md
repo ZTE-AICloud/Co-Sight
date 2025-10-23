@@ -105,3 +105,7 @@ if __name__ == '__main__':
     save_results(results, (WORKSPACE_PATH / f'result_level1_{datestr}.json').as_posix())
 ```
 
+## 备注
+不同需要不同的入口和结果处理方式，cosight_evals.py对应GAIA、cosight_evals_hle.py对应HLE、cosight_evals_ChineseSimpleQA.py对应Chinese SimpleQA
+
+
