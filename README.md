@@ -103,3 +103,8 @@ if __name__ == '__main__':
     datestr = datetime.datetime.today().strftime('%Y%m%d%H%M%S')
     save_results(results, (WORKSPACE_PATH / f'result_level1_{datestr}.json').as_posix())
 ```
+
+## PS
+Different requirements demand distinct entry points and result processing methods: cosight_evals.py corresponds to GAIA, cosight_evals_hle.py to HLE, and cosight_evals_ChineseSimpleQA.py to Chinese SimpleQA.
+
+
