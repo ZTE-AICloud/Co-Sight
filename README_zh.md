@@ -1,4 +1,4 @@
-![英文版说明]("README.md")
+[英文版readme]("README.md")
 
 ## 基准测试得分
 ![ ](./images/HLE_performance_comparison.png)
