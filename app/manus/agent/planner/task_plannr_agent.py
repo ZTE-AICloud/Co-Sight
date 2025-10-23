@@ -71,15 +71,26 @@ class TaskPlannerAgent(BaseAgent):
         plan_report_event_manager.publish("plan_result", self.plan)
         return result
 
-    def extract_pattern(self, content: str, pattern: str):
+    def finalize_plan_hle(self, question, output_format=""):
+        self.history.append(
+            {"role": "user", "content": planner_finalize_plan_prompt(question, self.plan.format(), output_format)})
+        raw_result = self.execute(self.history, max_iteration=1)
+        result = self.extract_pattern(raw_result, "final_answer")
+        print(f"raw_resultesult is >>{raw_result}<<, result is {result}")
+        self.plan.set_plan_result(result)
+        plan_report_event_manager.publish("plan_result", self.plan)
+        return result, raw_result
+
+    def extract_pattern(self, content: str, pattern="final_answer"):
         try:
             _pattern = fr"<{pattern}>(.*?)</{pattern}>"
-            match = re.search(_pattern, content, re.DOTALL)
-            if match:
-                text = match.group(1)
+            matches = re.findall(_pattern, content, re.DOTALL)
+            if matches:
+                text = matches[-1]
                 return text.strip()
             else:
                 return content
         except Exception as e:
             print(f"Error extracting answer: {e}, current content: {content}")
             return content
+

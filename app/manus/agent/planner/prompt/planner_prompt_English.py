@@ -124,8 +124,7 @@ When answering this survey, keep in mind that "facts" will typically be specific
 
 DO NOT include any other headings or sections in your response. DO NOT list next steps or plans until asked to do so."""
 
-
-def planner_re_plan_prompt(question, plan, facts, output_format=""):
+def planner_re_plan_prompt(question, plan,facts, output_format=""):
     replan_prompt = f"""
 Original task:{question}
 """
@@ -137,7 +136,7 @@ Ensure your final answer contains only the content in the following format: {out
     replan_prompt += f"""
 # Collected Facts:
 {facts}    
-
+    
 # Current plan status:
 {plan}
 
