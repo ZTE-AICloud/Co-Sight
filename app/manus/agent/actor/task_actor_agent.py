@@ -79,8 +79,10 @@ class TaskActorAgent(BaseAgent):
         all_functions = {
             # "read_excel_color": read_excel_color,
             # "download_wiki_main_image": search_toolkit.download_wiki_main_image,
+            # "download_youtube_channel_thumbnails": search_toolkit.download_youtube_channel_thumbnails,
             # "download_wiki_commons_image": search_toolkit.download_wiki_commons_image,
             # "get_wikipedia_revision_record": search_toolkit.get_wikipedia_revision_record,
+            # "count_youtube_videos_number": search_toolkit.count_youtube_videos_number,
 
             "search_wiki_history_url": search_toolkit.search_wiki_history_url,
             "search_wiki": search_toolkit.search_wiki,

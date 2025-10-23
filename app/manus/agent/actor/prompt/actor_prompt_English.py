@@ -16,7 +16,6 @@
 import os
 import platform
 
-
 def actor_system_prompt():
     # "* you MUST give priority to using the browser_use tool, as it is very powerful. If it fails, then try to use your search tools."
     system_prompt = f"""
@@ -87,14 +86,13 @@ Output Formatting (Non-negotiable)
 """
     return system_prompt
 
-
 def actor_execute_task_prompt(task, step_index, plan):
     workspace_path = os.getenv("WORKSPACE_PATH") or os.getcwd()
     try:
         files_list = "\n".join([f"  - {f}" for f in os.listdir(workspace_path)])
     except Exception as e:
         files_list = f"  - Error listing files: {str(e)}"
-
+        
     execute_task_prompt = f"""
 Current Task Execution Context:
 Task: {task}
@@ -116,8 +114,7 @@ Execute the current step:
 """
     return execute_task_prompt
 
-
-def update_facts_prompt(task, facts):
+def update_facts_prompt(task,facts):
     return f"""As a reminder, we are working to solve the following task:
 
 {task}

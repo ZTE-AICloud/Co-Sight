@@ -455,8 +455,8 @@ def mark_step_skill():
         'skill_type': "function",
         'display_name_zh': '标记步骤',
         'display_name_en': 'Mark Step',
-        'description_zh': '标记计划中的步骤状态，包括执行结果、遇到的问题、下一步建议等信息',
-        'description_en': 'Mark the status of a step in the plan, including execution results, problems encountered, and suggestions for next steps',
+        'description_zh': '标记计划中的步骤状态，包括执行结果、结果的置信水平、遇到的问题、下一步建议等信息',
+        'description_en': 'Mark the status of a step in the plan, including execution results, confidence level of results, problems encountered, and suggestions for next steps',
         'semantic_apis': ["api_planning"],
         'function': SkillFunction(
             id='6d7f9a2b-c6e3-4f8d-b1a2-3e4f5d6c7b8c',
@@ -485,12 +485,14 @@ def mark_step_skill():
                         'type': 'string',
                         'description_zh': '步骤的备注信息，包括：\n'
                                           '- 详细执行结果\n'
+                                          '- 结果的置信水平(不可忽视)\n'
                                           '- 遇到的问题\n'
                                           '- 下一步建议\n'
                                           '- 对其他步骤的依赖\n'
                                           '- 生成的任何文件的绝对路径',
                         'description_en': 'Additional notes for the step, including:\n'
                                           '- Detailed execution results\n'
+                                          '- Confidence level of the results (non-negotiable)\n'
                                           '- Problems encountered\n'
                                           '- Suggestions for next steps\n'
                                           '- Dependencies on other steps\n'
