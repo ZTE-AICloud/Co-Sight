@@ -10,6 +10,9 @@
 ![ ](./images/CSQA_performance_comparison.png)
 >  Performance comparison on the Chinese SimpleQA benchmark.
 
+## For more technical details
+See our paper at: [arXiv:2510.21557](https://arxiv.org/abs/2510.21557)
+
 ## Installation Guide
 
 ### Method 1: Using conda
@@ -119,6 +122,19 @@ if __name__ == '__main__':
 ## PS
 Different requirements demand distinct entry points and result processing methods: cosight_evals.py corresponds to GAIA, cosight_evals_hle.py to HLE, and cosight_evals_ChineseSimpleQA.py to Chinese SimpleQA.
 
+## Citation
+Please use the following BibTeX citation if you use this repository in your work:
+```
+@misc{zhang2025cosightenhancingllmbasedagents,
+      title={Co-Sight: Enhancing LLM-Based Agents via Conflict-Aware Meta-Verification and Trustworthy Reasoning with Structured Facts}, 
+      author={Hongwei Zhang and Ji Lu and Shiqing Jiang and Chenxiang Zhu and Li Xie and Chen Zhong and Haoran Chen and Yurui Zhu and Yongsheng Du and Yanqin Gao and Lingjun Huang and Baoli Wang and Fang Tan and Peng Zou},
+      year={2025},
+      eprint={2510.21557},
+      archivePrefix={arXiv},
+      primaryClass={cs.AI},
+      url={https://arxiv.org/abs/2510.21557}, 
+}
+```
 
 
 
