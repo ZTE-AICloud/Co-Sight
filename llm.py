@@ -46,6 +46,7 @@ def set_model(model_config: dict[str, Optional[str | int | float]]):
 
     if model_config['proxy']:
         http_client_kwargs["proxy"] = model_config['proxy']
+        # http_client_kwargs["proxy"] = None
 
     openai_llm = OpenAI(
         base_url=model_config['base_url'],
@@ -67,7 +68,7 @@ def set_model(model_config: dict[str, Optional[str | int | float]]):
 
     return ChatLLM(**chat_llm_kwargs)
 
-
+# first route
 plan_model_config = get_plan_model_config()
 llm_for_plan = set_model(plan_model_config)
 
@@ -79,3 +80,23 @@ llm_for_tool = set_model(tool_model_config)
 
 vision_model_config = get_vision_model_config()
 llm_for_vision = set_model(vision_model_config)
+
+
+# second route
+plan_model_config_route2 = get_second_route_model_config()
+llm_for_plan_route2 = set_model(plan_model_config_route2)
+
+act_model_config_route2 = get_second_route_model_config()
+llm_for_act_route2 = set_model(act_model_config_route2)
+
+tool_model_config_route2 = get_second_route_model_config()
+llm_for_tool_route2 = set_model(tool_model_config_route2)
+
+vision_model_config_route2 = get_second_route_model_config()
+llm_for_vision_route2 = set_model(vision_model_config_route2)
+
+# # judge model
+# judge_model_config = get_judge_model_config()
+# llm_for_judge = set_model(judge_model_config)
+
+
