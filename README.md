@@ -125,16 +125,14 @@ Different requirements demand distinct entry points and result processing method
 ## Citation
 Please use the following BibTeX citation if you use this repository in your work:
 ```
-@misc{zhang2025cosightenhancingllmbasedagents,
-      title={Co-Sight: Enhancing LLM-Based Agents via Conflict-Aware Meta-Verification and Trustworthy Reasoning with Structured Facts}, 
-      author={Hongwei Zhang and Ji Lu and Shiqing Jiang and Chenxiang Zhu and Li Xie and Chen Zhong and Haoran Chen and Yurui Zhu and Yongsheng Du and Yanqin Gao and Lingjun Huang and Baoli Wang and Fang Tan and Peng Zou},
-      year={2025},
-      eprint={2510.21557},
-      archivePrefix={arXiv},
-      primaryClass={cs.AI},
-      url={https://arxiv.org/abs/2510.21557}, 
+@article{zhang2025co,
+  title={Co-Sight: Enhancing LLM-Based Agents via Conflict-Aware Meta-Verification and Trustworthy Reasoning with Structured Facts},
+  author={Zhang, Hongwei and Lu, Ji and Jiang, Shiqing and Zhu, Chenxiang and Xie, Li and Zhong, Chen and Chen, Haoran and Zhu, Yurui and Du, Yongsheng and Gao, Yanqin and others},
+  journal={arXiv preprint arXiv:2510.21557},
+  year={2025}
 }
 ```
+
 
 
 
