@@ -34,7 +34,7 @@ class TaskPlannerAgent(BaseAgent):
         all_functions = {"create_plan": plan_toolkit.create_plan, "update_plan": plan_toolkit.update_plan,
                          "terminate": terminate_toolkit.terminate}
         if functions:
-            all_functions = functions.update(functions)
+            all_functions.update(functions)
         super().__init__(agent_instance, llm, all_functions)
 
     def create_plan(self, question, output_format=""):
