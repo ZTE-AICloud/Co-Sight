@@ -15,7 +15,9 @@
 
 import asyncio
 import json
+import os
 import uuid
+from datetime import datetime
 from typing import List, Optional
 
 import aiohttp
@@ -82,6 +84,58 @@ class WebsocketManager:
 
 
 manager = WebsocketManager()
+
+
+def _get_replay_workspace_path(message: dict, topic: str) -> Optional[str]:
+    """获取当前会话用于回放的 workspace 目录（replay.json 所在目录）。
+    优先从 message.extra.replayWorkspace / fromBackEnd.replayWorkspace 读取；
+    否则按时间戳新建一个 OpenClaw 专用 workspace，与 search 的 work_space 同基目录，便于回放列表展示。
+    """
+    try:
+        extra = message.get("extra") or {}
+        if isinstance(extra, dict):
+            from_back_end = extra.get("fromBackEnd") or {}
+            replay_workspace = extra.get("replayWorkspace") or from_back_end.get("replayWorkspace")
+            if isinstance(replay_workspace, str) and replay_workspace.strip():
+                path = replay_workspace.strip()
+                if not os.path.isabs(path):
+                    path = os.path.join(os.getcwd(), path)
+                return path
+    except Exception:
+        pass
+    try:
+        # OpenClaw 始终创建新 workspace，与 search 的 work_space_path 同基目录
+        curr = os.environ.get("WORKSPACE_PATH")
+        if isinstance(curr, str) and curr.strip() and "work_space_" in os.path.basename(curr):
+            base = os.path.dirname(curr)
+        else:
+            base = os.path.join(curr, "work_space") if (isinstance(curr, str) and curr.strip()) else os.path.join(os.getcwd(), "work_space")
+        if not os.path.isabs(base):
+            base = os.path.abspath(os.path.join(os.getcwd(), base))
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+        path = os.path.join(base, f"work_space_openclaw_{topic[:8]}_{timestamp}")
+        os.makedirs(path, exist_ok=True)
+        logger.info(f"创建 OpenClaw replay workspace: {path}")
+        return path
+    except Exception as e:
+        logger.warning(f"无法解析或创建 replay workspace: {e}")
+    return None
+
+
+def _append_to_replay(workspace_path: Optional[str], payload: dict) -> None:
+    """将发给前端的单条消息追加到该 workspace 下的 replay.json（JSONL 一行）。"""
+    if not workspace_path:
+        return
+    try:
+        replay_file = os.path.join(workspace_path, "replay.json")
+        os.makedirs(workspace_path, exist_ok=True)
+        line = json.dumps(payload, ensure_ascii=False)
+        if not line.endswith("\n"):
+            line += "\n"
+        with open(replay_file, "a", encoding="utf-8") as f:
+            f.write(line)
+    except Exception as e:
+        logger.warning(f"写入 replay.json 失败: {e}")
 
 
 @wsRouter.websocket("/robot/wss/messages")
@@ -292,6 +346,12 @@ async def _stream_handler(params, url, headers, topic, websocket):
                                 # 非完整JSON行，跳过
                                 continue
 
+                            # 回放中来自 OpenClaw 的已格式化的 WS 消息：用当前请求的 topic 透传，否则前端用录制时的 topic 取不到当前会话的展示
+                            if isinstance(line_json.get("data"), dict) and "topic" in line_json:
+                                payload = {"topic": topic, "data": line_json["data"]}
+                                await manager.send_json_to_topic(topic, payload, websocket)
+                                continue
+
                             msg_type = line_json.get("contentType") if line_json.get("contentType") is not None else "multi-modal"
                             init_data = line_json.get("content") if line_json.get("content") is not None else [
                                 {"type": "text", "value": i18n.t('unknown_message')}]
@@ -352,6 +412,10 @@ async def _stream_handler(params, url, headers, topic, websocket):
                             line_json = json.loads(decoded_line)
                         except json.JSONDecodeError:
                             continue
+                        if isinstance(line_json.get("data"), dict) and "topic" in line_json:
+                            payload = {"topic": topic, "data": line_json["data"]}
+                            await manager.send_json_to_topic(topic, payload, websocket)
+                            continue
                         msg_type = line_json.get("contentType") if line_json.get("contentType") is not None else "multi-modal"
                         init_data = line_json.get("content") if line_json.get("content") is not None else [
                             {"type": "text", "value": i18n.t('unknown_message')}]
@@ -403,7 +467,7 @@ async def _no_stream_handler(params, url, headers, topic, websocket):
 async def _send_to_openclaw(websocket: WebSocket, topic: str, message: dict, lang: str):
     """
     将消息转发给OpenClaw并处理响应
-    
+
     Args:
         websocket: WebSocket连接
         topic: 会话topic
@@ -411,13 +475,19 @@ async def _send_to_openclaw(websocket: WebSocket, topic: str, message: dict, lan
         lang: 语言
     """
     msg_uuid = str(uuid.uuid4())
-    
+    replay_workspace = _get_replay_workspace_path(message, topic)
+
+    async def send_openclaw_and_replay(payload: dict) -> None:
+        """发往前端并同时追加到当前会话的 replay.json（payload 为 {topic, data}）"""
+        await manager.send_json_to_topic(topic, payload, websocket)
+        _append_to_replay(replay_workspace, payload)
+
     try:
         # 若未连接则尝试按需连接（支持先起 Co-Sight 后起 Gateway 的场景）
         await openclaw_client_manager.ensure_connected()
         if not openclaw_client_manager.is_connected():
             error_message = "OpenClaw未连接" if lang == "zh" else "OpenClaw not connected"
-            await manager.send_json_to_topic(topic, {
+            await send_openclaw_and_replay({
                 "topic": topic,
                 "data": {
                     "type": "multi-modal",
@@ -429,13 +499,13 @@ async def _send_to_openclaw(websocket: WebSocket, topic: str, message: dict, lan
                     "initData": [{"type": "text", "value": error_message}],
                     "status": "error"
                 }
-            }, websocket)
+            })
             return
-        
+
         client = openclaw_client_manager.get_client()
         if not client:
             error_message = "OpenClaw客户端不可用" if lang == "zh" else "OpenClaw client unavailable"
-            await manager.send_json_to_topic(topic, {
+            await send_openclaw_and_replay({
                 "topic": topic,
                 "data": {
                     "type": "multi-modal",
@@ -447,7 +517,7 @@ async def _send_to_openclaw(websocket: WebSocket, topic: str, message: dict, lan
                     "initData": [{"type": "text", "value": error_message}],
                     "status": "error"
                 }
-            }, websocket)
+            })
             return
         
         # 用于累积不同来源的文本和同步final事件
@@ -564,7 +634,7 @@ async def _send_to_openclaw(websocket: WebSocket, topic: str, message: dict, lan
                 elif state == "error":
                     # 错误状态
                     error_msg = payload.get("errorMessage", "Unknown error")
-                    await manager.send_json_to_topic(topic, {
+                    await send_openclaw_and_replay({
                         "topic": topic,
                         "data": {
                             "type": "multi-modal",
@@ -576,7 +646,7 @@ async def _send_to_openclaw(websocket: WebSocket, topic: str, message: dict, lan
                             "initData": [{"type": "text", "value": f"Error: {error_msg}"}],
                             "status": "error"
                         }
-                    }, websocket)
+                    })
         
         # 注册事件处理器（监听"chat"和"agent"事件）
         client.register_event_handler("chat", handle_openclaw_event)
@@ -588,7 +658,66 @@ async def _send_to_openclaw(websocket: WebSocket, topic: str, message: dict, lan
             # 如果是多模态消息，提取文本内容
             text_parts = [item.get("value", "") for item in user_message if item.get("type") == "text"]
             user_message = " ".join(text_parts)
-        
+        user_input_title = (user_message or "").strip() or ("OpenClaw" if lang == "en" else "OpenClaw 对话")
+
+        # 先发一条单节点 manus step 到前端（状态：进行中），节点名称即用户输入
+        step_name = user_input_title[:200] if len(user_input_title) > 200 else user_input_title
+        manus_init = {
+            "title": step_name,
+            "steps": [step_name],
+            "step_files": {},
+            "step_statuses": {step_name: "in_progress"},
+            "step_notes": {step_name: ""},
+            "step_details": {step_name: ""},
+            "step_tool_calls": {step_name: []},
+            "dependencies": {},
+            "progress": {"total": 1, "completed": 0, "in_progress": 1, "blocked": 0, "not_started": 0},
+            "result": "",
+            "statusText": "正在执行..." if lang == "zh" else "Executing...",
+        }
+        await send_openclaw_and_replay({
+            "topic": topic,
+            "data": {
+                "type": "lui-message-manus-step",
+                "uuid": msg_uuid,
+                "timestamp": get_timestamp(),
+                "from": "ai",
+                "source": "openclaw",
+                "changeType": "replace",
+                "initData": manus_init,
+                "styles": {"width": "100%"},
+            },
+        })
+
+        async def send_manus_completed(success: bool = True):
+            """OpenClaw 消息发完后，将 DAG 节点状态更新为已完成"""
+            completed_init = {
+                "title": step_name,
+                "steps": [step_name],
+                "step_files": {},
+                "step_statuses": {step_name: "completed"},
+                "step_notes": {step_name: ""},
+                "step_details": {step_name: ""},
+                "step_tool_calls": {step_name: []},
+                "dependencies": {},
+                "progress": {"total": 1, "completed": 1, "in_progress": 0, "blocked": 0, "not_started": 0},
+                "result": "",
+                "statusText": "已完成" if (success and lang == "zh") else ("执行失败" if (not success and lang == "zh") else ("Completed" if success else "Failed")),
+            }
+            await send_openclaw_and_replay({
+                "topic": topic,
+                "data": {
+                    "type": "lui-message-manus-step",
+                    "uuid": msg_uuid,
+                    "timestamp": get_timestamp(),
+                    "from": "ai",
+                    "source": "openclaw",
+                    "changeType": "replace",
+                    "initData": completed_init,
+                    "styles": {"width": "100%"},
+                },
+            })
+
         # 生成OpenClaw会话键（格式：agent:main:<topic>）
         openclaw_session_key = f"agent:main:{topic}"
         
@@ -605,7 +734,7 @@ async def _send_to_openclaw(websocket: WebSocket, topic: str, message: dict, lan
 
                 # 兼容旧格式：payload 直接带 content 字段
                 if "content" in payload:
-                    await manager.send_json_to_topic(topic, {
+                    await send_openclaw_and_replay({
                         "topic": topic,
                         "data": {
                             "type": "multi-modal",
@@ -617,7 +746,7 @@ async def _send_to_openclaw(websocket: WebSocket, topic: str, message: dict, lan
                             "initData": [{"type": "text", "value": payload["content"]}],
                             "status": "finished"
                         }
-                    }, websocket)
+                    })
                 # 新格式：payload.messages 中包含完整对话历史
                 elif isinstance(payload.get("messages"), list):
                     messages = payload.get("messages", [])
@@ -647,7 +776,7 @@ async def _send_to_openclaw(websocket: WebSocket, topic: str, message: dict, lan
                         logger.warning(f"未从messages中提取到AI回复，messages: {messages}")
 
                     if ai_reply:
-                        await manager.send_json_to_topic(topic, {
+                        await send_openclaw_and_replay({
                             "topic": topic,
                             "data": {
                                 "type": "multi-modal",
@@ -659,7 +788,7 @@ async def _send_to_openclaw(websocket: WebSocket, topic: str, message: dict, lan
                                 "initData": [{"type": "text", "value": ai_reply}],
                                 "status": "finished_successfully"
                             }
-                        }, websocket)
+                        })
             
             # 等待chat final事件到达（最多120秒）
             try:
@@ -737,8 +866,8 @@ async def _send_to_openclaw(websocket: WebSocket, topic: str, message: dict, lan
                                     segment_count += 1
                                     change_type = "replace" if is_first_segment else "append"
                                     status = "streaming"  # 所有中间片段都是 streaming
-                                    
-                                    await manager.send_json_to_topic(topic, {
+
+                                    await send_openclaw_and_replay({
                                         "topic": topic,
                                         "data": {
                                             "type": "multi-modal",
@@ -751,11 +880,11 @@ async def _send_to_openclaw(websocket: WebSocket, topic: str, message: dict, lan
                                             "status": status,
                                             "metadata": message_data  # 添加结构化元数据
                                         }
-                                    }, websocket)
-                                    
+                                    })
+
                                     logger.info(f"已推送片段 #{segment_count}: messageType={message_data.get('messageType')}, role={role}")
                                     is_first_segment = False
-                                    
+
                                     # 短暂延迟，模拟流式效果
                                     await asyncio.sleep(0.05)
                             
@@ -783,7 +912,7 @@ async def _send_to_openclaw(websocket: WebSocket, topic: str, message: dict, lan
                                 segment_count += 1
                                 change_type = "replace" if is_first_segment else "append"
                                 
-                                await manager.send_json_to_topic(topic, {
+                                await send_openclaw_and_replay({
                                     "topic": topic,
                                     "data": {
                                         "type": "multi-modal",
@@ -796,15 +925,15 @@ async def _send_to_openclaw(websocket: WebSocket, topic: str, message: dict, lan
                                         "status": "streaming",
                                         "metadata": message_data
                                     }
-                                }, websocket)
-                                
+                                })
+
                                 logger.info(f"已推送片段 #{segment_count}: messageType=toolResult, toolName={tool_name}")
                                 is_first_segment = False
                                 await asyncio.sleep(0.05)
                         
                         # 发送最后一条完成消息
                         if segment_count > 0:
-                            await manager.send_json_to_topic(topic, {
+                            await send_openclaw_and_replay({
                                 "topic": topic,
                                 "data": {
                                     "type": "multi-modal",
@@ -817,17 +946,18 @@ async def _send_to_openclaw(websocket: WebSocket, topic: str, message: dict, lan
                                     "status": "finished_successfully",
                                     "metadata": {"messageType": "completion", "totalSegments": segment_count}
                                 }
-                            }, websocket)
-                        
+                            })
+
                         logger.info(f"✅ 完成分段推送，共 {segment_count} 个片段")
                 except Exception as e:
                     logger.error(f"获取历史消息失败: {e}", exc_info=True)
-        
+            await send_manus_completed(True)
+
         except Exception as e:
             logger.error(f"发送消息到OpenClaw失败: {e}", exc_info=True)
             error_message = f"发送失败: {str(e)}" if lang == "zh" else f"Send failed: {str(e)}"
-            
-            await manager.send_json_to_topic(topic, {
+
+            await send_openclaw_and_replay({
                 "topic": topic,
                 "data": {
                     "type": "multi-modal",
@@ -839,13 +969,14 @@ async def _send_to_openclaw(websocket: WebSocket, topic: str, message: dict, lan
                     "initData": [{"type": "text", "value": error_message}],
                     "status": "error"
                 }
-            }, websocket)
-    
+            })
+            await send_manus_completed(False)
+
     except Exception as e:
         logger.error(f"处理OpenClaw消息异常: {e}", exc_info=True)
         error_message = f"处理异常: {str(e)}" if lang == "zh" else f"Processing error: {str(e)}"
-        
-        await manager.send_json_to_topic(topic, {
+
+        await send_openclaw_and_replay({
             "topic": topic,
             "data": {
                 "type": "multi-modal",
@@ -857,4 +988,5 @@ async def _send_to_openclaw(websocket: WebSocket, topic: str, message: dict, lan
                 "initData": [{"type": "text", "value": error_message}],
                 "status": "error"
             }
-        }, websocket)
+        })
+        await send_manus_completed(False)

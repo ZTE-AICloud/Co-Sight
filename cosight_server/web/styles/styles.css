@@ -360,6 +360,16 @@ body {
     border-color: #c8e6c9;
 }
 
+/* OpenClaw 对话展示时右侧面板样式 */
+.right-container.openclaw-view #right-container-status {
+    color: #16213e;
+    background-color: #e8eaf6;
+    border-color: #9fa8da;
+}
+.right-container.openclaw-view #content-iframe {
+    display: block;
+}
+
 .right-content {
     flex: 1;
     display: flex;

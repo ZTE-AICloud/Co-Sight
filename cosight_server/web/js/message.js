@@ -63,8 +63,50 @@ class MessageService {
                 return;
             }
 
+            // OpenClaw 流式消息：type "multi-modal" + source "openclaw"，内容在 data.metadata，按 changeType 累积后渲染
+            if (messageType === 'multi-modal' && messageData.data?.source === 'openclaw') {
+                const topic = messageData.topic;
+                const changeType = messageData.data.changeType || 'append';
+                const metadata = messageData.data.metadata;
+
+                window.__openclawMessagesByTopic = window.__openclawMessagesByTopic || {};
+                if (!window.__openclawMessagesByTopic[topic]) {
+                    window.__openclawMessagesByTopic[topic] = [];
+                }
+                if (changeType === 'replace') {
+                    window.__openclawMessagesByTopic[topic] = [];
+                }
+                if (metadata && typeof metadata === 'object') {
+                    window.__openclawMessagesByTopic[topic].push(metadata);
+                } else {
+                    // 无 metadata 时（如错误或单条纯文本回复）：从 initData 提取一条文本作为助手消息
+                    const initData = messageData.data?.initData;
+                    if (Array.isArray(initData) && initData.length > 0 && initData[0].type === 'text' && initData[0].value) {
+                        window.__openclawMessagesByTopic[topic].push({
+                            messageType: 'text',
+                            role: 'assistant',
+                            content: initData[0].value
+                        });
+                    }
+                }
+
+                if (typeof window.showOpenClawInIframe === 'function') {
+                    window.showOpenClawInIframe(messageData);
+                }
+                return;
+            }
+
             // 检查是否是 lui-message-manus-step 类型的消息
             if (messageType === 'lui-message-manus-step') {
+                const source = messageData.data?.source || messageData.source || 'cosight';
+                if (source === 'openclaw') {
+                    console.log('收到 OpenClaw 来源的步骤消息，更新DAG并在 content-iframe 中展示');
+                    this.stepMessageHandler(messageData);
+                    if (typeof window.showOpenClawInIframe === 'function') {
+                        window.showOpenClawInIframe(messageData);
+                    }
+                    return;
+                }
                 console.log('收到 lui-message-manus-step 消息，开始创建DAG图');
                 console.log('完整消息数据:', messageData);
                 this.stepMessageHandler(messageData);

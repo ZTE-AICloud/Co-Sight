@@ -1551,9 +1551,11 @@ function toggleLoadingIndicator(isShow) {
 
 // 清理iframe和相关资源
 function cleanupContentResources() {
+    const rightContainer = document.getElementById('right-container');
     const iframe = document.getElementById('content-iframe');
     const markdownContent = document.getElementById('markdown-content');
 
+    if (rightContainer) rightContainer.classList.remove('openclaw-view');
     if (iframe) {
         // 清理事件监听器
         iframe.onload = null;
@@ -1701,6 +1703,173 @@ function showRightPanel() {
     }, 300); // 稍微延迟确保布局变化完成
 
     return true
+}
+
+/**
+ * OpenClaw 消息在右侧 content-iframe 中展示
+ * 后端格式：type "multi-modal", source "openclaw", changeType replace/append, data.metadata 或 data.initData 纯文本
+ * 按 topic 累积 metadata 列表，生成对话式 iframe 页面
+ */
+function showOpenClawInIframe(messageData) {
+    const topic = messageData.topic;
+    const metadataList = (topic && window.__openclawMessagesByTopic && window.__openclawMessagesByTopic[topic]) || [];
+    const payload = messageData.data?.payload;
+    const messages = payload && Array.isArray(payload.messages) ? payload.messages : null;
+    const initData = messageData.data?.content || messageData.data?.initData;
+
+    if (metadataList.length === 0 && !messages && !initData) {
+        console.warn('showOpenClawInIframe: 无 metadata 列表、无 payload.messages、无 initData');
+        return;
+    }
+
+    if (!showRightPanel()) return;
+
+    const rightContainer = document.getElementById('right-container');
+    const iframe = document.getElementById('content-iframe');
+    const markdownContent = document.getElementById('markdown-content');
+    const statusElement = document.getElementById('right-container-status');
+
+    if (rightContainer) rightContainer.classList.add('openclaw-view');
+    if (iframe) iframe.style.display = 'block';
+    if (markdownContent) markdownContent.style.display = 'none';
+    if (statusElement) {
+        statusElement.textContent = 'OpenClaw 对话';
+        statusElement.className = 'success';
+    }
+
+    if (metadataList.length > 0) {
+        if (iframe) iframe.srcdoc = buildOpenClawChatHtmlFromMetadataList(metadataList);
+        return;
+    }
+
+    if (messages) {
+        if (iframe) iframe.srcdoc = buildOpenClawChatHtml(messages);
+        return;
+    }
+
+    // 仅 initData 纯文本（错误或单条回复）：生成单条助手消息展示
+    if (initData && Array.isArray(initData) && initData.length > 0 && initData[0].type === 'text' && initData[0].value) {
+        var single = [{ messageType: 'text', role: 'assistant', content: initData[0].value }];
+        if (iframe) iframe.srcdoc = buildOpenClawChatHtmlFromMetadataList(single);
+    }
+}
+
+/**
+ * 根据 OpenClaw 流式 metadata 列表生成 iframe 内对话 HTML
+ * metadata 来自 backend data.metadata：messageType text|thinking|toolCall|toolResult|completion
+ */
+function buildOpenClawChatHtmlFromMetadataList(metadataList) {
+    var roleLabel = { user: '用户', assistant: '助手', toolResult: '工具结果' };
+    var roleClass = { user: 'oc-msg-user', assistant: 'oc-msg-assistant', toolResult: 'oc-msg-tool' };
+    var typeLabel = { text: '消息', thinking: '思考', toolCall: '工具调用', toolResult: '工具结果', completion: '完成' };
+
+    var listHtml = (metadataList || []).map(function (meta) {
+        var msgType = meta.messageType || 'text';
+        if (msgType === 'completion') {
+            var total = meta.totalSegments || 0;
+            return '<div class="oc-msg oc-msg-completion"><div class="oc-msg-body">共 ' + total + ' 个片段</div></div>';
+        }
+        var role = meta.role || 'assistant';
+        var label = roleLabel[role] || role;
+        var typeTag = typeLabel[msgType] || msgType;
+        var cls = roleClass[role] || 'oc-msg-assistant';
+        var body = '';
+
+        if (msgType === 'text' && meta.content !== undefined) {
+            body = '<div class="oc-content-text">' + escapeHtml(String(meta.content)).replace(/\n/g, '<br>') + '</div>';
+        } else if (msgType === 'thinking' && meta.content !== undefined) {
+            var text = String(meta.content);
+            var short = text.length > 400 ? text.slice(0, 400) + '…' : text;
+            body = '<details class="oc-content-thinking"><summary>' + escapeHtml(typeTag) + '</summary><pre class="oc-thinking-pre">' + escapeHtml(short) + '</pre></details>';
+        } else if (msgType === 'toolCall') {
+            var toolName = meta.toolName || 'tool';
+            var argsStr = meta.arguments ? JSON.stringify(meta.arguments) : '{}';
+            body = '<div class="oc-content-toolcall"><span class="oc-tool-name">' + escapeHtml(toolName) + '</span><pre class="oc-tool-args">' + escapeHtml(argsStr) + '</pre></div>';
+        } else if (msgType === 'toolResult') {
+            var toolName = meta.toolName || 'tool';
+            var resultText = meta.content !== undefined ? String(meta.content) : '';
+            if (resultText.length > 600) resultText = resultText.slice(0, 600) + '\n…';
+            var errCls = meta.isError ? ' oc-tool-error' : '';
+            body = '<div class="oc-tool-result' + errCls + '"><span class="oc-tool-result-name">' + escapeHtml(toolName) + '</span><pre class="oc-tool-result-body">' + escapeHtml(resultText) + '</pre></div>';
+        } else {
+            body = '<div class="oc-content-text">' + escapeHtml(JSON.stringify(meta)) + '</div>';
+        }
+
+        return '<div class="oc-msg ' + cls + '"><div class="oc-msg-label">' + escapeHtml(label) + ' · ' + escapeHtml(typeTag) + '</div><div class="oc-msg-body">' + body + '</div></div>';
+    }).join('');
+
+    var css = '*{box-sizing:border-box} body{margin:0;padding:20px;font-family:\'Segoe UI\',system-ui,sans-serif;background:linear-gradient(160deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);color:#e8e8e8;min-height:100vh}' +
+        '.oc-header{text-align:center;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,0.12)} .oc-header h1{font-size:1.35rem;font-weight:600;margin:0;color:#fff}' +
+        '.oc-messages{display:flex;flex-direction:column;gap:16px}' +
+        '.oc-msg{background:rgba(255,255,255,0.06);border-radius:12px;padding:14px 18px;border:1px solid rgba(255,255,255,0.08)}' +
+        '.oc-msg-user{border-left:4px solid rgba(59,130,246,0.8)} .oc-msg-assistant{border-left:4px solid rgba(99,102,241,0.8)} .oc-msg-tool{border-left:4px solid rgba(156,163,175,0.8)}' +
+        '.oc-msg-completion{opacity:0.85}' +
+        '.oc-msg-label{font-size:0.75rem;font-weight:600;color:rgba(255,255,255,0.6);margin-bottom:8px}' +
+        '.oc-msg-body{font-size:0.95rem;line-height:1.55}' +
+        '.oc-content-text{white-space:pre-wrap;word-break:break-word}' +
+        '.oc-content-thinking{font-size:0.85rem;color:rgba(255,255,255,0.85)} .oc-content-thinking summary{cursor:pointer}' +
+        '.oc-thinking-pre,.oc-tool-args,.oc-tool-result-body{white-space:pre-wrap;word-break:break-word;margin:8px 0 0;padding:10px;background:rgba(0,0,0,0.2);border-radius:8px;font-size:0.85rem;max-height:220px;overflow-y:auto}' +
+        '.oc-content-toolcall{margin-top:8px} .oc-tool-name{font-weight:600;color:#c7d2fe}' +
+        '.oc-tool-result-name{font-weight:600;color:rgba(255,255,255,0.9)} .oc-tool-error .oc-tool-result-body{color:#fca5a5}';
+
+    return '<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>OpenClaw 对话</title><style>' + css + '</style></head><body><div class="oc-header"><h1>OpenClaw 对话</h1></div><div class="oc-messages">' + listHtml + '</div></body></html>';
+}
+
+/**
+ * 根据 payload.messages（旧格式）生成对话 iframe HTML
+ */
+function buildOpenClawChatHtml(messages) {
+    var roleLabel = { user: '用户', assistant: '助手', toolResult: '工具结果' };
+    var roleClass = { user: 'oc-msg-user', assistant: 'oc-msg-assistant', toolResult: 'oc-msg-tool' };
+
+    function renderContentItems(items) {
+        if (!items || !Array.isArray(items)) return '';
+        return items.map(function (item) {
+            if (item.type === 'text' && item.text) {
+                return '<div class="oc-content-text">' + escapeHtml(item.text).replace(/\n/g, '<br>') + '</div>';
+            }
+            if (item.type === 'thinking' && item.thinking) {
+                var short = item.thinking.length > 300 ? item.thinking.slice(0, 300) + '…' : item.thinking;
+                return '<details class="oc-content-thinking"><summary>思考</summary><pre class="oc-thinking-pre">' + escapeHtml(short) + '</pre></details>';
+            }
+            if (item.type === 'toolCall' && item.name) {
+                var argsStr = item.arguments ? JSON.stringify(item.arguments) : '{}';
+                return '<div class="oc-content-toolcall"><span class="oc-tool-name">' + escapeHtml(item.name) + '</span><pre class="oc-tool-args">' + escapeHtml(argsStr) + '</pre></div>';
+            }
+            return '';
+        }).join('');
+    }
+
+    var listHtml = messages.map(function (msg) {
+        var role = msg.role || 'assistant';
+        var label = roleLabel[role] || role;
+        var cls = roleClass[role] || 'oc-msg-assistant';
+        var body = '';
+        if (role === 'toolResult') {
+            var toolName = msg.toolName || 'tool';
+            var errCls = msg.isError ? ' oc-tool-error' : '';
+            var text = (msg.content && msg.content[0] && msg.content[0].text) ? msg.content[0].text : '';
+            if (text.length > 800) text = text.slice(0, 800) + '\n…';
+            body = '<div class="oc-tool-result' + errCls + '"><span class="oc-tool-result-name">' + escapeHtml(toolName) + '</span><pre class="oc-tool-result-body">' + escapeHtml(text) + '</pre></div>';
+        } else {
+            body = renderContentItems(msg.content);
+        }
+        return '<div class="oc-msg ' + cls + '"><div class="oc-msg-label">' + escapeHtml(label) + '</div><div class="oc-msg-body">' + body + '</div></div>';
+    }).join('');
+
+    var css = '*{box-sizing:border-box} body{margin:0;padding:20px;font-family:\'Segoe UI\',system-ui,sans-serif;background:linear-gradient(160deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);color:#e8e8e8;min-height:100vh}' +
+        '.oc-header{text-align:center;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,0.12)} .oc-header h1{font-size:1.35rem;font-weight:600;margin:0;color:#fff}' +
+        '.oc-messages{display:flex;flex-direction:column;gap:16px}' +
+        '.oc-msg{background:rgba(255,255,255,0.06);border-radius:12px;padding:14px 18px;border:1px solid rgba(255,255,255,0.08)}' +
+        '.oc-msg-user{border-left:4px solid rgba(59,130,246,0.8)} .oc-msg-assistant{border-left:4px solid rgba(99,102,241,0.8)} .oc-msg-tool{border-left:4px solid rgba(156,163,175,0.8)}' +
+        '.oc-msg-label{font-size:0.75rem;font-weight:600;color:rgba(255,255,255,0.6);margin-bottom:8px}' +
+        '.oc-msg-body{font-size:0.95rem;line-height:1.55}' +
+        '.oc-content-text{white-space:pre-wrap;word-break:break-word}' +
+        '.oc-content-thinking summary{cursor:pointer}' +
+        '.oc-thinking-pre,.oc-tool-args,.oc-tool-result-body{white-space:pre-wrap;word-break:break-word;margin:8px 0 0;padding:10px;background:rgba(0,0,0,0.2);border-radius:8px;font-size:0.85rem;max-height:220px;overflow-y:auto}' +
+        '.oc-content-toolcall .oc-tool-name{font-weight:600;color:#c7d2fe}' +
+        '.oc-tool-result-name{font-weight:600} .oc-tool-error .oc-tool-result-body{color:#fca5a5}';
+    return '<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>OpenClaw 对话</title><style>' + css + '</style></head><body><div class="oc-header"><h1>OpenClaw 对话</h1></div><div class="oc-messages">' + listHtml + '</div></body></html>';
 }
 
 function showRightPanelForTool(toolCall) {
