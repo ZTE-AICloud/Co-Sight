@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import asyncio
 import json
 import uuid
 from typing import List, Optional
@@ -24,6 +25,7 @@ from cosight_server.deep_research.services.i18n_service import i18n
 from cosight_server.sdk.common.config import custom_config
 from app.common.logger_util import get_logger
 from cosight_server.sdk.common.utils import get_timestamp
+from cosight_server.deep_research.services.openclaw_client import openclaw_client_manager
 
 logger = get_logger("websocket")
 wsRouter = APIRouter()
@@ -136,7 +138,36 @@ async def websocket_handler(
                     }
                 }, websocket)
 
-                await _send_resp(websocket, cookie, data.get("topic"), message, lang)
+                # 路由逻辑：根据target字段决定转发到Co-Sight还是OpenClaw
+                target = data.get("target", "cosight")  # 默认使用cosight
+                
+                # 新增：后端二次检测OpenClaw命令（作为后备检测）
+                init_data = message.get("initData", [])
+                if isinstance(init_data, list) and len(init_data) > 0:
+                    first_item = init_data[0]
+                    if isinstance(first_item, dict) and first_item.get("type") == "text":
+                        text_value = first_item.get("value", "").strip()
+                        if text_value.startswith("/openclaw"):
+                            target = "openclaw"
+                            # 去掉 /openclaw 前缀
+                            actual_command = text_value[len("/openclaw"):].strip()
+                            if actual_command:
+                                # 更新消息内容
+                                init_data[0]["value"] = actual_command
+                                message["initData"] = init_data
+                                logger.info(f"后端检测到OpenClaw命令，实际内容: {actual_command}")
+                            else:
+                                # 命令为空，使用默认问候
+                                init_data[0]["value"] = "你好"
+                                message["initData"] = init_data
+                                logger.warning("OpenClaw命令为空，使用默认问候")
+                
+                if target == "openclaw":
+                    # 转发给OpenClaw
+                    await _send_to_openclaw(websocket, data.get("topic"), message, lang)
+                else:
+                    # 原有Co-Sight逻辑
+                    await _send_resp(websocket, cookie, data.get("topic"), message, lang)
 
 
         # Ended by AICoder, pid:cd2a2pa21827c9b148ae08eff0221b0be93612b0
@@ -273,6 +304,7 @@ async def _stream_handler(params, url, headers, topic, websocket):
                                     "uuid": msg_uuid,
                                     "timestamp": get_timestamp(),
                                     "from": "ai",
+                                    "source": "cosight",  # 标识来源
                                     "changeType": change_type,
                                     "initData": init_data,
                                     "headFoldConfig": line_json.get("headFoldConfig"),
@@ -331,6 +363,7 @@ async def _stream_handler(params, url, headers, topic, websocket):
                                 "uuid": msg_uuid,
                                 "timestamp": get_timestamp(),
                                 "from": "ai",
+                                "source": "cosight",  # 标识来源
                                 "changeType": change_type,
                                 "initData": init_data,
                                 "headFoldConfig": line_json.get("headFoldConfig"),
@@ -358,9 +391,470 @@ async def _no_stream_handler(params, url, headers, topic, websocket):
                     "uuid": str(uuid.uuid4()),
                     "timestamp": get_timestamp(),
                     "from": "ai",
+                    "source": "cosight",  # 标识来源
                     "initData": resp.get("content"),
                     "promptSentences": resp.get("promptSentences") or [],
                     "roleInfo": resp.get("roleInfo"),
                     "extra": resp.get("extra")
                 }
             }, websocket)
+
+
+async def _send_to_openclaw(websocket: WebSocket, topic: str, message: dict, lang: str):
+    """
+    将消息转发给OpenClaw并处理响应
+    
+    Args:
+        websocket: WebSocket连接
+        topic: 会话topic
+        message: 消息内容
+        lang: 语言
+    """
+    msg_uuid = str(uuid.uuid4())
+    
+    try:
+        # 若未连接则尝试按需连接（支持先起 Co-Sight 后起 Gateway 的场景）
+        await openclaw_client_manager.ensure_connected()
+        if not openclaw_client_manager.is_connected():
+            error_message = "OpenClaw未连接" if lang == "zh" else "OpenClaw not connected"
+            await manager.send_json_to_topic(topic, {
+                "topic": topic,
+                "data": {
+                    "type": "multi-modal",
+                    "uuid": msg_uuid,
+                    "timestamp": get_timestamp(),
+                    "from": "ai",
+                    "source": "openclaw",  # 标识来源
+                    "changeType": "replace",
+                    "initData": [{"type": "text", "value": error_message}],
+                    "status": "error"
+                }
+            }, websocket)
+            return
+        
+        client = openclaw_client_manager.get_client()
+        if not client:
+            error_message = "OpenClaw客户端不可用" if lang == "zh" else "OpenClaw client unavailable"
+            await manager.send_json_to_topic(topic, {
+                "topic": topic,
+                "data": {
+                    "type": "multi-modal",
+                    "uuid": msg_uuid,
+                    "timestamp": get_timestamp(),
+                    "from": "ai",
+                    "source": "openclaw",
+                    "changeType": "replace",
+                    "initData": [{"type": "text", "value": error_message}],
+                    "status": "error"
+                }
+            }, websocket)
+            return
+        
+        # 用于累积不同来源的文本和同步final事件
+        accumulated_text = {
+            "text": "",        # 来自 chat delta 事件
+            "agent_text": "", # 来自 agent 事件
+            "need_history": False,
+            "runId": None
+        }
+        final_event = asyncio.Event()  # 用于等待chat final事件
+        
+        # 注册事件处理器来接收OpenClaw的响应
+        async def handle_openclaw_event(event_data: dict):
+            """处理OpenClaw事件"""
+            event_type = event_data.get("event")
+            payload = event_data.get("payload", {})
+            
+            # 处理 agent 事件（包含实际的消息数据）
+            if event_type == "agent":
+                run_session_key = payload.get("sessionKey")
+                if run_session_key == openclaw_session_key:
+                    stream_type = payload.get("stream")
+                    data = payload.get("data")
+                    seq = payload.get("seq", 0)
+                    
+                    logger.info(f"收到OpenClaw agent事件: sessionKey={run_session_key}, stream={stream_type}, seq={seq}, data类型={type(data)}")
+                    
+                    # 尝试从 agent 事件的 data 中提取文本
+                    if data:
+                        logger.info(f"agent事件data内容(前500字符): {str(data)[:500]}...")
+                        
+                        # data 可能是 JSON 字符串，尝试解析
+                        if isinstance(data, str):
+                            try:
+                                import json
+                                data_obj = json.loads(data)
+                                logger.info(f"解析后的data类型: {type(data_obj)}, keys: {data_obj.keys() if isinstance(data_obj, dict) else 'N/A'}")
+                                
+                                # 如果是消息对象，提取文本
+                                if isinstance(data_obj, dict):
+                                    # 可能的格式1: {"type": "text", "text": "..."}
+                                    if data_obj.get("type") == "text" and "text" in data_obj:
+                                        text = data_obj.get("text", "").strip()
+                                        if text and not accumulated_text.get("agent_text"):
+                                            accumulated_text["agent_text"] = text
+                                            logger.info(f"✅ 从agent事件提取到文本(格式1)，长度: {len(text)}")
+                                    
+                                    # 可能的格式2: {"role": "assistant", "content": [...]}
+                                    elif data_obj.get("role") == "assistant":
+                                        content_items = data_obj.get("content", [])
+                                        text_parts = []
+                                        for item in content_items:
+                                            if isinstance(item, dict) and item.get("type") == "text":
+                                                text = item.get("text", "").strip()
+                                                if text:
+                                                    text_parts.append(text)
+                                        if text_parts:
+                                            accumulated_text["agent_text"] = "\n".join(text_parts)
+                                            logger.info(f"✅ 从agent事件提取到文本(格式2)，长度: {len(accumulated_text['agent_text'])}")
+                                
+                            except json.JSONDecodeError:
+                                logger.debug(f"agent事件data不是JSON格式")
+                        elif isinstance(data, dict):
+                            # data 已经是字典对象
+                            logger.info(f"agent事件data是字典，keys: {data.keys()}")
+                    
+                    # 不要return，让后续的 chat 事件也能处理
+            
+            if event_type == "chat":
+                # OpenClaw的chat事件
+                state = payload.get("state")
+                run_session_key = payload.get("sessionKey")
+                
+                # 记录所有 chat 事件（用于调试）
+                logger.info(f"收到OpenClaw chat事件: state={state}, sessionKey={run_session_key}, payload_keys={list(payload.keys())}")
+                
+                # 只处理当前会话的事件
+                if run_session_key != openclaw_session_key:
+                    logger.debug(f"跳过其他会话的事件: {run_session_key} != {openclaw_session_key}")
+                    return
+                
+                if state == "delta":
+                    # 增量更新：累积文本
+                    message_obj = payload.get("message")
+                    logger.info(f"delta事件中的message对象类型: {type(message_obj)}, keys: {message_obj.keys() if isinstance(message_obj, dict) else 'N/A'}")
+                    
+                    if message_obj:
+                        content_items = message_obj.get("content", []) if isinstance(message_obj, dict) else []
+                        for item in content_items:
+                            if isinstance(item, dict) and item.get("type") == "text":
+                                text = item.get("text", "")
+                                if text.strip():
+                                    accumulated_text["text"] = text  # delta 事件发送的是完整文本，不是增量
+                                    logger.info(f"✅ 收到delta事件文本，长度: {len(text)}, 前100字符: {text[:100]}")
+                    
+                    if not accumulated_text["text"]:
+                        logger.warning(f"delta事件未提取到文本: message_obj={message_obj}")
+                
+                elif state == "final":
+                    # Chat完成，需要主动调用chat.history获取完整对话
+                    # 原因：OpenClaw Gateway的webchat硬编码了disableBlockStreaming=true
+                    # 导致chat final事件中没有message字段
+                    try:
+                        logger.info(f"Chat完成，准备获取历史消息: sessionKey={openclaw_session_key}")
+                        
+                        # 设置标志并触发event
+                        accumulated_text["need_history"] = True
+                        accumulated_text["runId"] = payload.get("runId")
+                        final_event.set()  # 触发等待
+                    
+                    except Exception as e:
+                        logger.error(f"处理chat final事件异常: {e}", exc_info=True)
+                
+                elif state == "error":
+                    # 错误状态
+                    error_msg = payload.get("errorMessage", "Unknown error")
+                    await manager.send_json_to_topic(topic, {
+                        "topic": topic,
+                        "data": {
+                            "type": "multi-modal",
+                            "uuid": msg_uuid,
+                            "timestamp": get_timestamp(),
+                            "from": "ai",
+                            "source": "openclaw",
+                            "changeType": "replace",
+                            "initData": [{"type": "text", "value": f"Error: {error_msg}"}],
+                            "status": "error"
+                        }
+                    }, websocket)
+        
+        # 注册事件处理器（监听"chat"和"agent"事件）
+        client.register_event_handler("chat", handle_openclaw_event)
+        client.register_event_handler("agent", handle_openclaw_event)
+        
+        # 提取用户消息
+        user_message = message.get("initData", "")
+        if isinstance(user_message, list):
+            # 如果是多模态消息，提取文本内容
+            text_parts = [item.get("value", "") for item in user_message if item.get("type") == "text"]
+            user_message = " ".join(text_parts)
+        
+        # 生成OpenClaw会话键（格式：agent:main:<topic>）
+        openclaw_session_key = f"agent:main:{topic}"
+        
+        # 发送消息到OpenClaw
+        logger.info(f"转发消息到OpenClaw: sessionKey={openclaw_session_key}, message={user_message[:100]}...")
+        
+        try:
+            response = await client.send_message(user_message, openclaw_session_key)
+            logger.info(f"OpenClaw响应: {response}")
+            
+            # 如果有立即响应，也发送给前端
+            if response.get("ok") and response.get("payload"):
+                payload = response["payload"]
+
+                # 兼容旧格式：payload 直接带 content 字段
+                if "content" in payload:
+                    await manager.send_json_to_topic(topic, {
+                        "topic": topic,
+                        "data": {
+                            "type": "multi-modal",
+                            "uuid": msg_uuid,
+                            "timestamp": get_timestamp(),
+                            "from": "ai",
+                            "source": "openclaw",
+                            "changeType": "replace",
+                            "initData": [{"type": "text", "value": payload["content"]}],
+                            "status": "finished"
+                        }
+                    }, websocket)
+                # 新格式：payload.messages 中包含完整对话历史
+                elif isinstance(payload.get("messages"), list):
+                    messages = payload.get("messages", [])
+                    logger.info(f"从OpenClaw响应中提取AI回复，messages数量: {len(messages)}")
+                    ai_reply = ""
+
+                    # 查找最后一条 assistant 消息，并拼接其中的文本片段
+                    for msg in reversed(messages):
+                        if msg.get("role") != "assistant":
+                            continue
+                        content_items = msg.get("content", [])
+                        text_parts = []
+                        for item in content_items:
+                            if item.get("type") == "text":
+                                text = item.get("text", "")
+                                # 清理 <final> 标签
+                                import re
+                                text = re.sub(r'<final>(.*?)</final>', r'\1', text, flags=re.DOTALL)
+                                if text.strip():
+                                    text_parts.append(text)
+                        if text_parts:
+                            ai_reply = "\n".join(text_parts).strip()
+                            logger.info(f"从assistant消息中提取到AI回复，长度: {len(ai_reply)}, 前100字符: {ai_reply[:100]}")
+                            break
+                    
+                    if not ai_reply:
+                        logger.warning(f"未从messages中提取到AI回复，messages: {messages}")
+
+                    if ai_reply:
+                        await manager.send_json_to_topic(topic, {
+                            "topic": topic,
+                            "data": {
+                                "type": "multi-modal",
+                                "uuid": msg_uuid,
+                                "timestamp": get_timestamp(),
+                                "from": "ai",
+                                "source": "openclaw",
+                                "changeType": "replace",
+                                "initData": [{"type": "text", "value": ai_reply}],
+                                "status": "finished_successfully"
+                            }
+                        }, websocket)
+            
+            # 等待chat final事件到达（最多120秒）
+            try:
+                await asyncio.wait_for(final_event.wait(), timeout=120.0)
+                logger.info(f"✓ 收到chat final事件信号")
+            except asyncio.TimeoutError:
+                logger.warning(f"等待chat final事件超时（120秒）")
+            
+            # 在chat final事件后，等待片刻再调用chat.history
+            if accumulated_text.get("need_history"):
+                try:
+                    logger.info(f"准备调用chat.history获取完整对话")
+                    accumulated_text["need_history"] = False  # 清除标志
+                    
+                    # 等待一小段时间，确保OpenClaw Gateway完成消息存储
+                    await asyncio.sleep(0.5)
+                    
+                    # 调用chat.history获取完整消息历史
+                    history_response = await client.get_history(openclaw_session_key, limit=10)
+                    logger.info(f"chat.history响应: ok={history_response.get('ok')}, payload_keys={list(history_response.get('payload', {}).keys())}")
+                    
+                    if history_response.get("ok") and history_response.get("payload"):
+                        messages = history_response["payload"].get("messages", [])
+                        logger.info(f"从历史中获取到 {len(messages)} 条消息，准备分段推送")
+                        
+                        # 分段推送完整对话历史（结构化模式）
+                        import re
+                        is_first_segment = True
+                        segment_count = 0
+                        
+                        for idx, msg in enumerate(messages, 1):
+                            role = msg.get("role", "unknown")
+                            content_items = msg.get("content", [])
+                            
+                            # 处理每个 content item，每个单独发送
+                            for item in content_items:
+                                if not isinstance(item, dict):
+                                    continue
+                                    
+                                item_type = item.get("type", "")
+                                message_data = None
+                                
+                                if item_type == "text":
+                                    text = item.get("text", "")
+                                    # 清理 <final> 标签
+                                    text = re.sub(r'<final>(.*?)</final>', r'\1', text, flags=re.DOTALL)
+                                    if text.strip():
+                                        message_data = {
+                                            "messageType": "text",
+                                            "role": role,
+                                            "content": text.strip()
+                                        }
+                                
+                                elif item_type == "thinking":
+                                    thinking = item.get("thinking", "")
+                                    if thinking.strip():
+                                        message_data = {
+                                            "messageType": "thinking",
+                                            "role": role,
+                                            "content": thinking.strip()
+                                        }
+                                
+                                elif item_type == "toolCall":
+                                    tool_name = item.get("name", "unknown")
+                                    tool_args = item.get("arguments", {})
+                                    message_data = {
+                                        "messageType": "toolCall",
+                                        "role": role,
+                                        "toolName": tool_name,
+                                        "arguments": tool_args
+                                    }
+                                
+                                # 发送当前片段
+                                if message_data:
+                                    segment_count += 1
+                                    change_type = "replace" if is_first_segment else "append"
+                                    status = "streaming"  # 所有中间片段都是 streaming
+                                    
+                                    await manager.send_json_to_topic(topic, {
+                                        "topic": topic,
+                                        "data": {
+                                            "type": "multi-modal",
+                                            "uuid": msg_uuid,
+                                            "timestamp": get_timestamp(),
+                                            "from": "ai",
+                                            "source": "openclaw",
+                                            "changeType": change_type,
+                                            "initData": [{"type": "text", "value": json.dumps(message_data, ensure_ascii=False)}],
+                                            "status": status,
+                                            "metadata": message_data  # 添加结构化元数据
+                                        }
+                                    }, websocket)
+                                    
+                                    logger.info(f"已推送片段 #{segment_count}: messageType={message_data.get('messageType')}, role={role}")
+                                    is_first_segment = False
+                                    
+                                    # 短暂延迟，模拟流式效果
+                                    await asyncio.sleep(0.05)
+                            
+                            # 如果是 toolResult，单独发送
+                            if role == "toolResult":
+                                tool_name = msg.get("toolName", "unknown")
+                                is_error = msg.get("isError", False)
+                                tool_content_items = msg.get("content", [])
+                                
+                                # 提取 toolResult 的文本内容
+                                result_text = ""
+                                for item in tool_content_items:
+                                    if isinstance(item, dict) and item.get("type") == "text":
+                                        result_text = item.get("text", "")
+                                        break
+                                
+                                message_data = {
+                                    "messageType": "toolResult",
+                                    "role": role,
+                                    "toolName": tool_name,
+                                    "isError": is_error,
+                                    "content": result_text
+                                }
+                                
+                                segment_count += 1
+                                change_type = "replace" if is_first_segment else "append"
+                                
+                                await manager.send_json_to_topic(topic, {
+                                    "topic": topic,
+                                    "data": {
+                                        "type": "multi-modal",
+                                        "uuid": msg_uuid,
+                                        "timestamp": get_timestamp(),
+                                        "from": "ai",
+                                        "source": "openclaw",
+                                        "changeType": change_type,
+                                        "initData": [{"type": "text", "value": json.dumps(message_data, ensure_ascii=False)}],
+                                        "status": "streaming",
+                                        "metadata": message_data
+                                    }
+                                }, websocket)
+                                
+                                logger.info(f"已推送片段 #{segment_count}: messageType=toolResult, toolName={tool_name}")
+                                is_first_segment = False
+                                await asyncio.sleep(0.05)
+                        
+                        # 发送最后一条完成消息
+                        if segment_count > 0:
+                            await manager.send_json_to_topic(topic, {
+                                "topic": topic,
+                                "data": {
+                                    "type": "multi-modal",
+                                    "uuid": msg_uuid,
+                                    "timestamp": get_timestamp(),
+                                    "from": "ai",
+                                    "source": "openclaw",
+                                    "changeType": "append",
+                                    "initData": [{"type": "text", "value": ""}],
+                                    "status": "finished_successfully",
+                                    "metadata": {"messageType": "completion", "totalSegments": segment_count}
+                                }
+                            }, websocket)
+                        
+                        logger.info(f"✅ 完成分段推送，共 {segment_count} 个片段")
+                except Exception as e:
+                    logger.error(f"获取历史消息失败: {e}", exc_info=True)
+        
+        except Exception as e:
+            logger.error(f"发送消息到OpenClaw失败: {e}", exc_info=True)
+            error_message = f"发送失败: {str(e)}" if lang == "zh" else f"Send failed: {str(e)}"
+            
+            await manager.send_json_to_topic(topic, {
+                "topic": topic,
+                "data": {
+                    "type": "multi-modal",
+                    "uuid": msg_uuid,
+                    "timestamp": get_timestamp(),
+                    "from": "ai",
+                    "source": "openclaw",
+                    "changeType": "replace",
+                    "initData": [{"type": "text", "value": error_message}],
+                    "status": "error"
+                }
+            }, websocket)
+    
+    except Exception as e:
+        logger.error(f"处理OpenClaw消息异常: {e}", exc_info=True)
+        error_message = f"处理异常: {str(e)}" if lang == "zh" else f"Processing error: {str(e)}"
+        
+        await manager.send_json_to_topic(topic, {
+            "topic": topic,
+            "data": {
+                "type": "multi-modal",
+                "uuid": msg_uuid,
+                "timestamp": get_timestamp(),
+                "from": "ai",
+                "source": "openclaw",
+                "changeType": "replace",
+                "initData": [{"type": "text", "value": error_message}],
+                "status": "error"
+            }
+        }, websocket)

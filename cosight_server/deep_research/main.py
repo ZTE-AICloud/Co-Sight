@@ -138,6 +138,34 @@ from cosight_server.deep_research.routers.feedback import feedbackRouter
 
 app = FastAPI()
 
+
+@app.on_event("startup")
+async def startup_event():
+    """应用启动时的初始化"""
+    # 如果启用了OpenClaw，初始化客户端
+    if custom_config.get("openclaw_enabled"):
+        from cosight_server.deep_research.services.openclaw_client import openclaw_client_manager
+        try:
+            await openclaw_client_manager.start()
+            logger.info("✓ OpenClaw客户端已启动")
+        except Exception as e:
+            logger.error(f"✗ OpenClaw客户端启动失败: {e}", exc_info=True)
+    else:
+        logger.info("ℹ OpenClaw集成未启用")
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """应用关闭时的清理"""
+    # 如果启用了OpenClaw，停止客户端
+    if custom_config.get("openclaw_enabled"):
+        from cosight_server.deep_research.services.openclaw_client import openclaw_client_manager
+        try:
+            await openclaw_client_manager.stop()
+            logger.info("✓ OpenClaw客户端已停止")
+        except Exception as e:
+            logger.error(f"✗ OpenClaw客户端停止失败: {e}", exc_info=True)
+
 # 确保upload_files目录存在
 if not os.path.exists("upload_files"):
     os.makedirs("upload_files")

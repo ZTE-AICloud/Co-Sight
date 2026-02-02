@@ -148,9 +148,10 @@ class WebsocketService {
      * 发送消息
      * @param {string} topic - 主题名称
      * @param {string} message - 消息内容
+     * @param {string} target - 目标系统（cosight 或 openclaw），默认为 cosight
      */
-    sendMessage(topic, message) {
-        console.log(`send message >>>>>> topic: ${topic}, state: ${this._webSocket ? this._webSocket.readyState : 'null'}, message: ${message}`);
+    sendMessage(topic, message, target = "cosight") {
+        console.log(`send message >>>>>> topic: ${topic}, target: ${target}, state: ${this._webSocket ? this._webSocket.readyState : 'null'}, message: ${message}`);
 
         if (!this.isOpen) {
             console.error("WebSocket is not open");
@@ -160,6 +161,7 @@ class WebsocketService {
         const data = {
             action: 'message',
             topic: topic,
+            target: target,  // 新增：指定目标系统
             data: message,
             lang: this._lang
         };

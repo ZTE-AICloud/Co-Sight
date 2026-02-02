@@ -627,6 +627,27 @@ class MessageService {
 
     sendMessage(content) {
         console.log('MessageService.sendMessage >>>>>>>>>>>>>> ', content);
+        
+        // 新增：检测OpenClaw命令
+        let actualContent = content;
+        let target = "cosight";  // 默认使用cosight
+        
+        // 检查是否以 /openclaw 开头（忽略前后空格）
+        const trimmedContent = content.trim();
+        if (trimmedContent.startsWith('/openclaw')) {
+            target = "openclaw";
+            // 提取实际命令：去掉 /openclaw 前缀和后续空格
+            actualContent = trimmedContent.substring('/openclaw'.length).trim();
+            
+            // 如果提取后为空，给出提示
+            if (!actualContent) {
+                console.warn('OpenClaw命令为空，请在 /openclaw 后面输入具体命令');
+                actualContent = "你好";  // 默认问候
+            }
+            
+            console.log(`检测到OpenClaw命令，实际内容: "${actualContent}"`);
+        }
+        
         // 新消息发送前清理之前的tool events和历史数据
         this.clearStepToolEvents();
 
@@ -649,7 +670,7 @@ class MessageService {
             type: "multi-modal",
             from: "human",
             timestamp: Date.now(),
-            initData: [{type: "text", value: content}],
+            initData: [{type: "text", value: actualContent}],  // 使用处理后的内容
             roleInfo: {name: "admin"},
             mentions: [],
             extra: {
@@ -672,7 +693,7 @@ class MessageService {
         } catch (e) {
             console.warn('保存pending失败:', e);
         }
-        WebSocketService.sendMessage(topic, JSON.stringify(message));
+        WebSocketService.sendMessage(topic, JSON.stringify(message), target);  // 传递target参数
     }
 
     /**

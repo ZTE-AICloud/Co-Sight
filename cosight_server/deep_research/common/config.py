@@ -13,6 +13,28 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import os
+
+
+def _get_bool_env(key: str, default: bool) -> bool:
+    """从环境变量获取布尔值"""
+    value = os.getenv(key)
+    if value is None:
+        return default
+    return value.lower() in ('true', '1', 'yes', 'on')
+
+
+def _get_int_env(key: str, default: int) -> int:
+    """从环境变量获取整数值"""
+    value = os.getenv(key)
+    if value is None:
+        return default
+    try:
+        return int(value)
+    except ValueError:
+        return default
+
+
 custom_config_data = {
     "proxy": "http://192.168.167.3:8000",
     "portal_port": "5000",
@@ -41,5 +63,12 @@ custom_config_data = {
         "ip": "10.5.212.120",
         "port": "18088"
     },
-    "traffic_ops_token_key": "6cpUFC4HjVq0K7G3mFil1jpfYWlECFp4+ZjXrRKtWtE="
+    "traffic_ops_token_key": "6cpUFC4HjVq0K7G3mFil1jpfYWlECFp4+ZjXrRKtWtE=",
+    # OpenClaw集成配置 - 支持从环境变量读取
+    "openclaw_enabled": _get_bool_env("OPENCLAW_ENABLED", False),
+    "openclaw_gateway_url": os.getenv("OPENCLAW_GATEWAY_URL", "ws://127.0.0.1:18789"),
+    "openclaw_auth_token": os.getenv("OPENCLAW_AUTH_TOKEN", ""),
+    "openclaw_timeout": _get_int_env("OPENCLAW_TIMEOUT", 30),
+    "openclaw_reconnect_interval": _get_int_env("OPENCLAW_RECONNECT_INTERVAL", 5),
+    "openclaw_max_retries": _get_int_env("OPENCLAW_MAX_RETRIES", 3),
 }
