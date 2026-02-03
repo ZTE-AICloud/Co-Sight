@@ -926,6 +926,46 @@ body {
     color: #999;
 }
 
+/* 斜杠命令补全弹窗 */
+.slash-command-popover {
+    position: fixed;
+    z-index: 10000;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
+    padding: 6px 0;
+    max-height: 240px;
+    overflow-y: auto;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.slash-command-item {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    cursor: pointer;
+    border-radius: 6px;
+    margin: 0 4px;
+    transition: background 0.15s ease;
+}
+
+.slash-command-item:hover,
+.slash-command-item.selected {
+    background: rgba(33, 150, 243, 0.1);
+}
+
+.slash-command-item .slash-cmd {
+    font-weight: 600;
+    color: #1976d2;
+    margin-right: 8px;
+    min-width: 90px;
+}
+
+.slash-command-item .slash-desc {
+    color: #666;
+    font-size: 13px;
+}
+
 .send-button {
     background: none;
     border: none;

@@ -1343,6 +1343,149 @@ window.debugPanel = {
     }
 };
 
+// 斜杠命令补全：输入 / 后弹出 /openclaw 等，支持 Tab/点击补全
+var SLASH_COMMANDS = [
+    { cmd: '/openclaw', desc: '使用 OpenClaw 对话' }
+];
+var slashPopover = null;
+var slashPopoverSelectedIndex = 0;
+var slashPopoverInput = null;
+var slashPopoverPrefix = '';
+
+function getSlashPrefix(el) {
+    if (!el || typeof el.value === 'undefined') return null;
+    var start = el.selectionStart != null ? el.selectionStart : el.value.length;
+    var textBefore = el.value.slice(0, start);
+    var match = textBefore.match(/\/(\w*)$/);
+    return match ? '/' + match[1] : null;
+}
+
+function showSlashPopover(el, prefix) {
+    slashPopoverPrefix = prefix || '/';
+    var filtered = SLASH_COMMANDS.filter(function (c) {
+        return c.cmd.indexOf(slashPopoverPrefix) === 0;
+    });
+    if (filtered.length === 0) {
+        hideSlashPopover();
+        return;
+    }
+    slashPopoverInput = el;
+    slashPopoverSelectedIndex = 0;
+    if (!slashPopover) {
+        slashPopover = document.createElement('div');
+        slashPopover.className = 'slash-command-popover';
+        slashPopover.setAttribute('role', 'listbox');
+        document.body.appendChild(slashPopover);
+    }
+    slashPopover.innerHTML = '';
+    filtered.forEach(function (item, idx) {
+        var div = document.createElement('div');
+        div.className = 'slash-command-item' + (idx === 0 ? ' selected' : '');
+        div.setAttribute('role', 'option');
+        div.setAttribute('data-cmd', item.cmd);
+        div.innerHTML = '<span class="slash-cmd">' + escapeHtml(item.cmd) + '</span> <span class="slash-desc">' + escapeHtml(item.desc) + '</span>';
+        div.addEventListener('click', function () {
+            applySlashCommand(slashPopoverInput, item.cmd);
+            hideSlashPopover();
+        });
+        slashPopover.appendChild(div);
+    });
+    positionSlashPopover(el);
+    slashPopover.style.display = 'block';
+}
+
+function positionSlashPopover(el) {
+    if (!slashPopover || !el) return;
+    var rect = el.getBoundingClientRect();
+    slashPopover.style.position = 'fixed';
+    slashPopover.style.left = rect.left + 'px';
+    slashPopover.style.top = (rect.bottom + 4) + 'px';
+    slashPopover.style.minWidth = Math.max(rect.width, 200) + 'px';
+}
+
+function hideSlashPopover() {
+    if (slashPopover) {
+        slashPopover.style.display = 'none';
+        slashPopoverInput = null;
+    }
+}
+
+function applySlashCommand(el, cmd) {
+    if (!el || !cmd) return;
+    var start = el.selectionStart != null ? el.selectionStart : el.value.length;
+    var textBefore = el.value.slice(0, start);
+    var textAfter = el.value.slice(start);
+    var match = textBefore.match(/\/(\w*)$/);
+    var from = match ? start - match[0].length : start;
+    var newValue = el.value.slice(0, from) + cmd + ' ' + textAfter;
+    el.value = newValue;
+    el.selectionStart = el.selectionEnd = from + cmd.length + 1;
+    el.focus();
+}
+
+function getFilteredSlashCommands() {
+    if (!slashPopover || !slashPopoverInput) return [];
+    var prefix = getSlashPrefix(slashPopoverInput) || '/';
+    return SLASH_COMMANDS.filter(function (c) { return c.cmd.indexOf(prefix) === 0; });
+}
+
+function onSlashKeydown(el, e) {
+    if (!slashPopover || slashPopover.style.display !== 'block' || slashPopoverInput !== el) return;
+    var items = slashPopover.querySelectorAll('.slash-command-item');
+    if (items.length === 0) return;
+    if (e.key === 'Tab' || e.key === 'Enter') {
+        e.preventDefault();
+        e.stopImmediatePropagation(); // 仅补全到输入框，不触发回车发送
+        var cmd = getFilteredSlashCommands()[slashPopoverSelectedIndex];
+        if (cmd) {
+            applySlashCommand(el, cmd.cmd);
+            hideSlashPopover();
+        }
+        return;
+    }
+    if (e.key === 'Escape') {
+        e.preventDefault();
+        hideSlashPopover();
+        return;
+    }
+    if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        slashPopoverSelectedIndex = (slashPopoverSelectedIndex + 1) % items.length;
+        items.forEach(function (item, i) {
+            item.classList.toggle('selected', i === slashPopoverSelectedIndex);
+        });
+        return;
+    }
+    if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        slashPopoverSelectedIndex = (slashPopoverSelectedIndex - 1 + items.length) % items.length;
+        items.forEach(function (item, i) {
+            item.classList.toggle('selected', i === slashPopoverSelectedIndex);
+        });
+        return;
+    }
+}
+
+function attachSlashCompletion(inputEl) {
+    if (!inputEl) return;
+    inputEl.addEventListener('input', function () {
+        var prefix = getSlashPrefix(this);
+        if (prefix !== null) {
+            showSlashPopover(this, prefix);
+        } else {
+            hideSlashPopover();
+        }
+    });
+    inputEl.addEventListener('keydown', function (e) {
+        var prefix = getSlashPrefix(this);
+        if (prefix !== null && !slashPopover) showSlashPopover(this, prefix);
+        onSlashKeydown(this, e);
+    });
+    inputEl.addEventListener('blur', function () {
+        setTimeout(hideSlashPopover, 150);
+    });
+}
+
 // 输入框处理函数
 function initInputHandler() {
     const messageInput = document.getElementById('message-input');
@@ -1350,6 +1493,10 @@ function initInputHandler() {
     const replayButton = document.getElementById('replay-button');
     const initialMessageInput = document.getElementById('initial-message-input');
     const initialSendButton = document.getElementById('initial-send-button');
+
+    // 斜杠命令补全：绑定到两个输入框
+    attachSlashCompletion(messageInput);
+    attachSlashCompletion(initialMessageInput);
 
     // 初始化输入框处理
     if (messageInput && sendButton) {
