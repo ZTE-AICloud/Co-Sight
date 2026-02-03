@@ -122,7 +122,9 @@ if not os.path.exists("work_space"):
 # 设置WORKSPACE_PATH环境变量，使用相对路径或环境变量指定的路径
 workspace_env = os.getenv("WORKSPACE_PATH_ENV")
 WORKSPACE_PATH = workspace_env + "/work_space" if workspace_env else "work_space"
-logger.info(f"workspace path is >>>>>> {WORKSPACE_PATH}")
+WORKSPACE_PATH_ABS = os.path.abspath(WORKSPACE_PATH)
+os.environ["WORKSPACE_PATH"] = WORKSPACE_PATH_ABS
+logger.info(f"workspace path is >>>>>> {WORKSPACE_PATH} (abs: {WORKSPACE_PATH_ABS})")
 # 确保logs目录存在
 LOGS_PATH = os.path.join(WORKSPACE_PATH, 'plans')
 if not os.path.exists(LOGS_PATH):

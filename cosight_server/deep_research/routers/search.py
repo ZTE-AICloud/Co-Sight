@@ -36,9 +36,19 @@ from CoSight import CoSight
 
 searchRouter = APIRouter()
 
-# 使用从环境变量获取的WORKSPACE_PATH
-work_space_path = os.environ.get('WORKSPACE_PATH')
-work_space_path = os.path.join(work_space_path, "work_space") if work_space_path else os.path.join(os.getcwd(), "work_space")
+# 使用从环境变量获取的 WORKSPACE_PATH（与 main.py 一致，避免回放列表找不到历史任务）
+_curr = os.environ.get('WORKSPACE_PATH')
+if isinstance(_curr, str) and _curr.strip():
+    _curr = os.path.abspath(_curr) if not os.path.isabs(_curr) else _curr
+    bname = os.path.basename(_curr)
+    if bname == "work_space":
+        work_space_path = _curr  # 已是 work_space 基目录
+    elif "work_space_" in bname:
+        work_space_path = os.path.dirname(_curr)  # 具体 workspace 路径，取父目录
+    else:
+        work_space_path = os.path.join(_curr, "work_space")
+else:
+    work_space_path = os.path.join(os.getcwd(), "work_space")
 logger.info(f"Using work_space_path: {work_space_path}")
 if not os.path.exists(work_space_path):
     os.makedirs(work_space_path)
@@ -1164,6 +1174,7 @@ async def get_replay_workspaces():
                         
                         if lines:
                             first_line_data = json.loads(lines[0])
+                            # Co-Sight 格式：content.title
                             content = first_line_data.get('content', {})
                             if isinstance(content, dict):
                                 title = content.get('title', '未命名任务')
@@ -1171,8 +1182,16 @@ async def get_replay_workspaces():
                                 try:
                                     content_obj = json.loads(content)
                                     title = content_obj.get('title', '未命名任务')
-                                except:
+                                except Exception:
                                     pass
+                            # OpenClaw 格式：data.initData.title（用户输入的问题）
+                            if title == "未命名任务":
+                                data = first_line_data.get('data') or {}
+                                init_data = data.get('initData') if isinstance(data, dict) else {}
+                                if isinstance(init_data, dict):
+                                    openclaw_title = (init_data.get('title') or '').strip()
+                                    if openclaw_title:
+                                        title = openclaw_title
                 except Exception as e:
                     logger.warning(f"读取replay文件失败: {replay_file_path}, 错误: {e}")
                     continue

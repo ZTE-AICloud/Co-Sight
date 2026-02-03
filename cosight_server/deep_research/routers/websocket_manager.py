@@ -106,14 +106,23 @@ def _get_replay_workspace_path(message: dict, topic: str) -> Optional[str]:
     try:
         # OpenClaw 始终创建新 workspace，与 search 的 work_space_path 同基目录
         curr = os.environ.get("WORKSPACE_PATH")
-        if isinstance(curr, str) and curr.strip() and "work_space_" in os.path.basename(curr):
-            base = os.path.dirname(curr)
+        if isinstance(curr, str) and curr.strip():
+            curr = os.path.abspath(curr) if not os.path.isabs(curr) else curr
+            bname = os.path.basename(curr)
+            if "work_space_" in bname:
+                # curr 是具体 workspace 路径（如 work_space/work_space_20250202_xxx）
+                base = os.path.dirname(curr)
+            elif bname == "work_space":
+                # curr 已是 work_space 基目录
+                base = curr
+            else:
+                base = os.path.join(curr, "work_space")
         else:
-            base = os.path.join(curr, "work_space") if (isinstance(curr, str) and curr.strip()) else os.path.join(os.getcwd(), "work_space")
+            base = os.path.join(os.getcwd(), "work_space")
         if not os.path.isabs(base):
             base = os.path.abspath(os.path.join(os.getcwd(), base))
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-        path = os.path.join(base, f"work_space_openclaw_{topic[:8]}_{timestamp}")
+        path = os.path.join(base, f"work_space_{timestamp}")
         os.makedirs(path, exist_ok=True)
         logger.info(f"创建 OpenClaw replay workspace: {path}")
         return path
@@ -172,7 +181,11 @@ async def websocket_handler(
                 logger.info(f"bind topic >>> {topic} to current websocket")
                 continue
             if data.get("action") == "message":
-                message = json.loads(data.get("data"))
+                raw_data = data.get("data")
+                if isinstance(raw_data, dict):
+                    message = raw_data
+                else:
+                    message = json.loads(raw_data or "{}")
                 logger.info(f"message >>>>>>>>>>>>>> {message}")
                 # 绑定当前 topic 到该 websocket
                 manager.bind_topic(data.get("topic"), websocket)
@@ -194,6 +207,7 @@ async def websocket_handler(
 
                 # 路由逻辑：根据target字段决定转发到Co-Sight还是OpenClaw
                 target = data.get("target", "cosight")  # 默认使用cosight
+                logger.info(f"消息路由 target={target}, topic={data.get('topic')}")
                 
                 # 新增：后端二次检测OpenClaw命令（作为后备检测）
                 init_data = message.get("initData", [])
