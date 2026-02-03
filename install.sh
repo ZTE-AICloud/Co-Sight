@@ -450,7 +450,8 @@ install_cosight() {
     
     if [ "$USE_UV" = true ]; then
         log_info "使用 uv 安装依赖（更快）..."
-        uv pip install -r requirements.txt
+        uv venv
+        uv pip install -r requirements.txt --prerelease=allow
     else
         log_info "使用 pip 安装依赖..."
         $PYTHON_CMD -m pip install -r requirements.txt
