@@ -23,6 +23,7 @@ import json
 import uuid
 from typing import Optional, Dict, Callable, Any
 from enum import Enum
+from urllib.parse import urlparse
 
 import websockets
 from websockets.client import WebSocketClientProtocol
@@ -38,6 +39,14 @@ PROTOCOL_VERSION = 3
 # WebChat 客户端 ID / mode（与 openclaw GATEWAY_CLIENT_IDS.WEBCHAT 一致）
 GATEWAY_CLIENT_ID_WEBCHAT = "webchat"
 GATEWAY_CLIENT_MODE_WEBCHAT = "webchat"
+
+
+def _origin_for_gateway_url(ws_url: str) -> str:
+    """从 WebSocket URL 推导 Gateway 期望的 Origin（同源校验用）。"""
+    p = urlparse(ws_url)
+    scheme = "https" if p.scheme == "wss" else "http"
+    netloc = p.netloc or "127.0.0.1:18789"
+    return f"{scheme}://{netloc}"
 
 
 class ConnectionState(Enum):
@@ -100,13 +109,16 @@ class OpenClawClient:
             self.state = ConnectionState.CONNECTING
             logger.info(f"正在连接到OpenClaw Gateway: {self.gateway_url}")
 
+            # Gateway 对 webchat 做 Control UI 同源校验：Origin 须与 Gateway host 一致或位于 allowedOrigins
+            origin = _origin_for_gateway_url(self.gateway_url)
             try:
                 self.ws = await asyncio.wait_for(
                     websockets.connect(
                         self.gateway_url,
                         ping_interval=20,
                         ping_timeout=10,
-                        close_timeout=5
+                        close_timeout=5,
+                        additional_headers={"Origin": origin},
                     ),
                     timeout=self.timeout
                 )
@@ -240,6 +252,7 @@ class OpenClawClient:
                 "deliver": False,  # 不自动发送到外部渠道
             }
         }
+        logger.info(f"send_message >>>>>>>>>>>>>> request: {request}")
         
         # 创建Future等待响应
         future = asyncio.Future()
@@ -252,6 +265,7 @@ class OpenClawClient:
             
             # 等待响应（带超时）
             response = await asyncio.wait_for(future, timeout=self.timeout)
+            logger.info(f"send_message >>>>>>>>>>>>>> response: {response}")
             return response
             
         except asyncio.TimeoutError:
@@ -260,6 +274,93 @@ class OpenClawClient:
         finally:
             # 清理
             self.pending_requests.pop(request_id, None)
+
+    async def send_message_and_get_history(
+        self,
+        message: str,
+        session_key: str = "main",
+        limit: int = 10,
+        final_timeout: float = 120.0,
+        history_delay: float = 0.5,
+    ) -> Dict[str, Any]:
+        """
+        一次性完成：发送消息 + 等待本轮对话结束 + 获取完整历史（chat.history）。
+
+        使用方式示例::
+
+            resp = await client.send_message_and_get_history(
+                "现在几点了",
+                session_key="agent:main:xxxx",
+                limit=10,
+            )
+            # resp 结构类似:
+            # {"type":"res","ok":true,"payload":{"messages":[...], ...}}
+
+        Args:
+            message: 用户输入文本
+            session_key: 会话键（如 "main" 或 "agent:main:xxx"）
+            limit: chat.history 返回的消息条数上限
+            final_timeout: 等待 chat final 事件的最长时间（秒）
+            history_delay: 收到 final 后，为保证 Gateway 写入完成，额外等待的时间（秒）
+
+        Returns:
+            Dict: chat.history 的完整响应（包含 messages）
+        """
+        if self.state != ConnectionState.CONNECTED:
+            raise Exception("未连接到OpenClaw Gateway")
+
+        final_event = asyncio.Event()
+
+        # 记录原有的 chat 事件处理器，后面会恢复，避免影响现有逻辑（例如 websocket_manager）
+        original_handler: Optional[Callable] = self.event_handlers.get("chat")
+
+        async def chat_handler_wrapper(event_data: Dict[str, Any]):
+            """包装一层：先调用原 handler，再根据 state=final 触发本次等待。"""
+            # 先把事件转发给原有处理器（例如前端流式展示）
+            if original_handler:
+                await original_handler(event_data)
+
+            try:
+                payload = event_data.get("payload", {}) or {}
+                run_session_key = payload.get("sessionKey")
+                state = payload.get("state")
+                if run_session_key == session_key and state == "final":
+                    final_event.set()
+            except Exception:
+                # 不要因为这里出错影响主流程
+                logger.warning("chat_handler_wrapper 处理事件时出错", exc_info=True)
+
+        # 临时替换 chat 事件处理器
+        self.register_event_handler("chat", chat_handler_wrapper)
+
+        try:
+            # 1) 发送消息（chat.send）
+            send_response = await self.send_message(message=message, session_key=session_key)
+            if not send_response.get("ok", False):
+                # 发送失败，直接返回响应，通常其中包含 error 信息
+                return send_response
+
+            # 2) 等待本轮会话的 chat final 事件
+            try:
+                await asyncio.wait_for(final_event.wait(), timeout=final_timeout)
+            except asyncio.TimeoutError:
+                logger.warning(f"等待 chat final 事件超时（{final_timeout} 秒），仍然尝试调用 chat.history")
+
+            # 3) 为保证 Gateway 完成消息写入，略微等待一小会
+            await asyncio.sleep(history_delay)
+
+            # 4) 调用 chat.history 获取完整对话
+            history_response = await self.get_history(session_key=session_key, limit=limit)
+            return history_response
+
+        finally:
+            # 恢复原有 chat 事件处理器，避免影响其它调用方
+            if original_handler is not None:
+                self.register_event_handler("chat", original_handler)
+            else:
+                # 原来没有 handler，则清理掉我们临时注册的
+                if self.event_handlers.get("chat") is chat_handler_wrapper:
+                    self.event_handlers.pop("chat", None)
 
     async def get_history(self, session_key: str = "main", limit: int = 2) -> Dict[str, Any]:
         """
