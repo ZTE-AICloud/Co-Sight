@@ -23,6 +23,7 @@ command_exists() { command -v "$1" >/dev/null 2>&1; }
 detect_os() {
     if [[ "$OSTYPE" == "linux-gnu"* ]]; then OS="linux"; log_info "检测到操作系统: Linux"
     elif [[ "$OSTYPE" == "darwin"* ]]; then OS="macos"; log_info "检测到操作系统: macOS"
+    elif [[ "$OSTYPE" == "msys"* ]] || [[ "$OSTYPE" == "cygwin"* ]]; then OS="windows"; log_info "检测到操作系统: Windows (Git Bash/MSYS)"
     else log_error "不支持的操作系统: $OSTYPE"; exit 1; fi
 }
 
