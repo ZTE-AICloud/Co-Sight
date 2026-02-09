@@ -261,6 +261,17 @@ async def _send_resp(websocket, cookie, topic, message, lang):
         "stream": True,
         "contentProperties": message.get("extra", {}).get("fromBackEnd", {}).get("actualPrompt")
     }
+    
+    # 提取上传的文件ID列表
+    try:
+        extra = message.get("extra", {}) or {}
+        from_back_end = (extra.get("fromBackEnd") or {}) if isinstance(extra, dict) else {}
+        uploaded_files = from_back_end.get("uploadedFiles")
+        if uploaded_files and isinstance(uploaded_files, list) and len(uploaded_files) > 0:
+            params["uploadedFiles"] = uploaded_files
+            logger.info(f"Found uploaded files in message: {uploaded_files}")
+    except Exception as e:
+        logger.warning(f"Error extracting uploaded files from message: {e}")
     # 支持回放控制字段：replay、replayWorkspace、replayPlanId
     try:
         extra = message.get("extra", {}) or {}

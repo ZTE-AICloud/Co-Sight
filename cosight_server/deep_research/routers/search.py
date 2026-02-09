@@ -53,10 +53,25 @@ logger.info(f"Using work_space_path: {work_space_path}")
 if not os.path.exists(work_space_path):
     os.makedirs(work_space_path)
 
-# 确保logs目录存在
+# 确保logs目录存在（按 plan_id 记录规划日志）
 LOGS_PATH = os.path.join(work_space_path, 'plans')
 if not os.path.exists(LOGS_PATH):
     os.makedirs(LOGS_PATH)
+
+# 为回放文件单独创建目录，避免与正常任务工作区混在一起
+# 最终结构示例：
+#   work_space/
+#     work_space_20260105_192427_xxx/         <- 任务真实工作区（文件读取等只看到这里）
+#     replay_history/
+#       work_space_20260105_192427_xxx/
+#         replay.json                         <- 仅用于回放的日志
+REPLAY_BASE_PATH = os.path.join(work_space_path, 'replay_history')
+if not os.path.exists(REPLAY_BASE_PATH):
+    os.makedirs(REPLAY_BASE_PATH)
+logger.info(f"Using REPLAY_BASE_PATH: {REPLAY_BASE_PATH}")
+
+# 回放间隔时长配置（秒），可通过环境变量 REPLAY_DELAY 设置，默认 0.3 秒
+REPLAY_DELAY = float(os.environ.get("REPLAY_DELAY", "0.3"))
 
 
 # 将本地文件路径转换为可被前端访问的URL
@@ -387,6 +402,14 @@ async def search(request: Request, params: Any = Body(None)):
     if result := validate_search_input(params):
         return result
 
+    # 是否为回放请求（由 WebSocket 层透传）
+    is_replay_request = False
+    try:
+        if isinstance(params, dict):
+            is_replay_request = bool(params.get("replay", False))
+    except Exception:
+        is_replay_request = False
+
     session_info = params.get("sessionInfo", {})
     plan_id = session_info.get("messageSerialNumber", "")
     if not plan_id:
@@ -404,13 +427,35 @@ async def search(request: Request, params: Any = Body(None)):
 
     # 构造路径：/xxx/xxx/work_space/work_space_时间戳
     # 在函数外部生成，确保RecordGenerator和generator_func使用相同路径
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
-    work_space_path_time = os.path.join(work_space_path, f'work_space_{timestamp}')
-    print(f"work_space_path_time:{work_space_path_time}")
-    os.makedirs(work_space_path_time, exist_ok=True)
+    # 注意：回放请求不应创建新的工作区目录，否则会让 workspace 变得很冗余
+    if not is_replay_request:
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
+        work_space_path_time = os.path.join(work_space_path, f'work_space_{timestamp}')
+        print(f"work_space_path_time:{work_space_path_time}")
+        os.makedirs(work_space_path_time, exist_ok=True)
+        # 将工作空间路径存储到环境变量，供 RecordGenerator 和 CoSight 使用
+        os.environ['WORKSPACE_PATH'] = work_space_path_time
+    else:
+        # 回放场景下不需要新的工作区目录，这里仅占位，RecordGenerator 会使用 replayWorkspace
+        work_space_path_time = None
     
-    # 将工作空间路径存储到环境变量，供RecordGenerator使用
-    os.environ['WORKSPACE_PATH'] = work_space_path_time
+    # 处理上传的文件：将上传的文件复制到工作区
+    uploaded_files = params.get('uploadedFiles', [])
+    if uploaded_files:
+        logger.info(f"Copying uploaded files to workspace: {uploaded_files}")
+        try:
+            copy_result = copy_uploaded_files_to_workspace(
+                upload_ids=uploaded_files,
+                workspace_path=work_space_path_time
+            )
+            if copy_result['success']:
+                logger.info(f"Successfully copied {copy_result['copied_count']} file(s) to workspace")
+            else:
+                logger.warning(f"File copy completed with errors: {copy_result['message']}")
+                # 即使部分文件复制失败，也继续执行任务
+        except Exception as e:
+            logger.error(f"Error copying uploaded files to workspace: {str(e)}", exc_info=True)
+            # 文件复制失败不影响任务执行，只记录错误
 
     async def generator_func():
         # 清空之前可能存在的队列数据并保存当前事件循环
@@ -845,8 +890,8 @@ async def search(request: Request, params: Any = Body(None)):
 
     async def RecordGenerator(workspace_path=None):
         """两种模式的生成器：
-        - 记录模式（默认）：将 generate_stream_response 产生的每一行写入当前 WORKSPACE_PATH 下的 replay.json，同时正常向前端 yield
-        - 回放模式：从 replay.json 读取历史数据，按行每 2 秒 yield 一次
+        - 记录模式（默认）：将 generate_stream_response 产生的每一行写入 REPLAY_BASE_PATH 下对应工作区名目录里的 replay.json，同时正常向前端 yield
+        - 回放模式：从 REPLAY_BASE_PATH 下的 replay.json 读取历史数据，按行每 REPLAY_DELAY 秒 yield 一次
         
         回放模式触发条件：params 中存在键 'replay' 且为真值
         """
@@ -894,21 +939,38 @@ async def search(request: Request, params: Any = Body(None)):
                 curr_workspace = None
             if not curr_workspace:
                 curr_workspace = work_space_path
-
+        # 基于工作区目录名，在单独的 REPLAY_BASE_PATH 下构造回放文件路径
         replay_file_path = None
         if curr_workspace:
             try:
-                # 回放模式下不需要创建目录，只需要读取已存在的文件
-                if not replay_mode:
-                    os.makedirs(curr_workspace, exist_ok=True)
-                replay_file_path = os.path.join(curr_workspace, 'replay.json')
+                # 提取工作区目录名（例如 work_space_20260105_192427_xxx）
+                workspace_name = os.path.basename(os.path.normpath(curr_workspace))
+                if workspace_name:
+                    replay_dir = os.path.join(REPLAY_BASE_PATH, workspace_name)
+                    # 记录模式下确保目录存在；回放模式只读现有文件
+                    if not replay_mode:
+                        os.makedirs(replay_dir, exist_ok=True)
+                    replay_file_path = os.path.join(replay_dir, 'replay.json')
             except Exception as e:
-                logger.error(f"处理工作区路径失败: {e}")
+                logger.error(f"处理回放目录失败: {e}")
                 replay_file_path = None
 
         if replay_mode:
             # 回放模式：逐行读取历史记录
             try:
+                # 兼容旧版本：如果新目录中不存在回放文件，尝试旧的工作区目录
+                if (not replay_file_path) or (replay_file_path and not os.path.exists(replay_file_path)):
+                    try:
+                        workspace_name = None
+                        if curr_workspace:
+                            workspace_name = os.path.basename(os.path.normpath(curr_workspace))
+                        if workspace_name:
+                            legacy_path = os.path.join(work_space_path, workspace_name, "replay.json")
+                            if os.path.exists(legacy_path):
+                                replay_file_path = legacy_path
+                    except Exception as _e:
+                        logger.warning(f"兼容旧回放目录失败: {_e}")
+
                 # 确保路径是绝对路径
                 if replay_file_path and not os.path.isabs(replay_file_path):
                     replay_file_path = os.path.join(os.getcwd(), replay_file_path)
@@ -925,14 +987,14 @@ async def search(request: Request, params: Any = Body(None)):
                         for line in rf:
                             line = line.rstrip('\n')
                             if not line:
-                                await asyncio.sleep(0.3)
+                                await asyncio.sleep(REPLAY_DELAY)
                                 continue
                             try:
                                 yield line.encode('utf-8') + b'\n'
                             except Exception:
                                 # 如果编码失败，忽略该行
                                 pass
-                            await asyncio.sleep(0.3)
+                            await asyncio.sleep(REPLAY_DELAY)
                     return
                 else:
                     # 没有历史回放文件，输出一条提示信息
@@ -1154,24 +1216,28 @@ async def show_search_results(request: Request, query: str = "", tool: str = "",
 async def get_replay_workspaces():
     """获取所有包含replay.json的工作区列表"""
     workspaces = []
-    
-    # 使用环境变量中的work_space_path
-    work_space_base = work_space_path
-    
-    if os.path.exists(work_space_base):
-        for folder_name in sorted(os.listdir(work_space_base), reverse=True):
-            folder_path = os.path.join(work_space_base, folder_name)
+    seen: set[str] = set()
+
+    def _collect_from_base(base_dir: str, is_legacy: bool = False) -> None:
+        if not os.path.exists(base_dir):
+            return
+        for folder_name in sorted(os.listdir(base_dir), reverse=True):
+            folder_path = os.path.join(base_dir, folder_name)
             replay_file_path = os.path.join(folder_path, "replay.json")
-            
+
+            # 如果已经在新的回放目录中收集过该工作区，就不再用旧目录覆盖
+            if folder_name in seen:
+                continue
+
             if os.path.isdir(folder_path) and os.path.exists(replay_file_path):
                 title = "未命名任务"
                 message_count = 0
-                
+
                 try:
                     with open(replay_file_path, 'r', encoding='utf-8') as f:
                         lines = f.readlines()
                         message_count = len(lines)
-                        
+
                         if lines:
                             first_line_data = json.loads(lines[0])
                             # Co-Sight 格式：content.title
@@ -1195,21 +1261,34 @@ async def get_replay_workspaces():
                 except Exception as e:
                     logger.warning(f"读取replay文件失败: {replay_file_path}, 错误: {e}")
                     continue
-                
+
                 # 获取文件修改时间
                 mtime = os.path.getmtime(replay_file_path)
-                
+
+                # workspace_path 仍然使用旧格式，方便前端直接回放：
+                #   work_space/work_space_YYYYMMDD_HHMMSS_xxx
                 workspaces.append({
                     "workspace_name": folder_name,
                     "workspace_path": f"work_space/{folder_name}",
                     "title": title,
                     "created_time": datetime.fromtimestamp(mtime).isoformat(),
                     "message_count": message_count,
-                    "replay_file": f"work_space/{folder_name}/replay.json"
+                    # replay_file 字段用于需要直接访问原始日志的场景
+                    "replay_file": (
+                        f"replay_history/{folder_name}/replay.json"
+                        if not is_legacy
+                        else f"work_space/{folder_name}/replay.json"
+                    ),
                 })
-    
+                seen.add(folder_name)
+
+    # 先扫描新的回放目录（replay_history）
+    _collect_from_base(REPLAY_BASE_PATH, is_legacy=False)
+    # 再扫描旧的工作区目录（与任务工作区同级），兼容历史版本
+    _collect_from_base(work_space_path, is_legacy=True)
+
     return {
         "code": 0,
         "message": "success",
-        "data": workspaces
+        "data": workspaces,
     }
