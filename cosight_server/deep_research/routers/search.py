@@ -21,7 +21,7 @@ from pathlib import Path
 from typing import Any
 from fastapi import APIRouter, Body
 from starlette.requests import Request
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, JSONResponse
 from urllib.parse import quote
 from app.cosight.task.task_manager import TaskManager
 from llm import llm_for_plan, llm_for_act, llm_for_tool, llm_for_vision
@@ -69,6 +69,14 @@ REPLAY_BASE_PATH = os.path.join(work_space_path, 'replay_history')
 if not os.path.exists(REPLAY_BASE_PATH):
     os.makedirs(REPLAY_BASE_PATH)
 logger.info(f"Using REPLAY_BASE_PATH: {REPLAY_BASE_PATH}")
+
+# 允许读取的项目外目录（逗号分隔的绝对路径），用于 read-file 等接口访问如「团队成员工作区」
+# 未设置时允许任意绝对路径（保持原行为）；设置后仅允许 work_space 与下列目录下的文件
+_allowed_extra_dirs_raw = os.environ.get("COSIGHT_ALLOWED_EXTRA_DIRS", "").strip()
+ALLOWED_EXTRA_DIRS = [p.strip() for p in _allowed_extra_dirs_raw.split(",") if p.strip()]
+if ALLOWED_EXTRA_DIRS:
+    ALLOWED_EXTRA_DIRS = [os.path.abspath(p) for p in ALLOWED_EXTRA_DIRS]
+    logger.info(f"Allowed extra dirs for read-file: {ALLOWED_EXTRA_DIRS}")
 
 # 回放间隔时长配置（秒），可通过环境变量 REPLAY_DELAY 设置，默认 0.3 秒
 REPLAY_DELAY = float(os.environ.get("REPLAY_DELAY", "0.3"))
@@ -137,12 +145,12 @@ def _rewrite_paths_in_payload(payload):
         return payload
 
 async def _trigger_credibility_analysis(plan_queue, plan_data: Plan, completed_step: str):
-    """触发可信分析 - 异步执行，不阻塞主流程"""
-    
+    """触发可信分析 - 异步执行，不阻塞主流程（暂时关闭：不执行分析，仅检查下一步）"""
     # 立即检查并继续执行下一步骤，不等待可信分析
     await _check_and_continue_next_step(plan_queue, plan_data)
-    
-    # 异步执行可信分析，不阻塞主流程
+    # 暂时关闭可信分析：不创建分析任务，不向队列推送可信消息
+    return
+    # --- 以下为原逻辑，恢复时取消上方 return 并保留 ---
     try:
         logger.info(f"准备创建可信分析任务: {completed_step}")
         task = asyncio.create_task(_async_credibility_analysis(plan_queue, plan_data, completed_step))
@@ -255,6 +263,8 @@ async def append_create_plan(data: Any):
                 "step_notes": data.step_notes if hasattr(data, 'step_notes') else {},
                 "step_details": data.step_details if hasattr(data, 'step_details') else {},
                 "step_tool_calls": data.step_tool_calls if hasattr(data, 'step_tool_calls') else {},
+                # 新增：将每个步骤绑定的执行 Actor（agent_id）一并下发给前端，用于 DAG 中渲染对应图标
+                "step_actors": data.step_actors if hasattr(data, 'step_actors') else {},
                 "dependencies": {str(k): v for k, v in data.dependencies.items()} if hasattr(data,
                                                                                              'dependencies') else {},
                 "progress": data.get_progress() if hasattr(data, 'get_progress') and callable(
@@ -489,6 +499,8 @@ async def search(request: Request, params: Any = Body(None)):
                         "step_notes": plan_obj.step_notes if hasattr(plan_obj, 'step_notes') else {},
                         "step_details": plan_obj.step_details if hasattr(plan_obj, 'step_details') else {},
                         "step_tool_calls": plan_obj.step_tool_calls if hasattr(plan_obj, 'step_tool_calls') else {},
+                        # 新增：为前端提供「步骤 -> 执行 Actor(agent_id)」映射
+                        "step_actors": plan_obj.step_actors if hasattr(plan_obj, 'step_actors') else {},
                         "dependencies": {str(k): v for k, v in plan_obj.dependencies.items()} if hasattr(plan_obj,
                                                                                                      'dependencies') else {},
                         "progress": plan_obj.get_progress() if hasattr(plan_obj, 'get_progress') and callable(
@@ -610,6 +622,13 @@ async def search(request: Request, params: Any = Body(None)):
             pass
 
         # 在子线程中执行CoSight任务（若未在运行）
+        from cosight_server.sdk.common.config import custom_config
+        loop = asyncio.get_running_loop()
+        openclaw_sender = None
+        if custom_config.get("openclaw_enabled"):
+            from cosight_server.deep_research.services.openclaw_sync_bridge import make_sync_openclaw_sender
+            openclaw_sender = make_sync_openclaw_sender(loop)
+
         def run_manus():
             try:
                 # 避免进程级环境变量被并发覆盖，优先通过参数传递
@@ -622,9 +641,10 @@ async def search(request: Request, params: Any = Body(None)):
                 plan_report_event_manager.subscribe("plan_process", plan_id, append_create_plan_local)
                 plan_report_event_manager.subscribe("plan_result", plan_id, append_create_plan_local)
                 plan_report_event_manager.subscribe("tool_event", plan_id, append_create_plan_local)
+                plan_report_event_manager.subscribe("openclaw_step_display", plan_id, append_create_plan_local)
                 logger.info(f"Event subscription completed for plan_id: {plan_id}")
 
-                # 初始化CoSight并传入plan_id
+                # 初始化CoSight并传入plan_id；若启用 OpenClaw 则传入 openclaw_sender，每步走 OpenclawAgent
                 logger.info(f"llm is {llm_for_plan.model}, {llm_for_plan.base_url}, {llm_for_plan.api_key}")
                 cosight = CoSight(
                     llm_for_plan,
@@ -632,7 +652,8 @@ async def search(request: Request, params: Any = Body(None)):
                     llm_for_tool,
                     llm_for_vision,
                     work_space_path=work_space_path_time,
-                    message_uuid = plan_id
+                    message_uuid=plan_id,
+                    openclaw_sender=openclaw_sender,
                 )
                 result = cosight.execute(query_content)
                 logger.info(f"final result is {result}")
@@ -646,6 +667,7 @@ async def search(request: Request, params: Any = Body(None)):
                 plan_report_event_manager.unsubscribe("plan_process", plan_id, append_create_plan_local)
                 plan_report_event_manager.unsubscribe("plan_result", plan_id, append_create_plan_local)
                 plan_report_event_manager.unsubscribe("tool_event", plan_id, append_create_plan_local)
+                plan_report_event_manager.unsubscribe("openclaw_step_display", plan_id, append_create_plan_local)
                 # 清理TaskManager中的映射与运行态
                 TaskManager.mark_completed(plan_id)
                 TaskManager.remove_plan(plan_id)
@@ -659,6 +681,7 @@ async def search(request: Request, params: Any = Body(None)):
             plan_report_event_manager.subscribe("plan_process", plan_id, append_create_plan_local)
             plan_report_event_manager.subscribe("plan_result", plan_id, append_create_plan_local)
             plan_report_event_manager.subscribe("tool_event", plan_id, append_create_plan_local)
+            plan_report_event_manager.subscribe("openclaw_step_display", plan_id, append_create_plan_local)
         else:
             TaskManager.mark_running(plan_id)
             logger.info(f"Starting new task for plan_id: {plan_id}")
@@ -704,6 +727,11 @@ async def search(request: Request, params: Any = Body(None)):
                 # 工具事件（裸 dict），直接透传且不更新latest_plan（避免保活重复发送工具事件）
                 if isinstance(data, dict) and data.get("event_type") in ["tool_start", "tool_complete", "tool_error"]:
                     # 工具事件直接透传，不包装在plan中
+                    yield data
+                    continue
+
+                # OpenClaw step 返回内容：以 OpenClaw 界面格式透传，供前端用已有 OpenClaw 消息组件展示
+                if isinstance(data, dict) and data.get("type") == "openclaw-step-response":
                     yield data
                     continue
 
@@ -820,6 +848,31 @@ async def search(request: Request, params: Any = Body(None)):
                         "task": "tool_event",
                         "changeType": "append",
                         "content": response_data
+                    }
+                # OpenClaw step 返回：用已有 OpenClaw 界面展示格式（multi-modal + segments 按角色展示）
+                elif isinstance(response_data, dict) and response_data.get("type") == "openclaw-step-response":
+                    try:
+                        logger.info("发送 OpenClaw step 消息到前端")
+                    except Exception:
+                        pass
+                    openclaw_content = {
+                        "type": "multi-modal",
+                        "source": "openclaw",
+                        "step_index": response_data.get("step_index"),
+                        "step_title": response_data.get("step_title", ""),
+                        "content": response_data.get("content", "") or "",
+                        "initData": [{"type": "text", "value": response_data.get("content", "") or ""}],
+                    }
+                    if response_data.get("segments"):
+                        openclaw_content["segments"] = response_data["segments"]
+                    response_json = {
+                        "contentType": "lui-message-openclaw-step",
+                        "sessionInfo": params.get("sessionInfo", {}),
+                        "code": 0,
+                        "message": "ok",
+                        "task": "chat",
+                        "changeType": "append",
+                        "content": openclaw_content
                     }
                 # 兼容：若包裹在 plan 中的也是可信分析，则拆包成可信分析消息
                 elif (
@@ -1292,3 +1345,103 @@ async def get_replay_workspaces():
         "message": "success",
         "data": workspaces,
     }
+
+
+@searchRouter.get("/read-file")
+async def read_file(file_path: str):
+    """
+    读取文件内容（支持任意路径，包括工作区外的文件）
+    
+    Args:
+        file_path: 文件的绝对路径或相对路径
+        
+    Returns:
+        文件内容或错误信息
+    """
+    try:
+        # 验证文件路径
+        if not file_path:
+            return JSONResponse(
+                status_code=400,
+                content={"code": 1, "message": "文件路径不能为空", "data": None}
+            )
+        
+        # 如果是相对路径，尝试转换为绝对路径
+        if not os.path.isabs(file_path):
+            # 尝试相对于工作区路径
+            absolute_path = os.path.join(work_space_path, file_path)
+        else:
+            absolute_path = file_path
+
+        # 若配置了允许的项目外目录，则仅允许 work_space 与这些目录下的文件
+        if ALLOWED_EXTRA_DIRS:
+            try:
+                resolved = os.path.realpath(absolute_path)
+                work_abs = os.path.realpath(work_space_path)
+                if not (resolved == work_abs or resolved.startswith(work_abs + os.sep)):
+                    allowed = False
+                    for d in ALLOWED_EXTRA_DIRS:
+                        d_abs = os.path.realpath(d)
+                        if resolved == d_abs or resolved.startswith(d_abs + os.sep):
+                            allowed = True
+                            break
+                    if not allowed:
+                        return JSONResponse(
+                            status_code=403,
+                            content={
+                                "code": 1,
+                                "message": "该路径不在允许的目录内。请在环境变量 COSIGHT_ALLOWED_EXTRA_DIRS 中配置允许的根目录（逗号分隔），例如: /home/用户/团队成员工作区",
+                                "data": None,
+                            },
+                        )
+            except OSError:
+                pass  # 文件尚不存在时 realpath 可能失败，后面会返回 404
+        
+        # 验证文件是否存在
+        if not os.path.exists(absolute_path):
+            return JSONResponse(
+                status_code=404,
+                content={"code": 1, "message": f"文件不存在: {absolute_path}", "data": None}
+            )
+        
+        # 验证是否为文件（不是目录）
+        if not os.path.isfile(absolute_path):
+            return JSONResponse(
+                status_code=400,
+                content={"code": 1, "message": f"路径不是文件: {absolute_path}", "data": None}
+            )
+        
+        # 读取文件内容
+        try:
+            with open(absolute_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+        except UnicodeDecodeError:
+            # 如果 UTF-8 解码失败，尝试其他编码
+            try:
+                with open(absolute_path, 'r', encoding='gbk') as f:
+                    content = f.read()
+            except Exception as e:
+                return JSONResponse(
+                    status_code=500,
+                    content={"code": 1, "message": f"读取文件失败: {str(e)}", "data": None}
+                )
+        except Exception as e:
+            return JSONResponse(
+                status_code=500,
+                content={"code": 1, "message": f"读取文件失败: {str(e)}", "data": None}
+            )
+        
+        return {
+            "code": 0,
+            "message": "success",
+            "data": {
+                "content": content,
+                "file_path": absolute_path
+            }
+        }
+    except Exception as e:
+        logger.error(f"读取文件时出错: {str(e)}", exc_info=True)
+        return JSONResponse(
+            status_code=500,
+            content={"code": 1, "message": f"服务器错误: {str(e)}", "data": None}
+        )

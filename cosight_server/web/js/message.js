@@ -63,6 +63,90 @@ class MessageService {
                 return;
             }
 
+            // 深研 OpenClaw actor 单步结果：按 用户·消息 / 助手·思考 / 助手·消息 等角色在电脑区展示
+            if (messageType === 'lui-message-openclaw-step') {
+                const topic = messageData.topic || (typeof messageData.data?.sessionInfo?.sessionId !== 'undefined' ? messageData.data.sessionInfo.sessionId : null) || 'cosight-openclaw';
+                const rawPayload = messageData.data?.initData || messageData.data?.content;
+                const content = rawPayload && typeof rawPayload === 'object' && !Array.isArray(rawPayload) ? rawPayload : null;
+                const stepIndex = content && content.step_index != null ? Number(content.step_index) : null;
+                window.__cosightCurrentTopic = topic;
+                window.__openclawMessagesByTopic = window.__openclawMessagesByTopic || {};
+                window.__openclawStepByTopic = window.__openclawStepByTopic || {};
+                if (!window.__openclawStepByTopic[topic]) window.__openclawStepByTopic[topic] = {};
+
+                // 优先使用后端下发的 segments（已按 thinking/toolCall/text 等分好），按角色展示
+                var metadataList = null;
+                if (content && Array.isArray(content.segments) && content.segments.length > 0) {
+                    metadataList = content.segments.map(function (seg) {
+                        var role = seg.role || 'assistant';
+                        return {
+                            messageType: seg.messageType || 'text',
+                            role: role,
+                            content: seg.content,
+                            toolName: seg.toolName,
+                            arguments: seg.arguments,
+                            isError: seg.isError
+                        };
+                    });
+                    window.__openclawMessagesByTopic[topic] = metadataList;
+                    if (stepIndex != null) window.__openclawStepByTopic[topic][stepIndex] = metadataList;
+                } else {
+                    // 尝试从 content 字符串解析出 thinking/toolCall/text 数组（兼容后端未发 segments 或 Gateway 返回字符串）
+                    var rawContentStr = (content && content.content) || '';
+                    var parsed = null;
+                    if (typeof rawContentStr === 'string' && rawContentStr.trim().indexOf('[') === 0) {
+                        try { parsed = JSON.parse(rawContentStr); } catch (e) {}
+                    }
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        metadataList = [];
+                        parsed.forEach(function (seg) {
+                            if (!seg || typeof seg !== 'object') return;
+                            var t = seg.type || 'text';
+                            var role = 'assistant';
+                            if (t === 'thinking') metadataList.push({ messageType: 'thinking', role: role, content: seg.thinking || seg.content || '' });
+                            else if (t === 'toolCall') metadataList.push({ messageType: 'toolCall', role: role, toolName: seg.name || 'tool', arguments: seg.arguments || {} });
+                            else if (t === 'toolResult') metadataList.push({ messageType: 'toolResult', role: role, toolName: seg.name || 'tool', content: seg.content || seg.result || '', isError: !!seg.isError });
+                            else if (t === 'text') metadataList.push({ messageType: 'text', role: role, content: seg.text || seg.content || '' });
+                        });
+                        if (metadataList.length > 0) {
+                            window.__openclawMessagesByTopic[topic] = metadataList;
+                            if (stepIndex != null) window.__openclawStepByTopic[topic][stepIndex] = metadataList;
+                        }
+                    }
+                    if (!metadataList || metadataList.length === 0) {
+                        const initDataArray = Array.isArray(rawPayload)
+                            ? rawPayload
+                            : (content && (Array.isArray(content.initData) ? content.initData : (content.initData ? [content.initData] : [])));
+                        const textItem = initDataArray.find(item => item && item.type === 'text');
+                        const rawText = (textItem && textItem.value ? textItem.value : '') || (content && content.content) || (typeof rawPayload === 'string' ? rawPayload : '');
+                        const stepTitle = (content && (content.step_title || (content.step_index != null ? '步骤 ' + (Number(content.step_index) + 1) : ''))) || '';
+                        const displayText = stepTitle ? ('【' + stepTitle + '】\n\n' + rawText) : rawText;
+                        if (!rawText && !stepTitle) { return; }
+                        var msg = { messageType: 'text', role: 'assistant', content: displayText, step_index: stepIndex, step_title: (content && content.step_title) || '' };
+                        if (!window.__openclawMessagesByTopic[topic]) window.__openclawMessagesByTopic[topic] = [];
+                        window.__openclawMessagesByTopic[topic] = [msg];
+                        if (stepIndex != null) window.__openclawStepByTopic[topic][stepIndex] = [msg];
+                        metadataList = [msg];
+                    }
+                }
+
+                var normalized = {
+                    topic: topic,
+                    data: {
+                        type: 'multi-modal',
+                        source: 'openclaw',
+                        changeType: 'replace',
+                        initData: metadataList.length ? [{ type: 'text', value: '(已按角色展示)' }] : []
+                    }
+                };
+                if (typeof window.showOpenClawInIframe === 'function') {
+                    window.showOpenClawInIframe(normalized);
+                } else {
+                    console.warn('showOpenClawInIframe 未定义，无法展示 OpenClaw step 结果');
+                }
+                return;
+            }
+
             // OpenClaw 流式消息：type "multi-modal" + source "openclaw"，内容在 data.metadata，按 changeType 累积后渲染
             if (messageType === 'multi-modal' && messageData.data?.source === 'openclaw') {
                 const topic = messageData.topic;
@@ -98,6 +182,7 @@ class MessageService {
 
             // 检查是否是 lui-message-manus-step 类型的消息
             if (messageType === 'lui-message-manus-step') {
+                if (messageData.topic) window.__cosightCurrentTopic = messageData.topic;
                 const source = messageData.data?.source || messageData.source || 'cosight';
                 if (source === 'openclaw') {
                     console.log('收到 OpenClaw 来源的步骤消息，更新DAG并在 content-iframe 中展示');
@@ -692,6 +777,9 @@ class MessageService {
         
         // 新消息发送前清理之前的tool events和历史数据
         this.clearStepToolEvents();
+        if (typeof window.__rightPanelShowingFile !== 'undefined') {
+            window.__rightPanelShowingFile = null;
+        }
 
         // 清理历史的planId和pending请求
         try {

@@ -13,15 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from app.cosight.agent.actor.task_actor import TaskActorAgent, create_task_actor_instance
-from app.cosight.agent.actor.netopt_actor import NetoptActorAgent, create_netopt_actor_instance
-from app.cosight.agent.actor.openclaw import OpenclawAgent, create_openclaw_instance
+from app.cosight.agent.actor.task_actor.agent import TaskActorAgent
+from app.cosight.agent.actor.task_actor.instance import create_task_actor_instance
 
-__all__ = [
-    "TaskActorAgent",
-    "NetoptActorAgent",
-    "OpenclawAgent",
-    "create_task_actor_instance",
-    "create_netopt_actor_instance",
-    "create_openclaw_instance",
-]
+__all__ = ["TaskActorAgent", "create_task_actor_instance"]

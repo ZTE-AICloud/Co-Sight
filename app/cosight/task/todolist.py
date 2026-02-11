@@ -38,6 +38,9 @@ class Plan:
         self.step_notes = {step: "" for step in self.steps}
         self.step_details = {step: "" for step in self.steps}
         self.step_files = {step: "" for step in self.steps}
+        # 为每个步骤记录由意图分类器选择的执行 Actor（agent_id），例如："task_actor" / "netopt_actor" / "openclaw"
+        # 初始时为空，等到实际执行前由 CoSight._execute_single_step 写入
+        self.step_actors: Dict[str, Optional[str]] = {step: None for step in self.steps}
         # 存储每个步骤的工具调用信息
         self.step_tool_calls = {step: [] for step in self.steps}
         # 使用邻接表表示依赖关系
@@ -85,10 +88,12 @@ class Plan:
         if steps:
             # Preserve all existing steps and their statuses
             new_steps = []
-            new_statuses = {}
-            new_notes = {}
-            new_details = {}
-            new_tool_calls = {}
+            new_statuses: Dict[str, str] = {}
+            new_notes: Dict[str, str] = {}
+            new_details: Dict[str, str] = {}
+            new_tool_calls: Dict[str, list] = {}
+            # 保留或重置步骤与执行 Actor 的绑定关系
+            new_actors: Dict[str, Optional[str]] = {}
 
             # First, process all steps in the input order
             for step in steps:
@@ -99,6 +104,11 @@ class Plan:
                     new_notes[step] = self.step_notes.get(step)
                     new_details[step] = self.step_details.get(step)
                     new_tool_calls[step] = self.step_tool_calls.get(step, [])
+                    # 已经开始执行的步骤，保留原来的执行 Actor 绑定
+                    if hasattr(self, "step_actors"):
+                        new_actors[step] = self.step_actors.get(step)
+                    else:
+                        new_actors[step] = None
                 # If step exists in current steps and is not started, preserve as not_started
                 elif step in self.steps:
                     new_steps.append(step)
@@ -106,6 +116,11 @@ class Plan:
                     new_notes[step] = self.step_notes.get(step)
                     new_details[step] = self.step_details.get(step)
                     new_tool_calls[step] = self.step_tool_calls.get(step, [])
+                    # 还未开始执行的旧步骤，保持原有绑定（若存在），否则为空
+                    if hasattr(self, "step_actors"):
+                        new_actors[step] = self.step_actors.get(step)
+                    else:
+                        new_actors[step] = None
                 # If step is new, add as not_started
                 else:
                     new_steps.append(step)
@@ -113,12 +128,15 @@ class Plan:
                     new_notes[step] = ""
                     new_details[step] = ""
                     new_tool_calls[step] = []
+                    # 新增的步骤尚未选择执行 Actor
+                    new_actors[step] = None
 
             self.steps = new_steps
             self.step_statuses = new_statuses
             self.step_notes = new_notes
             self.step_details = new_details
             self.step_tool_calls = new_tool_calls
+            self.step_actors = new_actors
         logger.info(f"before update dependencies: {self.dependencies}")
         if dependencies:
             self.dependencies.clear()

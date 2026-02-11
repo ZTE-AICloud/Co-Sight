@@ -150,6 +150,26 @@ async def startup_event():
         try:
             await openclaw_client_manager.start()
             logger.info("✓ OpenClaw客户端已启动")
+
+            # 启动后做一次简单的自检：发送一条消息并通过 chat.history 获取完整回复
+            client = openclaw_client_manager.get_client()
+            if client is not None:
+                session_key = "agent:main:startup-healthcheck"
+                try:
+                    history_resp = await client.send_message_and_get_history(
+                        message="健康检查：现在几点了？",
+                        session_key=session_key,
+                        limit=5,
+                        final_timeout=30.0,
+                        history_delay=0.5,
+                    )
+                    # 为避免日志过长，仅截断前 500 字符
+                    logger.info(f"OpenClaw 自检成功，chat.history 响应(截断): {str(history_resp)}")
+                except Exception as e:
+                    # 自检失败不阻塞服务启动，但会记录详细日志，方便排查
+                    logger.error(f"OpenClaw 自检失败: {e}", exc_info=True)
+            else:
+                logger.error("OpenClaw 自检失败：client 不可用")
         except Exception as e:
             logger.error(f"✗ OpenClaw客户端启动失败: {e}", exc_info=True)
     else:

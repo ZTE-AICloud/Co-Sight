@@ -6,6 +6,21 @@ let svg, width, height, simulation;
 let tooltip = null; // 延迟初始化，等待DOM加载
 let zoom = null; // 缩放功能
 
+// 执行器(Actor Agent) 对应的图标映射，key 为后端的 agent_id
+// - task_actor        -> 通用报告执行器（报告/文档）
+// - netopt_actor      -> 网优资料整理执行器（无线/WiFi 图标）
+// - openclaw          -> OpenClaw 本地文件执行器（龙虾图标）
+const ACTOR_ICON_MAP = {
+    "task_actor": "images/report-document-file-svgrepo-com.svg",
+    "netopt_actor": "images/wifi-wireless-svgrepo-com.svg",
+    "openclaw": "images/openclaw.svg"
+};
+
+function getActorIcon(actorId) {
+    if (!actorId) return null;
+    return ACTOR_ICON_MAP[actorId] || null;
+}
+
 // 确保tooltip已初始化
 function ensureTooltipInitialized() {
     if (!tooltip) {
@@ -242,6 +257,11 @@ function initDAG() {
             event.stopPropagation();
             showStepDetails(event, d);
 
+            // 仅对 OpenClaw 节点在电脑区展示该 step 的 OpenClaw 对话（有则显示，无则占位）；非 openclaw 节点不展示占位页
+            if (d.actor === 'openclaw' && typeof window.showOpenClawStepInRightPanel === 'function') {
+                window.showOpenClawStepInRightPanel(d.id);
+            }
+
             // 切换节点工具面板的显示状态，使用完整的标题信息
             const panelTitle = `Step ${d.id} - ${d.title}`;
             const panelOpened = toggleNodeToolPanel(d.id, panelTitle);
@@ -265,9 +285,29 @@ function initDAG() {
             }
         });
 
-    // 添加节点文本
+    // 在节点圆圈上叠加 Actor 图标（如果该步骤已经绑定了执行器）
+    node.append("image")
+        .attr("class", "actor-icon")
+        .attr("width", 28)
+        .attr("height", 28)
+        // 让图标居中放在圆圈内部
+        .attr("x", -14)
+        .attr("y", -14)
+        // 同时设置 href 和 xlink:href 以兼容不同浏览器
+        .attr("href", d => getActorIcon(d.actor))
+        .attr("xlink:href", d => getActorIcon(d.actor))
+        .style("pointer-events", "none") // 图标不拦截鼠标事件，事件仍由圆圈处理
+        .attr("opacity", d => getActorIcon(d.actor) ? 1 : 0);
+
+    // 添加节点文本：显示在圆圈上方，字体为黑色
     node.append("text")
         .attr("class", "node-text")
+        .attr("x", 0)
+        // 圆圈半径为 25，这里放在圆圈上方一点
+        .attr("y", -35)
+        .attr("text-anchor", "middle")
+        .attr("font-size", "12px")
+        .attr("fill", "#000000")
         .text(d => d.name);
 
     // 添加状态图标
@@ -306,8 +346,8 @@ function initDAG() {
         updateAllPanelPositions();
     });
 
-    // 添加指示器
-    dagData.nodes.forEach(node => credibilityService.addNodeIndicators(node.id));
+    // 可信分级小圆圈指示器（暂时关闭）
+    // dagData.nodes.forEach(node => credibilityService.addNodeIndicators(node.id));
 
     updateProgress();
 }
@@ -552,6 +592,7 @@ function createDag(messageData) {
         console.log('10. initData?.step_notes:', initData?.step_notes);
         console.log('11. initData?.steps:', initData?.steps);
         console.log('12. initData?.step_statuses:', initData?.step_statuses);
+        console.log('13. initData?.step_actors:', initData?.step_actors);
         console.log('============================================');
         
         // 新会话检测：当 changeType=replace 或 话题/uuid 变化时，重置缓存
@@ -651,13 +692,20 @@ function createDag(messageData) {
             const stepNotesValue = initData.step_notes ? (initData.step_notes[step] || "") : "";
             console.log('  计算出的 stepNotesValue:', stepNotesValue);
             
+            // 从后端的 step_actors 中取出当前步骤对应的执行 Actor（agent_id）
+            let actorId = null;
+            if (initData.step_actors && typeof initData.step_actors === 'object') {
+                actorId = initData.step_actors[step] || null;
+            }
+            
             const nodeData = {
                 id: stepId,
                 name: `step${stepId}`,
                 fullName: step,  // 保留完整名称用于其他用途
                 status: initData.step_statuses[step] || "not_started",
                 step_notes: stepNotesValue,
-                dependencies: dependencies
+                dependencies: dependencies,
+                actor: actorId   // 记录执行该步骤的 Actor（agent_id），用于前端渲染图标
             };
             
             console.log('  最终节点数据:', nodeData);

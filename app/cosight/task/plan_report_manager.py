@@ -55,7 +55,22 @@ class EventManager:
                 except Exception as e:
                     logger.error(f"工具事件回调执行失败: {e}", exc_info=True)
             return
-        
+
+        # OpenClaw step 展示事件：将 step 返回内容以 OpenClaw 界面格式推送给前端
+        if event_type == "openclaw_step_display" and isinstance(plan_or_plan_id, str) and event_data is not None:
+            plan_id = plan_or_plan_id
+            callbacks = []
+            with self._lock:
+                if event_type in self._subscribers and plan_id in self._subscribers[event_type]:
+                    callbacks = self._subscribers[event_type][plan_id].copy()
+            logger.info(f"Publishing openclaw_step_display for plan_id: {plan_id}, callbacks: {len(callbacks)}")
+            for callback in callbacks:
+                try:
+                    callback(event_data)
+                except Exception as e:
+                    logger.error(f"openclaw_step_display 回调执行失败: {e}", exc_info=True)
+            return
+
         # 原有的Plan对象处理逻辑
         plan = plan_or_plan_id
         if plan is None:

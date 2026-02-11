@@ -18,7 +18,7 @@ from app.agent_dispatcher.infrastructure.entity.AgentTemplate import AgentTempla
 from app.cosight.agent.actor.instance.actor_agent_skill import *
 
 
-def create_actor_instance(agent_instance_name, work_space_path):
+def create_actor_instance(agent_instance_name, work_space_path, extra_skills=[]):
     agent_params = {
         'instance_id': f"actor_{agent_instance_name}",
         'instance_name': f"Actor {agent_instance_name}",
@@ -30,12 +30,21 @@ def create_actor_instance(agent_instance_name, work_space_path):
         'description_en': 'Specialized assistant for task execution and operations',
         "service_name": 'execution_service',
         "service_version": 'v1',
-        "template": create_actor_template("actor_agent_template", work_space_path)
+        "template": create_actor_template("actor_agent_template", work_space_path, extra_skills)
     }
     return AgentInstance(**agent_params)
 
 
-def create_actor_template(template_name, work_space_path):
+def create_actor_template(template_name, work_space_path, extra_skills=[]):
+    skills = [execute_code_skill(work_space_path),
+                   mark_step_skill(),
+                   file_saver_skill(),
+                   file_read_skill(),
+                   file_str_replace_skill(),
+                   file_find_in_content_skill(),    
+                   ]
+    if extra_skills:
+        skills.extend(extra_skills)
     template_content = {
         'template_name': template_name,
         'template_version': 'v1',
@@ -50,25 +59,7 @@ def create_actor_template(template_name, work_space_path):
         'default_replay_zh': '任务执行专家',
         'default_replay_en': 'Task Execution Expert',
         "icon": "",
-        'skills': [execute_code_skill(work_space_path),
-                #    search_baidu_skill(),
-                   mark_step_skill(),
-                #    browser_use_skill(),
-                   file_saver_skill(),
-                   file_read_skill(),
-                   file_str_replace_skill(),
-                   file_find_in_content_skill(),
-                   ask_question_about_image_skill(),
-                   extract_document_content_skill(),
-                   create_html_report_skill(),
-                   fetch_website_content_skill(),
-                   fetch_website_content_with_images_skill(),
-                   fetch_website_images_only_skill(),
-                   # search_duckgo_skill(),
-                   search_wiki_skill(),
-                   audio_recognition_skill(),
-                   ask_question_about_video_skill()],
-        # , terminate_skill(), browser_use_skill()
+        'skills': skills,
         "organizations": [],
         'knowledge': [],
         'max_iteration': 20,

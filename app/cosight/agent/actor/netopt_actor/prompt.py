@@ -13,15 +13,18 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from app.cosight.agent.actor.task_actor import TaskActorAgent, create_task_actor_instance
-from app.cosight.agent.actor.netopt_actor import NetoptActorAgent, create_netopt_actor_instance
-from app.cosight.agent.actor.openclaw import OpenclawAgent, create_openclaw_instance
+"""Netopt actor reuses task_actor prompts; can be overridden later for netopt-specific wording."""
+
+from app.cosight.agent.actor.task_actor.prompt import (
+    actor_system_prompt,
+    actor_system_prompt_zh,
+    actor_execute_task_prompt,
+    actor_execute_task_prompt_zh,
+)
 
 __all__ = [
-    "TaskActorAgent",
-    "NetoptActorAgent",
-    "OpenclawAgent",
-    "create_task_actor_instance",
-    "create_netopt_actor_instance",
-    "create_openclaw_instance",
+    "actor_system_prompt",
+    "actor_system_prompt_zh",
+    "actor_execute_task_prompt",
+    "actor_execute_task_prompt_zh",
 ]

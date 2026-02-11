@@ -833,6 +833,12 @@ async def _send_to_openclaw(websocket: WebSocket, topic: str, message: dict, lan
                     
                     # 调用chat.history获取完整消息历史
                     history_response = await client.get_history(openclaw_session_key, limit=10)
+                    # 为便于排查问题，这里打印完整的 history_response（截断到前 2000 个字符）
+                    try:
+                        history_json = json.dumps(history_response, ensure_ascii=False)
+                        logger.info(f"chat.history完整响应(截断): {history_json}")
+                    except Exception as e:
+                        logger.warning(f"chat.history响应序列化失败: {e}")
                     logger.info(f"chat.history响应: ok={history_response.get('ok')}, payload_keys={list(history_response.get('payload', {}).keys())}")
                     
                     if history_response.get("ok") and history_response.get("payload"):

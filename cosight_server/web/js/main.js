@@ -1708,6 +1708,10 @@ function cleanupContentResources() {
         iframe.onload = null;
         iframe.onerror = null;
 
+        // 必须先清 srcdoc，否则后续设置 src 不会生效（HTML5 中 srcdoc 优先于 src）
+        iframe.removeAttribute('srcdoc');
+        iframe.srcdoc = '';
+
         // 清理iframe内容
         iframe.src = 'about:blank';
 
@@ -1853,11 +1857,61 @@ function showRightPanel() {
 }
 
 /**
+ * 点击 DAG 的 step 节点时，在电脑区展示：有 OpenClaw 对话则展示对话，否则展示步骤占位页
+ * @param {number} nodeId - DAG 节点 id（1-based，step1=1, step2=2）
+ */
+function showOpenClawStepInRightPanel(nodeId) {
+    window.__rightPanelShowingFile = null;
+    // 先打开右侧电脑区，确保点击节点时面板一定有变化
+    if (!showRightPanel()) return;
+    var rightContainer = document.getElementById('right-container');
+    var iframe = document.getElementById('content-iframe');
+    var markdownContent = document.getElementById('markdown-content');
+    var statusElement = document.getElementById('right-container-status');
+    if (rightContainer) rightContainer.classList.add('openclaw-view');
+    if (markdownContent) markdownContent.style.display = 'none';
+    if (iframe) iframe.style.display = 'block';
+
+    var topic = window.__cosightCurrentTopic;
+    var stepIndex = nodeId - 1;
+    var list = (topic && window.__openclawStepByTopic && window.__openclawStepByTopic[topic])
+        ? (window.__openclawStepByTopic[topic][stepIndex]) : null;
+
+    if (list && list.length > 0) {
+        iframe.srcdoc = buildOpenClawChatHtmlFromMetadataList(list);
+        if (statusElement) {
+            statusElement.textContent = 'OpenClaw 对话 - Step ' + nodeId;
+            statusElement.className = 'success';
+        }
+    } else {
+        // 无 OpenClaw 对话时在电脑区显示步骤占位页，保证“有变化”
+        var stepTitle = 'Step ' + nodeId;
+        try {
+            if (typeof dagData !== 'undefined' && dagData.nodes) {
+                var node = dagData.nodes.find(function (n) { return n.id === nodeId; });
+                if (node) stepTitle = node.fullName || node.title || ('Step ' + nodeId);
+            }
+        } catch (_) {}
+        var esc = function (s) {
+            return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        };
+        iframe.srcdoc = '<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{font-family:sans-serif;padding:24px;color:#555;} .step-title{font-size:1.2em;margin-bottom:12px;}</style></head><body><div class="step-title">' + esc(stepTitle) + '</div><p>该步骤暂无 OpenClaw 对话。</p><p>可查看左侧节点工具面板中的工具调用与结果。</p></body></html>';
+        if (statusElement) {
+            statusElement.textContent = 'Step ' + nodeId + ' - 步骤详情';
+            statusElement.className = '';
+        }
+    }
+}
+
+/**
  * OpenClaw 消息在右侧 content-iframe 中展示
  * 后端格式：type "multi-modal", source "openclaw", changeType replace/append, data.metadata 或 data.initData 纯文本
  * 按 topic 累积 metadata 列表，生成对话式 iframe 页面
  */
 function showOpenClawInIframe(messageData) {
+    if (window.__rightPanelShowingFile) {
+        return;
+    }
     const topic = messageData.topic;
     const metadataList = (topic && window.__openclawMessagesByTopic && window.__openclawMessagesByTopic[topic]) || [];
     const payload = messageData.data?.payload;
@@ -2019,10 +2073,53 @@ function buildOpenClawChatHtml(messages) {
     return '<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>OpenClaw 对话</title><style>' + css + '</style></head><body><div class="oc-header"><h1>OpenClaw 对话</h1></div><div class="oc-messages">' + listHtml + '</div></body></html>';
 }
 
+/** 工作区静态文件 API 前缀，用于补全 work_space 路径，避免相对路径导致 404/卡住 */
+var FILE_BASE_URL = '/api/nae-deep-research/v1';
+
+/**
+ * 将 work_space/... 或 workspace/... 路径转为可请求的完整 URL（避免相对路径 404）
+ * @param {string} pathOrRelative - 相对路径如 work_space/xxx/file.md 或已是 /api/... 的路径
+ * @returns {string} 用于 fetch/iframe 的 URL
+ */
+function toWorkSpaceFileUrl(pathOrRelative) {
+    if (!pathOrRelative || typeof pathOrRelative !== 'string') return pathOrRelative;
+    if (pathOrRelative.indexOf('/api/') === 0) return pathOrRelative;
+    var s = pathOrRelative.replace(/^\/+/, '');
+    if (s.indexOf('work_space') === 0 || s.indexOf('workspace') === 0) return FILE_BASE_URL + '/' + s;
+    return pathOrRelative;
+}
+
+/**
+ * 在右侧电脑区打开指定文件（供 tooltip/step_notes 中的文件链接调用）
+ * 设置 __rightPanelShowingFile 防止后续 OpenClaw 流式消息覆盖 iframe
+ * @param {string} fullPath - 文件路径，如 /api/nae-deep-research/v1/work_space/.../xxx.html 或 work_space/.../xxx.md
+ */
+function openFileInRightPanel(fullPath) {
+    if (!fullPath || typeof fullPath !== 'string') return;
+    var path = fullPath.trim();
+    if (!path) return;
+    // 若非以 /api/ 开头，补全为 API 路径
+    if (path.indexOf('/api/') !== 0 && path.indexOf('work_space') !== -1) {
+        path = '/api/nae-deep-research/v1/' + (path.charAt(0) === '/' ? path.slice(1) : path);
+    }
+    window.__rightPanelShowingFile = { path: path, at: Date.now() };
+    var toolCall = {
+        url: null,
+        path: path,
+        tool: 'file_saver',
+        toolName: (typeof window.I18nService !== 'undefined' && window.I18nService.t('file_saver')) ? window.I18nService.t('file_saver') : '保存文件'
+    };
+    showRightPanelForTool(toolCall);
+}
+
 function showRightPanelForTool(toolCall) {
     const result = showRightPanel();
     if (!result) {
         return;
+    }
+    // 标记当前右侧正在显示文件，避免 OpenClaw 消息覆盖
+    if (toolCall.path && toolCall.path !== 'code://execute_code') {
+        window.__rightPanelShowingFile = { path: toolCall.path, at: Date.now() };
     }
 
     const url = toolCall.url;
@@ -2046,23 +2143,29 @@ function showRightPanelForTool(toolCall) {
         iframe.style.display = 'block';
         markdownContent.style.display = 'none';
 
-        // 先设置为空白页
+        // 先清 srcdoc 再设 src，否则 srcdoc 会一直占优导致后续加载无效
+        if (iframe.srcdoc) {
+            iframe.removeAttribute('srcdoc');
+            iframe.srcdoc = '';
+        }
         iframe.src = 'about:blank';
 
-        // 检查iframe嵌入是否被允许
-        checkIframeEmbedding(url).then(allowed => {
-            if (allowed) {
-                // 允许嵌入，继续加载
-                loadIframeContent(url, iframe, statusElement, tool, path);
-            } else {
-                // 不允许嵌入，显示错误和替代方案
-                showIframeEmbeddingError(url, statusElement);
-            }
-        }).catch(error => {
-            console.warn('iframe嵌入检查失败，尝试直接加载:', error);
-            // 检查失败时允许尝试加载
+        // 本站同源的可嵌入 API（如 search-results）直接加载，不走外部嵌入检查
+        if (isOwnEmbeddableApiUrl(url)) {
             loadIframeContent(url, iframe, statusElement, tool, path);
-        });
+        } else {
+            // 检查 iframe 嵌入是否被允许
+            checkIframeEmbedding(url).then(allowed => {
+                if (allowed) {
+                    loadIframeContent(url, iframe, statusElement, tool, path);
+                } else {
+                    showIframeEmbeddingError(url, statusElement);
+                }
+            }).catch(error => {
+                console.warn('iframe嵌入检查失败，尝试直接加载:', error);
+                loadIframeContent(url, iframe, statusElement, tool, path);
+            });
+        }
 
     } else if (path) {
         // 处理代码执行工具的特殊情况
@@ -2106,62 +2209,88 @@ function showRightPanelForTool(toolCall) {
         }
 
         if (ext === 'html' || ext === 'htm') {
-            // 使用 iframe 显示 HTML 文件
+            // 项目外路径（无 work_space）：通过 read-file API 取内容再用 srcdoc 显示，避免 iframe.src 导致 404
+            var isExternalPath = path.indexOf('/api/') !== 0 && path.indexOf('work_space') === -1 && path.indexOf('workspace') === -1;
+            if (isExternalPath) {
+                toggleLoadingIndicator(true);
+                if (statusElement) {
+                    statusElement.textContent = generateStatusText(tool, url, path);
+                    statusElement.className = 'loading';
+                }
+                iframe.style.display = 'block';
+                markdownContent.style.display = 'none';
+                iframe.src = 'about:blank';
+                var apiUrl = '/api/nae-deep-research/v1/read-file?file_path=' + encodeURIComponent(path);
+                fetch(apiUrl)
+                    .then(function (res) {
+                        if (!res.ok) throw new Error('HTTP error! status: ' + res.status);
+                        return res.json();
+                    })
+                    .then(function (data) {
+                        if (data.code === 0 && data.data && data.data.content) {
+                            iframe.srcdoc = data.data.content;
+                            if (statusElement) {
+                                statusElement.textContent = generateStatusText(tool, url, path);
+                                statusElement.className = 'success';
+                            }
+                            console.log('项目外 HTML 已通过 read-file 加载:', path);
+                        } else {
+                            throw new Error(data.message || '读取文件失败');
+                        }
+                    })
+                    .catch(function (err) {
+                        console.error('加载项目外 HTML 失败:', path, err);
+                        if (statusElement) {
+                            statusElement.textContent = (window.I18nService ? window.I18nService.t('webpage_load_failed').replace('{url}', path) : '网页加载失败: ' + path) + ' - ' + (err && err.message ? err.message : '');
+                            statusElement.className = 'error';
+                        }
+                    })
+                    .finally(function () { toggleLoadingIndicator(false); });
+                return;
+            }
+
+            // 工作区内 HTML：优先用 read-file + srcdoc 显示，避免 iframe.src 加载时 onload 不触发导致一直转圈
             toggleLoadingIndicator(true);
             if (statusElement) {
                 statusElement.textContent = generateStatusText(tool, url, path);
                 statusElement.className = 'loading';
             }
-
             iframe.style.display = 'block';
             markdownContent.style.display = 'none';
-
-            // 清空后再加载
             iframe.src = 'about:blank';
-            setTimeout(() => {
-                let isBlank = true;
-                iframe._loadingTimeout = setTimeout(() => {
-                    if (isBlank) return;
-                    toggleLoadingIndicator(false);
+
+            // read-file 需要「相对 work_space 目录」的路径，如 work_space_xxx/文件.html
+            var pathForApi = relativePath.replace(/^.*?work_space\//, '');
+            var readFileUrl = FILE_BASE_URL + '/read-file?file_path=' + encodeURIComponent(pathForApi);
+            var fetchPromise = fetch(readFileUrl).then(function (res) {
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                return res.json();
+            });
+            var FETCH_HTML_TIMEOUT_MS = 15000;
+            var timeoutPromise = new Promise(function (_, reject) {
+                setTimeout(function () { reject(new Error('请求超时')); }, FETCH_HTML_TIMEOUT_MS);
+            });
+            Promise.race([fetchPromise, timeoutPromise])
+                .then(function (data) {
+                    if (data.code === 0 && data.data && data.data.content) {
+                        iframe.srcdoc = data.data.content;
+                        if (statusElement) {
+                            statusElement.textContent = generateStatusText(tool, url, path);
+                            statusElement.className = 'success';
+                        }
+                        console.log('工作区 HTML 已通过 read-file 加载:', relativePath);
+                    } else {
+                        throw new Error(data.message || '读取失败');
+                    }
+                })
+                .catch(function (err) {
+                    console.error('工作区 HTML read-file 失败:', relativePath, err);
                     if (statusElement) {
-                        statusElement.textContent = (window.I18nService ? window.I18nService.t('loading_timeout').replace('{url}', relativePath) : `加载超时: ${relativePath}`);
+                        statusElement.textContent = (window.I18nService ? window.I18nService.t('webpage_load_failed').replace('{url}', relativePath) : '网页加载失败: ' + relativePath) + ' - ' + (err && err.message ? err.message : '');
                         statusElement.className = 'error';
                     }
-                    console.warn('iframe加载超时:', relativePath);
-                }, 10000);
-
-                iframe.onload = function () {
-                    if (isBlank) return;
-                    if (iframe._loadingTimeout) {
-                        clearTimeout(iframe._loadingTimeout);
-                        iframe._loadingTimeout = null;
-                    }
-                    toggleLoadingIndicator(false);
-                    if (statusElement) {
-                        statusElement.textContent = generateStatusText(tool, url, path);
-                        statusElement.className = 'success';
-                    }
-                    console.log('HTML 文件加载成功:', relativePath);
-                };
-
-                iframe.onerror = function () {
-                    if (iframe._loadingTimeout) {
-                        clearTimeout(iframe._loadingTimeout);
-                        iframe._loadingTimeout = null;
-                    }
-                    toggleLoadingIndicator(false);
-                    if (statusElement) {
-                        statusElement.textContent = (window.I18nService ? window.I18nService.t('webpage_load_failed').replace('{url}', relativePath) : `网页加载失败: ${relativePath}`);
-                        statusElement.className = 'error';
-                    }
-                    console.error('HTML 文件加载失败:', relativePath);
-                };
-
-                iframe.src = relativePath;
-                isBlank = false;
-            }, 100);
-
-            console.log('通过 iframe 显示 HTML 文件:', relativePath);
+                })
+                .finally(function () { toggleLoadingIndicator(false); });
         } else {
             // 显示 Markdown/文本内容
             iframe.style.display = 'none';
@@ -2174,6 +2303,19 @@ function showRightPanelForTool(toolCall) {
 
             loadMarkdownFile(path, tool);
             console.log('显示文件内容:', path);
+        }
+    } else {
+        // 该工具无 URL/路径可预览时，仍更新电脑区状态与占位内容，保证点击有反馈
+        var toolLabel = (toolCall.toolName || tool || '工具') + '';
+        var safeLabel = toolLabel.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        if (iframe) {
+            iframe.style.display = 'block';
+            iframe.srcdoc = '<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{font-family:sans-serif;padding:24px;color:#555;}</style></head><body><p>' + safeLabel + '</p><p>该工具无链接或文件可预览。</p></body></html>';
+        }
+        if (markdownContent) markdownContent.style.display = 'none';
+        if (statusElement) {
+            statusElement.textContent = toolLabel || '工具详情';
+            statusElement.className = '';
         }
     }
 }
@@ -2339,6 +2481,8 @@ function loadMarkdownFile(filePath, tool) {
 
     // 将绝对路径转换为相对路径
     let relativePath = filePath;
+    let useApiEndpoint = false; // 标记是否使用 API 端点读取文件
+    
     // 如果路径已经是完整的API路径（以/api/开头），直接使用
     if (filePath.startsWith('/api/')) {
         relativePath = filePath;
@@ -2354,26 +2498,60 @@ function loadMarkdownFile(filePath, tool) {
         if (workspaceIndex !== -1) {
             relativePath = filePath.substring(workspaceIndex);
         }
+    } else {
+        // 如果路径不包含 work_space 或 workspace，说明是工作区外的文件
+        // 使用 API 端点来读取
+        useApiEndpoint = true;
     }
 
-    console.log('尝试加载文件:', relativePath);
+    console.log('尝试加载文件:', relativePath, '使用API端点:', useApiEndpoint);
 
-    // 使用fetch加载文件内容
-    fetch(relativePath)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
+    // 根据文件路径类型选择不同的加载方式
+    let fetchPromise;
+    if (useApiEndpoint) {
+        // 对于工作区外的文件，使用 API 端点读取
+        const apiUrl = `/api/nae-deep-research/v1/read-file?file_path=${encodeURIComponent(filePath)}`;
+        fetchPromise = fetch(apiUrl)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.code === 0 && data.data && data.data.content) {
+                    return data.data.content;
+                } else {
+                    throw new Error(data.message || '读取文件失败');
+                }
+            });
+    } else {
+        // 对于工作区内的文件，使用完整 API URL 请求静态文件，避免相对路径 404/卡住
+        var workSpaceUrl = toWorkSpaceFileUrl(relativePath);
+        fetchPromise = fetch(workSpaceUrl)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.text();
+            });
+    }
 
-            // 更新状态文本
-            if (statusElement) {
-                const fileName = filePath.split('/').pop() || filePath.split('\\').pop();
-                statusElement.textContent = (window.I18nService ? window.I18nService.t('parsing_file').replace('{fileName}', fileName) : `正在解析文件 ${fileName}`);
-                statusElement.className = 'loading';
-            }
+    // 统一加超时，防止请求挂起导致电脑区一直“正在加载”
+    var FETCH_FILE_TIMEOUT_MS = 15000;
+    var timeoutPromise = new Promise(function (_, reject) {
+        setTimeout(function () { reject(new Error('请求超时')); }, FETCH_FILE_TIMEOUT_MS);
+    });
+    fetchPromise = Promise.race([fetchPromise, timeoutPromise]);
 
-            return response.text();
-        })
+    // 更新状态文本
+    if (statusElement) {
+        const fileName = filePath.split('/').pop() || filePath.split('\\').pop();
+        statusElement.textContent = (window.I18nService ? window.I18nService.t('parsing_file').replace('{fileName}', fileName) : `正在解析文件 ${fileName}`);
+        statusElement.className = 'loading';
+    }
+
+    fetchPromise
         .then(content => {
             // 判断文件类型
             const fileName = filePath.split('/').pop() || filePath.split('\\').pop();
@@ -2817,6 +2995,34 @@ function extractUrlFromSearchResult(toolResult, toolName) {
 // ==================== iframe嵌入检查相关函数 ====================
 
 /**
+ * 判断是否为本站可嵌入 API 的 path（如 /api/nae-deep-research/v1/search-results），
+ * 仅看 path 不要求同源，避免后端返回带 127.0.0.1 等 host 时与当前页 origin 不一致导致误判。
+ * @param {string} url - 要检查的 URL（可为相对路径或绝对路径）
+ * @returns {boolean}
+ */
+function isOwnEmbeddableApiUrl(url) {
+    if (!url || typeof url !== 'string') return false;
+    try {
+        var pathname;
+        var s = url.trim();
+        if (s.indexOf('/') === 0) {
+            pathname = s.split('?')[0];
+        } else if (s.indexOf('http') === 0) {
+            try {
+                pathname = new URL(s).pathname;
+            } catch (_) {
+                return false;
+            }
+        } else {
+            return false;
+        }
+        return pathname.indexOf('/api/nae-deep-research/') === 0;
+    } catch (_) {
+        return false;
+    }
+}
+
+/**
  * 检查URL是否允许iframe嵌入
  * @param {string} url - 要检查的URL
  * @returns {Promise<boolean>} - 是否允许嵌入
@@ -2918,175 +3124,23 @@ function loadIframeContent(url, iframe, statusElement, tool, path) {
 }
 
 /**
- * 显示iframe嵌入错误和替代方案
+ * 外链不允许嵌入时：仅更新状态文案，不显示无法嵌入模版页（避免 srcdoc 导致后续点击工具卡片无反应）
  * @param {string} url - 无法嵌入的URL
  * @param {HTMLElement} statusElement - 状态显示元素
  */
 function showIframeEmbeddingError(url, statusElement) {
-    // 隐藏加载提示
     toggleLoadingIndicator(false);
-    
-    // 更新状态文本
     if (statusElement) {
         statusElement.textContent = `网页不允许嵌入iframe: ${url}`;
         statusElement.className = 'error';
     }
-    
-    // 显示替代方案
-    showAlternativeOptions(url);
-}
-
-/**
- * 显示替代操作选项
- * @param {string} url - 无法嵌入的URL
- */
-function showAlternativeOptions(url) {
-    const rightContent = document.querySelector('.right-content');
-    if (!rightContent) return;
-    
-    // 隐藏iframe
     const iframe = document.getElementById('content-iframe');
     if (iframe) {
-        iframe.style.display = 'none';
+        iframe.style.display = 'block';
+        iframe.removeAttribute('srcdoc');
+        iframe.srcdoc = '';
+        iframe.src = 'about:blank';
     }
-    
-    // 显示替代操作面板
-    const alternativePanel = document.createElement('div');
-    alternativePanel.className = 'iframe-alternative-panel';
-    alternativePanel.innerHTML = `
-        <div class="alternative-content">
-            <h3><i class="fas fa-exclamation-triangle"></i> 网页无法嵌入</h3>
-            <p>该网页设置了安全策略，不允许在iframe中显示。</p>
-            <p class="url-info"><strong>网址:</strong> ${url}</p>
-            
-            <div class="alternative-actions">
-                <button class="action-btn primary" onclick="openInNewWindow('${url}')">
-                    <i class="fas fa-external-link-alt"></i> 在新窗口打开
-                </button>
-                <button class="action-btn secondary" onclick="copyUrlToClipboard('${url}')">
-                    <i class="fas fa-copy"></i> 复制链接
-                </button>
-            </div>
-            
-            <div class="help-info">
-                <h4><i class="fas fa-info-circle"></i> 为什么无法嵌入？</h4>
-                <ul>
-                    <li>网站设置了 <code>X-Frame-Options</code> 安全策略</li>
-                    <li>网站使用了 <code>Content-Security-Policy</code> 限制</li>
-                    <li>网站域名在黑名单中（如百度、社交媒体等）</li>
-                </ul>
-            </div>
-        </div>
-        
-        <style>
-            .iframe-alternative-panel {
-                padding: 30px;
-                text-align: center;
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            }
-            
-            .alternative-content h3 {
-                color: #f39c12;
-                margin-bottom: 15px;
-                font-size: 1.3em;
-            }
-            
-            .alternative-content p {
-                color: #666;
-                margin: 10px 0;
-                line-height: 1.6;
-            }
-            
-            .url-info {
-                background: #f8f9fa;
-                padding: 10px;
-                border-radius: 5px;
-                margin: 15px 0;
-                word-break: break-all;
-                font-family: monospace;
-                font-size: 0.9em;
-            }
-            
-            .alternative-actions {
-                margin: 25px 0;
-                display: flex;
-                gap: 15px;
-                justify-content: center;
-                flex-wrap: wrap;
-            }
-            
-            .action-btn {
-                padding: 12px 20px;
-                border: none;
-                border-radius: 8px;
-                cursor: pointer;
-                font-size: 14px;
-                font-weight: 500;
-                transition: all 0.3s ease;
-                display: inline-flex;
-                align-items: center;
-                gap: 8px;
-            }
-            
-            .action-btn.primary {
-                background: #007bff;
-                color: white;
-            }
-            
-            .action-btn.primary:hover {
-                background: #0056b3;
-                transform: translateY(-2px);
-            }
-            
-            .action-btn.secondary {
-                background: #6c757d;
-                color: white;
-            }
-            
-            .action-btn.secondary:hover {
-                background: #545b62;
-                transform: translateY(-2px);
-            }
-            
-            .help-info {
-                margin-top: 30px;
-                text-align: left;
-                background: #f8f9fa;
-                padding: 20px;
-                border-radius: 8px;
-                border-left: 4px solid #007bff;
-            }
-            
-            .help-info h4 {
-                color: #495057;
-                margin-bottom: 10px;
-                font-size: 1.1em;
-            }
-            
-            .help-info ul {
-                margin: 0;
-                padding-left: 20px;
-                color: #666;
-            }
-            
-            .help-info li {
-                margin: 8px 0;
-                line-height: 1.5;
-            }
-            
-            .help-info code {
-                background: #e9ecef;
-                padding: 2px 6px;
-                border-radius: 3px;
-                font-family: 'Courier New', Courier, monospace;
-                font-size: 0.9em;
-            }
-        </style>
-    `;
-    
-    // 清空现有内容并添加替代面板
-    rightContent.innerHTML = '';
-    rightContent.appendChild(alternativePanel);
 }
 
 /**
@@ -3122,6 +3176,9 @@ async function copyUrlToClipboard(url) {
     }
 }
 
-// 将函数暴露到全局作用域
+// 将函数暴露到全局作用域（DAG 节点点击、工具栏卡片等依赖）
 window.openInNewWindow = openInNewWindow;
 window.copyUrlToClipboard = copyUrlToClipboard;
+window.showOpenClawStepInRightPanel = showOpenClawStepInRightPanel;
+window.showRightPanel = showRightPanel;
+window.showRightPanelForTool = showRightPanelForTool;
