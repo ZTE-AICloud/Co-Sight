@@ -24,6 +24,7 @@ from app.cosight.task.plan_report_manager import plan_report_event_manager
 from app.cosight.task.task_manager import TaskManager
 from app.cosight.tool.plan_toolkit import PlanToolkit
 from app.cosight.tool.terminate_toolkit import TerminateToolkit
+from app.cosight.tool.file_toolkit import FileToolkit
 
 
 class TaskPlannerAgent(BaseAgent):
@@ -31,8 +32,9 @@ class TaskPlannerAgent(BaseAgent):
         self.plan = TaskManager.get_plan(plan_id)
         plan_toolkit = PlanToolkit(self.plan)
         terminate_toolkit = TerminateToolkit()
+        file_toolkit = FileToolkit()
         all_functions = {"create_plan": plan_toolkit.create_plan, "update_plan": plan_toolkit.update_plan,
-                         "terminate": terminate_toolkit.terminate}
+                         "terminate": terminate_toolkit.terminate,"file_read": file_toolkit.file_read}  
         if functions:
             all_functions.update(functions)
         super().__init__(agent_instance, llm, all_functions)

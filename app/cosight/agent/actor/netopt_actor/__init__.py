@@ -13,7 +13,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from app.cosight.agent.actor.netopt_actor.agent import NetoptActorAgent
-from app.cosight.agent.actor.netopt_actor.instance import create_netopt_actor_instance
+from actor.netopt_actor import NetoptActorAgent, create_netopt_actor_instance
 
 __all__ = ["NetoptActorAgent", "create_netopt_actor_instance"]

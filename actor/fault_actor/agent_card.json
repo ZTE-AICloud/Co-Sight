@@ -1,0 +1,13 @@
+{"agent_id": "fault_actor",
+"agent_name": "故障分析专家",
+"agent_description": "专注于故障告警、日志与工单分析的专业助手，帮助快速定位根因并输出处置建议。",
+"agent_icon": "report-document-file-svgrepo-com.svg",
+"skills": [
+    {
+    "skill_id": "fault_root_cause_skill",
+    "skill_name": "故障根因分析",
+    "skill_description": "基于告警与日志进行故障根因定位"
+    }
+]
+}
+

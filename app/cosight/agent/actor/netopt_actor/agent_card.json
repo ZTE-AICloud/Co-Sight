@@ -1,0 +1,12 @@
+{"agent_id": "netopt_actor",
+"agent_name": "网优资料整理专家",
+"agent_description": "专注于网优资料整理与报告的专业助手",
+"agent_icon": "wifi-wireless-svgrepo-com.svg",
+"skills": [
+    {
+    "skill_id": "network_root_cause_skill",
+    "skill_name": "网络根因定位",
+    "skill_description": "定位网络根因"
+    }
+]
+}

@@ -13,45 +13,40 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import os
-
 from app.agent_dispatcher.infrastructure.entity.AgentInstance import AgentInstance
 from app.agent_dispatcher.infrastructure.entity.AgentTemplate import AgentTemplate
 from app.cosight.agent.actor.instance.actor_agent_skill import (
-    execute_code_skill,
     mark_step_skill,
     file_saver_skill,
     file_read_skill,
-    file_str_replace_skill,
-    file_find_in_content_skill,
     register_mcp_tools,
 )
 from app.cosight.agent.actor.instance.actor_agent_instance import load_search_skill
 
 
-def create_task_actor_template(template_name: str, work_space_path: str, extra_skills=None):
+def create_fault_actor_template(template_name: str, work_space_path: str, extra_skills=None):
     if extra_skills is None:
         extra_skills = []
     skills = [
-        execute_code_skill(work_space_path),
         mark_step_skill(),
         file_saver_skill(),
         file_read_skill(),
+        register_mcp_tools()
     ]
     skills.extend(extra_skills)
     template_content = {
         "template_name": template_name,
         "template_version": "v1",
         "agent_type": "actor_agent",
-        "display_name_zh": "任务执行专家",
-        "display_name_en": "Task Execution Expert",
-        "description_zh": "负责具体任务执行",
-        "description_en": "Responsible for task execution",
+        "display_name_zh": "故障分析专家",
+        "display_name_en": "Fault Analysis Expert",
+        "description_zh": "负责故障相关资料的归档、分析与根因定位",
+        "description_en": "Responsible for organizing and analyzing fault-related data and root cause identification",
         "profile": [],
         "service_name": "execution_service",
         "service_version": "v1",
-        "default_replay_zh": "任务执行专家",
-        "default_replay_en": "Task Execution Expert",
+        "default_replay_zh": "故障分析专家",
+        "default_replay_en": "Fault Analysis Expert",
         "icon": "",
         "skills": skills,
         "organizations": [],
@@ -64,22 +59,23 @@ def create_task_actor_template(template_name: str, work_space_path: str, extra_s
     return AgentTemplate(**template_content)
 
 
-def create_task_actor_instance(agent_instance_name: str, work_space_path: str, extra_skills=None):
+def create_fault_actor_instance(agent_instance_name: str, work_space_path: str, extra_skills=None):
     if extra_skills is None:
         extra_skills = []
     agent_params = {
         "instance_id": f"actor_{agent_instance_name}",
         "instance_name": f"Actor {agent_instance_name}",
-        "template_name": "actor_agent_template",
+        "template_name": "fault_actor_agent_template",
         "template_version": "v1",
-        "display_name_zh": "任务执行专家",
-        "display_name_en": "Task Execution Expert",
-        "description_zh": "专注于任务执行和操作的专业助手",
-        "description_en": "Specialized assistant for task execution and operations",
+        "display_name_zh": "故障分析专家",
+        "display_name_en": "Fault Analysis Expert",
+        "description_zh": "专注于故障分析与根因定位的专业助手",
+        "description_en": "Specialized assistant for fault analysis and root cause identification",
         "service_name": "execution_service",
         "service_version": "v1",
-        "template": create_task_actor_template(
-            "actor_agent_template", work_space_path, extra_skills
+        "template": create_fault_actor_template(
+            "fault_actor_agent_template", work_space_path, extra_skills
         ),
     }
     return AgentInstance(**agent_params)
+
