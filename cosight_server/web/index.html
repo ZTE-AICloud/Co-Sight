@@ -339,30 +339,45 @@
                         return 0;
                     });
 
+                    const agentAvatarMap = {
+                        'task_actor': '/cosight/images/report-document-file-svgrepo-com.svg',
+                        'task_act_actor': '/cosight/images/report-document-file-svgrepo-com.svg',
+                        'openclaw': '/cosight/images/openclaw.svg',
+                        'fault_actor': '/cosight/images/fault_agent.svg',
+                        'netopt_actor': '/cosight/images/wifi-wireless-svgrepo-com.svg'
+                    };
                     let matchedCount = 0;
                     listEl.innerHTML = sortedAgents.map(a => {
-                        const aid = (a && a.agent_name) ? String(a.agent_name) : (a && a.agent_id ? String(a.agent_id) : '');
+                        const agentId = (a && a.agent_id) ? String(a.agent_id) : '';
+                        const aid = (a && a.agent_name) ? String(a.agent_name) : agentId;
                         const adesc = a && a.agent_description ? String(a.agent_description) : '';
                         const askills = Array.isArray(a && a.skills) ? a.skills : [];
+                        const avatarSrc = agentAvatarMap[agentId];
+                        const avatarHtml = avatarSrc
+                            ? `<img class="agent-item-avatar" src="${escapeHtmlUnsafe(avatarSrc)}" alt="">`
+                            : '';
                         const skillsHtml = askills.map(sn => {
                             const key = getSkillName(sn);
                             const meta = skillMap.get(key);
                             if (meta) {
                                 matchedCount += 1;
-                                return `<div class="skill-item"><div class="skill-item-header"><span class="skill-item-label">技能</span><span class="skill-item-name">${escapeHtmlUnsafe(meta.name)}</span></div><div class="skill-item-desc">${escapeHtmlUnsafe(meta.description)}</div></div>`;
+                                return `<details class="skill-item skill-collapse"><summary class="skill-item-header"><span class="skill-item-label">技能</span><span class="skill-item-name">${escapeHtmlUnsafe(meta.name)}</span><span class="collapse-icon" aria-hidden="true"></span></summary><div class="skill-item-desc">${escapeHtmlUnsafe(meta.description)}</div></details>`;
                             }
-                            return `<div class="skill-item skill-item-missing"><div class="skill-item-header"><span class="skill-item-label">技能</span><span class="skill-item-name">${escapeHtmlUnsafe(key)}</span></div><div class="skill-item-desc">未找到对应技能（请确认 skills 目录/名称是否存在）</div></div>`;
+                            return `<details class="skill-item skill-item-missing skill-collapse"><summary class="skill-item-header"><span class="skill-item-label">技能</span><span class="skill-item-name">${escapeHtmlUnsafe(key)}</span><span class="collapse-icon" aria-hidden="true"></span></summary><div class="skill-item-desc">未找到对应技能（请确认 skills 目录/名称是否存在）</div></details>`;
                         }).join('');
 
                         return `
-                          <div class="agent-item">
-                            <div class="agent-item-header">
-                              <span class="agent-item-label">智能体</span>
+                          <details class="agent-item agent-collapse">
+                            <summary class="agent-item-header">
+                              ${avatarHtml}
                               <span class="agent-item-name">${escapeHtmlUnsafe(aid)}</span>
+                              <span class="collapse-icon" aria-hidden="true"></span>
+                            </summary>
+                            <div class="agent-item-body">
+                              ${adesc ? `<div class="agent-item-desc">${escapeHtmlUnsafe(adesc)}</div>` : ''}
+                              <div class="agent-item-skills">${skillsHtml || '<div class="skills-modal-status">该智能体未配置技能</div>'}</div>
                             </div>
-                            <div class="agent-item-desc">${escapeHtmlUnsafe(adesc)}</div>
-                            <div class="agent-item-skills">${skillsHtml || '<div class="skills-modal-status">该智能体未配置技能</div>'}</div>
-                          </div>
+                          </details>
                         `;
                     }).join('');
 

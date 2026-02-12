@@ -669,12 +669,33 @@ body {
   transition: transform 0.15s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
+/* 折叠图标：收起为右箭头，展开为下箭头 */
+.collapse-icon {
+  display: inline-block;
+  margin-left: auto;
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 6px solid rgba(17, 24, 39, 0.5);
+  transition: transform 0.2s ease;
+}
+details:not([open]) .collapse-icon {
+  transform: rotate(-90deg);
+}
+
 .skill-item-header {
   display: flex;
   align-items: baseline;
   gap: 6px;
-  margin-bottom: 6px;
+  margin-bottom: 0;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
 }
+.skill-item-header::-webkit-details-marker { display: none; }
+.skill-item-header::marker { display: none; }
+details[open] .skill-item-header { margin-bottom: 6px; }
 
 .skill-item-header .skill-item-label,
 .skill-item-header .skill-item-name {
@@ -730,18 +751,21 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 6px;
+  margin-bottom: 0;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
 }
+.agent-item-header::-webkit-details-marker { display: none; }
+.agent-item-header::marker { display: none; }
+.agent-collapse[open] .agent-item-header { margin-bottom: 8px; }
 
-.agent-item-label {
-  font-size: 11px;
-  font-weight: 600;
-  color: rgba(37, 99, 235, 0.9);
-  background: rgba(37, 99, 235, 0.08);
-  padding: 2px 8px;
+.agent-item-avatar {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
   border-radius: 6px;
-  white-space: nowrap;
-  border: 1px solid rgba(37, 99, 235, 0.2);
+  flex-shrink: 0;
 }
 
 .agent-item-name {
@@ -749,6 +773,10 @@ body {
   color: #2563eb;
   font-size: 15px;
   letter-spacing: 0.4px;
+}
+
+.agent-item-body {
+  padding-top: 0;
 }
 
 .agent-item-desc {
