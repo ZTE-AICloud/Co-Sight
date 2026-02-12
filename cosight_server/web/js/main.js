@@ -617,7 +617,298 @@ function normalizeFilePathForFrontend(originalPath) {
 
 // 从原始绝对路径构造 API 工作区路径：/api/nae-deep-research/v1/work_space/...
 function buildApiWorkspacePath(originalPath) {
+     if (!originalPath || typeof originalPath !== 'string') return originalPath;
+
+    // 若已是完整URL或已是API路径，直接返回
+    if (/^https?:\/\//i.test(originalPath)) return originalPath;
+    if (originalPath.startsWith('/api/')) return originalPath;
+
+    // 统一分隔符
+    const p = originalPath.replace(/\\/g, '/');
+
+    // work_space: 支持 "work_space/xxx" 或 "/.../work_space/xxx"
+    if (p.startsWith('work_space/')) {
+        return `/api/nae-deep-research/v1/${p}`;
+    }
+    const wsIdx = p.indexOf('/work_space/');
+    if (wsIdx !== -1) {
+        const rel = p.substring(wsIdx + 1); // "work_space/..."
+        return `/api/nae-deep-research/v1/${rel}`;
+    }
+
+    // skills: 支持 "skills/xxx" 或 "/.../skills/xxx"
+    if (p.startsWith('skills/')) {
+        return `/api/nae-deep-research/v1/${p}`;
+    }
+    const skillsIdx = p.indexOf('/skills/');
+    if (skillsIdx !== -1) {
+        const rel = p.substring(skillsIdx + 1); // "skills/..."
+        return `/api/nae-deep-research/v1/${rel}`;
+    }
+
+    // 其它情况保持原样，避免影响既有逻辑
     return originalPath;
+}
+
+// ==================== Skills Modal（只读展示） ====================
+let _skillsLoadedOnce = false;
+
+function openSkillsModal() {
+    const modal = document.getElementById('skills-modal');
+    if (!modal) return;
+    modal.style.display = 'block';
+    // 先 display 再下一帧加 class，确保过渡动画生效
+    requestAnimationFrame(() => {
+        modal.classList.add('is-open');
+    });
+
+    // 首次打开时加载一次
+    if (!_skillsLoadedOnce) {
+        _skillsLoadedOnce = true;
+        loadAgentTeam();
+    }
+}
+
+function closeSkillsModal() {
+    const modal = document.getElementById('skills-modal');
+    if (!modal) return;
+    modal.classList.remove('is-open');
+    // 等动画结束再隐藏，避免突兀（用 transitionend 更稳）
+    const content = modal.querySelector('.skills-modal-content');
+    if (!content) {
+        modal.style.display = 'none';
+        return;
+    }
+    const onEnd = (e) => {
+        if (e && e.target !== content) return;
+        content.removeEventListener('transitionend', onEnd);
+        // 只有在关闭状态才隐藏
+        if (!modal.classList.contains('is-open')) {
+            modal.style.display = 'none';
+        }
+    };
+    content.addEventListener('transitionend', onEnd);
+    // 兜底：如果浏览器不触发 transitionend
+    setTimeout(() => onEnd({ target: content }), 500);
+}
+
+async function fetchSkillsCatalog() {
+    const resp = await fetch('/api/nae-deep-research/v1/deep-research/skills', {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' }
+    });
+    if (!resp.ok) {
+        throw new Error(`HTTP ${resp.status}`);
+    }
+    const json = await resp.json();
+    const data = json && json.data ? json.data : {};
+    const skills = Array.isArray(data.skills) ? data.skills : [];
+    // 统一为 {name, description}
+    return skills.map(s => ({
+        name: (s && s.name) ? String(s.name) : '',
+        description: (s && s.description) ? String(s.description) : '',
+    })).filter(s => !!s.name);
+}
+
+function buildSkillsMap(skillsCatalog) {
+    const map = new Map();
+    (Array.isArray(skillsCatalog) ? skillsCatalog : []).forEach(s => {
+        if (!s || !s.name) return;
+        map.set(String(s.name), {
+            name: String(s.name),
+            description: s.description ? String(s.description) : '',
+        });
+    });
+    return map;
+}
+
+async function fetchAgents() {
+    const resp = await fetch('/api/nae-deep-research/v1/deep-research/agents', {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' }
+    });
+    if (!resp.ok) {
+        throw new Error(`HTTP ${resp.status}`);
+    }
+    const json = await resp.json();
+    const data = json && json.data ? json.data : {};
+    return Array.isArray(data.agents) ? data.agents : [];
+}
+
+async function loadAgentTeam() {
+    const statusEl = document.getElementById('skills-modal-status');
+    const listEl = document.getElementById('skills-list');
+    if (!statusEl || !listEl) return;
+
+    statusEl.textContent = '加载中...';
+    listEl.innerHTML = '';
+
+    try {
+        const [skillsCatalog, agents] = await Promise.all([fetchSkillsCatalog(), fetchAgents()]);
+        const skillMap = buildSkillsMap(skillsCatalog);
+
+        if (!agents || agents.length === 0) {
+            statusEl.textContent = '共 0 个 Agent';
+            listEl.innerHTML = '<div class="skills-modal-status">未发现 Agent（请确认 actor 目录下存在 agent_card.json）</div>';
+            return;
+        }
+
+        function getSkillName(sn) {
+            if (sn == null) return '';
+            if (typeof sn === 'string') return String(sn).trim();
+            if (typeof sn === 'object' && sn !== null) {
+                return String(sn.skill_name || sn.name || sn.skill_id || '').trim();
+            }
+            return '';
+        }
+
+        const allSkillNames = (skillsCatalog || []).map(s => (s && s.name) ? String(s.name) : '').filter(Boolean);
+        const usedByOthers = new Set();
+        agents.forEach(a => {
+            if (!a || !a.agent_id) return;
+            const id = String(a.agent_id);
+            if (id === 'task_actor' || id === 'task_act_actor') return;
+            (Array.isArray(a.skills) ? a.skills : []).forEach(sn => {
+                const name = getSkillName(sn);
+                if (name) usedByOthers.add(name);
+            });
+        });
+        const remainingSkills = allSkillNames.filter(n => !usedByOthers.has(n));
+
+        const processedAgents = agents.map(a => {
+            const aid = (a && a.agent_id) ? String(a.agent_id) : '';
+            if (aid === 'task_actor' || aid === 'task_act_actor') {
+                return { ...a, skills: remainingSkills };
+            }
+            const normalizedSkills = (Array.isArray(a.skills) ? a.skills : []).map(sn => getSkillName(sn)).filter(Boolean);
+            return { ...a, skills: normalizedSkills };
+        });
+
+        const agentOrder = ['task_actor', 'task_act_actor', 'openclaw', 'fault_actor', 'netopt_actor'];
+        const sortedAgents = [...processedAgents].sort((a, b) => {
+            const ai = agentOrder.indexOf((a && a.agent_id) ? String(a.agent_id) : '');
+            const bi = agentOrder.indexOf((b && b.agent_id) ? String(b.agent_id) : '');
+            if (ai >= 0 && bi >= 0) return ai - bi;
+            if (ai >= 0) return -1;
+            if (bi >= 0) return 1;
+            return 0;
+        });
+
+        let matchedCount = 0;
+        listEl.innerHTML = sortedAgents.map(a => {
+            const aid = (a && a.agent_name) ? String(a.agent_name) : (a && a.agent_id ? String(a.agent_id) : '');
+            const adesc = a && a.agent_description ? String(a.agent_description) : '';
+            const askills = Array.isArray(a && a.skills) ? a.skills : [];
+
+            const skillsHtml = askills.map(sn => {
+                const key = getSkillName(sn);
+                const meta = skillMap.get(key);
+                if (meta) {
+                    matchedCount += 1;
+                    return `
+                        <div class="skill-item">
+                            <div class="skill-item-header">
+                                <span class="skill-item-label">技能</span>
+                                <span class="skill-item-name">${escapeHtml(meta.name)}</span>
+                            </div>
+                            <div class="skill-item-desc">${escapeHtml(meta.description)}</div>
+                        </div>
+                    `;
+                }
+                return `
+                    <div class="skill-item skill-item-missing">
+                        <div class="skill-item-header">
+                            <span class="skill-item-label">技能</span>
+                            <span class="skill-item-name">${escapeHtml(key)}</span>
+                        </div>
+                        <div class="skill-item-desc">未找到对应技能（请确认 skills 目录/名称是否存在）</div>
+                    </div>
+                `;
+            }).join('');
+
+            return `
+                <div class="agent-item">
+                    <div class="agent-item-header">
+                        <span class="agent-item-label">智能体</span>
+                        <span class="agent-item-name">${escapeHtml(aid)}</span>
+                    </div>
+                    <div class="agent-item-desc">${escapeHtml(adesc)}</div>
+                    <div class="agent-item-skills">
+                        ${skillsHtml || '<div class="skills-modal-status">该智能体未配置技能</div>'}
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        statusEl.textContent = `共 ${sortedAgents.length} 个 Agent，已匹配 ${matchedCount} 个技能`;
+    } catch (e) {
+        console.warn('加载 Agent Team 失败:', e);
+        statusEl.textContent = '加载失败';
+        listEl.innerHTML = `<div class="skills-modal-status">无法加载 Agent Team：${escapeHtml(String(e))}</div>`;
+    }
+}
+
+async function importSkillZip(file) {
+    const statusEl = document.getElementById('skills-modal-status');
+    if (statusEl) {
+        statusEl.textContent = '正在导入...';
+        statusEl.className = 'skills-modal-status';
+    }
+
+    const fd = new FormData();
+    fd.append('file', file);
+
+    const resp = await fetch('/api/nae-deep-research/v1/deep-research/skills/import', {
+        method: 'POST',
+        body: fd
+    });
+    const json = await resp.json().catch(() => ({}));
+    if (!resp.ok || !json || json.code !== 0) {
+        const msg = (json && (json.msg || json.message)) ? (json.msg || json.message) : `导入失败 (HTTP ${resp.status})`;
+        throw new Error(msg);
+    }
+    return json;
+}
+
+function initSkillsImportUI() {
+    const btn = document.getElementById('skills-import-btn');
+    const input = document.getElementById('skills-import-file');
+    if (!btn || !input) return;
+
+    btn.addEventListener('click', () => input.click());
+    input.addEventListener('change', async () => {
+        const file = input.files && input.files[0];
+        // reset input so selecting same file triggers change again
+        input.value = '';
+        if (!file) return;
+
+        const name = (file.name || '').toLowerCase();
+        if (!name.endsWith('.zip')) {
+            alert('只支持 .zip 格式的压缩包');
+            return;
+        }
+
+        try {
+            await importSkillZip(file);
+            await loadAgentTeam();
+            alert('导入成功');
+        } catch (e) {
+            alert(`导入失败：${e && e.message ? e.message : String(e)}`);
+        }
+    });
+}
+
+// DOM就绪后初始化导入入口
+document.addEventListener('DOMContentLoaded', () => {
+    initSkillsImportUI();
+});
+
+// 将 Skills 弹窗函数显式挂到 window，确保 inline onclick 可用
+try {
+    window.openSkillsModal = openSkillsModal;
+    window.closeSkillsModal = closeSkillsModal;
+} catch (e) {
+    // ignore
 }
 
 // 提取文件名（兼容 \ 与 /）
@@ -2207,6 +2498,8 @@ function showRightPanelForTool(toolCall) {
                 relativePath = relativePath.substring(workspaceIndex);
             }
         }
+        // 统一将 work_space/skills 的本地绝对路径映射为后端可访问的 API 路径
+        relativePath = buildApiWorkspacePath(relativePath);
 
         if (ext === 'html' || ext === 'htm') {
             // 项目外路径（无 work_space）：通过 read-file API 取内容再用 srcdoc 显示，避免 iframe.src 导致 404
@@ -2300,9 +2593,7 @@ function showRightPanelForTool(toolCall) {
                 statusElement.textContent = generateStatusText(tool, url, path);
                 statusElement.className = 'loading';
             }
-
-            loadMarkdownFile(path, tool);
-            console.log('显示文件内容:', path);
+        loadMarkdownFile(relativePath, tool);
         }
     } else {
         // 该工具无 URL/路径可预览时，仍更新电脑区状态与占位内容，保证点击有反馈
@@ -2465,6 +2756,63 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
+function isImageExtension(ext) {
+    if (!ext) return false;
+    const e = String(ext).toLowerCase();
+    return ['gif', 'png', 'jpg', 'jpeg', 'webp', 'bmp', 'svg'].includes(e);
+}
+
+function renderImagePreview(originalFilePath, relativePath, tool) {
+    const markdownContent = document.getElementById('markdown-content');
+    const statusElement = document.getElementById('right-container-status');
+    const iframe = document.getElementById('content-iframe');
+
+    if (iframe) iframe.style.display = 'none';
+    if (markdownContent) markdownContent.style.display = 'block';
+
+    if (statusElement) {
+        statusElement.textContent = generateStatusText(tool, null, originalFilePath);
+        statusElement.className = 'loading';
+    }
+
+    const safeSrc = escapeHtml(relativePath);
+    if (markdownContent) {
+        markdownContent.innerHTML = `
+            <div style="padding: 10px;">
+                <div style="color: rgba(0,0,0,0.65); font-size: 13px; margin-bottom: 10px;">
+                    图片预览：${escapeHtml(originalFilePath)}
+                </div>
+                <div style="display:flex; justify-content:center; align-items:center;">
+                    <img id="cosight-image-preview" src="${safeSrc}" alt="image"
+                         style="max-width: 100%; max-height: calc(100vh - 220px); border-radius: 10px; border: 1px solid rgba(0,0,0,0.08); background:#fff;" />
+                </div>
+            </div>
+        `;
+    }
+
+    // 监听加载成功/失败，更新状态栏
+    try {
+        const img = document.getElementById('cosight-image-preview');
+        if (img) {
+            img.onload = () => {
+                if (statusElement) {
+                    statusElement.textContent = generateStatusText(tool, null, originalFilePath);
+                    statusElement.className = 'success';
+                }
+            };
+            img.onerror = () => {
+                if (statusElement) {
+                    statusElement.textContent = `图片加载失败: ${originalFilePath}`;
+                    statusElement.className = 'error';
+                }
+            };
+        }
+    } catch (e) {
+        // ignore
+    }
+}
+
+
 // 加载并显示markdown文件
 function loadMarkdownFile(filePath, tool) {
     const markdownContent = document.getElementById('markdown-content');
@@ -2504,8 +2852,18 @@ function loadMarkdownFile(filePath, tool) {
         useApiEndpoint = true;
     }
 
+    // skills/work_space 统一走 API 路径，避免请求到 /home/... 或 /cosight/work_space...
+    relativePath = buildApiWorkspacePath(relativePath);
+
     console.log('尝试加载文件:', relativePath, '使用API端点:', useApiEndpoint);
 
+    // 图片文件：不要按文本读取，直接预览
+    const fileNameForExt = filePath.split('/').pop() || filePath.split('\\').pop() || '';
+    const extForExt = (fileNameForExt.split('.').pop() || '').toLowerCase();
+    if (isImageExtension(extForExt)) {
+        renderImagePreview(filePath, relativePath, tool);
+        return;
+    }
     // 根据文件路径类型选择不同的加载方式
     let fetchPromise;
     if (useApiEndpoint) {

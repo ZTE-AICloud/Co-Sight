@@ -19,7 +19,7 @@ from app.cosight.agent.actor.instance.actor_agent_skill import (
     mark_step_skill,
     file_saver_skill,
     file_read_skill,
-    register_mcp_tools,
+    register_mcp_tools, skill, run_terminal_cmd_skill,
 )
 from app.cosight.agent.actor.instance.actor_agent_instance import load_search_skill
 
@@ -31,7 +31,8 @@ def create_fault_actor_template(template_name: str, work_space_path: str, extra_
         mark_step_skill(),
         file_saver_skill(),
         file_read_skill(),
-        register_mcp_tools()
+        skill(),
+        run_terminal_cmd_skill(),
     ]
     skills.extend(extra_skills)
     template_content = {

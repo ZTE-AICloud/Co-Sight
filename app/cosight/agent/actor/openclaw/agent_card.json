@@ -1,0 +1,7 @@
+{"agent_id": "openclaw",
+"agent_name": "openclaw",
+"agent_description": "执行 Shell 指令、读写文件，设置定时任务、长期后台运行，接入通用通信平台",
+"agent_icon": "",
+"skills": []
+}
+

@@ -18,6 +18,8 @@
 from typing import Dict, Any
 
 from app.cosight.tool.act_toolkit import ActToolkit
+from app.cosight.tool.agent_skills.run_terminal_cmd import run_terminal_cmd
+from app.cosight.tool.agent_skills.skill_skill import skill_skill
 from app.cosight.tool.file_toolkit import FileToolkit
 from app.cosight.tool.document_processing_toolkit import DocumentProcessingToolkit
 from app.cosight.tool.search_toolkit import SearchToolkit
@@ -27,8 +29,6 @@ from app.cosight.tool.html_visualization_toolkit import HtmlVisualizationToolkit
 def build_energy_actor_functions(
     plan,
     work_space_path: str,
-    tool_llm,
-    question_ref: list,
 ) -> Dict[str, Any]:
     act_toolkit = ActToolkit(plan)
     file_toolkit = FileToolkit(work_space_path)
@@ -36,6 +36,8 @@ def build_energy_actor_functions(
         "mark_step": act_toolkit.mark_step,
         "file_read": file_toolkit.file_read,
         "file_saver": file_toolkit.file_saver,
+        "skill": skill_skill,
+        "run_terminal_cmd": run_terminal_cmd,
     }
     return all_functions
 

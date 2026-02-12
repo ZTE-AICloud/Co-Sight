@@ -89,8 +89,6 @@ class NetoptActorAgent(BaseAgent):
         all_functions = build_netopt_actor_functions(
             self.plan,
             self.work_space_path,
-            tool_llm,
-            self._question_ref,
         )
         if functions:
             all_functions.update(functions)

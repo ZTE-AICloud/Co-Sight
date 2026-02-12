@@ -18,6 +18,8 @@
 from typing import Dict, Any
 
 from app.cosight.tool.act_toolkit import ActToolkit
+from app.cosight.tool.agent_skills.run_terminal_cmd import run_terminal_cmd
+from app.cosight.tool.agent_skills.skill_skill import skill_skill
 from app.cosight.tool.file_toolkit import FileToolkit
 from app.cosight.tool.document_processing_toolkit import DocumentProcessingToolkit
 from app.cosight.tool.search_toolkit import SearchToolkit
@@ -27,33 +29,15 @@ from app.cosight.tool.html_visualization_toolkit import HtmlVisualizationToolkit
 def build_fault_actor_functions(
     plan,
     work_space_path: str,
-    tool_llm,
-    question_ref: list,
 ) -> Dict[str, Any]:
     act_toolkit = ActToolkit(plan)
     file_toolkit = FileToolkit(work_space_path)
-    doc_toolkit = DocumentProcessingToolkit()
-    search_toolkit = SearchToolkit()
-    html_toolkit = HtmlVisualizationToolkit(
-        workspace_path=work_space_path, tool_llm=tool_llm
-    )
     all_functions = {
         "mark_step": act_toolkit.mark_step,
         "file_read": file_toolkit.file_read,
         "file_saver": file_toolkit.file_saver,
-        "file_find_in_content": file_toolkit.file_find_in_content,
-        "file_str_replace": file_toolkit.file_str_replace,
-        "extract_document_content": doc_toolkit.extract_document_content,
-        "search_google": search_toolkit.search_google,
-        "search_wiki": search_toolkit.search_wiki,
-        "tavily_search": search_toolkit.tavily_search,
-        "create_html_report": lambda title=None, include_charts=True, chart_types=None, output_filename=None: html_toolkit.create_html_report(
-            title=title,
-            include_charts=include_charts,
-            chart_types=chart_types or ["all"],
-            output_filename=output_filename,
-            user_query=question_ref[0] if question_ref else None,
-        ),
+        "skill": skill_skill,
+        "run_terminal_cmd": run_terminal_cmd,
     }
     return all_functions
 

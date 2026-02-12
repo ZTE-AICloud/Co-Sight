@@ -113,4 +113,23 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // 页面卸载时清理
     window.addEventListener('beforeunload', cleanupWebSocket);
+
+    // Skills 按钮点击兜底绑定（避免 inline onclick 受作用域影响）
+    const skillsBtn = document.getElementById('btn-skills');
+    if (skillsBtn) {
+        skillsBtn.addEventListener('click', function (e) {
+            if (typeof window.openSkillsModal === 'function') {
+                window.openSkillsModal();
+            }
+        });
+    }
+
+    // Skills 弹窗：ESC 关闭（不影响现有 ESC 逻辑）
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+            if (typeof closeSkillsModal === 'function') {
+                closeSkillsModal();
+            }
+        }
+    });
 });

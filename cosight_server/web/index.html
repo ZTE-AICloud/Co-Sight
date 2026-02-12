@@ -26,9 +26,15 @@
     <div class="container">
         <div class="header">
             <h1><i class="fas fa-robot"></i> Co-Sight 超级智能体</h1>
-            <button class="btn-replay-history" onclick="goToReplayHistory()" title="查看历史回放">
-                <i class="fas fa-history"></i>
-            </button>
+            <div class="header-right-actions">
+                <button class="btn-replay-history" onclick="goToReplayHistory()" title="查看历史回放">
+                    <i class="fas fa-history"></i>
+                </button>
+                <button id="btn-skills" class="btn-skills" onclick="window.openSkillsModal && window.openSkillsModal()" title="查看Agent Team">
+                    <i class="fas fa-robot"></i>
+                    <span class="btn-skills-text">Agent Team</span>
+                </button>
+            </div>
             <!-- <p>DAG流程展示与进度跟踪</p> -->
         </div>
 
@@ -193,6 +199,32 @@
         <div id="tool-call-panels-container">
             <!-- 工具调用面板将动态创建并添加到这里 -->
         </div>
+
+        <!-- Agent Team 弹窗（复用原 Skills 弹窗结构） -->
+        <div id="skills-modal" class="skills-modal" style="display:none;">
+            <div class="skills-modal-backdrop" onclick="window.closeSkillsModal && window.closeSkillsModal()"></div>
+            <div class="skills-modal-content">
+                <div class="skills-modal-header">
+                    <div class="skills-modal-title"><i class="fas fa-robot"></i> Agent Team</div>
+                    <button class="skills-modal-close" onclick="window.closeSkillsModal && window.closeSkillsModal()" title="关闭">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="skills-modal-body">
+                    <div class="skills-modal-toolbar">
+                        <div id="skills-modal-status" class="skills-modal-status">加载中...</div>
+                        <div class="skills-modal-actions">
+                            <input id="skills-import-file" type="file" accept=".zip" style="display:none;" />
+                            <button id="skills-import-btn" class="skills-import-btn" type="button" data-tooltip="导入通用智能体 skill · 仅支持 .zip">
+                                <i class="fas fa-file-import"></i>
+                                <span>Import</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="skills-list" class="skills-list"></div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="tooltip" id="tooltip"></div>
@@ -211,6 +243,167 @@
 
     <script src="js/init.js"></script>
     <script src="js/replay-init.js"></script>
+        <script>
+        // Agent Team 弹窗兜底：若 main.js 未正确挂载 window.openSkillsModal，则在这里提供最简实现
+        (function ensureSkillsModal() {
+            if (typeof window.openSkillsModal === 'function' && typeof window.closeSkillsModal === 'function') {
+                return;
+            }
+
+            async function fetchAgentsFallback() {
+                const resp = await fetch('/api/nae-deep-research/v1/deep-research/agents', { method: 'GET', headers: { 'Accept': 'application/json' } });
+                if (!resp.ok) return [];
+                const json = await resp.json();
+                const data = json && json.data ? json.data : {};
+                return Array.isArray(data.agents) ? data.agents : [];
+            }
+
+            function escapeHtmlUnsafe(str) {
+                return String(str || '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+            }
+
+            async function loadAgentTeamFallback() {
+                const statusEl = document.getElementById('skills-modal-status');
+                const listEl = document.getElementById('skills-list');
+                if (!statusEl || !listEl) return;
+                statusEl.textContent = '加载中...';
+                listEl.innerHTML = '';
+                try {
+                    const [skillsResp, agents] = await Promise.all([
+                        fetch('/api/nae-deep-research/v1/deep-research/skills', { method: 'GET', headers: { 'Accept': 'application/json' } }),
+                        fetchAgentsFallback()
+                    ]);
+                    const skillsJson = await skillsResp.json();
+                    const skillsData = skillsJson && skillsJson.data ? skillsJson.data : {};
+                    const skills = Array.isArray(skillsData.skills) ? skillsData.skills : [];
+
+                    const skillMap = new Map();
+                    skills.forEach(s => {
+                        const name = (s && s.name) ? String(s.name) : '';
+                        if (!name) return;
+                        skillMap.set(name, {
+                            name,
+                            description: (s && s.description) ? String(s.description) : '',
+                        });
+                    });
+
+                    if (!agents || agents.length === 0) {
+                        statusEl.textContent = '共 0 个 Agent';
+                        listEl.innerHTML = '<div class="skills-modal-status">未发现 Agent（请确认 actor 目录下存在 agent_card.json）</div>';
+                        return;
+                    }
+
+                    function getSkillName(sn) {
+                        if (sn == null) return '';
+                        if (typeof sn === 'string') return String(sn).trim();
+                        if (typeof sn === 'object' && sn !== null) {
+                            return String(sn.skill_name || sn.name || sn.skill_id || '').trim();
+                        }
+                        return '';
+                    }
+
+                    const allSkillNames = skills.map(s => (s && s.name) ? String(s.name) : '').filter(Boolean);
+                    const usedByOthers = new Set();
+                    agents.forEach(a => {
+                        if (!a || !a.agent_id) return;
+                        const id = String(a.agent_id);
+                        if (id === 'task_actor' || id === 'task_act_actor') return;
+                        (Array.isArray(a.skills) ? a.skills : []).forEach(sn => {
+                            const name = getSkillName(sn);
+                            if (name) usedByOthers.add(name);
+                        });
+                    });
+                    const remainingSkills = allSkillNames.filter(n => !usedByOthers.has(n));
+
+                    const processedAgents = agents.map(a => {
+                        const aid = (a && a.agent_id) ? String(a.agent_id) : '';
+                        if (aid === 'task_actor' || aid === 'task_act_actor') {
+                            return { ...a, skills: remainingSkills };
+                        }
+                        const normalizedSkills = (Array.isArray(a.skills) ? a.skills : []).map(sn => getSkillName(sn)).filter(Boolean);
+                        return { ...a, skills: normalizedSkills };
+                    });
+
+                    const agentOrder = ['task_actor', 'task_act_actor', 'openclaw', 'fault_actor', 'netopt_actor'];
+                    const sortedAgents = [...processedAgents].sort((a, b) => {
+                        const ai = agentOrder.indexOf((a && a.agent_id) ? String(a.agent_id) : '');
+                        const bi = agentOrder.indexOf((b && b.agent_id) ? String(b.agent_id) : '');
+                        if (ai >= 0 && bi >= 0) return ai - bi;
+                        if (ai >= 0) return -1;
+                        if (bi >= 0) return 1;
+                        return 0;
+                    });
+
+                    let matchedCount = 0;
+                    listEl.innerHTML = sortedAgents.map(a => {
+                        const aid = (a && a.agent_name) ? String(a.agent_name) : (a && a.agent_id ? String(a.agent_id) : '');
+                        const adesc = a && a.agent_description ? String(a.agent_description) : '';
+                        const askills = Array.isArray(a && a.skills) ? a.skills : [];
+                        const skillsHtml = askills.map(sn => {
+                            const key = getSkillName(sn);
+                            const meta = skillMap.get(key);
+                            if (meta) {
+                                matchedCount += 1;
+                                return `<div class="skill-item"><div class="skill-item-header"><span class="skill-item-label">技能</span><span class="skill-item-name">${escapeHtmlUnsafe(meta.name)}</span></div><div class="skill-item-desc">${escapeHtmlUnsafe(meta.description)}</div></div>`;
+                            }
+                            return `<div class="skill-item skill-item-missing"><div class="skill-item-header"><span class="skill-item-label">技能</span><span class="skill-item-name">${escapeHtmlUnsafe(key)}</span></div><div class="skill-item-desc">未找到对应技能（请确认 skills 目录/名称是否存在）</div></div>`;
+                        }).join('');
+
+                        return `
+                          <div class="agent-item">
+                            <div class="agent-item-header">
+                              <span class="agent-item-label">智能体</span>
+                              <span class="agent-item-name">${escapeHtmlUnsafe(aid)}</span>
+                            </div>
+                            <div class="agent-item-desc">${escapeHtmlUnsafe(adesc)}</div>
+                            <div class="agent-item-skills">${skillsHtml || '<div class="skills-modal-status">该智能体未配置技能</div>'}</div>
+                          </div>
+                        `;
+                    }).join('');
+
+                    // 追加匹配统计（不覆盖前面的 Agent 数）
+                    statusEl.textContent = `共 ${sortedAgents.length} 个 Agent，已匹配 ${matchedCount} 个技能`;
+                } catch (e) {
+                    const statusEl2 = document.getElementById('skills-modal-status');
+                    if (statusEl2) statusEl2.textContent = '加载失败';
+                }
+            }
+
+            window.openSkillsModal = function () {
+                const modal = document.getElementById('skills-modal');
+                if (!modal) return;
+                modal.style.display = 'block';
+                requestAnimationFrame(() => {
+                    modal.classList.add('is-open');
+                });
+                loadAgentTeamFallback();
+            };
+            window.closeSkillsModal = function () {
+                const modal = document.getElementById('skills-modal');
+                if (!modal) return;
+                modal.classList.remove('is-open');
+                const content = modal.querySelector('.skills-modal-content');
+                if (!content) {
+                    modal.style.display = 'none';
+                    return;
+                }
+                const onEnd = (e) => {
+                    if (e && e.target !== content) return;
+                    content.removeEventListener('transitionend', onEnd);
+                    if (!modal.classList.contains('is-open')) {
+                        modal.style.display = 'none';
+                    }
+                };
+                content.addEventListener('transitionend', onEnd);
+                setTimeout(() => onEnd({ target: content }), 500);
+            };
+        })();
+    </script>
     <script>
         // 跳转到回放历史页面
         function goToReplayHistory() {

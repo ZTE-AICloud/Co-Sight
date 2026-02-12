@@ -778,3 +778,97 @@ def fetch_website_images_only_skill():
         )
     }
 
+
+def skill():
+    """
+    通用 skill 执行技能：
+    - 用于在主对话中执行指定名称的外部 Skill（如 /commit, /review-pr, /pdf 等）
+    """
+    return {
+        'skill_name': 'skill',
+        'skill_type': "function",
+        'display_name_zh': 'skill',
+        'display_name_en': 'skill',
+        'description_zh': (
+            '在主对话中执行一个已配置的外部 skill。'
+            '参数 skill 为要调用的技能名称（如 "commit"、"review-pr"、"pdf" 等），'
+            '可选参数 b 为传递给该技能的额外参数字符串。'
+        ),
+        'description_en': (
+            'Execute a configured external skill within the main conversation. '
+            'The "skill" parameter is the skill name (e.g., "commit", "review-pr", "pdf"), '
+            'and optional parameter "b" contains additional arguments for the skill.'
+        ),
+        'function': SkillFunction(
+            id='ccceb850-b30f-42c3-a81f-4dcc327ef222',
+            name='tools.skill',
+            description_zh='调用指定名称的外部 skill，并可传入可选参数字符串。',
+            description_en='Invoke an external skill by name with optional argument string.',
+            parameters={
+                "type": "object",
+                "properties": {
+                    "skill": {
+                        "type": "string",
+                        "description_zh": "要调用的 Skill 名称，例如：\"commit\"、\"review-pr\"、\"pdf\"",
+                        "description_en": "The skill name, e.g., \"commit\", \"review-pr\", or \"pdf\""
+                    },
+                    "args": {
+                        "type": "string",
+                        "description_zh": "传递给该 Skill 的可选参数字符串",
+                        "description_en": "Optional argument string for the skill"
+                    }
+                },
+                "required": ["skill"]
+            }
+        )
+    }
+
+
+def run_terminal_cmd_skill():
+    """
+    终端命令执行技能：
+    - 用于代表用户在终端中执行命令
+    """
+    return {
+        'skill_name': 'run_terminal_cmd',
+        'skill_type': 'function',
+        'display_name_zh': 'run_terminal_cmd',
+        'display_name_en': 'run_terminal_cmd',
+        'description_zh': (
+            '代表用户在终端中执行命令。'
+            '注意：你有能力在用户系统上真实执行命令，需要谨慎使用，'
+            '并假设执行过程为非交互式（例如需要自动加上 --yes 等参数）。'
+        ),
+        'description_en': (
+            'Propose a command to run on behalf of the user. '
+            'You DO have the ability to run commands directly on the user\'s system, '
+            'so use this carefully and assume non-interactive execution (e.g. add --yes when needed).'
+        ),
+        'function': SkillFunction(
+            id='ccceb850-b30f-42c3-a81f-4dcc327ef223',
+            name='tools.run_terminal_cmd',
+            description_zh='在终端中执行给定的命令，可选择是否后台运行，并说明原因。',
+            description_en='Execute the given terminal command, optionally in background, with an explanation.',
+            parameters={
+                "type": "object",
+                "properties": {
+                    "command": {
+                        "type": "string",
+                        "description_zh": "要执行的终端命令",
+                        "description_en": "The terminal command to execute"
+                    },
+                    "is_background": {
+                        "type": "string",
+                        "description_zh": "是否在后台运行该命令",
+                        "description_en": "Whether the command should be run in the background"
+                    },
+                    "explanation": {
+                        "type": "string",
+                        "description_zh": "一句话说明为什么需要执行该命令，以及它如何帮助完成当前目标",
+                        "description_en": "One sentence explaining why this command needs to be run and how it contributes to the goal."
+                    }
+                },
+                "required": ["command"]
+            }
+        )
+    }
