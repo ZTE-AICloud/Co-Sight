@@ -15,6 +15,7 @@
 
 from app.agent_dispatcher.infrastructure.entity.AgentInstance import AgentInstance
 from app.agent_dispatcher.infrastructure.entity.AgentTemplate import AgentTemplate
+from app.cosight.agent.actor.instance.actor_agent_skill import file_read_skill
 from app.cosight.agent.base.common_skill import terminate_skill
 from app.cosight.agent.planner.instance.planner_agent_skill import create_plan_skill, update_plan_skill
 
@@ -51,7 +52,7 @@ def create_planner_template(template_name):
         'default_replay_zh': '任务规划专家',
         'default_replay_en': 'Task Planning Expert',
         "icon": "",
-        'skills': [create_plan_skill(), update_plan_skill(), terminate_skill()],
+        'skills': [create_plan_skill(), update_plan_skill(), terminate_skill(), file_read_skill()],
         "organizations": [],
         'knowledge': [],
         'max_iteration': 20,
