@@ -26,9 +26,7 @@ from typing import Callable, Optional
 from app.cosight.agent.actor import (
     OpenclawAgent,
     TaskActorAgent,
-    NetoptActorAgent,
     create_task_actor_instance,
-    create_netopt_actor_instance,
     create_openclaw_instance,
 )
 from app.cosight.agent.actor.intent_classifier import IntentClassifier
@@ -185,33 +183,29 @@ class CoSight:
                 instance = create_openclaw_instance(
                     f"actor_for_step_{step_index}", self.work_space_path
                 )
-            elif actor_class is TaskActorAgent:
+            else:
+                # 默认使用通用 TaskActor 的实例工厂
                 instance = create_task_actor_instance(
                     f"actor_for_step_{step_index}", self.work_space_path,
                     extra_skills=[],
                 )
-            else:
-                instance = create_netopt_actor_instance(
-                    f"actor_for_step_{step_index}", self.work_space_path,
-                    extra_skills=[],
-                )
-            if actor_class is OpenclawAgent:
-                agent = OpenclawAgent(
-                    instance,
-                    self.plan_id,
-                    self.work_space_path,
-                    self.openclaw_sender,
-                )
-            else:
-                # 这里对 TaskActorAgent / NetoptActorAgent 等共享同一构造签名的执行器统一实例化
-                agent = actor_class(
-                    instance,
-                    self.act_llm,
-                    self.vision_llm,
-                    self.tool_llm,
-                    self.plan_id,
-                    work_space_path=self.work_space_path,
-                )
+                if actor_class is OpenclawAgent:
+                    agent = OpenclawAgent(
+                        instance,
+                        self.plan_id,
+                        self.work_space_path,
+                        self.openclaw_sender,
+                    )
+                else:
+                    # 这里对 TaskActorAgent 等共享同一构造签名的执行器统一实例化
+                    agent = actor_class(
+                        instance,
+                        self.act_llm,
+                        self.vision_llm,
+                        self.tool_llm,
+                        self.plan_id,
+                        work_space_path=self.work_space_path,
+                    )
 
             result = agent.act(question=question, step_index=step_index)
             logger.info(f"Completed execution of step {step_index} with result: {result}")
@@ -260,13 +254,9 @@ class CoSight:
                     instance = create_openclaw_instance(
                         f"actor_for_step_{step_index}", self.work_space_path
                     )
-                elif actor_class is TaskActorAgent:
-                    instance = create_task_actor_instance(
-                        f"actor_for_step_{step_index}", self.work_space_path,
-                        extra_skills=[],
-                    )
                 else:
-                    instance = create_netopt_actor_instance(
+                    # 默认使用通用 TaskActor 的实例工厂
+                    instance = create_task_actor_instance(
                         f"actor_for_step_{step_index}", self.work_space_path,
                         extra_skills=[],
                     )
@@ -278,6 +268,7 @@ class CoSight:
                         self.openclaw_sender,
                     )
                 else:
+                    # 这里对 TaskActorAgent 等共享同一构造签名的执行器统一实例化
                     agent = actor_class(
                         instance,
                         self.act_llm,

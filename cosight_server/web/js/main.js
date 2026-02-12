@@ -762,29 +762,13 @@ async function loadAgentTeam() {
             return '';
         }
 
-        const allSkillNames = (skillsCatalog || []).map(s => (s && s.name) ? String(s.name) : '').filter(Boolean);
-        const usedByOthers = new Set();
-        agents.forEach(a => {
-            if (!a || !a.agent_id) return;
-            const id = String(a.agent_id);
-            if (id === 'task_actor' || id === 'task_act_actor') return;
-            (Array.isArray(a.skills) ? a.skills : []).forEach(sn => {
-                const name = getSkillName(sn);
-                if (name) usedByOthers.add(name);
-            });
-        });
-        const remainingSkills = allSkillNames.filter(n => !usedByOthers.has(n));
-
         const processedAgents = agents.map(a => {
             const aid = (a && a.agent_id) ? String(a.agent_id) : '';
-            if (aid === 'task_actor' || aid === 'task_act_actor') {
-                return { ...a, skills: remainingSkills };
-            }
             const normalizedSkills = (Array.isArray(a.skills) ? a.skills : []).map(sn => getSkillName(sn)).filter(Boolean);
             return { ...a, skills: normalizedSkills };
         });
 
-        const agentOrder = ['task_actor', 'task_act_actor', 'openclaw', 'fault_actor', 'netopt_actor'];
+        const agentOrder = ['task_actor', 'task_act_actor', 'openclaw'];
         const sortedAgents = [...processedAgents].sort((a, b) => {
             const ai = agentOrder.indexOf((a && a.agent_id) ? String(a.agent_id) : '');
             const bi = agentOrder.indexOf((b && b.agent_id) ? String(b.agent_id) : '');
@@ -797,9 +781,7 @@ async function loadAgentTeam() {
         const agentAvatarMap = {
             'task_actor': '/cosight/images/report-document-file-svgrepo-com.svg',
             'task_act_actor': '/cosight/images/report-document-file-svgrepo-com.svg',
-            'openclaw': '/cosight/images/openclaw.svg',
-            'fault_actor': '/cosight/images/fault_agent.svg',
-            'netopt_actor': '/cosight/images/wifi-wireless-svgrepo-com.svg'
+            'openclaw': '/cosight/images/openclaw.svg'
         };
         let matchedCount = 0;
         listEl.innerHTML = sortedAgents.map(a => {

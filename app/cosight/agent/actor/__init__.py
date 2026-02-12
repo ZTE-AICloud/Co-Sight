@@ -14,23 +14,11 @@
 #    under the License.
 
 from app.cosight.agent.actor.task_actor import TaskActorAgent, create_task_actor_instance
-from actor.netopt_actor import NetoptActorAgent, create_netopt_actor_instance
-from actor.fault_actor import FaultActorAgent, create_fault_actor_instance
-from actor.experience_actor import ExperienceActorAgent, create_experience_actor_instance
-from actor.energy_actor import EnergyActorAgent, create_energy_actor_instance
 from app.cosight.agent.actor.openclaw import OpenclawAgent, create_openclaw_instance
 
 __all__ = [
     "TaskActorAgent",
-    "NetoptActorAgent",
-    "FaultActorAgent",
-    "ExperienceActorAgent",
-    "EnergyActorAgent",
     "OpenclawAgent",
     "create_task_actor_instance",
-    "create_netopt_actor_instance",
-    "create_fault_actor_instance",
-    "create_experience_actor_instance",
-    "create_energy_actor_instance",
     "create_openclaw_instance",
 ]

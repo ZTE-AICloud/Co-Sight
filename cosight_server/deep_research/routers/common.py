@@ -159,7 +159,7 @@ def _load_agent_card(card_path: Path) -> Optional[dict]:
 async def list_agents():
     """
     返回智能体清单。扫描规则：
-    - actor/（仓库根目录）：扫描所有子目录的 agent_card.json（fault_actor、netopt_actor、energy_actor、experience_actor 等）
+    - actor/（仓库根目录）：扫描所有子目录的 agent_card.json（用于自定义业务 Actor）
     - app/cosight/agent/actor/：仅读取 openclaw、task_actor 两个文件夹的 agent_card.json
     """
     repo_root = Path(__file__).resolve().parents[3]  # .../Co-Sight

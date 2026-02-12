@@ -24,20 +24,12 @@ import os
 from typing import List, Tuple, Type, Optional
 
 from app.cosight.agent.actor.task_actor import TaskActorAgent
-from actor.netopt_actor import NetoptActorAgent
-from actor.fault_actor import FaultActorAgent
-from actor.experience_actor import ExperienceActorAgent
-from actor.energy_actor import EnergyActorAgent
 from app.cosight.agent.actor.openclaw import OpenclawAgent
 from app.common.logger_util import logger
 
 # (agent_id, description, actor_class); Openclaw 的 id 用于过滤
 _REGISTRY: List[Tuple[str, str, Type]] = [
     (TaskActorAgent.AGENT_ID, TaskActorAgent.DESCRIPTION, TaskActorAgent),
-    (NetoptActorAgent.AGENT_ID, NetoptActorAgent.DESCRIPTION, NetoptActorAgent),
-    (FaultActorAgent.AGENT_ID, FaultActorAgent.DESCRIPTION, FaultActorAgent),
-    (ExperienceActorAgent.AGENT_ID, ExperienceActorAgent.DESCRIPTION, ExperienceActorAgent),
-    (EnergyActorAgent.AGENT_ID, EnergyActorAgent.DESCRIPTION, EnergyActorAgent),
     (OpenclawAgent.AGENT_ID, OpenclawAgent.DESCRIPTION, OpenclawAgent),
 ]
 

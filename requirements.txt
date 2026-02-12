@@ -28,3 +28,4 @@ minify-html==0.16.4
 pdfplumber==0.11.0
 PyMuPDF==1.24.0
 langfuse==3.10.5
+strictyaml
