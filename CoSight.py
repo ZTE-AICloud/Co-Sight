@@ -189,23 +189,23 @@ class CoSight:
                     f"actor_for_step_{step_index}", self.work_space_path,
                     extra_skills=[],
                 )
-                if actor_class is OpenclawAgent:
-                    agent = OpenclawAgent(
-                        instance,
-                        self.plan_id,
-                        self.work_space_path,
-                        self.openclaw_sender,
-                    )
-                else:
-                    # 这里对 TaskActorAgent 等共享同一构造签名的执行器统一实例化
-                    agent = actor_class(
-                        instance,
-                        self.act_llm,
-                        self.vision_llm,
-                        self.tool_llm,
-                        self.plan_id,
-                        work_space_path=self.work_space_path,
-                    )
+            if actor_class is OpenclawAgent:
+                agent = OpenclawAgent(
+                    instance,
+                    self.plan_id,
+                    self.work_space_path,
+                    self.openclaw_sender,
+                )
+            else:
+                # 这里对 TaskActorAgent 等共享同一构造签名的执行器统一实例化
+                agent = actor_class(
+                    instance,
+                    self.act_llm,
+                    self.vision_llm,
+                    self.tool_llm,
+                    self.plan_id,
+                    work_space_path=self.work_space_path,
+                )
 
             result = agent.act(question=question, step_index=step_index)
             logger.info(f"Completed execution of step {step_index} with result: {result}")

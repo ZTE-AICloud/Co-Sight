@@ -181,6 +181,12 @@ class ToolResultProcessor:
         4. 检测内容类型和大小
         5. 对于HTML页面，尝试检测JavaScript反iframe模式
         
+        注意（网络/环境差异）：
+        - 本检查在**服务器侧**执行，可使用 BROWSER_PROXY_URL/PROXY_URL 代理。
+        - 电脑区实际加载由**用户浏览器**发起 iframe 请求，与服务器网络可能不一致（内网/代理/防火墙），
+          故服务器判为可嵌入时，浏览器仍可能加载失败或遭 X-Frame-Options 拦截无法呈现。
+        - 前端在加载失败或超时会显示兜底页，提供「在新窗口打开」链接。
+        
         Args:
             url: 要检查的URL
             
@@ -616,19 +622,14 @@ class ToolResultProcessor:
             if result_count == 0:
                 result_count = len(unique_urls)
             
-            # 确定first_url
-            first_url = None
-            if embeddable_urls:
-                first_url = embeddable_urls[0]
-            else:
-                # 如果embeddable_urls为空，生成可嵌入的搜索结果展示页面URL
-                first_url = ToolResultProcessor._generate_search_results_page_url(tool_name, tool_args, unique_urls)
-            
+            # 电脑区 first_url 固定用本站「搜索结果汇总页」，保证 iframe 一定能打开（外链普遍 X-Frame-Options 禁止嵌入，主分支行为可靠）
+            first_url = ToolResultProcessor._generate_search_results_page_url(tool_name, tool_args, unique_urls)
+
             return {
                 "tool_type": "search",
                 "summary": ToolResultProcessor._get_localized_summary(
-                    f"搜索完成，找到 {result_count} 个结果，其中 {len(embeddable_urls)} 个可在电脑区浏览",
-                    f"Search completed, found {result_count} results, {len(embeddable_urls)} can be browsed in desktop area",
+                    f"搜索完成，找到 {result_count} 个结果，其中 {len(embeddable_urls)} 个可在新窗口浏览",
+                    f"Search completed, found {result_count} results, {len(embeddable_urls)} can be browsed in new window",
                     task_title
                 ),
                 "first_url": first_url,

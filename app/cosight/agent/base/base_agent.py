@@ -391,7 +391,8 @@ class BaseAgent:
         for i in range(max_iteration):
             # 为了避免日志过大，这里不再打印完整 messages，只记录关键元信息
             logger.info(f"act agent call with tools start: iter={i}, step_index={step_index}, "
-                        f"msg_count={len(messages)}, tools_count={len(self.tools)}")
+                        f"msg_count={len(messages)}, tools_count={len(self.tools)}"
+                        f"message content ={messages}")
             response = self.llm.create_with_tools(messages, self.tools)
 
             # Process initial response

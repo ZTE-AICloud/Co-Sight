@@ -34,7 +34,6 @@ from app.cosight.tool.scrape_website_toolkit import (
 from app.cosight.tool.deep_search.searchers.tavily_search import TavilySearch
 from app.cosight.tool.audio_toolkit import AudioTool
 from app.cosight.tool.video_analysis_toolkit import VideoTool
-from app.cosight.tool.html_visualization_toolkit import HtmlVisualizationToolkit
 from config.config import get_tavily_config
 
 
@@ -73,9 +72,7 @@ def build_task_actor_functions(
         {"api_key": get_tavily_config()},
     )
     code_toolkit = CodeToolkit(sandbox="subprocess")
-    html_toolkit = HtmlVisualizationToolkit(
-        workspace_path=work_space_path, tool_llm=tool_llm
-    )
+
 
     all_functions = {
         "mark_step": act_toolkit.mark_step,
@@ -94,12 +91,5 @@ def build_task_actor_functions(
         "fetch_website_content_with_images": fetch_website_content_with_images,
         "fetch_website_images_only": fetch_website_images_only,
         "extract_document_content": doc_toolkit.extract_document_content,
-        "create_html_report": lambda title=None, include_charts=True, chart_types=None, output_filename=None: html_toolkit.create_html_report(
-            title=title,
-            include_charts=include_charts,
-            chart_types=chart_types or ["all"],
-            output_filename=output_filename,
-            user_query=question_ref[0] if question_ref else None,
-        ),
     }
     return all_functions

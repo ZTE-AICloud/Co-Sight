@@ -2407,9 +2407,12 @@ function showRightPanelForTool(toolCall) {
     if (!result) {
         return;
     }
-    // 标记当前右侧正在显示文件，避免 OpenClaw 消息覆盖
+    // 标记当前右侧正在显示文件/网页，避免 OpenClaw 流式消息覆盖电脑区（主分支无 OpenClaw 故无此问题）
     if (toolCall.path && toolCall.path !== 'code://execute_code') {
         window.__rightPanelShowingFile = { path: toolCall.path, at: Date.now() };
+    } else if (toolCall.url) {
+        // 搜索等工具只有 url 无 path，也需标记，否则 OpenClaw 消息会覆盖刚打开的网页
+        window.__rightPanelShowingFile = { path: toolCall.url, at: Date.now() };
     }
 
     const url = toolCall.url;
@@ -2440,21 +2443,12 @@ function showRightPanelForTool(toolCall) {
         }
         iframe.src = 'about:blank';
 
-        // 本站同源的可嵌入 API（如 search-results）直接加载，不走外部嵌入检查
+        // 本站 API（如 search-results）用 fetch+srcdoc，避免 iframe.src 请求排队导致“加载超时”
         if (isOwnEmbeddableApiUrl(url)) {
-            loadIframeContent(url, iframe, statusElement, tool, path);
+            loadOwnApiInIframe(url, iframe, statusElement, tool, path);
         } else {
-            // 检查 iframe 嵌入是否被允许
-            checkIframeEmbedding(url).then(allowed => {
-                if (allowed) {
-                    loadIframeContent(url, iframe, statusElement, tool, path);
-                } else {
-                    showIframeEmbeddingError(url, statusElement);
-                }
-            }).catch(error => {
-                console.warn('iframe嵌入检查失败，尝试直接加载:', error);
-                loadIframeContent(url, iframe, statusElement, tool, path);
-            });
+            // 外链优先走代理拉取 HTML 再用 srcdoc 显示，解决 iframe.src 加载时 onload 不触发导致一直转圈
+            loadExternalUrlViaProxy(url, iframe, statusElement, tool, path);
         }
 
     } else if (path) {
@@ -3413,6 +3407,112 @@ async function checkIframeEmbedding(url) {
 }
 
 /**
+ * 生成 iframe 加载失败时的兜底页 HTML（含「在新窗口打开」链接）
+ * 用于网络不可达、跨域或 X-Frame-Options 等导致无法在 iframe 内呈现时，至少提供可点击打开
+ * @param {string} url - 目标 URL
+ * @param {string} reason - 简短原因（如 加载超时 / 网页加载失败）
+ */
+function buildIframeLoadFallbackHtml(url, reason) {
+    var esc = function (s) {
+        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    };
+    var u = esc(url);
+    var r = esc(reason || '');
+    return '<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
+        '<style>body{font-family:sans-serif;padding:24px;color:#555;max-width:560px;margin:0 auto;} .title{font-size:1.1em;margin-bottom:12px;color:#333;} .url{word-break:break-all;font-size:12px;color:#888;margin:8px 0;} a{color:#667eea;}</style></head><body>' +
+        '<div class="title">' + r + '</div><div class="url">' + u + '</div>' +
+        '<p><a href="' + u + '" target="_blank" rel="noopener noreferrer">在新窗口打开此链接</a></p></body></html>';
+}
+
+/**
+ * 在电脑区 iframe 中显示「加载失败」兜底页（含在新窗口打开链接）
+ */
+function setIframeLoadFallback(iframe, url, statusElement, reason) {
+    if (!iframe || !url) return;
+    if (iframe._loadingTimeout) {
+        clearTimeout(iframe._loadingTimeout);
+        iframe._loadingTimeout = null;
+    }
+    toggleLoadingIndicator(false);
+    if (statusElement) {
+        statusElement.textContent = reason || (url.length > 50 ? url.slice(0, 50) + '…' : url);
+        statusElement.className = 'error';
+    }
+    iframe.removeAttribute('src');
+    iframe.srcdoc = buildIframeLoadFallbackHtml(url, reason);
+}
+
+/**
+ * 外链通过后端 proxy-page 拉取 HTML，再用 srcdoc 显示，解决 iframe.src 时 onload 不触发导致一直转圈。
+ * 仅对可嵌入 URL 代理；若代理失败则回退为 iframe.src 加载。
+ */
+function loadExternalUrlViaProxy(url, iframe, statusElement, tool, path) {
+    var proxyUrl = '/api/nae-deep-research/v1/proxy-page?url=' + encodeURIComponent(url);
+    var FETCH_TIMEOUT_MS = 18000;
+
+    var controller = new AbortController();
+    var timeoutId = setTimeout(function () { controller.abort(); }, FETCH_TIMEOUT_MS);
+
+    fetch(proxyUrl, { signal: controller.signal })
+        .then(function (res) {
+            clearTimeout(timeoutId);
+            if (res.ok) return res.text();
+            throw new Error('HTTP ' + res.status);
+        })
+        .then(function (html) {
+            toggleLoadingIndicator(false);
+            if (statusElement) {
+                statusElement.textContent = generateStatusText(tool, url, path);
+                statusElement.className = 'success';
+            }
+            if (iframe) {
+                iframe.removeAttribute('src');
+                iframe.srcdoc = html;
+            }
+            console.log('外链已通过 proxy-page 加载:', url.split('?')[0]);
+        })
+        .catch(function (err) {
+            clearTimeout(timeoutId);
+            console.warn('loadExternalUrlViaProxy failed, fallback to iframe.src:', url, err);
+            loadIframeContent(url, iframe, statusElement, tool, path);
+        });
+}
+
+/**
+ * 本站 API（如 search-results）用 fetch 取 HTML 再写入 srcdoc，避免 iframe.src 排队/onload 不触发导致超时
+ */
+function loadOwnApiInIframe(url, iframe, statusElement, tool, path) {
+    var FETCH_TIMEOUT_MS = 10000;
+    var controller = new AbortController();
+    var timeoutId = setTimeout(function () { controller.abort(); }, FETCH_TIMEOUT_MS);
+
+    fetch(url, { signal: controller.signal })
+        .then(function (res) {
+            clearTimeout(timeoutId);
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            return res.text();
+        })
+        .then(function (html) {
+            toggleLoadingIndicator(false);
+            if (statusElement) {
+                statusElement.textContent = generateStatusText(tool, url, path);
+                statusElement.className = 'success';
+            }
+            if (iframe) {
+                iframe.removeAttribute('src');
+                iframe.srcdoc = html;
+            }
+            console.log('本站 API 已通过 fetch 加载:', url.split('?')[0]);
+        })
+        .catch(function (err) {
+            clearTimeout(timeoutId);
+            var reason = (err && err.name === 'AbortError') ? ('加载超时: ' + url) : ('加载失败: ' + (err && err.message ? err.message : url));
+            setIframeLoadFallback(iframe, url, statusElement, reason);
+            console.warn('loadOwnApiInIframe failed:', url, err);
+        });
+}
+
+/**
  * 加载iframe内容
  * @param {string} url - 要加载的URL
  * @param {HTMLElement} iframe - iframe元素
@@ -3427,28 +3527,27 @@ function loadIframeContent(url, iframe, statusElement, tool, path) {
 
         // 设置加载超时机制（15秒，比原来更长）
         iframe._loadingTimeout = setTimeout(() => {
-            if (isBlank) return;
-            toggleLoadingIndicator(false);
-            if (statusElement) {
-                statusElement.textContent = (window.I18nService ? window.I18nService.t('loading_timeout').replace('{url}', url) : `加载超时: ${url}`);
-                statusElement.className = 'error';
-            }
+            if (!isBlank) return;
+            isBlank = false;
+            setIframeLoadFallback(
+                iframe,
+                url,
+                statusElement,
+                window.I18nService ? window.I18nService.t('loading_timeout').replace('{url}', url) : '加载超时: ' + url
+            );
             console.warn('iframe加载超时:', url);
         }, 15000);
 
         // 设置加载完成事件监听器
         iframe.onload = function () {
-            if (isBlank) return;
-
+            if (!isBlank) return;
+            isBlank = false;
             // 清理超时定时器
             if (iframe._loadingTimeout) {
                 clearTimeout(iframe._loadingTimeout);
                 iframe._loadingTimeout = null;
             }
-
-            // 立即隐藏loading，避免与网页内容共存
             toggleLoadingIndicator(false);
-            // 更新状态文本
             if (statusElement) {
                 statusElement.textContent = generateStatusText(tool, url, path);
                 statusElement.className = 'success';
@@ -3458,45 +3557,35 @@ function loadIframeContent(url, iframe, statusElement, tool, path) {
 
         // 设置加载错误事件监听器
         iframe.onerror = function () {
-            // 清理超时定时器
-            if (iframe._loadingTimeout) {
-                clearTimeout(iframe._loadingTimeout);
-                iframe._loadingTimeout = null;
-            }
-
-            // 隐藏加载提示
-            toggleLoadingIndicator(false);
-            // 更新状态文本
-            if (statusElement) {
-                statusElement.textContent = (window.I18nService ? window.I18nService.t('webpage_load_failed').replace('{url}', url) : `网页加载失败: ${url}`);
-                statusElement.className = 'error';
-            }
+            if (!isBlank) return;
+            isBlank = false;
+            var reason = window.I18nService ? window.I18nService.t('webpage_load_failed').replace('{url}', url) : '网页加载失败: ' + url;
+            setIframeLoadFallback(iframe, url, statusElement, reason);
             console.error('iframe加载失败:', url);
         };
 
-        // 加载新内容
+        // 加载新内容（不在这里把 isBlank 置 false，否则 15s 超时回调会误判“已加载”而无法显示兜底页）
         iframe.src = url;
-        isBlank = false;
     }, 100);
 }
 
 /**
- * 外链不允许嵌入时：仅更新状态文案，不显示无法嵌入模版页（避免 srcdoc 导致后续点击工具卡片无反应）
+ * 外链不允许嵌入时：更新状态文案并在 iframe 内显示兜底页（含「在新窗口打开」链接）
  * @param {string} url - 无法嵌入的URL
  * @param {HTMLElement} statusElement - 状态显示元素
  */
 function showIframeEmbeddingError(url, statusElement) {
     toggleLoadingIndicator(false);
+    var reason = '网页不允许嵌入 iframe';
     if (statusElement) {
-        statusElement.textContent = `网页不允许嵌入iframe: ${url}`;
+        statusElement.textContent = reason + ': ' + (url.length > 40 ? url.slice(0, 40) + '…' : url);
         statusElement.className = 'error';
     }
-    const iframe = document.getElementById('content-iframe');
-    if (iframe) {
+    var iframe = document.getElementById('content-iframe');
+    if (iframe && url) {
         iframe.style.display = 'block';
-        iframe.removeAttribute('srcdoc');
-        iframe.srcdoc = '';
-        iframe.src = 'about:blank';
+        iframe.removeAttribute('src');
+        iframe.srcdoc = buildIframeLoadFallbackHtml(url, reason);
     }
 }
 

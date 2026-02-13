@@ -18,7 +18,7 @@ import asyncio
 import os
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional, Tuple
 from fastapi import APIRouter, Body
 from starlette.requests import Request
 from fastapi.responses import StreamingResponse, JSONResponse
@@ -1097,6 +1097,110 @@ async def search(request: Request, params: Any = Body(None)):
         RecordGenerator(work_space_path_time),
         media_type="application/json"
     )
+
+
+@searchRouter.post("/check-iframe-embedding")
+async def check_iframe_embedding(body: dict = Body(...)):
+    """
+    检查给定 URL 是否允许在电脑区 iframe 中嵌入。
+    与后端工具结果处理中的 check_embeddable 逻辑一致（服务器侧请求目标 URL 检查可访问性与 X-Frame-Options 等）。
+    注意：浏览器实际加载 iframe 时仍可能因用户网络、目标站按上下文返回不同头等原因无法呈现。
+    """
+    url = (body or {}).get("url")
+    if not url or not isinstance(url, str):
+        return JSONResponse(
+            status_code=400,
+            content={"allowed": False, "reason": "missing or invalid url"},
+        )
+    try:
+        from app.cosight.tool.tool_result_processor import ToolResultProcessor
+        # 同步的 HTTP 检查放到线程中执行，避免阻塞事件循环
+        allowed = await asyncio.to_thread(ToolResultProcessor.check_embeddable, url.strip())
+        return {"allowed": bool(allowed), "reason": None if allowed else "server_check_failed"}
+    except Exception as e:
+        logger.warning("check-iframe-embedding failed for url=%s: %s", url[:80], e)
+        return {"allowed": False, "reason": str(e)}
+
+
+def _fetch_page_html(url: str, timeout: int = 15) -> Tuple[Optional[str], Optional[str]]:
+    """
+    服务端拉取 URL 的 HTML 内容，用于电脑区通过 srcdoc 呈现，避免 iframe.src 加载时 onload 不触发导致一直转圈。
+    返回 (html_content, error_message)，成功时 error_message 为 None。
+    """
+    import requests
+    from urllib.parse import urlparse
+
+    url = (url or "").strip()
+    if not url:
+        return None, "missing url"
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https"):
+        return None, "only http/https allowed"
+    if not parsed.netloc:
+        return None, "invalid url host"
+
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7",
+    }
+    proxies = None
+    proxy_url = os.environ.get("BROWSER_PROXY_URL") or os.environ.get("PROXY_URL")
+    if proxy_url:
+        proxies = {"http": proxy_url, "https": proxy_url}
+
+    try:
+        resp = requests.get(
+            url,
+            headers=headers,
+            timeout=timeout,
+            allow_redirects=True,
+            verify=False,
+            proxies=proxies,
+        )
+        if resp.status_code >= 400:
+            return None, f"HTTP {resp.status_code}"
+        ct = (resp.headers.get("Content-Type") or "").lower()
+        if "text/html" not in ct and "application/xhtml" not in ct:
+            return None, "not html"
+        # 限制体积，避免过大响应
+        if len(resp.content) > 10 * 1024 * 1024:
+            return None, "response too large"
+        text = resp.text
+        if not text:
+            return None, "empty body"
+        return text, None
+    except requests.exceptions.Timeout:
+        return None, "timeout"
+    except requests.exceptions.RequestException as e:
+        return None, str(e) or "request failed"
+
+
+@searchRouter.get("/proxy-page")
+async def proxy_page(request: Request, url: str = ""):
+    """
+    拉取可嵌入网页的 HTML，供电脑区用 iframe.srcdoc 显示，解决 iframe.src 加载时 onload 不触发导致一直转圈的问题。
+    仅对通过 check_embeddable 的 URL 拉取，避免代理内网或不可嵌入页。
+    """
+    from fastapi.responses import HTMLResponse, PlainTextResponse
+
+    url = (url or "").strip()
+    if not url:
+        return PlainTextResponse("missing url", status_code=400)
+    try:
+        from app.cosight.tool.tool_result_processor import ToolResultProcessor
+        allowed = await asyncio.to_thread(ToolResultProcessor.check_embeddable, url)
+        if not allowed:
+            return PlainTextResponse("url not embeddable", status_code=403)
+    except Exception as e:
+        logger.warning("proxy-page check_embeddable failed for url=%s: %s", url[:80], e)
+        return PlainTextResponse("embed check failed", status_code=403)
+
+    html, err = await asyncio.to_thread(_fetch_page_html, url)
+    if err:
+        logger.info("proxy-page fetch failed for url=%s: %s", url[:80], err)
+        return PlainTextResponse(err or "fetch failed", status_code=502)
+    return HTMLResponse(html)
 
 
 @searchRouter.get("/search-results")
