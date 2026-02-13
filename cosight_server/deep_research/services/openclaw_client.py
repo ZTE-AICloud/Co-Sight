@@ -20,6 +20,7 @@ OpenClaw WebSocket客户端
 
 import asyncio
 import json
+import os
 import uuid
 from typing import Optional, Dict, Callable, Any
 from enum import Enum
@@ -112,16 +113,38 @@ class OpenClawClient:
             # Gateway 对 webchat 做 Control UI 同源校验：Origin 须与 Gateway host 一致或位于 allowedOrigins
             origin = _origin_for_gateway_url(self.gateway_url)
             try:
-                self.ws = await asyncio.wait_for(
-                    websockets.connect(
-                        self.gateway_url,
-                        ping_interval=20,
-                        ping_timeout=10,
-                        close_timeout=5,
-                        additional_headers={"Origin": origin},
-                    ),
-                    timeout=self.timeout
-                )
+                # 连接本地 Gateway 时强制不走代理，避免环境变量中的 HTTP_PROXY 导致 InvalidProxyMessage
+                # websockets 15.0.1 不支持 proxy=False，通过临时修改 NO_PROXY 环境变量实现
+                parsed_url = urlparse(self.gateway_url)
+                gateway_host = parsed_url.hostname or "127.0.0.1"
+                original_no_proxy = os.environ.get("NO_PROXY", "")
+                # 将 Gateway host 加入 NO_PROXY，确保不走代理
+                no_proxy_list = [h.strip() for h in original_no_proxy.split(",") if h.strip()]
+                if gateway_host not in no_proxy_list:
+                    no_proxy_list.append(gateway_host)
+                if "127.0.0.1" not in no_proxy_list:
+                    no_proxy_list.append("127.0.0.1")
+                if "localhost" not in no_proxy_list:
+                    no_proxy_list.append("localhost")
+                os.environ["NO_PROXY"] = ",".join(no_proxy_list)
+                
+                try:
+                    self.ws = await asyncio.wait_for(
+                        websockets.connect(
+                            self.gateway_url,
+                            ping_interval=20,
+                            ping_timeout=10,
+                            close_timeout=5,
+                            additional_headers={"Origin": origin},
+                        ),
+                        timeout=self.timeout
+                    )
+                finally:
+                    # 恢复原始的 NO_PROXY 环境变量
+                    if original_no_proxy:
+                        os.environ["NO_PROXY"] = original_no_proxy
+                    elif "NO_PROXY" in os.environ:
+                        del os.environ["NO_PROXY"]
                 # Gateway 建立连接后会先发 connect.challenge，再等客户端发 connect 请求
                 first = await asyncio.wait_for(self.ws.recv(), timeout=self.timeout)
                 first_data = json.loads(first)

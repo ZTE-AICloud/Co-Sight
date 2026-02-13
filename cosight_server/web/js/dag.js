@@ -8,17 +8,9 @@ let zoom = null; // 缩放功能
 
 // 执行器(Actor Agent) 对应的图标映射，key 为后端的 agent_id
 // - task_actor        -> 通用报告执行器（报告/文档）
-// - netopt_actor      -> 网优资料整理执行器（无线/WiFi 图标）
-// - fault_actor       -> 故障分析执行器（通用报告图标）
-// - experience_actor  -> 体验分析执行器（通用报告图标）
-// - energy_actor      -> 能效分析执行器（通用报告图标）
 // - openclaw          -> OpenClaw 本地文件执行器（龙虾图标）
 const ACTOR_ICON_MAP = {
     "task_actor": "images/report-document-file-svgrepo-com.svg",
-    "netopt_actor": "images/wifi-wireless-svgrepo-com.svg",
-    "fault_actor": "images/report-document-file-svgrepo-com.svg",
-    "experience_actor": "images/report-document-file-svgrepo-com.svg",
-    "energy_actor": "images/report-document-file-svgrepo-com.svg",
     "openclaw": "images/openclaw.svg"
 };
 

@@ -1,5 +1,0 @@
-{"agent_id":"fault_actor",
-  "agent_name":"故障排障专家",
-  "agent_description":"拥有丰富故障根因分析经验的专家。",
-  "agent_icon":"report-document-file-svgrepo-com.svg",
-  "skills":["监控指标与早期预警","告警根因诊断"]}

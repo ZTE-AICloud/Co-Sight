@@ -38,7 +38,7 @@ class Plan:
         self.step_notes = {step: "" for step in self.steps}
         self.step_details = {step: "" for step in self.steps}
         self.step_files = {step: "" for step in self.steps}
-        # 为每个步骤记录由意图分类器选择的执行 Actor（agent_id），例如："task_actor" / "netopt_actor" / "openclaw"
+        # 为每个步骤记录由意图分类器选择的执行 Actor（agent_id），例如："task_actor" / "openclaw"
         # 初始时为空，等到实际执行前由 CoSight._execute_single_step 写入
         self.step_actors: Dict[str, Optional[str]] = {step: None for step in self.steps}
         # 存储每个步骤的工具调用信息
