@@ -5,7 +5,7 @@ requests==2.32.3
 wheel==0.45.1
 setuptools==77.0.3
 mcp==1.18.0
-lagent==0.2.4
+lagent>=0.2.0,<0.2.4
 docx2markdown==0.1.1
 ffmpeg-python==0.2.0
 baidusearch==1.0.3
