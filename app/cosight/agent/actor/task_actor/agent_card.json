@@ -1,7 +1,7 @@
 {"agent_id": "task_act_actor",
-"agent_name": "通用智能体",
+"agent_name": "深度搜索智能体",
 "agent_description": "主要实现深度洞察功能：收集资料、分析归纳、生成深度洞察报告与可视化。",
 "agent_icon": "",
-"skills": []
+"skills": [
 }
 

@@ -1,5 +1,5 @@
 {"agent_id": "openclaw",
-"agent_name": "openclaw",
+"agent_name": "openclaw智能体",
 "agent_description": "安排定时任务与创建技能的个人助手；可执行技能、技能包与本地文件操作。",
 "agent_icon": "",
 "skills": []

@@ -832,7 +832,7 @@ async function loadAgentTeam() {
                     <div class="agent-item-body">
                         ${adesc ? `<div class="agent-item-desc">${escapeHtml(adesc)}</div>` : ''}
                         <div class="agent-item-skills">
-                            ${skillsHtml || '<div class="skills-modal-status">该智能体未配置技能</div>'}
+                            ${skillsHtml || '<div class="skills-modal-status">除内置工具外，该智能体未配置其他技能。</div>'}
                         </div>
                     </div>
                 </details>
