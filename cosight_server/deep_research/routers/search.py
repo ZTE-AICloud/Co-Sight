@@ -16,12 +16,14 @@
 import json
 import asyncio
 import os
+import shutil
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 from fastapi import APIRouter, Body
 from starlette.requests import Request
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
 from urllib.parse import quote
 from app.cosight.task.task_manager import TaskManager
 from llm import llm_for_plan, llm_for_act, llm_for_tool, llm_for_vision
@@ -62,6 +64,91 @@ logger.info(f"Using REPLAY_BASE_PATH: {REPLAY_BASE_PATH}")
 
 # 回放间隔时长配置（秒），可通过环境变量 REPLAY_DELAY 设置，默认 0.3 秒
 REPLAY_DELAY = float(os.environ.get("REPLAY_DELAY", "0.3"))
+
+
+def _resolve_workspace_name(workspace_path_value: str) -> str | None:
+    if not workspace_path_value or not isinstance(workspace_path_value, str):
+        return None
+    normalized = workspace_path_value.replace("\\", "/").strip().rstrip("/")
+    if not normalized:
+        return None
+    return normalized.split("/")[-1] or None
+
+
+def _resolve_replay_paths(workspace_path_value: str) -> dict[str, str | None]:
+    workspace_name = _resolve_workspace_name(workspace_path_value)
+    if not workspace_name:
+        return {
+            "workspace_name": None,
+            "replay_dir": None,
+            "replay_file": None,
+            "metadata_file": None,
+            "legacy_replay_file": None,
+            "workspace_dir": None,
+        }
+
+    replay_dir = os.path.join(REPLAY_BASE_PATH, workspace_name)
+    return {
+        "workspace_name": workspace_name,
+        "replay_dir": replay_dir,
+        "replay_file": os.path.join(replay_dir, "replay.json"),
+        "metadata_file": os.path.join(replay_dir, "metadata.json"),
+        "legacy_replay_file": os.path.join(work_space_path, workspace_name, "replay.json"),
+        "workspace_dir": os.path.join(work_space_path, workspace_name),
+    }
+
+
+def _is_safe_workspace_target(path_value: str | None) -> bool:
+    if not path_value:
+        return False
+    try:
+        workspace_root = os.path.realpath(work_space_path)
+        target_path = os.path.realpath(path_value)
+        if target_path == workspace_root:
+            return False
+        common_path = os.path.commonpath([workspace_root, target_path])
+        return common_path == workspace_root
+    except Exception:
+        return False
+
+
+def _read_replay_title_from_event(replay_file_path: str) -> tuple[str, int]:
+    title = "未命名任务"
+    message_count = 0
+
+    with open(replay_file_path, "r", encoding="utf-8") as f:
+        lines = f.readlines()
+        message_count = len(lines)
+
+    if not lines:
+        return title, message_count
+
+    first_line_data = json.loads(lines[0])
+    content = first_line_data.get("content", {})
+    if isinstance(content, dict):
+        title = content.get("title", title)
+    elif isinstance(content, str):
+        try:
+            content_obj = json.loads(content)
+            title = content_obj.get("title", title)
+        except Exception:
+            pass
+    return title, message_count
+
+
+def _read_replay_display_title(paths: dict[str, str | None], replay_file_path: str) -> tuple[str, int]:
+    title, message_count = _read_replay_title_from_event(replay_file_path)
+    metadata_file = paths.get("metadata_file")
+    if metadata_file and os.path.exists(metadata_file):
+        try:
+            with open(metadata_file, "r", encoding="utf-8") as f:
+                metadata = json.load(f)
+            custom_title = str(metadata.get("title", "")).strip()
+            if custom_title:
+                title = custom_title
+        except Exception as e:
+            logger.warning(f"读取回放 metadata 失败: {metadata_file}, 错误: {e}")
+    return title, message_count
 
 
 # 将本地文件路径转换为可被前端访问的URL
@@ -224,6 +311,37 @@ async def _check_and_continue_next_step(plan_queue, plan_data: Plan):
     except Exception as e:
         logger.error(f"检查下一步骤失败: {e}", exc_info=True)
 
+def _serialize_plan_data(plan_obj: Plan) -> dict:
+    return {
+        "title": plan_obj.title if hasattr(plan_obj, "title") else "",
+        "steps": plan_obj.steps if hasattr(plan_obj, "steps") else [],
+        "step_files": plan_obj.step_files if hasattr(plan_obj, "step_files") else {},
+        "step_statuses": plan_obj.step_statuses if hasattr(plan_obj, "step_statuses") else {},
+        "step_notes": plan_obj.step_notes if hasattr(plan_obj, "step_notes") else {},
+        "step_details": plan_obj.step_details if hasattr(plan_obj, "step_details") else {},
+        "step_tool_calls": plan_obj.step_tool_calls if hasattr(plan_obj, "step_tool_calls") else {},
+        "dependencies": {str(k): v for k, v in plan_obj.dependencies.items()}
+        if hasattr(plan_obj, "dependencies")
+        else {},
+        "progress": plan_obj.get_progress()
+        if hasattr(plan_obj, "get_progress") and callable(plan_obj.get_progress)
+        else {},
+        "result": plan_obj.get_plan_result()
+        if hasattr(plan_obj, "get_plan_result") and callable(plan_obj.get_plan_result)
+        else "",
+        "selected_planner_id": getattr(plan_obj, "selected_planner_id", ""),
+        "allowed_actor_ids": getattr(plan_obj, "allowed_actor_ids", []),
+        "default_actor_id": getattr(plan_obj, "default_actor_id", ""),
+        "dispatch_mode": getattr(plan_obj, "dispatch_mode", "single_actor"),
+        "step_agents": plan_obj.get_step_agents_payload()
+        if hasattr(plan_obj, "get_step_agents_payload")
+        else {},
+        "step_execution_agents": plan_obj.get_step_execution_agents_payload()
+        if hasattr(plan_obj, "get_step_execution_agents_payload")
+        else {},
+    }
+
+
 async def append_create_plan(data: Any):
     """
     将数据追加写入LOGS_PATH下的plan.log文件，并将数据放入队列以发送给客户端
@@ -237,21 +355,7 @@ async def append_create_plan(data: Any):
 
         # 处理Plan对象转换为可序列化的dict
         if isinstance(data, Plan):
-            plan_dict = {
-                "title": data.title if hasattr(data, 'title') else "",
-                "steps": data.steps if hasattr(data, 'steps') else [],
-                "step_files": data.step_files if hasattr(data, 'step_files') else {},
-                "step_statuses": data.step_statuses if hasattr(data, 'step_statuses') else {},
-                "step_notes": data.step_notes if hasattr(data, 'step_notes') else {},
-                "step_details": data.step_details if hasattr(data, 'step_details') else {},
-                "step_tool_calls": data.step_tool_calls if hasattr(data, 'step_tool_calls') else {},
-                "dependencies": {str(k): v for k, v in data.dependencies.items()} if hasattr(data,
-                                                                                             'dependencies') else {},
-                "progress": data.get_progress() if hasattr(data, 'get_progress') and callable(
-                    data.get_progress) else {},
-                "result": data.get_plan_result() if hasattr(data, 'get_plan_result') and callable(
-                    data.get_plan_result) else ""
-            }
+            plan_dict = _serialize_plan_data(data)
             logger.info(f"step_files:{data.step_files}")
 
             # logger.info(f"Plan对象已转换为字典: {plan_dict}")
@@ -411,6 +515,22 @@ async def search(request: Request, params: Any = Body(None)):
     query_content = content_array[0]['value'] if content_array and isinstance(
         content_array, list) and len(content_array) > 0 and 'value' in content_array[0] else ""
 
+    # === LightRAG 知识库上下文注入 ===
+    kb_ids = params.get('knowledgeBases', [])
+    if kb_ids and isinstance(kb_ids, list) and len(kb_ids) > 0:
+        try:
+            from cosight_server.deep_research.services.knowledge_base_service import query_knowledge_bases
+            kb_context = await query_knowledge_bases(
+                question=query_content,
+                kb_ids=kb_ids,
+                mode=os.environ.get('LIGHTRAG_DEFAULT_QUERY_MODE', 'hybrid')
+            )
+            if kb_context:
+                query_content = f"{query_content}\n\n[知识库参考信息]\n{kb_context}"
+                logger.info(f"Injected KB context from {len(kb_ids)} knowledge base(s)")
+        except Exception as e:
+            logger.warning(f"Failed to query knowledge bases: {e}")
+
     # 规划每个 plan 的持久化文件
     plan_log_path = os.path.join(LOGS_PATH, f"{plan_id}.log")
     plan_final_path = os.path.join(LOGS_PATH, f"{plan_id}.final.json")
@@ -471,21 +591,7 @@ async def search(request: Request, params: Any = Body(None)):
                 # 处理Plan对象转换为可序列化的dict
                 if isinstance(data, Plan):
                     plan_obj = data
-                    plan_dict = {
-                        "title": plan_obj.title if hasattr(plan_obj, 'title') else "",
-                        "steps": plan_obj.steps if hasattr(plan_obj, 'steps') else [],
-                        "step_files": plan_obj.step_files if hasattr(plan_obj, 'step_files') else {},
-                        "step_statuses": plan_obj.step_statuses if hasattr(plan_obj, 'step_statuses') else {},
-                        "step_notes": plan_obj.step_notes if hasattr(plan_obj, 'step_notes') else {},
-                        "step_details": plan_obj.step_details if hasattr(plan_obj, 'step_details') else {},
-                        "step_tool_calls": plan_obj.step_tool_calls if hasattr(plan_obj, 'step_tool_calls') else {},
-                        "dependencies": {str(k): v for k, v in plan_obj.dependencies.items()} if hasattr(plan_obj,
-                                                                                                     'dependencies') else {},
-                        "progress": plan_obj.get_progress() if hasattr(plan_obj, 'get_progress') and callable(
-                            data.get_progress) else {},
-                        "result": plan_obj.get_plan_result() if hasattr(plan_obj, 'get_plan_result') and callable(
-                            data.get_plan_result) else ""
-                    }
+                    plan_dict = _serialize_plan_data(plan_obj)
                     logger.info(f"step_files:{plan_obj.step_files}")
 
                     # logger.info(f"Plan对象已转换为字典: {plan_dict}")
@@ -614,15 +720,20 @@ async def search(request: Request, params: Any = Body(None)):
                 plan_report_event_manager.subscribe("tool_event", plan_id, append_create_plan_local)
                 logger.info(f"Event subscription completed for plan_id: {plan_id}")
 
-                # 初始化CoSight并传入plan_id
+                # 初始化CoSight并传入plan_id和运行时agent配置
                 logger.info(f"llm is {llm_for_plan.model}, {llm_for_plan.base_url}, {llm_for_plan.api_key}")
+                # 从请求参数中提取 agent_run_config（前端发送）
+                agent_run_config = params.get("agentRunConfig", None)
+                if agent_run_config:
+                    logger.info(f"Using agent_run_config: {agent_run_config}")
                 cosight = CoSight(
                     llm_for_plan,
                     llm_for_act,
                     llm_for_tool,
                     llm_for_vision,
                     work_space_path=work_space_path_time,
-                    message_uuid = plan_id
+                    message_uuid = plan_id,
+                    agent_run_config=agent_run_config
                 )
                 result = cosight.execute(query_content)
                 logger.info(f"final result is {result}")
@@ -1220,25 +1331,9 @@ async def get_replay_workspaces():
                 continue
 
             if os.path.isdir(folder_path) and os.path.exists(replay_file_path):
-                title = "未命名任务"
-                message_count = 0
-
                 try:
-                    with open(replay_file_path, 'r', encoding='utf-8') as f:
-                        lines = f.readlines()
-                        message_count = len(lines)
-
-                        if lines:
-                            first_line_data = json.loads(lines[0])
-                            content = first_line_data.get('content', {})
-                            if isinstance(content, dict):
-                                title = content.get('title', '未命名任务')
-                            elif isinstance(content, str):
-                                try:
-                                    content_obj = json.loads(content)
-                                    title = content_obj.get('title', '未命名任务')
-                                except Exception:
-                                    pass
+                    resolved_paths = _resolve_replay_paths(f"work_space/{folder_name}")
+                    title, message_count = _read_replay_display_title(resolved_paths, replay_file_path)
                 except Exception as e:
                     logger.warning(f"读取replay文件失败: {replay_file_path}, 错误: {e}")
                     continue
@@ -1273,3 +1368,83 @@ async def get_replay_workspaces():
         "message": "success",
         "data": workspaces,
     }
+
+
+class ReplayRenameRequest(BaseModel):
+    workspace_path: str
+    title: str
+
+
+@searchRouter.post("/replay/workspaces/rename")
+async def rename_replay_workspace(body: ReplayRenameRequest):
+    workspace_path = body.workspace_path
+    paths = _resolve_replay_paths(workspace_path)
+    workspace_name = paths.get("workspace_name")
+    replay_file = paths.get("replay_file")
+    legacy_replay_file = paths.get("legacy_replay_file")
+    metadata_file = paths.get("metadata_file")
+
+    if not workspace_name:
+        return {"code": -1, "message": "无效的工作区路径", "data": None}
+
+    title = body.title.strip()
+    if not title:
+        return {"code": -1, "message": "标题不能为空", "data": None}
+
+    if len(title) > 120:
+        return {"code": -1, "message": "标题长度不能超过 120 个字符", "data": None}
+
+    replay_exists = bool((replay_file and os.path.exists(replay_file)) or (legacy_replay_file and os.path.exists(legacy_replay_file)))
+    if not replay_exists:
+        return {"code": -1, "message": "回放记录不存在", "data": None}
+
+    try:
+        replay_dir = paths.get("replay_dir")
+        if replay_dir:
+            os.makedirs(replay_dir, exist_ok=True)
+        with open(metadata_file, "w", encoding="utf-8") as f:
+            json.dump({"title": title, "workspace_name": workspace_name}, f, ensure_ascii=False, indent=2)
+        return {"code": 0, "message": "重命名成功", "data": {"workspace_path": workspace_path, "title": title}}
+    except Exception as e:
+        logger.error(f"重命名回放记录失败: {workspace_path}, 错误: {e}", exc_info=True)
+        return {"code": -1, "message": f"重命名失败: {str(e)}", "data": None}
+
+
+@searchRouter.delete("/replay/workspaces")
+async def delete_replay_workspace(workspace_path: str):
+    paths = _resolve_replay_paths(workspace_path)
+    workspace_name = paths.get("workspace_name")
+    replay_dir = paths.get("replay_dir")
+    replay_file = paths.get("replay_file")
+    legacy_replay_file = paths.get("legacy_replay_file")
+    workspace_dir = paths.get("workspace_dir")
+
+    if not workspace_name:
+        return {"code": -1, "message": "无效的工作区路径", "data": None}
+
+    deleted = False
+    try:
+        if replay_dir and os.path.isdir(replay_dir):
+            shutil.rmtree(replay_dir, ignore_errors=False)
+            deleted = True
+        elif replay_file and os.path.exists(replay_file):
+            os.remove(replay_file)
+            deleted = True
+
+        if legacy_replay_file and os.path.exists(legacy_replay_file):
+            os.remove(legacy_replay_file)
+            deleted = True
+
+        if workspace_dir and os.path.isdir(workspace_dir):
+            if not _is_safe_workspace_target(workspace_dir):
+                return {"code": -1, "message": "目标工作区目录不安全，已拒绝删除", "data": None}
+            shutil.rmtree(workspace_dir, ignore_errors=False)
+            deleted = True
+
+        if not deleted:
+            return {"code": -1, "message": "回放记录不存在", "data": None}
+
+        return {"code": 0, "message": "删除成功", "data": {"workspace_path": workspace_path}}
+    except Exception as e:
+        logger.error(f"删除回放记录失败: {workspace_path}, 错误: {e}", exc_info=True)
+        return {"code": -1, "message": f"删除失败: {str(e)}", "data": None}

@@ -1,0 +1,9 @@
+{
+  "doc-ffa23c8a1182a27d389f489a0ccd8200": {
+    "content": "LightRAG Test Document\r\n\r\nLightRAG is a lightweight Retrieval-Augmented Generation system. It supports graph-based knowledge storage and efficient document retrieval.\r\n\r\nKey Features:\r\n1. Fast document indexing with automatic entity extraction\r\n2. Knowledge graph construction from unstructured text\r\n3. Multiple query modes: naive, local, global, hybrid, and mix\r\n4. Support for various LLM and embedding providers\r\n5. Built-in reranking for improved retrieval quality\r\n\r\nThis is a small test document to verify that the document processing pipeline works correctly with the configured embedding and LLM models.\r\n\r\nThe system extracts entities and relationships from documents, builds a knowledge graph, and enables semantic search over the indexed content.",
+    "file_path": "test_small.txt",
+    "create_time": 1773306437,
+    "update_time": 1773306437,
+    "_id": "doc-ffa23c8a1182a27d389f489a0ccd8200"
+  }
+}

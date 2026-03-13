@@ -1,0 +1,146 @@
+{
+  "LightRAG<SEP>Retrieval-Augmented Generation": {
+    "chunk_ids": [
+      "chunk-ffa23c8a1182a27d389f489a0ccd8200"
+    ],
+    "count": 1,
+    "create_time": 1773306438,
+    "update_time": 1773306438,
+    "_id": "LightRAG<SEP>Retrieval-Augmented Generation"
+  },
+  "Knowledge Graph<SEP>LightRAG": {
+    "chunk_ids": [
+      "chunk-ffa23c8a1182a27d389f489a0ccd8200"
+    ],
+    "count": 1,
+    "create_time": 1773306438,
+    "update_time": 1773306438,
+    "_id": "Knowledge Graph<SEP>LightRAG"
+  },
+  "Document Indexing<SEP>LightRAG": {
+    "chunk_ids": [
+      "chunk-ffa23c8a1182a27d389f489a0ccd8200"
+    ],
+    "count": 1,
+    "create_time": 1773306439,
+    "update_time": 1773306439,
+    "_id": "Document Indexing<SEP>LightRAG"
+  },
+  "LightRAG<SEP>Query Modes": {
+    "chunk_ids": [
+      "chunk-ffa23c8a1182a27d389f489a0ccd8200"
+    ],
+    "count": 1,
+    "create_time": 1773306439,
+    "update_time": 1773306439,
+    "_id": "LightRAG<SEP>Query Modes"
+  },
+  "Document Indexing<SEP>Entity Extraction": {
+    "chunk_ids": [
+      "chunk-ffa23c8a1182a27d389f489a0ccd8200"
+    ],
+    "count": 1,
+    "create_time": 1773306439,
+    "update_time": 1773306439,
+    "_id": "Document Indexing<SEP>Entity Extraction"
+  },
+  "LLM<SEP>LightRAG": {
+    "chunk_ids": [
+      "chunk-ffa23c8a1182a27d389f489a0ccd8200"
+    ],
+    "count": 1,
+    "create_time": 1773306439,
+    "update_time": 1773306439,
+    "_id": "LLM<SEP>LightRAG"
+  },
+  "Knowledge Graph<SEP>Unstructured Text": {
+    "chunk_ids": [
+      "chunk-ffa23c8a1182a27d389f489a0ccd8200"
+    ],
+    "count": 1,
+    "create_time": 1773306439,
+    "update_time": 1773306439,
+    "_id": "Knowledge Graph<SEP>Unstructured Text"
+  },
+  "Embedding<SEP>LightRAG": {
+    "chunk_ids": [
+      "chunk-ffa23c8a1182a27d389f489a0ccd8200"
+    ],
+    "count": 1,
+    "create_time": 1773306440,
+    "update_time": 1773306440,
+    "_id": "Embedding<SEP>LightRAG"
+  },
+  "Indexed Content<SEP>Semantic Search": {
+    "chunk_ids": [
+      "chunk-ffa23c8a1182a27d389f489a0ccd8200"
+    ],
+    "count": 1,
+    "create_time": 1773306440,
+    "update_time": 1773306440,
+    "_id": "Indexed Content<SEP>Semantic Search"
+  },
+  "LightRAG<SEP>Reranking": {
+    "chunk_ids": [
+      "chunk-ffa23c8a1182a27d389f489a0ccd8200"
+    ],
+    "count": 1,
+    "create_time": 1773306440,
+    "update_time": 1773306440,
+    "_id": "LightRAG<SEP>Reranking"
+  },
+  "Document Processing Pipeline<SEP>Embedding": {
+    "chunk_ids": [
+      "chunk-ffa23c8a1182a27d389f489a0ccd8200"
+    ],
+    "count": 1,
+    "create_time": 1773306440,
+    "update_time": 1773306440,
+    "_id": "Document Processing Pipeline<SEP>Embedding"
+  },
+  "Document Processing Pipeline<SEP>LLM": {
+    "chunk_ids": [
+      "chunk-ffa23c8a1182a27d389f489a0ccd8200"
+    ],
+    "count": 1,
+    "create_time": 1773306440,
+    "update_time": 1773306440,
+    "_id": "Document Processing Pipeline<SEP>LLM"
+  },
+  "LightRAG<SEP>Semantic Search": {
+    "chunk_ids": [
+      "chunk-ffa23c8a1182a27d389f489a0ccd8200"
+    ],
+    "count": 1,
+    "create_time": 1773306440,
+    "update_time": 1773306440,
+    "_id": "LightRAG<SEP>Semantic Search"
+  },
+  "Document Processing Pipeline<SEP>LightRAG Test Document": {
+    "chunk_ids": [
+      "chunk-ffa23c8a1182a27d389f489a0ccd8200"
+    ],
+    "count": 1,
+    "create_time": 1773306440,
+    "update_time": 1773306440,
+    "_id": "Document Processing Pipeline<SEP>LightRAG Test Document"
+  },
+  "Document Retrieval<SEP>LightRAG": {
+    "chunk_ids": [
+      "chunk-ffa23c8a1182a27d389f489a0ccd8200"
+    ],
+    "count": 1,
+    "create_time": 1773306440,
+    "update_time": 1773306440,
+    "_id": "Document Retrieval<SEP>LightRAG"
+  },
+  "Documents<SEP>LightRAG": {
+    "chunk_ids": [
+      "chunk-ffa23c8a1182a27d389f489a0ccd8200"
+    ],
+    "count": 1,
+    "create_time": 1773306441,
+    "update_time": 1773306441,
+    "_id": "Documents<SEP>LightRAG"
+  }
+}

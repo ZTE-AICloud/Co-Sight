@@ -52,6 +52,22 @@ class BaseAgent:
         if not hasattr(self, 'plan'):
             self.plan = None  # Will be set by subclasses that have access to Plan
 
+    def _get_runtime_agent_metadata(self) -> Dict[str, str]:
+        agent_type = getattr(self, "runtime_agent_type", "")
+        if not agent_type and getattr(self.agent_instance, "template", None):
+            template_type = getattr(self.agent_instance.template, "agent_type", "")
+            agent_type = "planner" if "planner" in template_type else "actor"
+
+        return {
+            "agent_id": getattr(self, "runtime_agent_id", self.agent_instance.instance_id),
+            "agent_name": getattr(
+                self,
+                "runtime_agent_name",
+                self.agent_instance.display_name_zh or self.agent_instance.instance_name,
+            ),
+            "agent_type": agent_type or "actor",
+        }
+
     def _normalize_tool_args(self, function_to_call, raw_args: Dict[str, Any], function_name: str = "") -> Dict[str, Any]:
         """
         将LLM生成的可能不规范的参数键统一映射为工具函数真实参数名。
@@ -180,6 +196,8 @@ class BaseAgent:
             # 增加序列号确保事件顺序
             self._tool_event_sequence += 1
             
+            agent_metadata = self._get_runtime_agent_metadata()
+
             # 构建事件数据
             event_data = {
                 "event_type": event_type,
@@ -188,7 +206,10 @@ class BaseAgent:
                 "tool_args": tool_args,
                 "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
                 "step_index": step_index,
-                "sequence": self._tool_event_sequence  # 添加序列号
+                "sequence": self._tool_event_sequence,  # 添加序列号
+                "agent_id": agent_metadata["agent_id"],
+                "agent_name": agent_metadata["agent_name"],
+                "agent_type": agent_metadata["agent_type"],
             }
             
             if duration is not None:

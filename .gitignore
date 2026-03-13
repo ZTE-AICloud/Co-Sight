@@ -23,3 +23,9 @@ work_space/**
 .cursorindexingignore
 .specstory
 scripts/*
+providers.json
+agents.json
+test_api_key.py
+/tmp/test_api_key.py
+*.bak
+providers.json

@@ -55,6 +55,15 @@ def create_plan_skill():
                         'description_zh': '步骤之间的依赖关系，例如 {1: [0]} 表示步骤1依赖于步骤0',
                         'description_en': 'Dependencies between steps, e.g. {1: [0]} means step 1 depends on step 0',
                         'default': None
+                    },
+                    'step_agents': {
+                        'type': 'object',
+                        'additionalProperties': {
+                            'type': 'string'
+                        },
+                        'description_zh': '每个步骤分配的执行智能体 ID，例如 {"0": "actor_default", "1": "actor_code_review"}',
+                        'description_en': 'Agent ID assigned to each step, e.g. {"0": "actor_default", "1": "actor_code_review"}',
+                        'default': None
                     }
                 },
                 'required': ['title', 'steps']
@@ -104,6 +113,15 @@ def update_plan_skill():
                         },
                         'description_zh': '新的步骤依赖关系',
                         'description_en': 'New dependencies between steps'
+                    },
+                    'step_agents': {
+                        'type': 'object',
+                        'additionalProperties': {
+                            'type': 'string'
+                        },
+                        'description_zh': '每个步骤分配的执行智能体 ID，可更新现有分配',
+                        'description_en': 'Agent ID assigned to each step, can update existing assignments',
+                        'default': None
                     }
                 },
                 'required': []

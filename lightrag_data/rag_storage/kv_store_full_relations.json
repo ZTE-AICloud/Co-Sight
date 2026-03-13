@@ -1,0 +1,74 @@
+{
+  "doc-ffa23c8a1182a27d389f489a0ccd8200": {
+    "relation_pairs": [
+      [
+        "Embedding",
+        "LightRAG"
+      ],
+      [
+        "LightRAG",
+        "Retrieval-Augmented Generation"
+      ],
+      [
+        "Document Processing Pipeline",
+        "Embedding"
+      ],
+      [
+        "Knowledge Graph",
+        "Unstructured Text"
+      ],
+      [
+        "Document Retrieval",
+        "LightRAG"
+      ],
+      [
+        "Document Indexing",
+        "LightRAG"
+      ],
+      [
+        "Document Processing Pipeline",
+        "LightRAG Test Document"
+      ],
+      [
+        "LightRAG",
+        "Reranking"
+      ],
+      [
+        "Documents",
+        "LightRAG"
+      ],
+      [
+        "LightRAG",
+        "Semantic Search"
+      ],
+      [
+        "LightRAG",
+        "Query Modes"
+      ],
+      [
+        "Document Processing Pipeline",
+        "LLM"
+      ],
+      [
+        "LLM",
+        "LightRAG"
+      ],
+      [
+        "Document Indexing",
+        "Entity Extraction"
+      ],
+      [
+        "Knowledge Graph",
+        "LightRAG"
+      ],
+      [
+        "Indexed Content",
+        "Semantic Search"
+      ]
+    ],
+    "count": 16,
+    "create_time": 1773306441,
+    "update_time": 1773306441,
+    "_id": "doc-ffa23c8a1182a27d389f489a0ccd8200"
+  }
+}

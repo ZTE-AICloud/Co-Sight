@@ -30,20 +30,44 @@ function setupMessageHandling() {
 }
 
 document.addEventListener("DOMContentLoaded", function () {
+    const shouldResetHome = Boolean(window.__cosightResetHome);
+
     // 初始化websocket连接
     WebSocketService.initWebSocket();
     
     // 等待WebSocket连接建立后设置消息处理
     WebSocketService.websocketConnected.addEventListener('connected', function() {
         console.log('WebSocket连接已建立，设置消息处理...');
-        setupMessageHandling();
+        if (!shouldResetHome) {
+            setupMessageHandling();
+        }
     });
     
     // 初始化输入框
     initInputHandler();
+
+    if (shouldResetHome) {
+        try {
+            if (typeof window.resetSessionCaches === 'function') {
+                window.resetSessionCaches();
+            }
+        } catch (e) {
+            console.warn('resetSessionCaches failed during home reset:', e);
+        }
+
+        try {
+            if (typeof window.showInitialHomeView === 'function') {
+                window.showInitialHomeView();
+            }
+        } catch (e) {
+            console.warn('showInitialHomeView failed during home reset:', e);
+        }
+    }
     
     // 检查是否有保存的DAG数据需要恢复
-    checkAndRestoreDAGData();
+    if (!shouldResetHome) {
+        checkAndRestoreDAGData();
+    }
 
     // 监听窗口大小变化
     window.addEventListener("resize", handleResize);

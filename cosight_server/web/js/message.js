@@ -502,6 +502,8 @@ class MessageService {
             statusDescription = (window.I18nService ? `${window.I18nService.t('execute_tool')}${getToolDisplayName(toolCallRecord.tool_name)}` : `执行工具: ${getToolDisplayName(toolCallRecord.tool_name)}`);
         }
 
+        const agentEvent = toolCallRecord.complete_event || toolCallRecord.start_event || {};
+
         return {
             id: callId,
             nodeId: nodeId,
@@ -517,6 +519,9 @@ class MessageService {
             url: url,
             path: path,
             timestamp: toolCallRecord.timestamp,
+            agentId: agentEvent.agent_id || null,
+            agentName: agentEvent.agent_name || null,
+            agentType: agentEvent.agent_type || null,
             // 为execute_code工具保留原始参数，以便显示代码内容
             tool_args: toolCallRecord.tool_args
         };
@@ -625,7 +630,7 @@ class MessageService {
         return false;
     }
 
-    sendMessage(content) {
+    sendMessage(content, options = {}) {
         console.log('MessageService.sendMessage >>>>>>>>>>>>>> ', content);
         // 新消息发送前清理之前的tool events和历史数据
         this.clearStepToolEvents();
@@ -654,7 +659,9 @@ class MessageService {
             mentions: [],
             extra: {
                 fromBackEnd: {
-                    actualPrompt: JSON.stringify({deepResearchEnabled: true})
+                    actualPrompt: JSON.stringify({deepResearchEnabled: true}),
+                    agentRunConfig: options.agentRunConfig || null,
+                    knowledgeBases: (typeof KnowledgeService !== 'undefined') ? KnowledgeService.getSelectedKBIds() : []
                 }
             },
             // 会被服务端解析的会话信息

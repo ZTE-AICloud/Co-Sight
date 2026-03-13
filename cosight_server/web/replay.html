@@ -43,8 +43,8 @@
         // 返回主页的函数
         function goBack() {
             const targetPage = window.location.pathname.includes('/cosight/') 
-                ? 'index.html' 
-                : '/cosight/index.html';
+                ? 'index.html?reset_home=1' 
+                : '/cosight/index.html?reset_home=1';
             window.location.href = targetPage;
         }
     </script>

@@ -13,12 +13,33 @@
 
     <link rel="stylesheet" href="styles/styles.css">
     <link rel="stylesheet" href="styles/md.css">
-    
+
     <!-- 页面刷新时清空localStorage -->
     <script>
-        // 页面刷新时清空localStorage中的所有内容
-        localStorage.clear();
-        console.log('页面刷新，已清空localStorage');
+        (function prepareEntryReset() {
+            const params = new URLSearchParams(window.location.search);
+            const shouldResetHome = params.get('reset_home') === '1';
+            window.__cosightResetHome = shouldResetHome;
+
+            if (!shouldResetHome) {
+                return;
+            }
+
+            try {
+                localStorage.removeItem('cosight:lastManusStep');
+                localStorage.removeItem('cosight:stepToolEvents');
+                localStorage.removeItem('cosight:planIdByTopic');
+                localStorage.removeItem('cosight:pendingRequests');
+            } catch (error) {
+                console.warn('[home-reset] failed to clear cached session state:', error);
+            }
+
+            try {
+                window.history.replaceState({}, document.title, window.location.pathname);
+            } catch (error) {
+                console.warn('[home-reset] failed to clean URL:', error);
+            }
+        })();
     </script>
 </head>
 
@@ -26,9 +47,20 @@
     <div class="container">
         <div class="header">
             <h1><i class="fas fa-robot"></i> Co-Sight 超级智能体</h1>
-            <button class="btn-replay-history" onclick="goToReplayHistory()" title="查看历史回放">
-                <i class="fas fa-history"></i>
-            </button>
+            <div class="header-buttons">
+                <button class="btn-knowledge" onclick="KnowledgeService.open()" title="知识库管理">
+                    <i class="fas fa-book"></i>
+                </button>
+                <button class="btn-agents" onclick="AgentService.open()" title="智能体管理">
+                    <i class="fas fa-robot"></i>
+                </button>
+                <button class="btn-settings" onclick="SettingsService.open()" title="设置">
+                    <i class="fas fa-cog"></i>
+                </button>
+                <button class="btn-replay-history" onclick="goToReplayHistory()" title="查看历史回放">
+                    <i class="fas fa-history"></i>
+                </button>
+            </div>
             <!-- <p>DAG流程展示与进度跟踪</p> -->
         </div>
 
@@ -39,9 +71,12 @@
                 <p class="welcome-subtitle">今天有什么可以帮到你？</p>
             </div>
 
+            <!-- 知识库选择器（初始输入区） -->
+            <div id="kb-selector-container-initial" class="kb-selector-wrapper"></div>
             <div class="initial-input-field-container">
                 <!-- <textarea class="initial-textarea" placeholder="请输入你的任务..." id="initial-message-input" rows="3">请分析2025年江苏足球联赛中各个足球队的表现分析这些球队的强项弱项等，然后预测一下最终的比赛成绩，生成一个对应的报告</textarea> -->
-                <textarea class="initial-textarea" placeholder="请输入你的任务..." id="initial-message-input" rows="3"></textarea>
+                <textarea class="initial-textarea" placeholder="请输入你的任务..." id="initial-message-input"
+                    rows="3"></textarea>
                 <button class="initial-send-button" id="initial-send-button">
                     <i class="fas fa-paper-plane"></i>
                 </button>
@@ -142,6 +177,8 @@
                         </div>
                     </div>
 
+                    <!-- 知识库选择器（DAG输入区） -->
+                    <div id="kb-selector-container-main" class="kb-selector-wrapper"></div>
                     <div class="input">
                         <div class="input-container">
                             <input type="text" class="input-field" placeholder="请输入你的任务..." id="message-input">
@@ -178,7 +215,8 @@
                 <div class="right-content">
                     <!-- <iframe id="content-iframe" src="https://www.logonews.cn/2025-jiangsu-football-city-league-logo.html" width="100%"
                         height="100%" frameborder="0"></iframe> -->
-                    <iframe id="content-iframe" width="100%" height="100%" frameborder="0" style="display: none;"></iframe>
+                    <iframe id="content-iframe" width="100%" height="100%" frameborder="0"
+                        style="display: none;"></iframe>
                     <div id="markdown-content"></div>
                     <!-- 加载中提示 -->
                     <div id="loading-indicator" class="loading-indicator" style="display: none;">
@@ -195,16 +233,28 @@
         </div>
     </div>
 
+    <!-- 设置弹窗容器 -->
+    <div id="settings-modal"></div>
+    <!-- 智能体管理弹窗容器 -->
+    <div id="agent-modal"></div>
+    <!-- 知识库管理弹窗容器 -->
+    <div id="knowledge-modal"></div>
+
     <div class="tooltip" id="tooltip"></div>
     <div class="steps-tooltip" id="steps-tooltip"></div>
     <div class="verification-tooltip" id="verification-tooltip"></div>
 
-    <!-- 国际化服务脚本 --><script src="js/i18n.js"></script><script src="data/data.js"></script>
+    <!-- 国际化服务脚本 -->
+    <script src="js/i18n.js"></script>
+    <script src="data/data.js"></script>
     <script src="js/websocket.js"></script>
     <script src="js/message.js"></script>
     <script src="js/steps.js"></script>
     <script src="js/dag.js"></script>
     <script src="js/credibility.js"></script>
+    <script src="js/settings.js"></script>
+    <script src="js/agents.js"></script>
+    <script src="js/knowledge.js"></script>
     <script src="js/main.js"></script>
     <script src="temp/test.js"></script>
     <script src="temp/data.js"></script>
@@ -214,8 +264,8 @@
     <script>
         // 跳转到回放历史页面
         function goToReplayHistory() {
-            const targetPage = window.location.pathname.includes('/cosight/') 
-                ? 'replay.html' 
+            const targetPage = window.location.pathname.includes('/cosight/')
+                ? 'replay.html'
                 : '/cosight/replay.html';
             window.location.href = targetPage;
         }
@@ -223,6 +273,7 @@
     <script>
         (function restoreFromStorage() {
             try {
+                if (window.__cosightResetHome) return;
                 const raw = localStorage.getItem('cosight:lastManusStep');
                 const pendingRaw = localStorage.getItem('cosight:pendingRequests');
                 const pendings = pendingRaw ? JSON.parse(pendingRaw) : {};
@@ -260,7 +311,7 @@
                             // 包装一次性监听器：首次收到消息后，清除 pending 状态
                             const originalHandler = window.messageService && window.messageService.receiveMessage
                                 ? window.messageService.receiveMessage
-                                : () => {};
+                                : () => { };
                             let firstMessageHandled = false;
                             const wrappedHandler = (evt) => {
                                 if (!firstMessageHandled) {

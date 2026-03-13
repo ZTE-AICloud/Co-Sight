@@ -1,0 +1,26 @@
+{
+  "doc-ffa23c8a1182a27d389f489a0ccd8200": {
+    "entity_names": [
+      "Reranking",
+      "Entity Extraction",
+      "LightRAG Test Document",
+      "Retrieval-Augmented Generation",
+      "Document Processing Pipeline",
+      "Knowledge Graph",
+      "Document Indexing",
+      "Documents",
+      "Query Modes",
+      "Document Retrieval",
+      "LLM",
+      "Indexed Content",
+      "Semantic Search",
+      "Embedding",
+      "LightRAG",
+      "Unstructured Text"
+    ],
+    "count": 16,
+    "create_time": 1773306441,
+    "update_time": 1773306441,
+    "_id": "doc-ffa23c8a1182a27d389f489a0ccd8200"
+  }
+}

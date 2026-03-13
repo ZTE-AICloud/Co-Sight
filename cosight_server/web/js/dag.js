@@ -13,6 +13,25 @@ function ensureTooltipInitialized() {
     }
 }
 
+function resolveRuntimeAgentName(agentId) {
+    if (!agentId) return "";
+    if (
+        window.RuntimeAgentSelector &&
+        typeof window.RuntimeAgentSelector.getAgentName === "function"
+    ) {
+        return window.RuntimeAgentSelector.getAgentName(agentId) || agentId;
+    }
+    return agentId;
+}
+
+function buildNodeAgentLabel(node) {
+    const planned = resolveRuntimeAgentName(node.plannedAgentId);
+    const actual = resolveRuntimeAgentName(node.executionAgentId);
+    const label = actual || planned;
+    if (!label) return "";
+    return label.length > 16 ? `${label.slice(0, 15)}…` : label;
+}
+
 // 计算层次化布局
 function calculateHierarchicalLayout() {
     const nodes = dagData.nodes;
@@ -243,7 +262,7 @@ function initDAG() {
             showStepDetails(event, d);
 
             // 切换节点工具面板的显示状态，使用完整的标题信息
-            const panelTitle = `Step ${d.id} - ${d.title}`;
+            const panelTitle = `Step ${d.id} - ${d.fullName || d.title || d.name}`;
             const panelOpened = toggleNodeToolPanel(d.id, panelTitle);
 
             // 只有在面板被打开时才添加工具调用
@@ -269,6 +288,15 @@ function initDAG() {
     node.append("text")
         .attr("class", "node-text")
         .text(d => d.name);
+
+    node.append("text")
+        .attr("class", "node-agent-text")
+        .attr("x", 0)
+        .attr("y", 15)
+        .attr("text-anchor", "middle")
+        .attr("font-size", "10px")
+        .attr("fill", "#5b6475")
+        .text(d => buildNodeAgentLabel(d));
 
     // 添加状态图标
     node.append("text")
@@ -314,8 +342,17 @@ function initDAG() {
 
 // 显示步骤详情
 function showStepDetails(event, d) {
-    document.getElementById("step-title").textContent = d.title;
-    document.getElementById("step-description").textContent = d.description;
+    const stepTitle = d.fullName || d.title || d.name;
+    const details = [
+        `状态: ${getStatusText(d.status)}`,
+        d.plannedAgentId ? `计划执行: ${resolveRuntimeAgentName(d.plannedAgentId)}` : "",
+        d.executionAgentId ? `实际执行: ${resolveRuntimeAgentName(d.executionAgentId)}` : "",
+        d.isFallback ? "已回退到默认 Actor" : "",
+        d.step_notes ? `说明: ${d.step_notes}` : "",
+    ].filter(Boolean).join(" | ");
+
+    document.getElementById("step-title").textContent = `Step ${d.id} - ${stepTitle}`;
+    document.getElementById("step-description").textContent = details || "暂无详细信息";
 
     // 高亮相关节点
     highlightRelatedNodes(d);
@@ -649,6 +686,10 @@ function createDag(messageData) {
             console.log('  initData.step_statuses[step] 值:', initData.step_statuses ? initData.step_statuses[step] : 'N/A');
             
             const stepNotesValue = initData.step_notes ? (initData.step_notes[step] || "") : "";
+            const plannedAgentId = initData.step_agents ? (initData.step_agents[String(index)] || null) : null;
+            const executionAgentId = initData.step_execution_agents
+                ? (initData.step_execution_agents[String(index)] || null)
+                : null;
             console.log('  计算出的 stepNotesValue:', stepNotesValue);
             
             const nodeData = {
@@ -657,7 +698,10 @@ function createDag(messageData) {
                 fullName: step,  // 保留完整名称用于其他用途
                 status: initData.step_statuses[step] || "not_started",
                 step_notes: stepNotesValue,
-                dependencies: dependencies
+                dependencies: dependencies,
+                plannedAgentId: plannedAgentId,
+                executionAgentId: executionAgentId,
+                isFallback: Boolean(plannedAgentId && executionAgentId && plannedAgentId !== executionAgentId)
             };
             
             console.log('  最终节点数据:', nodeData);

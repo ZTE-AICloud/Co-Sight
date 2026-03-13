@@ -171,6 +171,14 @@ async def _send_resp(websocket, cookie, topic, message, lang):
         if uploaded_files and isinstance(uploaded_files, list) and len(uploaded_files) > 0:
             params["uploadedFiles"] = uploaded_files
             logger.info(f"Found uploaded files in message: {uploaded_files}")
+        agent_run_config = from_back_end.get("agentRunConfig")
+        if isinstance(agent_run_config, dict):
+            params["agentRunConfig"] = agent_run_config
+        # 提取知识库选择列表
+        knowledge_bases = from_back_end.get("knowledgeBases")
+        if isinstance(knowledge_bases, list) and len(knowledge_bases) > 0:
+            params["knowledgeBases"] = knowledge_bases
+            logger.info(f"Found knowledge bases in message: {knowledge_bases}")
     except Exception as e:
         logger.warning(f"Error extracting uploaded files from message: {e}")
     # 支持回放控制字段：replay、replayWorkspace、replayPlanId

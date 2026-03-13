@@ -121,12 +121,12 @@ if __name__ == '__main__':
     
     model_info = {
         "base_url": "https://api.deepseek.com/",
-        "api_key": "sk-425469d1f43543cc87ab12ebf8c8e081",
+        "api_key": "YOUR_DEEPSEEK_API_KEY",
         "model_name": "deepseek-chat",
 
     }
     web_search_info = {
-        "api_key": "tvly-dev-123"
+        "api_key": "YOUR_TAVILY_API_KEY"
     }
     deep_search_toolkit = DeepSearchToolkit(model_info, web_search_info)
     result = asyncio.run(deep_search_toolkit.deep_search("介绍哪吒2"))

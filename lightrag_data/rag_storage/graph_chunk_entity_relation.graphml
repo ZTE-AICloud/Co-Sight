@@ -1,0 +1,304 @@
+<?xml version='1.0' encoding='utf-8'?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd"><key id="d13" for="edge" attr.name="truncate" attr.type="string"/>
+<key id="d12" for="edge" attr.name="created_at" attr.type="long"/>
+<key id="d11" for="edge" attr.name="file_path" attr.type="string"/>
+<key id="d10" for="edge" attr.name="source_id" attr.type="string"/>
+<key id="d9" for="edge" attr.name="keywords" attr.type="string"/>
+<key id="d8" for="edge" attr.name="description" attr.type="string"/>
+<key id="d7" for="edge" attr.name="weight" attr.type="double"/>
+<key id="d6" for="node" attr.name="truncate" attr.type="string"/>
+<key id="d5" for="node" attr.name="created_at" attr.type="long"/>
+<key id="d4" for="node" attr.name="file_path" attr.type="string"/>
+<key id="d3" for="node" attr.name="source_id" attr.type="string"/>
+<key id="d2" for="node" attr.name="description" attr.type="string"/>
+<key id="d1" for="node" attr.name="entity_type" attr.type="string"/>
+<key id="d0" for="node" attr.name="entity_id" attr.type="string"/>
+<graph edgedefault="undirected"><node id="LightRAG">
+  <data key="d0">LightRAG</data>
+  <data key="d1">artifact</data>
+  <data key="d2">LightRAG is a lightweight Retrieval-Augmented Generation system supporting graph-based knowledge storage and efficient document retrieval.</data>
+  <data key="d3">chunk-ffa23c8a1182a27d389f489a0ccd8200</data>
+  <data key="d4">test_small.txt</data>
+  <data key="d5">1773306437</data>
+  <data key="d6"></data>
+</node>
+<node id="Retrieval-Augmented Generation">
+  <data key="d0">Retrieval-Augmented Generation</data>
+  <data key="d1">method</data>
+  <data key="d2">Retrieval-Augmented Generation is the underlying methodology used by the LightRAG system.</data>
+  <data key="d3">chunk-ffa23c8a1182a27d389f489a0ccd8200</data>
+  <data key="d4">test_small.txt</data>
+  <data key="d5">1773306437</data>
+  <data key="d6"></data>
+</node>
+<node id="Knowledge Graph">
+  <data key="d0">Knowledge Graph</data>
+  <data key="d1">concept</data>
+  <data key="d2">Knowledge Graph is a structure used for storage and construction from unstructured text within LightRAG.</data>
+  <data key="d3">chunk-ffa23c8a1182a27d389f489a0ccd8200</data>
+  <data key="d4">test_small.txt</data>
+  <data key="d5">1773306437</data>
+  <data key="d6"></data>
+</node>
+<node id="Document Indexing">
+  <data key="d0">Document Indexing</data>
+  <data key="d1">method</data>
+  <data key="d2">Document Indexing is a fast process with automatic entity extraction supported by LightRAG.</data>
+  <data key="d3">chunk-ffa23c8a1182a27d389f489a0ccd8200</data>
+  <data key="d4">test_small.txt</data>
+  <data key="d5">1773306437</data>
+  <data key="d6"></data>
+</node>
+<node id="Entity Extraction">
+  <data key="d0">Entity Extraction</data>
+  <data key="d1">method</data>
+  <data key="d2">Entity Extraction is an automatic process part of the document indexing feature.</data>
+  <data key="d3">chunk-ffa23c8a1182a27d389f489a0ccd8200</data>
+  <data key="d4">test_small.txt</data>
+  <data key="d5">1773306437</data>
+  <data key="d6"></data>
+</node>
+<node id="Query Modes">
+  <data key="d0">Query Modes</data>
+  <data key="d1">concept</data>
+  <data key="d2">Query Modes include naive, local, global, hybrid, and mix options available in LightRAG.</data>
+  <data key="d3">chunk-ffa23c8a1182a27d389f489a0ccd8200</data>
+  <data key="d4">test_small.txt</data>
+  <data key="d5">1773306437</data>
+  <data key="d6"></data>
+</node>
+<node id="LLM">
+  <data key="d0">LLM</data>
+  <data key="d1">concept</data>
+  <data key="d2">LLM refers to Large Language Model providers supported by the system.</data>
+  <data key="d3">chunk-ffa23c8a1182a27d389f489a0ccd8200</data>
+  <data key="d4">test_small.txt</data>
+  <data key="d5">1773306437</data>
+  <data key="d6"></data>
+</node>
+<node id="Embedding">
+  <data key="d0">Embedding</data>
+  <data key="d1">concept</data>
+  <data key="d2">Embedding refers to embedding providers and models configured for the document processing pipeline.</data>
+  <data key="d3">chunk-ffa23c8a1182a27d389f489a0ccd8200</data>
+  <data key="d4">test_small.txt</data>
+  <data key="d5">1773306437</data>
+  <data key="d6"></data>
+</node>
+<node id="Reranking">
+  <data key="d0">Reranking</data>
+  <data key="d1">method</data>
+  <data key="d2">Reranking is a built-in method for improved retrieval quality within LightRAG.</data>
+  <data key="d3">chunk-ffa23c8a1182a27d389f489a0ccd8200</data>
+  <data key="d4">test_small.txt</data>
+  <data key="d5">1773306438</data>
+  <data key="d6"></data>
+</node>
+<node id="Document Processing Pipeline">
+  <data key="d0">Document Processing Pipeline</data>
+  <data key="d1">method</data>
+  <data key="d2">Document Processing Pipeline is the system component verified by the test document to work with embedding and LLM models.</data>
+  <data key="d3">chunk-ffa23c8a1182a27d389f489a0ccd8200</data>
+  <data key="d4">test_small.txt</data>
+  <data key="d5">1773306438</data>
+  <data key="d6"></data>
+</node>
+<node id="Semantic Search">
+  <data key="d0">Semantic Search</data>
+  <data key="d1">method</data>
+  <data key="d2">Semantic Search is enabled over indexed content by the system after building a knowledge graph.</data>
+  <data key="d3">chunk-ffa23c8a1182a27d389f489a0ccd8200</data>
+  <data key="d4">test_small.txt</data>
+  <data key="d5">1773306438</data>
+  <data key="d6"></data>
+</node>
+<node id="LightRAG Test Document">
+  <data key="d0">LightRAG Test Document</data>
+  <data key="d1">content</data>
+  <data key="d2">LightRAG Test Document is a small test document used to verify the document processing pipeline.</data>
+  <data key="d3">chunk-ffa23c8a1182a27d389f489a0ccd8200</data>
+  <data key="d4">test_small.txt</data>
+  <data key="d5">1773306438</data>
+  <data key="d6"></data>
+</node>
+<node id="Unstructured Text">
+  <data key="d0">Unstructured Text</data>
+  <data key="d1">content</data>
+  <data key="d2">Unstructured text serves as the source material for knowledge graph construction within the system.</data>
+  <data key="d3">chunk-ffa23c8a1182a27d389f489a0ccd8200</data>
+  <data key="d4">test_small.txt</data>
+  <data key="d5">1773306438</data>
+  <data key="d6"></data>
+</node>
+<node id="Document Retrieval">
+  <data key="d0">Document Retrieval</data>
+  <data key="d1">method</data>
+  <data key="d2">Document retrieval is an efficient process supported by the LightRAG system.</data>
+  <data key="d3">chunk-ffa23c8a1182a27d389f489a0ccd8200</data>
+  <data key="d4">test_small.txt</data>
+  <data key="d5">1773306438</data>
+  <data key="d6"></data>
+</node>
+<node id="Indexed Content">
+  <data key="d0">Indexed Content</data>
+  <data key="d1">content</data>
+  <data key="d2">Indexed content refers to the processed data over which semantic search is enabled.</data>
+  <data key="d3">chunk-ffa23c8a1182a27d389f489a0ccd8200</data>
+  <data key="d4">test_small.txt</data>
+  <data key="d5">1773306438</data>
+  <data key="d6"></data>
+</node>
+<node id="Documents">
+  <data key="d0">Documents</data>
+  <data key="d1">content</data>
+  <data key="d2">Documents are the general source files from which the system extracts entities and relationships.</data>
+  <data key="d3">chunk-ffa23c8a1182a27d389f489a0ccd8200</data>
+  <data key="d4">test_small.txt</data>
+  <data key="d5">1773306438</data>
+  <data key="d6"></data>
+</node>
+<edge source="LightRAG" target="Retrieval-Augmented Generation">
+  <data key="d7">1.0</data>
+  <data key="d8">LightRAG is implemented as a Retrieval-Augmented Generation system.</data>
+  <data key="d9">implementation,system type</data>
+  <data key="d10">chunk-ffa23c8a1182a27d389f489a0ccd8200</data>
+  <data key="d11">test_small.txt</data>
+  <data key="d12">1773306438</data>
+  <data key="d13"></data>
+</edge>
+<edge source="LightRAG" target="Knowledge Graph">
+  <data key="d7">1.0</data>
+  <data key="d8">LightRAG supports graph-based knowledge storage and constructs knowledge graphs from text.</data>
+  <data key="d9">construction,knowledge storage</data>
+  <data key="d10">chunk-ffa23c8a1182a27d389f489a0ccd8200</data>
+  <data key="d11">test_small.txt</data>
+  <data key="d12">1773306438</data>
+  <data key="d13"></data>
+</edge>
+<edge source="LightRAG" target="Document Indexing">
+  <data key="d7">1.0</data>
+  <data key="d8">LightRAG supports fast document indexing as a key feature.</data>
+  <data key="d9">feature support,performance</data>
+  <data key="d10">chunk-ffa23c8a1182a27d389f489a0ccd8200</data>
+  <data key="d11">test_small.txt</data>
+  <data key="d12">1773306439</data>
+  <data key="d13"></data>
+</edge>
+<edge source="LightRAG" target="Query Modes">
+  <data key="d7">1.0</data>
+  <data key="d8">LightRAG supports multiple query modes including naive, local, global, hybrid, and mix.</data>
+  <data key="d9">functionality,search options</data>
+  <data key="d10">chunk-ffa23c8a1182a27d389f489a0ccd8200</data>
+  <data key="d11">test_small.txt</data>
+  <data key="d12">1773306439</data>
+  <data key="d13"></data>
+</edge>
+<edge source="LightRAG" target="LLM">
+  <data key="d7">1.0</data>
+  <data key="d8">LightRAG supports various LLM providers.</data>
+  <data key="d9">integration,provider support</data>
+  <data key="d10">chunk-ffa23c8a1182a27d389f489a0ccd8200</data>
+  <data key="d11">test_small.txt</data>
+  <data key="d12">1773306439</data>
+  <data key="d13"></data>
+</edge>
+<edge source="LightRAG" target="Embedding">
+  <data key="d7">1.0</data>
+  <data key="d8">LightRAG supports various embedding providers.</data>
+  <data key="d9">integration,provider support</data>
+  <data key="d10">chunk-ffa23c8a1182a27d389f489a0ccd8200</data>
+  <data key="d11">test_small.txt</data>
+  <data key="d12">1773306440</data>
+  <data key="d13"></data>
+</edge>
+<edge source="LightRAG" target="Reranking">
+  <data key="d7">1.0</data>
+  <data key="d8">LightRAG includes built-in reranking for improved retrieval quality.</data>
+  <data key="d9">feature,quality improvement</data>
+  <data key="d10">chunk-ffa23c8a1182a27d389f489a0ccd8200</data>
+  <data key="d11">test_small.txt</data>
+  <data key="d12">1773306440</data>
+  <data key="d13"></data>
+</edge>
+<edge source="LightRAG" target="Semantic Search">
+  <data key="d7">1.0</data>
+  <data key="d8">LightRAG enables semantic search over indexed content.</data>
+  <data key="d9">capability,enablement</data>
+  <data key="d10">chunk-ffa23c8a1182a27d389f489a0ccd8200</data>
+  <data key="d11">test_small.txt</data>
+  <data key="d12">1773306440</data>
+  <data key="d13"></data>
+</edge>
+<edge source="LightRAG" target="Document Retrieval">
+  <data key="d7">1.0</data>
+  <data key="d8">LightRAG supports efficient document retrieval.</data>
+  <data key="d9">functionality,system support</data>
+  <data key="d10">chunk-ffa23c8a1182a27d389f489a0ccd8200</data>
+  <data key="d11">test_small.txt</data>
+  <data key="d12">1773306440</data>
+  <data key="d13"></data>
+</edge>
+<edge source="LightRAG" target="Documents">
+  <data key="d7">1.0</data>
+  <data key="d8">The system extracts entities and relationships from documents.</data>
+  <data key="d9">extraction source,processing</data>
+  <data key="d10">chunk-ffa23c8a1182a27d389f489a0ccd8200</data>
+  <data key="d11">test_small.txt</data>
+  <data key="d12">1773306441</data>
+  <data key="d13"></data>
+</edge>
+<edge source="Knowledge Graph" target="Unstructured Text">
+  <data key="d7">1.0</data>
+  <data key="d8">Knowledge graphs are constructed from unstructured text.</data>
+  <data key="d9">construction,source material</data>
+  <data key="d10">chunk-ffa23c8a1182a27d389f489a0ccd8200</data>
+  <data key="d11">test_small.txt</data>
+  <data key="d12">1773306439</data>
+  <data key="d13"></data>
+</edge>
+<edge source="Document Indexing" target="Entity Extraction">
+  <data key="d7">1.0</data>
+  <data key="d8">Document indexing includes automatic entity extraction.</data>
+  <data key="d9">automation,process inclusion</data>
+  <data key="d10">chunk-ffa23c8a1182a27d389f489a0ccd8200</data>
+  <data key="d11">test_small.txt</data>
+  <data key="d12">1773306439</data>
+  <data key="d13"></data>
+</edge>
+<edge source="LLM" target="Document Processing Pipeline">
+  <data key="d7">1.0</data>
+  <data key="d8">The document processing pipeline works with configured LLM models.</data>
+  <data key="d9">configuration,model usage</data>
+  <data key="d10">chunk-ffa23c8a1182a27d389f489a0ccd8200</data>
+  <data key="d11">test_small.txt</data>
+  <data key="d12">1773306440</data>
+  <data key="d13"></data>
+</edge>
+<edge source="Embedding" target="Document Processing Pipeline">
+  <data key="d7">1.0</data>
+  <data key="d8">The document processing pipeline works with configured embedding models.</data>
+  <data key="d9">configuration,model usage</data>
+  <data key="d10">chunk-ffa23c8a1182a27d389f489a0ccd8200</data>
+  <data key="d11">test_small.txt</data>
+  <data key="d12">1773306440</data>
+  <data key="d13"></data>
+</edge>
+<edge source="Document Processing Pipeline" target="LightRAG Test Document">
+  <data key="d7">1.0</data>
+  <data key="d8">The LightRAG Test Document is used to verify that the document processing pipeline works correctly.</data>
+  <data key="d9">testing,verification</data>
+  <data key="d10">chunk-ffa23c8a1182a27d389f489a0ccd8200</data>
+  <data key="d11">test_small.txt</data>
+  <data key="d12">1773306440</data>
+  <data key="d13"></data>
+</edge>
+<edge source="Semantic Search" target="Indexed Content">
+  <data key="d7">1.0</data>
+  <data key="d8">Semantic search is enabled over the indexed content.</data>
+  <data key="d9">operation,search target</data>
+  <data key="d10">chunk-ffa23c8a1182a27d389f489a0ccd8200</data>
+  <data key="d11">test_small.txt</data>
+  <data key="d12">1773306440</data>
+  <data key="d13"></data>
+</edge>
+</graph></graphml>

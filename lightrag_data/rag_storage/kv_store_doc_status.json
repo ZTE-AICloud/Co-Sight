@@ -1,0 +1,19 @@
+{
+  "doc-ffa23c8a1182a27d389f489a0ccd8200": {
+    "status": "processed",
+    "chunks_count": 1,
+    "chunks_list": [
+      "chunk-ffa23c8a1182a27d389f489a0ccd8200"
+    ],
+    "content_summary": "LightRAG Test Document\r\n\r\nLightRAG is a lightweight Retrieval-Augmented Generation system. It supports graph-based knowledge storage and efficient document retrieval.\r\n\r\nKey Features:\r\n1. Fast document indexing with automatic entity extraction\r\n2. Kn...",
+    "content_length": 758,
+    "created_at": "2026-03-12T09:07:17.429889+00:00",
+    "updated_at": "2026-03-12T09:07:21.421798+00:00",
+    "file_path": "test_small.txt",
+    "track_id": "upload_20260312_170717_14ab62b6",
+    "metadata": {
+      "processing_start_time": 1773306437,
+      "processing_end_time": 1773306441
+    }
+  }
+}

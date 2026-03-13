@@ -13,7 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-def planner_system_prompt(question):
+def planner_system_prompt(question, available_actors=None, dispatch_mode="single_actor"):
     import sys
     import os
 
@@ -275,6 +275,29 @@ title: Develop a web application
 steps: ["Requirements gathering", "System design", "Database design", "Frontend development", "Backend development", "Testing", "Deployment"]
 dependencies: {1: [0], 2: [0], 3: [1], 4: [1], 5: [3, 4], 6: [5]}
 """
+    # ---------- 动态注入可用 Actor 列表 ----------
+    if available_actors and dispatch_mode == "planner_assign":
+        actors_info = "\n".join([
+            f"  - ID: {a.get('id', 'unknown')}, 名称: {a.get('name', '未命名')}, "
+            f"描述: {a.get('description', '无描述')}, "
+            f"技能: {', '.join(a.get('skills', []))}"
+            for a in available_actors
+        ])
+        actor_section = f"""
+
+# 可用执行智能体（Actor）
+以下是本次任务可用的执行智能体列表，你可以为每个步骤指定由哪个 Actor 执行：
+{actors_info}
+
+# 步骤分配规则
+1. 在调用 create_plan 或 update_plan 时，可以额外传入 step_agents 参数
+2. step_agents 格式为字典：{{"0": "actor_id", "1": "actor_id", ...}}
+3. 根据每个步骤的任务性质，选择最匹配的 Actor
+4. 如果某个步骤不指定 Actor，系统会使用默认 Actor
+5. 只能从上述列表中选择 Actor，不能使用不存在的 ID
+"""
+        system_prompt += actor_section
+
     return system_prompt
 
 

@@ -220,6 +220,28 @@
     box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
 }
 
+.btn-rename {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.28);
+}
+
+.btn-rename:hover {
+    background: linear-gradient(135deg, #f97316 0%, #f59e0b 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+}
+
 .loading {
     display: flex;
     justify-content: center;
@@ -313,7 +335,8 @@
     }
 
     .btn-replay,
-    .btn-delete {
+    .btn-delete,
+    .btn-rename {
         width: 100%;
         justify-content: center;
     }

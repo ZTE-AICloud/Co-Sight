@@ -1,0 +1,146 @@
+{
+  "LightRAG": {
+    "chunk_ids": [
+      "chunk-ffa23c8a1182a27d389f489a0ccd8200"
+    ],
+    "count": 1,
+    "create_time": 1773306437,
+    "update_time": 1773306437,
+    "_id": "LightRAG"
+  },
+  "Retrieval-Augmented Generation": {
+    "chunk_ids": [
+      "chunk-ffa23c8a1182a27d389f489a0ccd8200"
+    ],
+    "count": 1,
+    "create_time": 1773306437,
+    "update_time": 1773306437,
+    "_id": "Retrieval-Augmented Generation"
+  },
+  "Knowledge Graph": {
+    "chunk_ids": [
+      "chunk-ffa23c8a1182a27d389f489a0ccd8200"
+    ],
+    "count": 1,
+    "create_time": 1773306437,
+    "update_time": 1773306437,
+    "_id": "Knowledge Graph"
+  },
+  "Document Indexing": {
+    "chunk_ids": [
+      "chunk-ffa23c8a1182a27d389f489a0ccd8200"
+    ],
+    "count": 1,
+    "create_time": 1773306437,
+    "update_time": 1773306437,
+    "_id": "Document Indexing"
+  },
+  "Entity Extraction": {
+    "chunk_ids": [
+      "chunk-ffa23c8a1182a27d389f489a0ccd8200"
+    ],
+    "count": 1,
+    "create_time": 1773306437,
+    "update_time": 1773306437,
+    "_id": "Entity Extraction"
+  },
+  "Query Modes": {
+    "chunk_ids": [
+      "chunk-ffa23c8a1182a27d389f489a0ccd8200"
+    ],
+    "count": 1,
+    "create_time": 1773306437,
+    "update_time": 1773306437,
+    "_id": "Query Modes"
+  },
+  "LLM": {
+    "chunk_ids": [
+      "chunk-ffa23c8a1182a27d389f489a0ccd8200"
+    ],
+    "count": 1,
+    "create_time": 1773306437,
+    "update_time": 1773306437,
+    "_id": "LLM"
+  },
+  "Embedding": {
+    "chunk_ids": [
+      "chunk-ffa23c8a1182a27d389f489a0ccd8200"
+    ],
+    "count": 1,
+    "create_time": 1773306437,
+    "update_time": 1773306437,
+    "_id": "Embedding"
+  },
+  "Reranking": {
+    "chunk_ids": [
+      "chunk-ffa23c8a1182a27d389f489a0ccd8200"
+    ],
+    "count": 1,
+    "create_time": 1773306438,
+    "update_time": 1773306438,
+    "_id": "Reranking"
+  },
+  "Document Processing Pipeline": {
+    "chunk_ids": [
+      "chunk-ffa23c8a1182a27d389f489a0ccd8200"
+    ],
+    "count": 1,
+    "create_time": 1773306438,
+    "update_time": 1773306438,
+    "_id": "Document Processing Pipeline"
+  },
+  "Semantic Search": {
+    "chunk_ids": [
+      "chunk-ffa23c8a1182a27d389f489a0ccd8200"
+    ],
+    "count": 1,
+    "create_time": 1773306438,
+    "update_time": 1773306438,
+    "_id": "Semantic Search"
+  },
+  "LightRAG Test Document": {
+    "chunk_ids": [
+      "chunk-ffa23c8a1182a27d389f489a0ccd8200"
+    ],
+    "count": 1,
+    "create_time": 1773306438,
+    "update_time": 1773306438,
+    "_id": "LightRAG Test Document"
+  },
+  "Unstructured Text": {
+    "chunk_ids": [
+      "chunk-ffa23c8a1182a27d389f489a0ccd8200"
+    ],
+    "count": 1,
+    "create_time": 1773306438,
+    "update_time": 1773306438,
+    "_id": "Unstructured Text"
+  },
+  "Document Retrieval": {
+    "chunk_ids": [
+      "chunk-ffa23c8a1182a27d389f489a0ccd8200"
+    ],
+    "count": 1,
+    "create_time": 1773306438,
+    "update_time": 1773306438,
+    "_id": "Document Retrieval"
+  },
+  "Indexed Content": {
+    "chunk_ids": [
+      "chunk-ffa23c8a1182a27d389f489a0ccd8200"
+    ],
+    "count": 1,
+    "create_time": 1773306438,
+    "update_time": 1773306438,
+    "_id": "Indexed Content"
+  },
+  "Documents": {
+    "chunk_ids": [
+      "chunk-ffa23c8a1182a27d389f489a0ccd8200"
+    ],
+    "count": 1,
+    "create_time": 1773306438,
+    "update_time": 1773306438,
+    "_id": "Documents"
+  }
+}

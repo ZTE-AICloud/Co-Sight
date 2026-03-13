@@ -897,7 +897,38 @@ function normalizeFilePathForFrontend(originalPath) {
 
 // 从原始绝对路径构造 API 工作区路径：/api/nae-deep-research/v1/work_space/...
 function buildApiWorkspacePath(originalPath) {
-  return originalPath;
+  if (!originalPath || typeof originalPath !== "string") {
+    return originalPath;
+  }
+
+  try {
+    const normalized = originalPath.replace(/\\/g, "/").trim();
+    if (!normalized) {
+      return originalPath;
+    }
+
+    if (normalized.startsWith("/api/")) {
+      return normalized;
+    }
+
+    const markerIndex = normalized.indexOf("work_space");
+    if (markerIndex === -1) {
+      return originalPath;
+    }
+
+    let relativePath = normalized.substring(markerIndex);
+    if (!relativePath.startsWith("work_space/")) {
+      if (relativePath.startsWith("work_space_")) {
+        relativePath = `work_space/${relativePath}`;
+      } else if (relativePath.startsWith("work_space")) {
+        relativePath = relativePath.replace(/^work_space\/?/, "work_space/");
+      }
+    }
+
+    return `/api/nae-deep-research/v1/${relativePath}`;
+  } catch (e) {
+    return originalPath;
+  }
 }
 
 // 提取文件名（兼容 \ 与 /）
@@ -1438,6 +1469,14 @@ function createToolCallItem(toolCall) {
   nameText.textContent = toolCall.toolName;
   name.appendChild(nameText);
 
+  if (toolCall.agentName) {
+    const agentBadge = document.createElement("span");
+    agentBadge.textContent = toolCall.agentName;
+    agentBadge.style.cssText =
+      "display:inline-flex;align-items:center;margin-left:8px;padding:2px 8px;border-radius:999px;background:#eef2ff;color:#3949ab;font-size:11px;font-weight:600;";
+    name.appendChild(agentBadge);
+  }
+
   // 添加验证步骤图标
   const verificationIcons = createVerificationIcons(toolCall);
   if (verificationIcons) {
@@ -1890,7 +1929,340 @@ function initFileUpload() {
 }
 
 // 输入框处理函数
+const RuntimeAgentSelector = (function () {
+  const API_BASE = "/api/nae-deep-research/v1";
+  const STORAGE_KEY = "cosight:agentRunConfig";
+  let runtimeDefaults = {
+    planners: [],
+    actors: [],
+    default_planner: null,
+    default_actor: null,
+  };
+  let state = {
+    planner_id: "",
+    allowed_actor_ids: [],
+    default_actor_id: "",
+    dispatch_mode: "single_actor",
+  };
+  let initPromise = null;
+
+  function getAgentMap() {
+    const items = [...(runtimeDefaults.planners || []), ...(runtimeDefaults.actors || [])];
+    return new Map(items.map((item) => [item.id, item]));
+  }
+
+  function getAgentName(agentId) {
+    if (!agentId) return "";
+    const agent = getAgentMap().get(agentId);
+    return agent && agent.name ? agent.name : agentId;
+  }
+
+  function loadStoredState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch (error) {
+      console.warn("Failed to parse stored agentRunConfig:", error);
+      return {};
+    }
+  }
+
+  function persistState() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (error) {
+      console.warn("Failed to persist agentRunConfig:", error);
+    }
+  }
+
+  function normalizeState(candidate = {}) {
+    const plannerMap = new Map((runtimeDefaults.planners || []).map((item) => [item.id, item]));
+    const actorMap = new Map((runtimeDefaults.actors || []).map((item) => [item.id, item]));
+    const defaultPlannerId =
+      runtimeDefaults.default_planner?.id ||
+      runtimeDefaults.planners?.[0]?.id ||
+      "builtin-planner";
+    const defaultActorId =
+      runtimeDefaults.default_actor?.id ||
+      runtimeDefaults.actors?.[0]?.id ||
+      "builtin-actor";
+
+    const planner_id = plannerMap.has(candidate.planner_id)
+      ? candidate.planner_id
+      : defaultPlannerId;
+
+    const requestedActors = Array.isArray(candidate.allowed_actor_ids)
+      ? candidate.allowed_actor_ids.filter((actorId) => actorMap.has(actorId))
+      : [];
+    const allowed_actor_ids = Array.from(new Set(requestedActors));
+    const normalizedAllowedActors =
+      allowed_actor_ids.length > 0
+        ? allowed_actor_ids
+        : actorMap.has(defaultActorId)
+        ? [defaultActorId]
+        : runtimeDefaults.actors?.[0]
+        ? [runtimeDefaults.actors[0].id]
+        : [];
+
+    const default_actor_id = normalizedAllowedActors.includes(candidate.default_actor_id)
+      ? candidate.default_actor_id
+      : normalizedAllowedActors[0] || defaultActorId;
+
+    const dispatch_mode =
+      candidate.dispatch_mode === "planner_assign" ? "planner_assign" : "single_actor";
+
+    return {
+      planner_id,
+      allowed_actor_ids: normalizedAllowedActors,
+      default_actor_id,
+      dispatch_mode,
+    };
+  }
+
+  async function fetchRuntimeDefaults() {
+    const response = await fetch(`${API_BASE}/deep-research/runtime-agent-defaults`);
+    const json = await response.json();
+    if (json.code !== 200 && json.code !== 0) {
+      throw new Error(json.msg || "Failed to fetch runtime agent defaults");
+    }
+    return json.data || {};
+  }
+
+  function ensureContainers() {
+    const initialField = document.querySelector(".initial-input-field-container");
+    if (initialField && initialField.parentNode && !document.getElementById("initial-agent-selector")) {
+      const container = document.createElement("div");
+      container.id = "initial-agent-selector";
+      container.className = "agent-run-config initial-agent-wrapper";
+      initialField.parentNode.insertBefore(container, initialField);
+    }
+
+    const mainInput = document.querySelector(".input");
+    if (mainInput && mainInput.parentNode && !document.getElementById("main-agent-selector")) {
+      const container = document.createElement("div");
+      container.id = "main-agent-selector";
+      container.className = "agent-run-config main-agent-wrapper";
+      mainInput.parentNode.insertBefore(container, mainInput);
+    }
+  }
+
+  function getPlannerName(id) {
+    const p = (runtimeDefaults.planners || []).find(x => x.id === id);
+    return p ? p.name : id;
+  }
+  function getActorName(id) {
+    const a = (runtimeDefaults.actors || []).find(x => x.id === id);
+    return a ? a.name : id;
+  }
+  function getActorNames(ids) {
+    return ids.map(id => getActorName(id)).join(', ');
+  }
+
+  function renderSelector(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    container.innerHTML = `
+      <div class="agent-run-card">
+        <div class="agent-run-header">运行时智能体</div>
+        <div class="agent-run-grid">
+           <!-- Custom Select: Planner -->
+           <div class="agent-run-field custom-select-container">
+             <span>Planner</span>
+             <div class="custom-select-trigger" data-dropdown="planner-${containerId}">
+                <span class="custom-select-value">${getPlannerName(state.planner_id)}</span>
+                <i class="fas fa-chevron-down"></i>
+             </div>
+             <div class="custom-select-dropdown" id="planner-${containerId}" style="display:none;">
+               ${(runtimeDefaults.planners || []).map(p => `
+                 <div class="custom-select-option" data-value="${p.id}" data-role-target="planner">${p.name}</div>
+               `).join("")}
+             </div>
+           </div>
+           
+           <!-- Custom Select: Actors -->
+           <div class="agent-run-field custom-select-container">
+             <span>Actors</span>
+             <div class="custom-select-trigger" data-dropdown="actors-${containerId}">
+                <span class="custom-select-value">${state.allowed_actor_ids.length > 0 ? getActorNames(state.allowed_actor_ids) : '无'}</span>
+                <i class="fas fa-chevron-down"></i>
+             </div>
+             <div class="custom-select-dropdown" id="actors-${containerId}" style="display:none;">
+               ${(runtimeDefaults.actors || []).map(a => `
+                 <label class="custom-select-option multi" onclick="event.stopPropagation()">
+                   <input type="checkbox" value="${a.id}" ${state.allowed_actor_ids.includes(a.id)?'checked':''} data-role-target="actors" />
+                   <span>${a.name}</span>
+                 </label>
+               `).join("")}
+             </div>
+           </div>
+
+           <!-- Custom Select: Default Actor -->
+           <div class="agent-run-field custom-select-container">
+             <span>默认 Actor</span>
+             <div class="custom-select-trigger" data-dropdown="default-actor-${containerId}">
+                <span class="custom-select-value">${getActorName(state.default_actor_id)}</span>
+                <i class="fas fa-chevron-down"></i>
+             </div>
+             <div class="custom-select-dropdown" id="default-actor-${containerId}" style="display:none;">
+               ${(runtimeDefaults.actors || []).filter(a => state.allowed_actor_ids.includes(a.id)).map(a => `
+                 <div class="custom-select-option" data-value="${a.id}" data-role-target="default-actor">${a.name}</div>
+               `).join("")}
+             </div>
+           </div>
+
+           <!-- Custom Select: Dispatch Mode -->
+           <div class="agent-run-field custom-select-container">
+             <span>分配模式</span>
+             <div class="custom-select-trigger" data-dropdown="dispatch-mode-${containerId}">
+                <span class="custom-select-value">${state.dispatch_mode === 'planner_assign' ? 'Planner Assign' : 'Single Actor'}</span>
+                <i class="fas fa-chevron-down"></i>
+             </div>
+             <div class="custom-select-dropdown" id="dispatch-mode-${containerId}" style="display:none;">
+                <div class="custom-select-option" data-value="single_actor" data-role-target="dispatch-mode">Single Actor</div>
+                <div class="custom-select-option" data-value="planner_assign" data-role-target="dispatch-mode">Planner Assign</div>
+             </div>
+           </div>
+        </div>
+      </div>
+    `;
+
+    // Handle toggling dropdowns
+    container.querySelectorAll('.custom-select-trigger').forEach(trigger => {
+      trigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const dropdownId = trigger.getAttribute('data-dropdown');
+        const dropdown = document.getElementById(dropdownId);
+        const isVisible = dropdown.style.display === 'block';
+
+        // Hide all other dropdowns
+        document.querySelectorAll('.custom-select-dropdown').forEach(d => d.style.display = 'none');
+        
+        if (!isVisible) {
+          dropdown.style.display = 'block';
+        }
+      });
+    });
+
+    // Handle single selections
+    container.querySelectorAll('.custom-select-option:not(.multi)').forEach(opt => {
+      opt.addEventListener('click', (e) => {
+        const val = opt.getAttribute('data-value');
+        const role = opt.getAttribute('data-role-target');
+        if (role === 'planner') updateState({ planner_id: val });
+        if (role === 'default-actor') updateState({ default_actor_id: val });
+        if (role === 'dispatch-mode') updateState({ dispatch_mode: val });
+      });
+    });
+
+    // Handle multi selections
+    container.querySelectorAll('input[data-role-target="actors"]').forEach(chk => {
+      chk.addEventListener('change', (e) => {
+        const dropdown = chk.closest('.custom-select-dropdown');
+        const nextActors = Array.from(dropdown.querySelectorAll('input:checked')).map(i => i.value);
+        
+        const openId = dropdown.id;
+        updateState({ allowed_actor_ids: nextActors });
+        
+        // Re-open since renderAll destroys the DOM
+        const newDropdown = document.getElementById(openId);
+        if (newDropdown) newDropdown.style.display = 'block';
+      });
+    });
+  }
+
+  function renderAll() {
+    renderSelector("initial-agent-selector");
+    renderSelector("main-agent-selector");
+  }
+
+  function updateState(patch) {
+    state = normalizeState({ ...state, ...patch });
+    persistState();
+    renderAll();
+  }
+
+  async function init() {
+    if (!window.__globalClickAdded) {
+      document.addEventListener('click', () => {
+        document.querySelectorAll('.custom-select-dropdown').forEach(d => d.style.display = 'none');
+      });
+      window.__globalClickAdded = true;
+    }
+    
+    if (!initPromise) {
+      initPromise = (async () => {
+        ensureContainers();
+        runtimeDefaults = await fetchRuntimeDefaults();
+        state = normalizeState(loadStoredState());
+        persistState();
+        renderAll();
+      })().catch((error) => {
+        console.warn("RuntimeAgentSelector init failed:", error);
+        initPromise = null;
+      });
+    }
+    return initPromise;
+  }
+
+  async function refresh() {
+    runtimeDefaults = await fetchRuntimeDefaults();
+    state = normalizeState(state);
+    persistState();
+    ensureContainers();
+    renderAll();
+  }
+
+  function getSelectedConfig() {
+    return { ...state, allowed_actor_ids: [...state.allowed_actor_ids] };
+  }
+
+  return {
+    init,
+    refresh,
+    getSelectedConfig,
+    getAgentName,
+  };
+})();
+
+window.RuntimeAgentSelector = RuntimeAgentSelector;
+
+function getRuntimeAgentDisplayName(agentId) {
+  if (!agentId) return "未分配";
+  if (
+    window.RuntimeAgentSelector &&
+    typeof window.RuntimeAgentSelector.getAgentName === "function"
+  ) {
+    return window.RuntimeAgentSelector.getAgentName(agentId) || agentId;
+  }
+  return agentId;
+}
+
+function formatStepAgentSummary(step) {
+  const planned = step.plannedAgentId
+    ? `计划执行: ${getRuntimeAgentDisplayName(step.plannedAgentId)}`
+    : "计划执行: 未分配";
+  const actual = step.executionAgentId
+    ? `实际执行: ${getRuntimeAgentDisplayName(step.executionAgentId)}`
+    : "实际执行: 未开始";
+  const fallback = step.isFallback ? "已回退到默认 Actor" : "";
+  return [planned, actual, fallback].filter(Boolean).join(" | ");
+}
+
 function initInputHandler() {
+  if (
+    window.RuntimeAgentSelector &&
+    typeof window.RuntimeAgentSelector.init === "function"
+  ) {
+    window.RuntimeAgentSelector.init();
+  }
+
+  // 初始化知识库选择器
+  if (typeof KnowledgeService !== 'undefined') {
+    KnowledgeService.renderSelector('kb-selector-container-initial');
+    KnowledgeService.renderSelector('kb-selector-container-main');
+  }
+
   const messageInput = document.getElementById("message-input");
   const sendButton = document.getElementById("send-button");
   const replayButton = document.getElementById("replay-button");
@@ -1937,7 +2309,12 @@ function initInputHandler() {
         ) {
           window.messageService.sendReplay();
         } else {
-          messageService.sendMessage(message);
+          const agentRunConfig =
+            window.RuntimeAgentSelector &&
+            typeof window.RuntimeAgentSelector.getSelectedConfig === "function"
+              ? window.RuntimeAgentSelector.getSelectedConfig()
+              : null;
+          messageService.sendMessage(message, { agentRunConfig });
         }
         // 清空输入框
         messageInput.value = "";
@@ -2045,7 +2422,12 @@ function initInputHandler() {
         typeof window.messageService.sendMessage === "function" &&
         message
       ) {
-        window.messageService.sendMessage(message);
+        const agentRunConfig =
+          window.RuntimeAgentSelector &&
+          typeof window.RuntimeAgentSelector.getSelectedConfig === "function"
+            ? window.RuntimeAgentSelector.getSelectedConfig()
+            : null;
+        window.messageService.sendMessage(message, { agentRunConfig });
       }
     }
 
@@ -2089,6 +2471,32 @@ function hideInitialInputAndShowMain(message) {
       middleContainer.classList.add("show");
       // 仅负责界面切换；消息发送交由调用方控制
     }, 300); // 等待初始输入框的隐藏动画完成
+  }
+}
+
+function showInitialHomeView() {
+  const initialInputContainer = document.querySelector(
+    ".initial-input-container"
+  );
+  const middleContainer = document.querySelector(".middle-container");
+  const rightContainer = document.getElementById("right-container");
+  const titleContainer = document.getElementById("title-container");
+
+  if (initialInputContainer) {
+    initialInputContainer.classList.remove("hidden");
+  }
+
+  if (middleContainer) {
+    middleContainer.classList.remove("show");
+  }
+
+  if (rightContainer) {
+    rightContainer.classList.remove("show");
+    rightContainer.classList.remove("maximized");
+  }
+
+  if (titleContainer) {
+    titleContainer.style.opacity = "0";
   }
 }
 
@@ -2261,6 +2669,12 @@ function cleanupAllResources() {
 // 检查并恢复DAG数据
 function checkAndRestoreDAGData() {
   try {
+    if (window.__cosightResetHome) {
+      resetUICaches();
+      showInitialHomeView();
+      return;
+    }
+
     // F5刷新场景：只清理UI状态，保留localStorage数据
     resetUICaches();
 
@@ -2401,24 +2815,7 @@ function showRightPanelForTool(toolCall) {
     const fileName = path.split("/").pop() || path.split("\\").pop() || "";
     const ext = (fileName.split(".").pop() || "").toLowerCase();
 
-    // 将绝对路径转换为相对路径（与 loadMarkdownFile 保持一致）
-    let relativePath = path;
-    // 如果路径已经是完整的API路径（以/api/开头），直接使用
-    if (relativePath.startsWith("/api/")) {
-      relativePath = path;
-    } else if (relativePath.includes("work_space")) {
-      // 提取work_space之后的路径部分
-      const workspaceIndex = relativePath.indexOf("work_space");
-      if (workspaceIndex !== -1) {
-        relativePath = relativePath.substring(workspaceIndex);
-      }
-    } else if (relativePath.includes("workspace")) {
-      // 兼容旧的workspace命名
-      const workspaceIndex = relativePath.indexOf("workspace");
-      if (workspaceIndex !== -1) {
-        relativePath = relativePath.substring(workspaceIndex);
-      }
-    }
+    const relativePath = buildApiWorkspacePath(path);
 
     if (ext === "html" || ext === "htm") {
       // 使用 iframe 显示 HTML 文件
@@ -2856,24 +3253,7 @@ function loadMarkdownFile(filePath, tool, toolCall) {
     statusElement.className = "loading";
   }
 
-  // 将绝对路径转换为相对路径
-  let relativePath = filePath;
-  // 如果路径已经是完整的API路径（以/api/开头），直接使用
-  if (filePath.startsWith("/api/")) {
-    relativePath = filePath;
-  } else if (filePath.includes("work_space")) {
-    // 提取work_space之后的路径部分
-    const workspaceIndex = filePath.indexOf("work_space");
-    if (workspaceIndex !== -1) {
-      relativePath = filePath.substring(workspaceIndex);
-    }
-  } else if (filePath.includes("workspace")) {
-    // 兼容旧的workspace命名
-    const workspaceIndex = filePath.indexOf("workspace");
-    if (workspaceIndex !== -1) {
-      relativePath = filePath.substring(workspaceIndex);
-    }
-  }
+  const relativePath = buildApiWorkspacePath(filePath);
 
   console.log("尝试加载文件:", relativePath);
 
@@ -3144,13 +3524,17 @@ function generateStepsListHtml() {
   steps.forEach((step) => {
     const statusClass = step.status || "not_started";
     const statusText = getStatusText(step.status);
+    const agentSummary = formatStepAgentSummary(step);
 
     html += `
             <div class="step-item">
                 <div class="step-status ${statusClass}"></div>
-                <div class="step-text">${step.name} - ${
+                <div style="display:flex;flex-direction:column;gap:4px;">
+                  <div class="step-text">${step.name} - ${
       step.fullName || step.title || ""
     }</div>
+                  <div style="font-size:11px;color:#667085;">${statusText} | ${agentSummary}</div>
+                </div>
             </div>
         `;
   });
@@ -3287,6 +3671,7 @@ function resetUICaches() {
 if (typeof window !== "undefined") {
   window.resetSessionCaches = resetSessionCaches;
   window.resetUICaches = resetUICaches;
+  window.showInitialHomeView = showInitialHomeView;
 }
 
 if (typeof module !== "undefined" && module.exports) {

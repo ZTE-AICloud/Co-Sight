@@ -212,3 +212,37 @@ def validate_config(config: dict) -> bool:
     if not config.get("api_key"):
         raise ValueError("OPENAI_COMPATIBILITY_API_KEY 未配置")
     return True
+
+
+# ========== LightRAG 知识库配置 ==========
+def get_lightrag_config() -> dict:
+    """获取 LightRAG 服务连接配置"""
+    return {
+        "base_url": os.environ.get("LIGHTRAG_BASE_URL", "http://localhost:9621"),
+        "api_key": os.environ.get("LIGHTRAG_API_KEY", ""),
+        "storage_dir": os.environ.get("LIGHTRAG_STORAGE_DIR", "./lightrag_data"),
+        "default_query_mode": os.environ.get("LIGHTRAG_DEFAULT_QUERY_MODE", "hybrid"),
+    }
+
+
+def get_embedding_config() -> dict:
+    """获取嵌入模型配置"""
+    return {
+        "api_key": os.environ.get("LIGHTRAG_EMBEDDING_API_KEY", ""),
+        "api_base": os.environ.get("LIGHTRAG_EMBEDDING_API_BASE", ""),
+        "model": os.environ.get("LIGHTRAG_EMBEDDING_MODEL", "text-embedding-3-small"),
+        "dim": int(os.environ.get("LIGHTRAG_EMBEDDING_DIM", "1536")),
+        "max_tokens": int(os.environ.get("LIGHTRAG_EMBEDDING_MAX_TOKENS", "8192")),
+    }
+
+
+def get_rerank_config() -> dict:
+    """获取重排序模型配置"""
+    enabled = os.environ.get("LIGHTRAG_RERANK_ENABLED", "false").strip().lower()
+    return {
+        "enabled": enabled in ("1", "true", "yes", "on"),
+        "api_key": os.environ.get("LIGHTRAG_RERANK_API_KEY", ""),
+        "api_base": os.environ.get("LIGHTRAG_RERANK_API_BASE", ""),
+        "model": os.environ.get("LIGHTRAG_RERANK_MODEL", ""),
+        "top_k": int(os.environ.get("LIGHTRAG_RERANK_TOP_K", "5")),
+    }

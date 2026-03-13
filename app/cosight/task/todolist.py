@@ -40,6 +40,12 @@ class Plan:
         self.step_files = {step: "" for step in self.steps}
         # 存储每个步骤的工具调用信息
         self.step_tool_calls = {step: [] for step in self.steps}
+        self.selected_planner_id = ""
+        self.allowed_actor_ids = []
+        self.default_actor_id = ""
+        self.dispatch_mode = "single_actor"
+        self.step_agents_by_step: Dict[str, str] = {}
+        self.step_execution_agents_by_step: Dict[str, str] = {}
         # 使用邻接表表示依赖关系
         if dependencies:
             self.dependencies = self._normalize_dependencies(dependencies)
@@ -53,6 +59,83 @@ class Plan:
 
     def get_plan_result(self):
         return self.result
+
+    def configure_runtime_agents(self, planner_id: str, allowed_actor_ids: List[str],
+                                 default_actor_id: str, dispatch_mode: str):
+        self.selected_planner_id = planner_id or ""
+        self.allowed_actor_ids = list(allowed_actor_ids or [])
+        self.default_actor_id = default_actor_id or ""
+        self.dispatch_mode = dispatch_mode or "single_actor"
+
+    def _validate_step_index(self, step_index: int):
+        if step_index < 0 or step_index >= len(self.steps):
+            raise ValueError(f"Invalid step_index: {step_index}. Valid indices range from 0 to {len(self.steps) - 1}.")
+
+    def _get_step_name(self, step_index: int) -> str:
+        self._validate_step_index(step_index)
+        return self.steps[step_index]
+
+    def _validate_unique_steps(self, steps: List[str]):
+        duplicates = []
+        seen = set()
+        for step in steps:
+            if step in seen and step not in duplicates:
+                duplicates.append(step)
+            seen.add(step)
+        if duplicates:
+            raise ValueError(f"Duplicate steps are not allowed: {duplicates}")
+
+    def set_step_agent(self, step_index: int, agent_id: str):
+        """设置 Planner 为指定步骤分配的 actor_id"""
+        step = self._get_step_name(step_index)
+        if agent_id:
+            self.step_agents_by_step[step] = agent_id
+        else:
+            self.step_agents_by_step.pop(step, None)
+
+    def get_step_agent(self, step_index: int) -> Optional[str]:
+        """获取 Planner 为指定步骤分配的 actor_id"""
+        step = self._get_step_name(step_index)
+        return self.step_agents_by_step.get(step)
+
+    def set_step_execution_agent(self, step_index: int, agent_id: str):
+        """记录实际执行指定步骤的 actor_id"""
+        step = self._get_step_name(step_index)
+        if agent_id:
+            self.step_execution_agents_by_step[step] = agent_id
+        else:
+            self.step_execution_agents_by_step.pop(step, None)
+
+    def get_step_execution_agent(self, step_index: int) -> Optional[str]:
+        """获取实际执行指定步骤的 actor_id"""
+        step = self._get_step_name(step_index)
+        return self.step_execution_agents_by_step.get(step)
+
+    def replace_step_agents_batch(self, step_agents_map: Dict[int, str]):
+        """批量替换步骤的 agent 分配（由 Planner 的 create_plan/update_plan 调用）"""
+        assignments: Dict[str, str] = {}
+        for idx, agent_id in step_agents_map.items():
+            if not agent_id:
+                continue
+            step = self._get_step_name(int(idx))
+            assignments[step] = agent_id
+        self.step_agents_by_step = assignments
+
+    def get_step_agents_payload(self) -> Dict[str, str]:
+        payload = {}
+        for index, step in enumerate(self.steps):
+            agent_id = self.step_agents_by_step.get(step)
+            if agent_id:
+                payload[str(index)] = agent_id
+        return payload
+
+    def get_step_execution_agents_payload(self) -> Dict[str, str]:
+        payload = {}
+        for index, step in enumerate(self.steps):
+            agent_id = self.step_execution_agents_by_step.get(step)
+            if agent_id:
+                payload[str(index)] = agent_id
+        return payload
 
     def get_ready_steps(self) -> List[int]:
         """获取所有前置依赖都已完成的步骤索引
@@ -83,12 +166,16 @@ class Plan:
             tmep_str = str(steps)
             steps = tmep_str.split("\n")
         if steps:
+            self._validate_unique_steps(steps)
             # Preserve all existing steps and their statuses
             new_steps = []
             new_statuses = {}
             new_notes = {}
             new_details = {}
+            new_files = {}
             new_tool_calls = {}
+            new_step_agents_by_step = {}
+            new_step_execution_agents_by_step = {}
 
             # First, process all steps in the input order
             for step in steps:
@@ -98,27 +185,41 @@ class Plan:
                     new_statuses[step] = self.step_statuses.get(step)
                     new_notes[step] = self.step_notes.get(step)
                     new_details[step] = self.step_details.get(step)
+                    new_files[step] = self.step_files.get(step, "")
                     new_tool_calls[step] = self.step_tool_calls.get(step, [])
+                    if step in self.step_agents_by_step:
+                        new_step_agents_by_step[step] = self.step_agents_by_step[step]
+                    if step in self.step_execution_agents_by_step:
+                        new_step_execution_agents_by_step[step] = self.step_execution_agents_by_step[step]
                 # If step exists in current steps and is not started, preserve as not_started
                 elif step in self.steps:
                     new_steps.append(step)
                     new_statuses[step] = "not_started"
                     new_notes[step] = self.step_notes.get(step)
                     new_details[step] = self.step_details.get(step)
+                    new_files[step] = self.step_files.get(step, "")
                     new_tool_calls[step] = self.step_tool_calls.get(step, [])
+                    if step in self.step_agents_by_step:
+                        new_step_agents_by_step[step] = self.step_agents_by_step[step]
+                    if step in self.step_execution_agents_by_step:
+                        new_step_execution_agents_by_step[step] = self.step_execution_agents_by_step[step]
                 # If step is new, add as not_started
                 else:
                     new_steps.append(step)
                     new_statuses[step] = "not_started"
                     new_notes[step] = ""
                     new_details[step] = ""
+                    new_files[step] = ""
                     new_tool_calls[step] = []
 
             self.steps = new_steps
             self.step_statuses = new_statuses
             self.step_notes = new_notes
             self.step_details = new_details
+            self.step_files = new_files
             self.step_tool_calls = new_tool_calls
+            self.step_agents_by_step = new_step_agents_by_step
+            self.step_execution_agents_by_step = new_step_execution_agents_by_step
         logger.info(f"before update dependencies: {self.dependencies}")
         if dependencies:
             self.dependencies.clear()
@@ -137,8 +238,7 @@ class Plan:
             step_notes (Optional[str]): Notes for the step
         """
         # Validate step index
-        if step_index < 0 or step_index >= len(self.steps):
-            raise ValueError(f"Invalid step_index: {step_index}. Valid indices range from 0 to {len(self.steps) - 1}.")
+        self._validate_step_index(step_index)
         logger.info(f"step_index: {step_index}, step_status is {step_status},step_notes is {step_notes}")
         step = self.steps[step_index]
 
@@ -186,8 +286,7 @@ class Plan:
             return
         
         # Handle step-specific tools
-        if step_index < 0 or step_index >= len(self.steps):
-            raise ValueError(f"Invalid step_index: {step_index}. Valid indices range from 0 to {len(self.steps) - 1}.")
+        self._validate_step_index(step_index)
         
         step = self.steps[step_index]
         tool_call_info = {

@@ -53,7 +53,7 @@ def create_actor_template(template_name, work_space_path):
         'skills': [execute_code_skill(work_space_path),
                 #    search_baidu_skill(),
                    mark_step_skill(),
-                #    browser_use_skill(),
+                   browser_use_skill(),
                    file_saver_skill(),
                    file_read_skill(),
                    file_str_replace_skill(),

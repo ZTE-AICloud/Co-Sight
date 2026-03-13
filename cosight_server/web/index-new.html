@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Co-Sight 超级智能体</title>
+    <link rel="icon" href="favicon.ico">
+
+    <script src="libs/d3.v7.min.js"></script>
+    <script src="libs/marked.min.js"></script>
+    <link href="libs/fontawesome-6.7.2/css/all.min.css" rel="stylesheet">
+
+    <link rel="stylesheet" href="styles/styles-new.css">
+    <link rel="stylesheet" href="styles/md.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <aside class="sidebar-left" id="sidebar-left">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-robot"></i>
+                    <span class="logo-text">Co-Sight</span>
+                </div>
+                <button class="btn-collapse-sidebar" id="collapse-left-btn" title="收起侧边栏">
+                    <i class="fas fa-indent" style="transform: rotate(180deg);"></i>
+                </button>
+            </div>
+
+            <div class="thread-section">
+                <div class="section-header">
+                    <span class="section-title">线程</span>
+                    <div class="section-actions">
+                        <button class="btn-icon-small" id="new-thread-btn" title="新建线程">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                        <button class="btn-icon-small" id="new-folder-btn" title="新建文件夹">
+                            <i class="fas fa-folder-plus"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="folder-list" id="folder-list"></div>
+            </div>
+
+            <div class="sidebar-footer">
+                <button class="btn-settings" id="settings-btn" title="设置">
+                    <i class="fas fa-cog"></i>
+                    <span>设置</span>
+                </button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="main-header">
+                <div class="sidebar-expand-btn-wrapper">
+                    <button class="sidebar-expand-btn" id="sidebar-expand-btn" title="展开侧边栏">
+                        <i class="fas fa-indent"></i>
+                    </button>
+                    <button class="new-chat-bubble-btn" id="new-chat-bubble-btn" title="新建聊天">
+                        <i class="fas fa-comment-dots"></i>
+                    </button>
+                </div>
+
+                <div class="main-title">
+                    <h2 id="conversation-title">新对话</h2>
+                    <button class="rename-title-btn" id="rename-title-btn" title="重命名标题">
+                        <i class="fas fa-pen"></i>
+                    </button>
+                </div>
+
+                <div class="main-actions">
+                    <button class="btn-icon" id="clear-chat-btn" title="清空对话">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                    <button class="btn-icon" id="export-chat-btn" title="导出对话">
+                        <i class="fas fa-download"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="chat-container" id="chat-container">
+                <div class="welcome-screen" id="welcome-screen">
+                    <div class="welcome-content">
+                        <div class="welcome-icon">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <h1 class="welcome-title">你好，</h1>
+                        <p class="welcome-subtitle">今天有什么可以帮到你？</p>
+                    </div>
+                </div>
+
+                <div class="message-list" id="message-list" style="display: none;"></div>
+            </div>
+
+            <div class="input-area">
+                <div class="input-container">
+                    <div class="input-wrapper">
+                        <div class="file-preview-container" id="file-preview-container" style="display: none;">
+                            <div class="file-preview-list" id="file-preview-list"></div>
+                        </div>
+
+                        <textarea class="chat-input" id="chat-input" placeholder="请输入你的任务..." rows="1"></textarea>
+                        <div class="input-buttons">
+                            <button class="btn-input-action" id="upload-file-btn" title="上传文件">
+                                <i class="fas fa-paperclip"></i>
+                            </button>
+                            <button class="btn-send" id="send-btn">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <aside class="sidebar-right" id="sidebar-right">
+            <div class="sidebar-right-header">
+                <div class="sidebar-right-title">
+                    <i class="fas fa-project-diagram"></i>
+                    <span>任务执行</span>
+                </div>
+                <div class="sidebar-right-actions">
+                    <button class="btn-icon-small" id="expand-right-btn" title="展开/收起">
+                        <i class="fas fa-expand-alt"></i>
+                    </button>
+                    <button class="btn-icon-small" id="close-right-btn" title="关闭">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="sidebar-right-content">
+                <div class="progress-overview">
+                    <div class="progress-stats">
+                        <div class="stat-item completed">
+                            <div class="stat-number" id="completed-count">0</div>
+                            <div class="stat-label">已完成</div>
+                        </div>
+                        <div class="stat-item in-progress">
+                            <div class="stat-number" id="in-progress-count">0</div>
+                            <div class="stat-label">进行中</div>
+                        </div>
+                        <div class="stat-item blocked">
+                            <div class="stat-number" id="blocked-count">0</div>
+                            <div class="stat-label">阻塞</div>
+                        </div>
+                        <div class="stat-item not-started">
+                            <div class="stat-number" id="not-started-count">0</div>
+                            <div class="stat-label">未开始</div>
+                        </div>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progress-fill"></div>
+                        </div>
+                        <span class="progress-text" id="progress-text">0%</span>
+                    </div>
+                </div>
+
+                <div class="task-chain-section">
+                    <div class="section-title-bar">
+                        <span><i class="fas fa-sitemap"></i> 任务链</span>
+                    </div>
+                    <div class="dag-wrapper">
+                        <svg class="dag-svg" id="dag-svg"></svg>
+                    </div>
+                </div>
+
+                <div class="tool-chain-section">
+                    <div class="section-title-bar">
+                        <span><i class="fas fa-tools"></i> 工具链</span>
+                        <span class="tool-count" id="tool-count">0</span>
+                    </div>
+                    <div class="tool-chain-list" id="tool-chain-list"></div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <div class="modal-overlay" id="folder-modal-overlay" style="display: none;">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>新建文件夹</h3>
+                <button class="btn-close-modal" id="close-folder-modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <input type="text" class="modal-input" id="folder-name-input" placeholder="请输入文件夹名称">
+            </div>
+            <div class="modal-footer">
+                <button class="btn-modal-secondary" id="cancel-folder-btn">取消</button>
+                <button class="btn-modal-primary" id="confirm-folder-btn">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="rename-modal-overlay" style="display: none;">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>重命名线程</h3>
+                <button class="btn-close-modal" id="close-rename-modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <input type="text" class="modal-input" id="rename-input" placeholder="请输入线程名称">
+            </div>
+            <div class="modal-footer">
+                <button class="btn-modal-secondary" id="cancel-rename-btn">取消</button>
+                <button class="btn-modal-primary" id="confirm-rename-btn">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="delete-confirm-modal-overlay" style="display: none;">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>删除确认</h3>
+                <button class="btn-close-modal" id="close-delete-confirm-modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-message" id="delete-confirm-message"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-modal-secondary" id="cancel-delete-confirm-btn">取消</button>
+                <button class="btn-modal-primary btn-delete-confirm" id="confirm-delete-confirm-btn">删除</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="delete-folder-confirm-modal-overlay" style="display: none;">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>删除确认</h3>
+                <button class="btn-close-modal" id="close-delete-folder-confirm-modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-message" id="delete-folder-confirm-message"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-modal-secondary" id="cancel-delete-folder-confirm-btn">取消</button>
+                <button class="btn-modal-primary btn-delete-confirm" id="confirm-delete-folder-confirm-btn">删除</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="settings-modal"></div>
+
+    <div class="tooltip" id="tooltip"></div>
+    <div class="steps-tooltip" id="steps-tooltip"></div>
+    <div class="verification-tooltip" id="verification-tooltip"></div>
+
+    <script src="js/i18n.js"></script>
+    <script src="js/settings.js"></script>
+    <script src="js/main-new.js"></script>
+</body>
+
+</html>
