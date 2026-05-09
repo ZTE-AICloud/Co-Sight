@@ -1,0 +1,95 @@
+### 5. 代码运行流程 Draw.io 描述
+
+以下是将 Co-Sight 代码执行流程转换为 Draw.io 序列图的文本描述。
+
+**参与者/生命线:**
+
+*   **用户** (通过浏览器)
+*   **Co-Sight UI** (Angular 前端)
+*   **搜索路由器** (FastAPI 后端 - `search.py`)
+*   **CoSight 编排器** (`CoSight.py` 实例)
+*   **任务规划器代理** (`TaskPlannerAgent` 实例)
+*   **任务执行器代理** (`TaskActorAgent` 实例 - 可以有多个)
+*   **基础代理** (规划器/执行器内的逻辑)
+*   **计划对象** (`todolist.Plan` 实例)
+*   **计划报告事件管理器**
+*   **LLM 服务** (规划/执行/工具)
+*   **工具集** (Python 函数, 例如搜索, 文件保存器)
+*   **工作区** (文件系统)
+
+**消息/调用顺序:**
+
+1.  **用户** `->` **Co-Sight UI**: 输入查询 (例如, "可再生能源趋势") 并提交。
+2.  **Co-Sight UI** `->` **搜索路由器**: `POST /deep-research/search` 及查询。
+3.  **搜索路由器**: 创建唯一的 `task_workspace_path`。
+4.  **搜索路由器**: 创建 `asyncio.Queue` (`plan_queue`) 用于流式传输。
+5.  **搜索路由器**: 将 `append_create_plan` 回调订阅到 `计划报告事件管理器` 的各种计划事件。
+6.  **搜索路由器** `->` **(新线程)**: 启动 `run_manus(query, task_workspace_path)`。
+    *   **(线程) run_manus** `->` **CoSight 编排器**: `cosight = CoSight(llms, workspace_path)`。
+    *   **(线程) run_manus** `->` **CoSight 编排器**: `cosight.execute(query)`。
+7.  **搜索路由器** `->` **Co-Sight UI**: 返回 `StreamingResponse` (等待 `plan_queue` 中的项目)。
+
+    --- **初始规划阶段** ---
+8.  **CoSight 编排器** `->` **计划对象**: `plan = Plan(workspace_path)`。
+9.  **CoSight 编排器** `->` **任务规划器代理**: `planner = TaskPlannerAgent(plan_llm, plan.id)`。
+10. **CoSight 编排器** `->` **任务规划器代理**: `planner.create_plan(query)`。
+11. **任务规划器代理** `->` **基础代理**: `self.execute(用于计划创建的提示)`。
+12. **基础代理** `->` **LLM 服务 (规划)**: `llm.create_with_tools(提示, 规划器工具)`。
+13. **LLM 服务 (规划)** `->` **基础代理**: 响应及 `tool_call: create_plan(title, steps, dependencies)`。
+14. **基础代理** `->` **工具集 (PlanToolkit)**: `PlanToolkit.create_plan(title, steps, dependencies)`。
+15. **工具集 (PlanToolkit)** `->` **计划对象**: `plan.update(title, steps, dependencies)`。
+16. **计划对象** `->` **计划报告事件管理器**: `publish("plan_created", plan_data)` (或 `plan_updated`)。
+17. **计划报告事件管理器** `->` **搜索路由器 (append_create_plan 回调)**: 事件及 `plan_data`。
+18. **搜索路由器 (append_create_plan)**: 将 `plan_data`放入 `plan_queue`。
+19. **搜索路由器 (StreamingResponse)** `->` **Co-Sight UI**: 流式传输初始 `plan_data` (JSON)。
+20. **Co-Sight UI**: 显示初始计划结构。
+21. **工具集 (PlanToolkit)** `->` **基础代理**: 返回 "计划已创建"。
+22. **基础代理** `->` **任务规划器代理**: 返回 "计划已创建"。
+23. **任务规划器代理** `->` **CoSight 编排器**: 返回 "计划已创建"。
+
+    --- **步骤执行循环 (对就绪步骤重复)** ---
+24. **CoSight 编排器** `->` **计划对象**: `ready_steps = plan.get_ready_steps()`。
+25. **CoSight 编排器**: *如果没有 ready_steps, 进入最终确定阶段 (步骤 40)。*
+26. **CoSight 编排器** `->` **(每个就绪步骤的新线程)**: `execute_step_thread(step_index)`。
+    *   **(线程) execute_step_thread** `->` **任务执行器代理**: `actor = TaskActorAgent(act_llm, plan.id, workspace_path)`。
+    *   **(线程) execute_step_thread** `->` **任务执行器代理**: `actor.act(query, step_index)`。
+27. **任务执行器代理** `->` **计划对象**: `plan.mark_step(step_index, status="in_progress")`。
+28. **计划对象** `->` **计划报告事件管理器**: `publish("plan_process", plan_data_in_progress)`。
+29. **计划报告事件管理器** `->` **搜索路由器 (append_create_plan)**: 事件及 `plan_data_in_progress`。
+30. **搜索路由器 (StreamingResponse)** `->` **Co-Sight UI**: 流式传输 `plan_data_in_progress`。
+31. **Co-Sight UI**: 更新步骤状态为 "in progress"。
+32. **任务执行器代理** `->` **基础代理**: `self.execute(用于步骤操作的提示, max_iteration=10)`。
+33. **基础代理** `->` **LLM 服务 (执行)**: `llm.create_with_tools(提示, 执行器工具)`。
+34. **LLM 服务 (执行)** `->` **基础代理**: 响应及 `tool_call: 例如, search_google("topic")` 或 `file_saver("data", "file.txt")`。
+35. **基础代理** `->` **工具集 (例如 SearchToolkit 或 FileToolkit)**: `SearchToolkit.search_google("topic")` 或 `FileToolkit.file_saver("data", "file.txt")`。
+    *   **工具集 (FileToolkit)** `->` **工作区**: 写入 `file.txt`。
+36. **工具集** `->` **基础代理**: 返回工具输出 (例如, 搜索结果, "文件已保存")。
+37. **基础代理** `->` **LLM 服务 (执行)**: `llm.create_with_tools(带工具输出的历史记录, 执行器工具)`。
+    *   *LLM 可能调用更多工具, 或提供文本, 或调用 `mark_step`。*
+38. **LLM 服务 (执行)** `->` **基础代理**: 响应及 `tool_call: mark_step(step_index, status="completed", notes="...")`。
+39. **基础代理** `->` **工具集 (ActToolkit)**: `ActToolkit.mark_step(...)`。
+40. **工具集 (ActToolkit)** `->` **计划对象**: `plan.mark_step(step_index, status="completed", notes="...")`。
+    *   **计划对象 (mark_step)**: 调用 `process_text_with_workspace(notes, workspace_path)`，它会扫描 `notes` 和 `工作区` 以查找文件链接, 更新 `plan.step_files`。
+41. **计划对象** `->` **计划报告事件管理器**: `publish("plan_process", plan_data_completed_step)`。
+42. **计划报告事件管理器** `->` **搜索路由器 (append_create_plan)**: 事件及 `plan_data_completed_step`。
+43. **搜索路由器 (StreamingResponse)** `->` **Co-Sight UI**: 流式传输 `plan_data_completed_step`。
+44. **Co-Sight UI**: 更新步骤状态、备注并显示文件链接。
+45. **工具集 (ActToolkit)** `->` **基础代理**: 返回 "步骤已标记"。
+46. **基础代理** `->` **任务执行器代理**: 返回 "步骤已标记"。
+47. **任务执行器代理** `->` **(线程) execute_step_thread**: 返回结果。
+48. **(线程) execute_step_thread** `->` **CoSight 编排器**: 收集步骤结果。
+    *   *如果还有更多步骤或并行执行仍在继续, 则返回步骤 24。*
+
+    --- **最终确定阶段** ---
+49. **CoSight 编排器** (循环结束后) `->` **任务规划器代理**: `planner.finalize_plan(query, plan.format())`。
+50. **任务规划器代理** `->` **LLM 服务 (规划)**: `llm.chat_to_llm(用于最终摘要的提示)`。(直接调用, 非基于工具的 `execute`)。
+51. **LLM 服务 (规划)** `->` **任务规划器代理**: 返回最终摘要文本。
+52. **任务规划器代理** `->` **计划对象**: `plan.set_plan_result(final_summary_text)`。
+53. **任务规划器代理** `->` **计划报告事件管理器**: `publish("plan_result", plan_data_final)`。
+54. **计划报告事件管理器** `->` **搜索路由器 (append_create_plan)**: 事件及 `plan_data_final`。
+55. **搜索路由器 (StreamingResponse)** `->` **Co-Sight UI**: 流式传输 `plan_data_final`。
+56. **Co-Sight UI**: 显示最终报告/摘要。
+57. **任务规划器代理** `->` **CoSight 编排器**: 返回最终格式化字符串。
+58. **CoSight 编排器** `->` **(线程) run_manus**: 返回最终结果。
+59. **(线程) run_manus**: 线程完成。
+60. **搜索路由器 (StreamingResponse)**: 在所有排队项目发送完毕且驱动线程完成后，流自然结束。
