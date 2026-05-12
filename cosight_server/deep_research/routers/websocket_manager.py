@@ -44,7 +44,8 @@ class WebsocketManager:
 
     def disconnect(self, ws: WebSocket):
         # 关闭时 移除ws对象
-        self.active_clients.remove(ws)
+        if ws in self.active_clients:
+            self.active_clients.remove(ws)
         # 清理与该 ws 相关的 topic 绑定
         topics_to_remove = [topic for topic, mapped_ws in self.topic_to_ws.items() if mapped_ws is ws]
         for topic in topics_to_remove:
@@ -71,7 +72,14 @@ class WebsocketManager:
         ws = self.get_ws_for_topic(topic) or default_ws
         if ws is not None:
             logger.info(f"send_json_to_topic >>>>>>>>>>>>>> topic: {topic}, data: {data}")
-            await ws.send_json(data)
+            try:
+                await ws.send_json(data)
+            except Exception as e:
+                logger.warning(f"send_json_to_topic failed, drop stale websocket for topic: {topic}, error: {e}")
+                if topic and self.topic_to_ws.get(topic) is ws:
+                    self.topic_to_ws.pop(topic, None)
+                if ws in self.active_clients:
+                    self.active_clients.remove(ws)
 
     async def broadcast(self, message: str):
         # 广播消息

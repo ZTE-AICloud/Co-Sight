@@ -85,6 +85,38 @@ body {
     transform: translateY(-50%) scale(1.05);
 }
 
+.replay-overlay {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(20, 24, 33, 0.5);
+    z-index: 12000;
+}
+
+.replay-overlay.show {
+    display: flex;
+}
+
+.replay-overlay-panel {
+    position: relative;
+    width: min(1240px, 96vw);
+    height: min(860px, 92vh);
+    background: #f8f9fa;
+    border-radius: 8px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.28);
+    overflow: hidden;
+}
+
+#replay-overlay-iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: #f8f9fa;
+}
+
 @keyframes replay-pulse {
     0%, 100% {
         box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);

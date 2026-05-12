@@ -13,13 +13,6 @@
 
     <link rel="stylesheet" href="styles/styles.css">
     <link rel="stylesheet" href="styles/md.css">
-    
-    <!-- 页面刷新时清空localStorage -->
-    <script>
-        // 页面刷新时清空localStorage中的所有内容
-        localStorage.clear();
-        console.log('页面刷新，已清空localStorage');
-    </script>
 </head>
 
 <body>
@@ -195,6 +188,11 @@
         </div>
     </div>
 
+    <div class="replay-overlay" id="replay-overlay" aria-hidden="true">
+        <div class="replay-overlay-panel">
+        </div>
+    </div>
+
     <div class="tooltip" id="tooltip"></div>
     <div class="steps-tooltip" id="steps-tooltip"></div>
     <div class="verification-tooltip" id="verification-tooltip"></div>
@@ -214,15 +212,61 @@
     <script>
         // 跳转到回放历史页面
         function goToReplayHistory() {
-            const targetPage = window.location.pathname.includes('/cosight/') 
-                ? 'replay.html' 
-                : '/cosight/replay.html';
-            window.location.href = targetPage;
+            const basePage = window.location.pathname.includes('/cosight/') 
+                ? 'replay.html?embedded=true' 
+                : '/cosight/replay.html?embedded=true';
+            const targetPage = `${basePage}&_ts=${Date.now()}`;
+            const overlay = document.getElementById('replay-overlay');
+            const panel = overlay ? overlay.querySelector('.replay-overlay-panel') : null;
+            if (!overlay || !panel) return;
+            const oldIframe = document.getElementById('replay-overlay-iframe');
+            if (oldIframe) {
+                oldIframe.remove();
+            }
+            overlay.classList.remove('show');
+            const iframe = document.createElement('iframe');
+            iframe.id = 'replay-overlay-iframe';
+            iframe.title = '任务回放历史';
+            iframe.frameBorder = '0';
+            iframe.src = targetPage;
+            panel.appendChild(iframe);
+            overlay.classList.add('show');
+            overlay.setAttribute('aria-hidden', 'false');
         }
+
+        function closeReplayOverlay() {
+            const overlay = document.getElementById('replay-overlay');
+            const iframe = document.getElementById('replay-overlay-iframe');
+            if (!overlay) return;
+            overlay.classList.remove('show');
+            overlay.setAttribute('aria-hidden', 'true');
+            if (iframe) {
+                iframe.remove();
+            }
+        }
+
+        window.addEventListener('message', (event) => {
+            if (event.origin !== window.location.origin) return;
+            if (event.data && event.data.type === 'cosight:closeReplayOverlay') {
+                closeReplayOverlay();
+            }
+        });
+
+        window.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                const overlay = document.getElementById('replay-overlay');
+                if (overlay && overlay.classList.contains('show')) {
+                    closeReplayOverlay();
+                }
+            }
+        });
     </script>
     <script>
         (function restoreFromStorage() {
             try {
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.get('replay') === 'true') return;
+
                 const raw = localStorage.getItem('cosight:lastManusStep');
                 const pendingRaw = localStorage.getItem('cosight:pendingRequests');
                 const pendings = pendingRaw ? JSON.parse(pendingRaw) : {};

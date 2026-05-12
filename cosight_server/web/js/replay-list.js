@@ -65,7 +65,9 @@ function startReplay(workspacePath) {
         : '/cosight/index.html';
     
     // 跳转到主页面并传递回放参数
-    const replayUrl = `${targetPage}?replay=true&workspace=${encodeURIComponent(workspacePath)}`;
+    const urlParams = new URLSearchParams(window.location.search);
+    const embeddedParam = urlParams.get('embedded') === 'true' ? '&embedded=true' : '';
+    const replayUrl = `${targetPage}?replay=true${embeddedParam}&workspace=${encodeURIComponent(workspacePath)}&_ts=${Date.now()}`;
     console.log('跳转到:', replayUrl);
     window.location.href = replayUrl;
 }

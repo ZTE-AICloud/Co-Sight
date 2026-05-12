@@ -13,14 +13,15 @@
     <div class="replay-container">
         <div class="replay-header">
             <h1><i class="fas fa-history"></i> 任务回放历史</h1>
-            <button class="btn-back" onclick="goBack()">
-                <i class="fas fa-arrow-left"></i> 返回主页
-            </button>
+            <div class="replay-header-actions">
+                <button class="btn-back" onclick="closeReplay()">
+                    <i class="fas fa-arrow-left"></i> 返回主页
+                </button>
+            </div>
         </div>
 
         <div class="replay-filter">
-            <input type="text" id="search-input" placeholder="搜索任务标题..." 
-                   class="search-input">
+            <input type="text" id="search-input" placeholder="搜索任务标题..." class="search-input">
             <select id="time-filter" class="time-filter">
                 <option value="all">全部时间</option>
                 <option value="today">今天</option>
@@ -40,14 +41,29 @@
 
     <script src="js/replay-list.js"></script>
     <script>
-        // 返回主页的函数
-        function goBack() {
-            const targetPage = window.location.pathname.includes('/cosight/') 
-                ? 'index.html' 
+        const replayUrlParams = new URLSearchParams(window.location.search);
+        const isEmbeddedReplay = replayUrlParams.get('embedded') === 'true';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!isEmbeddedReplay) return;
+            const backButton = document.querySelector('.btn-back');
+            if (backButton) {
+                backButton.innerHTML = '<i class="fas fa-times"></i> 关闭';
+                backButton.title = '关闭回放';
+            }
+        });
+
+        function closeReplay() {
+            if (isEmbeddedReplay && window.parent && window.parent !== window) {
+                window.parent.postMessage({ type: 'cosight:closeReplayOverlay' }, window.location.origin);
+                return;
+            }
+
+            const targetPage = window.location.pathname.includes('/cosight/')
+                ? 'index.html'
                 : '/cosight/index.html';
             window.location.href = targetPage;
         }
     </script>
 </body>
 </html>
-
