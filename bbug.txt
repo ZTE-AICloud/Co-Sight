@@ -11,6 +11,7 @@
 
 
 #错误：在调用 search_wiki 工具时，程序通过 wikipedia.summary() 请求 Wikipedia 接口。由于接口返回了空响应或非 JSON 格式内容，第三方库在执行 r.json() 解析时触发 JSONDecodeError，导致工具调用失败。
+
 问题性质：该问题属于外部接口响应异常导致的异常处理不完整问题，不属于核心业务逻辑错误。
 修复方案：在 app/cosight/tool/search_toolkit.py 的 SearchToolkit.search_wiki() 方法中补充异常捕获逻辑，覆盖以下异常类型：
 requests.exceptions.JSONDecodeError
@@ -81,3 +82,11 @@ requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
 [2026-05-12 20:08:19.525][31336][6072][WARNING][tool_result_processor.py:228] URL https://bbs.eeworld.com.cn/thread-1134613-1-1.html GET请求也失败: HTTPSConnectionPool(host='bbs.eeworld.com.cn', port=443): Max retries exceeded with url: /thread-1134613-1-1.html (Caused by ProxyError('Unable to connect to proxy', RemoteDisconnected('Remote end closed connection without response')))
 [2026-05-12 20:08:24.942][31336][10924][WARNING][tool_result_processor.py:228] URL https://fgw.sz.gov.cn/ztzl/qtztzl/szscjmyjjfzzhfwpt/mqfc/myqyfzdt/content/post_12422434.html GET请求也失败: HTTPSConnectionPool(host='fgw.sz.gov.cn', port=443): Max retries exceeded with url: /ztzl/qtztzl/szscjmyjjfzzhfwpt/mqfc/myqyfzdt/content/post_12422434.html (Caused by SSLError(SSLError(1, '[SSL: BAD_ECPOINT] bad ecpoint (_ssl.c:1006)')))
 [2026-05-12 20:08:26.241][31336][3644][WARNING][tool_result_processor.py:228] URL https://fgw.sz.gov.cn/ztzl/qtztzl/szscjmyjjfzzhfwpt/mqfc/myqyxfal/content/post_12505457.html GET请求也失败: HTTPSConnectionPool(host='fgw.sz.gov.cn', port=443): Max retries exceeded with url: /ztzl/qtztzl/szscjmyjjfzzhfwpt/mqfc/myqyxfal/content/post_12505457.html (Caused by SSLError(SSLError(1, '[SSL: BAD_ECPOINT] bad ecpoint (_ssl.c:1006)')))
+
+
+
+#错误：回放页面没有返回工作区按钮，离开工作区之后会删除状态暂存导致任务截断
+
+问题性质：前端页面跳转与运行状态管理冲突
+原因分析：回放页面和当前工作区共用了同一套浏览器运行环境与本地状态，但原来的页面切换方式没有隔离二者。点击回放历史会直接通过 window.location.href 跳转到 replay.html。这样会导致当前工作区页面被卸载，正在运行的任务页面不再保留。同时，首页加载时又会执行 localStorage.clear()，把任务恢复所依赖的状态一起清掉
+优化方案:不再让回放页面破坏当前工作区，而是将回放历史以内嵌 overlay 的方式打开，并对前后端状态恢复和异常处理进行加固
