@@ -1,0 +1,83 @@
+
+#文件保存操作未合并导致的重复工具调用
+
+[2026-05-12 14:43:56.159][14408][28352][WARNING][base_agent.py:532] file_saver called 2 times in step 3. Consider consolidating file saves to improve performance.
+ 
+问题性质：非功能性问题，属于性能优化类告警。
+原因分析：Agent 在生成多个版本内容时，将完整报告和精简报告分别保存为独立文件，导致同一 step 内重复调用 
+ 优化方案：
+将完整报告和精简报告整合到同一个 Markdown 文件中，通过不同标题分区保存，避免多次调用 file_saver，提高执行效率。
+
+
+
+#错误：在调用 search_wiki 工具时，程序通过 wikipedia.summary() 请求 Wikipedia 接口。由于接口返回了空响应或非 JSON 格式内容，第三方库在执行 r.json() 解析时触发 JSONDecodeError，导致工具调用失败。
+问题性质：该问题属于外部接口响应异常导致的异常处理不完整问题，不属于核心业务逻辑错误。
+修复方案：在 app/cosight/tool/search_toolkit.py 的 SearchToolkit.search_wiki() 方法中补充异常捕获逻辑，覆盖以下异常类型：
+requests.exceptions.JSONDecodeError
+requests.exceptions.RequestException
+json.JSONDecodeError
+兜底 Exception
+同时保留原有正常逻辑：正常页面仍返回 Wikipedia URL + Summary，页面不存在时仍返回 PageError 提示，消歧义场景仍优先使用第一个候选项。
+当 Wikipedia 返回空响应、非 JSON 响应、代理错误或网络请求异常时，search_wiki() 不再继续向上抛异常，而是返回可读的错误字符串
+额外优化：将消歧义分支里的裸 except: 改为显式异常捕获并记录日志，避免静默吞掉未知错误。
+
+[2026-05-12 14:42:41.485][14408][2664][ERROR][base_agent.py:581] Unhandled exception: Expecting value: line 1 column 1 (char 0)
+Traceback (most recent call last):
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\requests\models.py", line 974, in json
+    return complexjson.loads(self.text, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sh137\AppData\Local\Programs\Python\Python311\Lib\json\__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sh137\AppData\Local\Programs\Python\Python311\Lib\json\decoder.py", line 337, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sh137\AppData\Local\Programs\Python\Python311\Lib\json\decoder.py", line 355, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\app\cosight\agent\base\base_agent.py", line 551, in _execute_tool_call
+    result = function_to_call(**norm_args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\app\cosight\tool\search_toolkit.py", line 54, in search_wiki
+    result = wikipedia.summary(entity, sentences=5, auto_suggest=False)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\wikipedia\util.py", line 28, in __call__
+    ret = self._cache[key] = self.fn(*args, **kwargs)
+                             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\wikipedia\wikipedia.py", line 231, in summary
+    page_info = page(title, auto_suggest=auto_suggest, redirect=redirect)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\wikipedia\wikipedia.py", line 276, in page
+    return WikipediaPage(title, redirect=redirect, preload=preload)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\wikipedia\wikipedia.py", line 299, in __init__
+    self.__load(redirect=redirect, preload=preload)
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\wikipedia\wikipedia.py", line 336, in __load
+    request = _wiki_request(query_params)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\wikipedia\wikipedia.py", line 742, in _wiki_request
+    return r.json()
+           ^^^^^^^^
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\requests\models.py", line 978, in json
+    raise RequestsJSONDecodeError(e.msg, e.doc, e.pos)
+requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+
+
+
+错误：#外部网页抓取阶段出现 HTTP GET 请求失败，主要表现为代理连接异常和读取超时。该问题属于外部网络访问异常或目标站点响应异常，不属于核心业务逻辑错误。
+[2026-05-12 14:49:52.323][14408][17692][WARNING][tool_result_processor.py:228] URL https://www.eeworld.com.cn/qrs/hisic470769.html GET请求也失败: HTTPSConnectionPool(host='www.eeworld.com.cn', port=443): Max retries exceeded with url: /qrs/hisic470769.html (Caused by ProxyError('Unable to connect to proxy', RemoteDisconnected('Remote end closed connection without response')))
+[2026-05-12 14:50:06.053][14408][3920][WARNING][tool_result_processor.py:228] URL https://www.eet-china.com/mp/a476309.html GET请求也失败: HTTPSConnectionPool(host='www.eet-china.com', port=443): Max retries exceeded with url: /mp/a476309.html (Caused by ProxyError('Unable to connect to proxy', RemoteDisconnected('Remote end closed connection without response')))
+[2026-05-12 14:50:07.775][14408][29676][WARNING][tool_result_processor.py:228] URL https://www.esmchina.com/news/13943.html GET请求也失败: HTTPSConnectionPool(host='www.esmchina.com', port=443): Read timed out. (read timeout=8)
+[2026-05-12 14:50:21.499][14408][14416][WARNING][tool_result_processor.py:228] URL https://www.eet-china.com/mp/a470235.html GET请求也失败: HTTPSConnectionPool(host='www.eet-china.com', port=443): Read timed out. (read timeout=8)
+[2026-05-12 14:50:23.635][14408][29044][WARNING][tool_result_processor.py:228] URL https://www.eet-china.com/mp/a452975.html GET请求也失败: HTTPSConnectionPool(host='www.eet-china.com', port=443): Read timed out. (read timeout=8)
+[2026-05-12 14:50:46.117][14408][30592][WARNING][tool_result_processor.py:228] URL https://www.eet-china.com/mp/a390575.html GET请求也失败: HTTPSConnectionPool(host='www.eet-china.com', port=443): Read timed out. (read timeout=8)
+[2026-05-12 19:30:12.285][9212][31660][WARNING][tool_result_processor.py:228] URL https://www.esmchina.com/marketnews/53487.html GET请求也失败: HTTPSConnectionPool(host='www.esmchina.com', port=443): Read timed out. (read timeout=8)
+[2026-05-12 19:30:34.275][9212][23020][WARNING][tool_result_processor.py:228] URL https://www.esmchina.com/marketnews/57241.html GET请求也失败: HTTPSConnectionPool(host='www.esmchina.com', port=443): Read timed out. (read timeout=8)
+[2026-05-12 19:30:35.323][9212][16524][WARNING][tool_result_processor.py:228] URL https://www.eet-china.com/info/73016.html GET请求也失败: HTTPSConnectionPool(host='www.eet-china.com', port=443): Read timed out. (read timeout=8)
+[2026-05-12 20:08:19.525][31336][6072][WARNING][tool_result_processor.py:228] URL https://bbs.eeworld.com.cn/thread-1134613-1-1.html GET请求也失败: HTTPSConnectionPool(host='bbs.eeworld.com.cn', port=443): Max retries exceeded with url: /thread-1134613-1-1.html (Caused by ProxyError('Unable to connect to proxy', RemoteDisconnected('Remote end closed connection without response')))
+[2026-05-12 20:08:24.942][31336][10924][WARNING][tool_result_processor.py:228] URL https://fgw.sz.gov.cn/ztzl/qtztzl/szscjmyjjfzzhfwpt/mqfc/myqyfzdt/content/post_12422434.html GET请求也失败: HTTPSConnectionPool(host='fgw.sz.gov.cn', port=443): Max retries exceeded with url: /ztzl/qtztzl/szscjmyjjfzzhfwpt/mqfc/myqyfzdt/content/post_12422434.html (Caused by SSLError(SSLError(1, '[SSL: BAD_ECPOINT] bad ecpoint (_ssl.c:1006)')))
+[2026-05-12 20:08:26.241][31336][3644][WARNING][tool_result_processor.py:228] URL https://fgw.sz.gov.cn/ztzl/qtztzl/szscjmyjjfzzhfwpt/mqfc/myqyxfal/content/post_12505457.html GET请求也失败: HTTPSConnectionPool(host='fgw.sz.gov.cn', port=443): Max retries exceeded with url: /ztzl/qtztzl/szscjmyjjfzzhfwpt/mqfc/myqyxfal/content/post_12505457.html (Caused by SSLError(SSLError(1, '[SSL: BAD_ECPOINT] bad ecpoint (_ssl.c:1006)')))

@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import json
 import os
 import xml.etree.ElementTree as ET
 from typing import Any, Dict, List, Literal, Optional, TypeAlias, Union
@@ -48,6 +49,10 @@ class SearchToolkit:
 
         result: str
         page_url: str = ""
+        invalid_response_msg = (
+            f'Wikipedia search failed for entity "{entity}": received an '
+            "invalid or empty response from Wikipedia."
+        )
 
         try:
             # 获取页面摘要
@@ -57,14 +62,30 @@ class SearchToolkit:
             page_url = page.url
         except wikipedia.exceptions.DisambiguationError as e:
             # 如果有歧义，选择第一个选项
-            result = wikipedia.summary(
-                e.options[0], sentences=5, auto_suggest=False
-            )
             try:
+                result = wikipedia.summary(
+                    e.options[0], sentences=5, auto_suggest=False
+                )
                 page = wikipedia.page(e.options[0], auto_suggest=False)
                 page_url = page.url
-            except:
-                pass
+            except (
+                requests.exceptions.JSONDecodeError,
+                requests.exceptions.RequestException,
+                json.JSONDecodeError,
+                wikipedia.exceptions.WikipediaException,
+            ):
+                logger.warning(invalid_response_msg, exc_info=True)
+                result = invalid_response_msg
+            except Exception as disambiguation_error:
+                logger.error(
+                    "Unexpected Wikipedia disambiguation search failure for "
+                    f'entity "{entity}": {disambiguation_error}',
+                    exc_info=True
+                )
+                result = (
+                    f'Wikipedia search failed for entity "{entity}": '
+                    f"{disambiguation_error}"
+                )
         except wikipedia.exceptions.PageError:
             result = (
                 "There is no page in Wikipedia corresponding to entity "
@@ -73,6 +94,19 @@ class SearchToolkit:
             )
         except wikipedia.exceptions.WikipediaException as e:
             result = f"An exception occurred during the search: {e}"
+        except (
+            requests.exceptions.JSONDecodeError,
+            requests.exceptions.RequestException,
+            json.JSONDecodeError,
+        ):
+            logger.warning(invalid_response_msg, exc_info=True)
+            result = invalid_response_msg
+        except Exception as e:
+            logger.error(
+                f'Unexpected Wikipedia search failure for entity "{entity}": {e}',
+                exc_info=True
+            )
+            result = f'Wikipedia search failed for entity "{entity}": {e}'
         
         # 如果有URL，将URL信息添加到结果中
         if page_url:

@@ -62,6 +62,14 @@ Work efficiently. Save files only when producing final outputs.
 """
         return system_prompt
     
+    consolidated_save_guidance = """
+# Consolidated File Save Rules
+- This is a prompt-level performance optimization, not a hard runtime limit; BaseAgent file_saver warning telemetry remains the fallback monitor.
+- For related outputs in the same step, collect and organize content first, then call file_saver once before the step ends, using Mode="w" to write one Markdown file.
+- Do not create separate files for each search result, each evidence fragment, or full/concise report variants.
+- If the same step needs both a full report and a concise report, write them into one Markdown file with "## Full Report" and "## Concise Report" sections.
+"""
+
     report_tool_guidance = """
 # Report-Specific Enhancement Rules
 - IMPORTANT: When using a model based on OpenRouter Claude, DO NOT use the create_html_report tool for any task.
@@ -80,8 +88,9 @@ You are an assistant helping complete complex tasks. Your goal is to execute tas
 
 # Task Execution Rules:
 1. For all output tasks (file generation and information gathering):
-   - First save structured, properly formatted files with complete paths in the workspace directory using file_saver
+   - Collect and organize related outputs in memory first, then save ONE structured, properly formatted file at the end of the current step using file_saver with Mode="w"
    - Include clear organization, comprehensive analysis with supporting evidence, and actionable recommendations
+   - If both a full report and a concise report are required in the same step, save them in ONE Markdown file with separate sections: "## Full Report" and "## Concise Report"
 2. Use mark_step when:
    - The task is fully completed with all required outputs saved
    - Or the task is blocked due to external factors after multiple attempts
@@ -99,7 +108,7 @@ You are an assistant helping complete complex tasks. Your goal is to execute tas
    - Keep as many figures, tables, and text as possible in the final file, and use the file_read tools in the WorkSpace directory to get the file content you need if necessary
    - After you save the file, check to make sure that the file is generated correctly, and rebuild if it is not successfully generated to ensure that the file exists
    - When the content information is insufficient, you can summarize and supplement it by yourself
-   - Save the analysis report using file_saver before marking the step
+   - Save the analysis report using file_saver once before marking the step
 5. When using search tools:
    - ALWAYS after receiving search results, extract useful information exactly as presented
    - Format extracted information in a suitable document format with clear organization
@@ -113,6 +122,7 @@ You are an assistant helping complete complex tasks. Your goal is to execute tas
    - Include precise references to sources for all extracted information
    - IMPORTANT: Extracted information must be 100% faithful to the original sources
    - OPTIMIZATION: Only use file_saver ONCE per step to save all collected information
+   - This is a prompt-level performance optimization, not a hard runtime limit; BaseAgent warning telemetry remains the fallback if multiple saves happen
 
 # HTML Report Optimization Rules:
 6. When generating HTML reports, follow these optimization requirements:
@@ -125,6 +135,8 @@ You are an assistant helping complete complex tasks. Your goal is to execute tas
    - Limit file size to under 2MB, use simplified template when exceeded
 
 {report_tool_guidance}
+
+{consolidated_save_guidance}
 
 # Visualization / Plotting Rules (Fonts)
 - When generating any charts or images (Matplotlib/Seaborn/PIL), you MUST explicitly set a Chinese font from the project to avoid missing glyphs.
@@ -190,8 +202,9 @@ def actor_execute_task_prompt(task, step_index, plan, workspace_path: str):
 # TURBO MODE - Final Step Instructions:
 1. This is the FINAL step - create the final output now
 2. Gather all necessary information efficiently
-3. Save the final result using file_saver (this is the ONLY file you should create)
+3. Save the final result using file_saver with Mode="w" (this is the ONLY file you should create)
 4. Call mark_step with the file path when done
+5. If both full and concise reports are required, put them in one Markdown file under "## Full Report" and "## Concise Report"
 
 Focus on efficiency and completing the task with minimal tool calls.
 """
@@ -227,7 +240,8 @@ Work efficiently with minimal tool calls. No file generation in intermediate ste
   * Conduct research for each subtopic
   * Create a well-structured report using file_saver directly
   * Format as markdown or plain text with clear sections and organization
-  * Save all findings directly to a single output file
+  * Save all findings directly to a single output file with Mode="w"
+  * If both full and concise versions are needed, use one Markdown file with "## Full Report" and "## Concise Report" sections
 """
     
     execute_task_prompt = f"""
@@ -271,18 +285,19 @@ Follow the general task execution rules above.
 # Search Tool Guidelines:
 - When using any search tool:
   1. After receiving search results, ALWAYS extract useful information exactly as presented
-  2. Structure the extracted information as follows:
+  2. Keep extracted information in memory until the current step is ready to finish; do not save after each individual search result
+  3. Structure the consolidated extracted information as follows:
      * Title: "Information from [search term] via [source]"
      * Sources: List of all sources with URLs where information was obtained
      * Extracted Content: Organized collection of facts, data, and information directly from sources
      * Direct Quotations: Use quotation marks for exact wording from sources
-  3. Save the extracted information to the workspace using file_saver with:
-     * Filename: "info_[search_term]_[source].md" (e.g., "info_climate_change_google.md")
-     * Content: The organized extracted information with proper source attribution
+  4. At the end of the step, save the consolidated extracted information to the workspace using a single file_saver call with:
+     * Filename: "search_results_summary_[step_name].md" or another comprehensive Markdown filename
+     * Content: All organized extracted information with proper source attribution
      * Mode: "w" (write mode)
-  4. Do not add personal interpretations, conclusions, or anything not explicitly stated in sources
-  5. IMPORTANT: All extracted information must be 100% faithful to the original search results
-  6. Never skip this extraction step after search operations
+  5. Do not add personal interpretations, conclusions, or anything not explicitly stated in sources
+  6. IMPORTANT: All extracted information must be 100% faithful to the original search results
+  7. Never skip this extraction step after search operations
 """
     return execute_task_prompt
 
@@ -324,7 +339,15 @@ def actor_system_prompt_zh(work_space_path):
 高效工作。仅在生成最终输出时保存文件。
 """
         return system_prompt
-    
+
+    consolidated_save_guidance = """
+# 合并保存规则
+- 这是 Prompt-level 性能优化约束，不是底层强制限制；BaseAgent 的 file_saver 多次调用告警仍作为兜底监控保留。
+- 对于同一步骤内的相关输出，先收集和组织内容，步骤结束前只调用一次 file_saver，并使用 Mode="w" 写入一个 Markdown 文件。
+- 不要为每次搜索结果、每个资料片段、完整报告和精简报告分别创建文件。
+- 如果同一步骤需要完整报告和精简报告，必须写入同一个 Markdown 文件，并使用章节 "## 完整报告" 和 "## 精简报告" 分区。
+"""
+
     report_tool_guidance = """
 # 报告特定增强规则
 - 重要提示：当使用基于 OpenRouter Claude 的模型时，任何任务均不得使用 create_html_report 工具。
@@ -343,8 +366,9 @@ def actor_system_prompt_zh(work_space_path):
 
 # 任务执行规则：
 1. 对于所有输出任务（文件生成和信息收集）：
-   - 首先使用 file_saver 将结构化、格式正确的文件保存到工作区目录
+   - 先在当前步骤内收集和组织相关输出，再于步骤结束时使用 file_saver 和 Mode="w" 一次性保存到一个结构化 Markdown 文件
    - 包含清晰的组织、全面的分析及支持证据的可操作建议
+   - 如果同一步骤需要完整报告和精简报告，保存到同一个 Markdown 文件，并使用 "## 完整报告" 和 "## 精简报告" 分区
 2. 使用 mark_step 的情况包括：
    - 任务已完成且所有输出文件已保存
    - 或在多次尝试后因外部因素阻塞
@@ -362,7 +386,7 @@ def actor_system_prompt_zh(work_space_path):
    - 尽可能保留图表、表格和文本内容，如需使用内容，可通过工作区目录的 file_read 工具获取
    - 保存文件后需确保文件正确生成，若未成功生成则需重建以保证文件存在
    - 当内容信息不足时，可自行总结补充
-   - 在标记步骤前使用 file_saver 保存分析报告
+   - 在标记步骤前只使用一次 file_saver 保存分析报告
 5. 使用搜索工具时：
    - 一旦收到搜索结果，必须精确提取有用信息
    - 以合适的文档格式呈现提取的信息并保持清晰组织
@@ -376,6 +400,7 @@ def actor_system_prompt_zh(work_space_path):
    - 所有提取的信息需包含精确的来源引用
    - 重要提示：提取的信息必须完全忠实于原始来源
    - 优化提示：每个步骤只使用一次 file_saver 来保存所有收集的信息
+   - 这是 Prompt-level 性能优化约束；如果仍出现多次保存，BaseAgent 告警继续作为兜底监控
 
 # HTML报告优化规则：
 6. 生成HTML报告时的优化要求：
@@ -388,6 +413,8 @@ def actor_system_prompt_zh(work_space_path):
    - 限制文件大小在2MB以下，超过时使用简化模板
 
 {report_tool_guidance}
+
+{consolidated_save_guidance}
 
 # 环境信息
 - 操作系统: {platform.platform()}
@@ -425,8 +452,9 @@ def actor_execute_task_prompt_zh(task, step_index, plan, workspace_path):
 # 急速模式 - 最后一步指令：
 1. 这是最后一步 - 现在创建最终输出
 2. 高效收集所有必要信息
-3. 使用 file_saver 保存最终结果（这是你应该创建的唯一文件）
+3. 使用 file_saver 和 Mode="w" 保存最终结果（这是你应该创建的唯一文件）
 4. 完成后使用文件路径调用 mark_step
+5. 如果需要完整报告和精简报告，将它们写入同一个 Markdown 文件的 "## 完整报告" 和 "## 精简报告" 分区
 
 专注于效率，用最少的工具调用完成任务。
 """
@@ -459,7 +487,8 @@ def actor_execute_task_prompt_zh(task, step_index, plan, workspace_path):
   * 为每个子主题进行研究
   * 直接使用 file_saver 创建结构化报告
   * 以 Markdown 或纯文本格式保存，包含清晰章节和组织
-  * 将所有发现保存到单个输出文件中
+  * 使用 Mode="w" 将所有发现保存到单个输出文件中
+  * 如果需要完整报告和精简报告，将它们写入同一个 Markdown 文件的 "## 完整报告" 和 "## 精简报告" 分区
 """
 
     execute_task_prompt = f"""
@@ -484,18 +513,19 @@ def actor_execute_task_prompt_zh(task, step_index, plan, workspace_path):
 # 搜索工具指南：
 - 当使用任何搜索工具时：
   1. 收到搜索结果后，必须始终精确提取有用信息
-  2. 提取的信息需按以下结构组织：
+  2. 在当前步骤结束前，将每次搜索提取的信息保留在上下文中，不要对每次搜索结果分别调用 file_saver
+  3. 提取的信息需按以下结构组织：
      * 标题: "来自 [搜索词] 的信息（通过 [来源]）"
      * 来源: 列出所有获取信息的来源及网址
      * 提取内容: 直接从来源中提取的事实、数据和信息
      * 直接引用: 使用引号标注来源中的原文
-  3. 使用 file_saver 将提取的信息保存到工作区，需满足：
-     * 文件名: "检索结果_[搜索词]_[来源].md"（例如 "检索结果_气候变化_百度.md"）
-     * 内容: 按照来源标注的结构化提取信息
+  4. 在步骤结束时，使用一次 file_saver 将所有提取信息保存到工作区，需满足：
+     * 文件名: "搜索结果汇总_[步骤名称].md" 或其他综合性 Markdown 文件名
+     * 内容: 按来源和主题组织所有结构化提取信息
      * 模式: "w"（写入模式）
-  4. 不添加个人解释、结论或来源中未明确提及的内容
-  5. 重要提示：所有提取的信息必须完全忠实于原始搜索结果
-  6. 不得跳过搜索操作后的提取步骤
+  5. 不添加个人解释、结论或来源中未明确提及的内容
+  6. 重要提示：所有提取的信息必须完全忠实于原始搜索结果
+  7. 不得跳过搜索操作后的提取步骤
 """
     return execute_task_prompt
 
