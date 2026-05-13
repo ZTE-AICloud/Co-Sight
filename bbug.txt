@@ -13,7 +13,7 @@
 #错误：在调用 search_wiki 工具时，程序通过 wikipedia.summary() 请求 Wikipedia 接口。由于接口返回了空响应或非 JSON 格式内容，第三方库在执行 r.json() 解析时触发 JSONDecodeError，导致工具调用失败。
 
 问题性质：该问题属于外部接口响应异常导致的异常处理不完整问题，不属于核心业务逻辑错误。
-修复方案：在 app/cosight/tool/search_toolkit.py 的 SearchToolkit.search_wiki() 方法中补充异常捕获逻辑，覆盖以下异常类型：
+修复方案（old）：在 app/cosight/tool/search_toolkit.py 的 SearchToolkit.search_wiki() 方法中补充异常捕获逻辑，覆盖以下异常类型：
 requests.exceptions.JSONDecodeError
 requests.exceptions.RequestException
 json.JSONDecodeError
@@ -21,6 +21,10 @@ json.JSONDecodeError
 同时保留原有正常逻辑：正常页面仍返回 Wikipedia URL + Summary，页面不存在时仍返回 PageError 提示，消歧义场景仍优先使用第一个候选项。
 当 Wikipedia 返回空响应、非 JSON 响应、代理错误或网络请求异常时，search_wiki() 不再继续向上抛异常，而是返回可读的错误字符串
 额外优化：将消歧义分支里的裸 except: 改为显式异常捕获并记录日志，避免静默吞掉未知错误。
+
+修复方案（now）：仅修改百科搜索相关代码，不改 Google/Tavily/文件工具等其它功能。
+保留现有工具入口名 search_wiki(entity: str) -> str，避免影响 agent 注册、调用参数、结果处理链路。
+将内部实现从 wikipedia Python 包替换为请求并解析百度百科页面。
 
 [2026-05-12 14:42:41.485][14408][2664][ERROR][base_agent.py:581] Unhandled exception: Expecting value: line 1 column 1 (char 0)
 Traceback (most recent call last):
@@ -90,3 +94,234 @@ requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
 问题性质：前端页面跳转与运行状态管理冲突
 原因分析：回放页面和当前工作区共用了同一套浏览器运行环境与本地状态，但原来的页面切换方式没有隔离二者。点击回放历史会直接通过 window.location.href 跳转到 replay.html。这样会导致当前工作区页面被卸载，正在运行的任务页面不再保留。同时，首页加载时又会执行 localStorage.clear()，把任务恢复所依赖的状态一起清掉
 优化方案:不再让回放页面破坏当前工作区，而是将回放历史以内嵌 overlay 的方式打开，并对前后端状态恢复和异常处理进行加固
+问题：在内嵌的overlay上的回放页面中，如果再点击回放页面会内嵌新的overlay，且无法返回到最初工作区
+
+
+
+# file_read 误读 workspace 目录导致 PermissionError
+
+原因分析:file_read 当前未在读取前判断目标路径是文件还是目录。当 Agent 将 workspace 目录路径传给 file_read 时，工具直接执行 open(absolute_path)，导致目录被误当作文件读取，从而触发 PermissionError。
+优化方案：在 file_read 执行 open() 前增加路径类型校验：
+如果路径不存在，返回“文件不存在”提示。
+如果路径是目录，返回“目标是目录，请指定具体文件路径”，并可附带目录下的文件列表。
+只有当路径是普通文件时，才执行 open() 读取。
+同时应优化 Agent 的工具使用提示，要求读取文件时传入具体文件路径，例如 .md、.txt、.json 文件，而不是 workspace 根目录。
+
+[2026-05-13 16:13:27.247][22756][28248][ERROR][file_toolkit.py:131] Error: Permission denied. Try with sudo=True if appropriate: [Errno 13] Permission denied: 'D:\\sty\\rank\\zhongxing_agent\\Co-Sight-git\\work_space\\work_space_20260513_161322_765159'
+Traceback (most recent call last):
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\app\cosight\tool\file_toolkit.py", line 117, in file_read
+    with open(absolute_path, 'rb' if binary else 'r', encoding=None if binary else 'utf-8') as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+PermissionError: [Errno 13] Permission denied: 'D:\\sty\\rank\\zhongxing_agent\\Co-Sight-git\\work_space\\work_space_20260513_161322_765159'
+
+[2026-05-13 18:32:29.026][22756][34056][ERROR][file_toolkit.py:131] Error: Permission denied. Try with sudo=True if appropriate: [Errno 13] Permission denied: 'D:\\sty\\rank\\zhongxing_agent\\Co-Sight-git\\work_space\\work_space_20260513_183224_911724'
+Traceback (most recent call last):
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\app\cosight\tool\file_toolkit.py", line 117, in file_read
+    with open(absolute_path, 'rb' if binary else 'r', encoding=None if binary else 'utf-8') as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+PermissionError: [Errno 13] Permission denied: 'D:\\sty\\rank\\zhongxing_agent\\Co-Sight-git\\work_space\\work_space_20260513_183224_911724'
+
+
+
+================================================================================================================================================================================================
+
+
+
+
+[2026-05-13 20:19:31.196][22756][24064][WARNING][chat_llm.py:722] chat with LLM error: Request timed out. on attempt 1, retrying...
+Traceback (most recent call last):
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\httpx\_transports\default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\httpx\_transports\default.py", line 127, in __iter__
+    for part in self._httpcore_stream:
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\httpcore\_sync\connection_pool.py", line 407, in __iter__
+    raise exc from None
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\httpcore\_sync\connection_pool.py", line 403, in __iter__
+    for part in self._stream:
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\httpcore\_sync\http11.py", line 342, in __iter__
+    raise exc
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\httpcore\_sync\http11.py", line 334, in __iter__
+    for chunk in self._connection._receive_response_body(**kwargs):
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\httpcore\_sync\http11.py", line 203, in _receive_response_body
+    event = self._receive_event(timeout=timeout)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\httpcore\_sync\http11.py", line 217, in _receive_event
+    data = self._network_stream.read(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\httpcore\_backends\sync.py", line 126, in read
+    with map_exceptions(exc_map):
+  File "C:\Users\sh137\AppData\Local\Programs\Python\Python311\Lib\contextlib.py", line 158, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\httpcore\_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ReadTimeout: The read operation timed out
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\openai\_base_client.py", line 982, in request
+    response = self._client.send(
+               ^^^^^^^^^^^^^^^^^^
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\httpx\_client.py", line 928, in send
+    raise exc
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\httpx\_client.py", line 922, in send
+    response.read()
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\httpx\_models.py", line 881, in read
+    self._content = b"".join(self.iter_bytes())
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\httpx\_models.py", line 897, in iter_bytes
+    for raw_bytes in self.iter_raw():
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\httpx\_models.py", line 951, in iter_raw
+    for raw_stream_bytes in self.stream:
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\httpx\_client.py", line 153, in __iter__
+    for chunk in self._stream:
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\httpx\_transports\default.py", line 126, in __iter__
+    with map_httpcore_exceptions():
+  File "C:\Users\sh137\AppData\Local\Programs\Python\Python311\Lib\contextlib.py", line 158, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\httpx\_transports\default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ReadTimeout: The read operation timed out
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\app\cosight\llm\chat_llm.py", line 668, in create_with_tools
+    response = self.client.chat.completions.create(**api_params)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\openai\_utils\_utils.py", line 286, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\openai\resources\chat\completions\completions.py", line 1147, in create
+    return self._post(
+           ^^^^^^^^^^^
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\openai\_base_client.py", line 1259, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\openai\_base_client.py", line 1000, in request
+    raise APITimeoutError(request=request) from err
+openai.APITimeoutError: Request timed out.
+
+
+
+[2026-05-13 20:20:55.850][22756][24064][ERROR][chat_llm.py:764] Failed to fix tool call arguments on attempt 1: Unterminated string starting at: line 1 column 161 (char 160)
+
+
+
+[2026-05-13 20:21:42.449][22756][20616][ERROR][base_agent.py:581] Unhandled exception: FileToolkit.file_saver() missing 2 required positional arguments: 'content' and 'file_path'
+Traceback (most recent call last):
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\app\cosight\agent\base\base_agent.py", line 551, in _execute_tool_call
+    result = function_to_call(**norm_args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: FileToolkit.file_saver() missing 2 required positional arguments: 'content' and 'file_path'
+
+
+
+
+
+[2026-05-13 20:27:20.320][22756][36656][ERROR][search_toolkit.py:744] error": f"An unexpected error occurred: HTTPSConnectionPool(host='api.tavily.com', port=443): Max retries exceeded with url: /search (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1006)')))
+urllib3.exceptions.SSLError: [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1006)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\requests\adapters.py", line 667, in send
+    resp = conn.urlopen(
+           ^^^^^^^^^^^^^
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\urllib3\connectionpool.py", line 842, in urlopen
+    retries = retries.increment(
+              ^^^^^^^^^^^^^^^^^^
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\urllib3\util\retry.py", line 543, in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='api.tavily.com', port=443): Max retries exceeded with url: /search (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1006)')))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\app\cosight\tool\search_toolkit.py", line 740, in tavily_search
+    `include_images` is True).
+        ^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\tavily\tavily.py", line 118, in search
+    response_dict = self._search(query,
+                    ^^^^^^^^^^^^^^^^^^^
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\tavily\tavily.py", line 76, in _search
+    response = requests.post(self.base_url + "/search", data=json.dumps(data), headers=self.headers, timeout=timeout, proxies=self.proxies)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\requests\api.py", line 115, in post
+    return request("post", url, data=data, json=json, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\requests\api.py", line 59, in request
+    return session.request(method=method, url=url, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\requests\sessions.py", line 589, in request
+    resp = self.send(prep, **send_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\requests\sessions.py", line 703, in send
+    r = adapter.send(request, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\requests\adapters.py", line 698, in send
+    raise SSLError(e, request=request)
+requests.exceptions.SSLError: HTTPSConnectionPool(host='api.tavily.com', port=443): Max retries exceeded with url: /search (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1006)')))
+
+
+
+
+
+
+[2026-05-13 20:28:03.958][22756][36700][ERROR][search_toolkit.py:744] error": f"An unexpected error occurred: ('Connection broken: IncompleteRead(0 bytes read, 6320 more expected)', IncompleteRead(0 bytes read, 6320 more expected))
+Traceback (most recent call last):
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\urllib3\response.py", line 905, in _error_catcher
+    yield
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\urllib3\response.py", line 1043, in _raw_read
+    raise IncompleteRead(self._fp_bytes_read, self.length_remaining)
+urllib3.exceptions.IncompleteRead: IncompleteRead(0 bytes read, 6320 more expected)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\requests\models.py", line 820, in generate
+    yield from self.raw.stream(chunk_size, decode_content=True)
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\urllib3\response.py", line 1267, in stream
+    data = self.read(amt=amt, decode_content=decode_content)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\urllib3\response.py", line 1110, in read
+    data = self._raw_read(amt)
+           ^^^^^^^^^^^^^^^^^^^
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\urllib3\response.py", line 1021, in _raw_read
+    with self._error_catcher():
+  File "C:\Users\sh137\AppData\Local\Programs\Python\Python311\Lib\contextlib.py", line 158, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\urllib3\response.py", line 925, in _error_catcher
+    raise ProtocolError(arg, e) from e
+urllib3.exceptions.ProtocolError: ('Connection broken: IncompleteRead(0 bytes read, 6320 more expected)', IncompleteRead(0 bytes read, 6320 more expected))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\app\cosight\tool\search_toolkit.py", line 740, in tavily_search
+    `include_images` is True).
+        ^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\tavily\tavily.py", line 118, in search
+    response_dict = self._search(query,
+                    ^^^^^^^^^^^^^^^^^^^
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\tavily\tavily.py", line 76, in _search
+    response = requests.post(self.base_url + "/search", data=json.dumps(data), headers=self.headers, timeout=timeout, proxies=self.proxies)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\requests\api.py", line 115, in post
+    return request("post", url, data=data, json=json, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\requests\api.py", line 59, in request
+    return session.request(method=method, url=url, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\requests\sessions.py", line 589, in request
+    resp = self.send(prep, **send_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\requests\sessions.py", line 746, in send
+    r.content
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\requests\models.py", line 902, in content
+    self._content = b"".join(self.iter_content(CONTENT_CHUNK_SIZE)) or b""
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\sty\rank\zhongxing_agent\Co-Sight-git\venv\Lib\site-packages\requests\models.py", line 822, in generate
+    raise ChunkedEncodingError(e)
+requests.exceptions.ChunkedEncodingError: ('Connection broken: IncompleteRead(0 bytes read, 6320 more expected)', IncompleteRead(0 bytes read, 6320 more expected))
