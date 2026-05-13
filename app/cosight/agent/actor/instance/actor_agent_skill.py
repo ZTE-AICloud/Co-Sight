@@ -145,16 +145,16 @@ def search_wiki_skill():
     return {
         'skill_name': 'search_wiki',
         'skill_type': "function",
-        'display_name_zh': '维基百科搜索',
-        'display_name_en': 'Google Search',
-        'description_zh': '使用维基百科搜索工具搜索给定查询的信息',
-        'description_en': 'Use wiki search engine to search information for the given query',
+        'display_name_zh': '百度百科搜索',
+        'display_name_en': 'Baidu Baike Search',
+        'description_zh': '使用百度百科搜索工具搜索给定查询的信息',
+        'description_en': 'Use Baidu Baike search engine to search information for the given query',
         'semantic_apis': ["api_search"],
         'function': SkillFunction(
             id='3c44f9ad-be5c-4e6c-a9d8-1426b23828a0',
-            name='app.cosight.search_toolkit.search_google',
-            description_zh='使用维基百科搜索工具搜索给定查询的信息',
-            description_en='Get search results using wiki search engine',
+            name='app.cosight.search_toolkit.search_wiki',
+            description_zh='使用百度百科搜索工具搜索给定查询的信息',
+            description_en='Get search results using Baidu Baike search engine',
             parameters={
                 "type": "object",
                 "properties": {
@@ -364,21 +364,21 @@ def file_read_skill():
         'skill_type': "function",
         'display_name_zh': '文件读取',
         'display_name_en': 'File Read',
-        'description_zh': '读取指定路径的本地文件内容，支持文本和二进制文件（如图片、音频、视频）',
-        'description_en': 'Read content from a local file at a specified path. Supports both text and binary files (e.g., images, audio, video)',
+        'description_zh': '读取指定路径的本地文件内容，必须传入具体文件路径（如 .md、.txt、.json），不要传工作区根目录或目录路径。支持文本和二进制文件（如图片、音频、视频）',
+        'description_en': 'Read content from a local file at a specified path. Pass a concrete file path (for example .md, .txt, .json), not the workspace root or a directory. Supports both text and binary files (e.g., images, audio, video)',
         'semantic_apis': ["api_file_management"],
         'function': SkillFunction(
             id='6c44f9ad-be5c-4e6c-a9d8-1426b23828a3',
             name='app.cosight.tool.file_toolkit.FileToolkit.file_read',
-            description_zh='读取指定路径的文件内容，支持文本和二进制文件',
-            description_en='Read content from a file at the specified path. Supports both text and binary files',
+            description_zh='读取指定路径的文件内容。必须指定具体文件路径，不要传工作区根目录或目录路径。支持文本和二进制文件',
+            description_en='Read content from a file at the specified path. Specify a concrete file path, not the workspace root or a directory. Supports both text and binary files',
             parameters={
                 "type": "object",
                 "properties": {
                     "file": {
                         "type": "string",
-                        "description_zh": "要读取的文件的绝对路径（需在工作区内，WORKSPACE_PATH环境变量指定）",
-                        "description_en": "Absolute path of the file to read (must be within workspace specified by WORKSPACE_PATH environment variable)"
+                        "description_zh": "要读取的具体文件绝对路径（需在工作区内，WORKSPACE_PATH环境变量指定）。应指向 .md、.txt、.json 等文件，不要传工作区根目录或目录路径",
+                        "description_en": "Absolute path of the concrete file to read (must be within workspace specified by WORKSPACE_PATH environment variable). Point to a file such as .md, .txt, or .json, not the workspace root or a directory"
                     },
                     "start_line": {
                         "type": "integer",

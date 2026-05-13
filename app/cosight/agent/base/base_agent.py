@@ -262,7 +262,7 @@ class BaseAgent:
             "search_baidu": "百度搜索",
             "search_google": "谷歌搜索", 
             "tavily_search": "Tavily搜索",
-            "search_wiki": "维基百科搜索",
+            "search_wiki": "百度百科搜索",
             "image_search": "图片搜索",
             "audio_recognition": "音频识别",
             

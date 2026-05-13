@@ -573,9 +573,12 @@ class ToolResultProcessor:
                 http_matches = re.findall(http_pattern, tool_result)
                 urls.extend(http_matches)
                 
-                # 方法5: 专门处理维基搜索的URL格式 "Wikipedia URL: https://..."
+                # 方法5: 专门处理百科搜索的URL格式
                 if tool_name == 'search_wiki':
-                    wiki_url_pattern = r'Wikipedia URL:\s*(https?://[^\s\n]+)'
+                    wiki_url_pattern = (
+                        r'(?:Baidu Baike|Wikipedia) URL:\s*'
+                        r'(https?://[^\s\n]+)'
+                    )
                     wiki_matches = re.findall(wiki_url_pattern, tool_result)
                     urls.extend(wiki_matches)
                 

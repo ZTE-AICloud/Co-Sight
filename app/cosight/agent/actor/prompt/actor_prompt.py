@@ -68,6 +68,7 @@ Work efficiently. Save files only when producing final outputs.
 - For related outputs in the same step, collect and organize content first, then call file_saver once before the step ends, using Mode="w" to write one Markdown file.
 - Do not create separate files for each search result, each evidence fragment, or full/concise report variants.
 - If the same step needs both a full report and a concise report, write them into one Markdown file with "## Full Report" and "## Concise Report" sections.
+- If the current step is the final step or asks for a report/summary after research, do not save a separate search_results_summary file. Put the source list, extracted facts, and evidence appendix inside the final report file, then call file_saver only once.
 """
 
     report_tool_guidance = """
@@ -105,7 +106,7 @@ You are an assistant helping complete complex tasks. Your goal is to execute tas
    - If you need to get the content in the link, you can use the web content fetch tool
    - The final report must not be output until all placeholder content has been fully replaced and resolved
    - Reflect on potential information gaps and compile findings into exhaustive analysis reports that maximize detail depth and content comprehensiveness, ensuring all outputs are well-structured, thoroughly documented, and include actionable recommendations with supporting evidence
-   - Keep as many figures, tables, and text as possible in the final file, and use the file_read tools in the WorkSpace directory to get the file content you need if necessary
+   - Keep as many figures, tables, and text as possible in the final file. If content from the WorkSpace is needed, use file_read with a concrete file path such as .md, .txt, or .json; do not pass the WorkSpace root or any directory path.
    - After you save the file, check to make sure that the file is generated correctly, and rebuild if it is not successfully generated to ensure that the file exists
    - When the content information is insufficient, you can summarize and supplement it by yourself
    - Save the analysis report using file_saver once before marking the step
@@ -205,6 +206,7 @@ def actor_execute_task_prompt(task, step_index, plan, workspace_path: str):
 3. Save the final result using file_saver with Mode="w" (this is the ONLY file you should create)
 4. Call mark_step with the file path when done
 5. If both full and concise reports are required, put them in one Markdown file under "## Full Report" and "## Concise Report"
+6. If searches are used in this final step, include sources and extracted evidence inside the final result file instead of creating a separate search summary file
 
 Focus on efficiency and completing the task with minimal tool calls.
 """
@@ -295,6 +297,7 @@ Follow the general task execution rules above.
      * Filename: "search_results_summary_[step_name].md" or another comprehensive Markdown filename
      * Content: All organized extracted information with proper source attribution
      * Mode: "w" (write mode)
+     * If this same step will also produce a final report or task summary, do not create a separate search summary file. Put the search evidence into a "Sources and Extracted Evidence" section or appendix in the final report, and save only that final report.
   5. Do not add personal interpretations, conclusions, or anything not explicitly stated in sources
   6. IMPORTANT: All extracted information must be 100% faithful to the original search results
   7. Never skip this extraction step after search operations
@@ -348,6 +351,10 @@ def actor_system_prompt_zh(work_space_path):
 - 如果同一步骤需要完整报告和精简报告，必须写入同一个 Markdown 文件，并使用章节 "## 完整报告" 和 "## 精简报告" 分区。
 """
 
+    consolidated_save_guidance += """
+- If the current step is the final step or asks for a report/summary after research, do not save a separate search_results_summary file. Put sources, extracted facts, and evidence appendix inside the final report file, then call file_saver only once.
+"""
+
     report_tool_guidance = """
 # 报告特定增强规则
 - 重要提示：当使用基于 OpenRouter Claude 的模型时，任何任务均不得使用 create_html_report 工具。
@@ -383,7 +390,7 @@ def actor_system_prompt_zh(work_space_path):
    - 若需获取链接内容，可使用网页内容抓取工具
    - 最终报告必须在所有占位内容完全替换和解决后输出
    - 反思潜在的信息缺口，并生成详尽的分析报告，最大化内容深度和全面性，确保所有输出结构清晰、文档完整并包含支持证据的可操作建议
-   - 尽可能保留图表、表格和文本内容，如需使用内容，可通过工作区目录的 file_read 工具获取
+   - 尽可能保留图表、表格和文本内容，如需使用工作区内容，可通过 file_read 读取具体文件路径（如 .md、.txt、.json），不要传工作区根目录或目录路径
    - 保存文件后需确保文件正确生成，若未成功生成则需重建以保证文件存在
    - 当内容信息不足时，可自行总结补充
    - 在标记步骤前只使用一次 file_saver 保存分析报告
@@ -455,6 +462,7 @@ def actor_execute_task_prompt_zh(task, step_index, plan, workspace_path):
 3. 使用 file_saver 和 Mode="w" 保存最终结果（这是你应该创建的唯一文件）
 4. 完成后使用文件路径调用 mark_step
 5. 如果需要完整报告和精简报告，将它们写入同一个 Markdown 文件的 "## 完整报告" 和 "## 精简报告" 分区
+6. 如果最后一步使用了搜索工具，将来源和提取证据写入最终结果文件，不要另外创建搜索结果汇总文件
 
 专注于效率，用最少的工具调用完成任务。
 """
@@ -498,6 +506,10 @@ def actor_execute_task_prompt_zh(task, step_index, plan, workspace_path):
 当前步骤索引: {step_index}
 当前步骤描述: {plan.steps[step_index]}
 
+# 最终报告/总结步骤的单文件保存规则
+- 如果当前步骤先搜索再生成最终报告或任务总结，将搜索证据保留在上下文中，并写入最终报告的“来源与证据”章节或附录；不要在同一步骤额外创建搜索结果汇总文件。
+- 除非前一次保存失败需要重试，当前步骤只调用一次 file_saver。
+
 # 环境信息
 - 工作区: {workspace_path}
   工作区中的文件:
@@ -523,6 +535,7 @@ def actor_execute_task_prompt_zh(task, step_index, plan, workspace_path):
      * 文件名: "搜索结果汇总_[步骤名称].md" 或其他综合性 Markdown 文件名
      * 内容: 按来源和主题组织所有结构化提取信息
      * 模式: "w"（写入模式）
+     * 如果同一步骤还会生成最终报告或任务总结，不要再创建单独的搜索结果汇总文件；将搜索证据写入最终报告的“来源与证据”章节或附录，只保存最终报告
   5. 不添加个人解释、结论或来源中未明确提及的内容
   6. 重要提示：所有提取的信息必须完全忠实于原始搜索结果
   7. 不得跳过搜索操作后的提取步骤

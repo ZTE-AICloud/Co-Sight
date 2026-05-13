@@ -15,8 +15,10 @@
 
 import json
 import os
+import time
 import xml.etree.ElementTree as ET
 from typing import Any, Dict, List, Literal, Optional, TypeAlias, Union
+from urllib.parse import quote
 
 import requests
 
@@ -26,7 +28,7 @@ class SearchToolkit:
     r"""A class representing a toolkit for web search.
 
     This class provides methods for searching information on the web using
-    search engines like Google, DuckDuckGo, Wikipedia and Wolfram Alpha, Brave.
+    search engines like Google, DuckDuckGo, Baidu Baike and Wolfram Alpha, Brave.
     """
 
     def __init__(self):
@@ -34,84 +36,98 @@ class SearchToolkit:
         self.proxies = {"http": proxy, "https": proxy} if proxy else None
 
     def search_wiki(self, entity: str) -> str:
-        r"""Search the entity in WikiPedia and return the summary of the
-            required page, containing factual information about
-            the given entity.
+        r"""Search the entity in Baidu Baike and return the summary of the
+            required page, containing factual information about the given
+            entity.
 
         Args:
             entity (str): The entity to be searched.
 
         Returns:
-            str: The search result. If the page corresponding to the entity
-                exists, return the summary of this entity in a string.
+            str: The search result. If the Baidu Baike page corresponding to
+                the entity exists, return the summary of this entity in a
+                string.
         """
-        import wikipedia
+        from bs4 import BeautifulSoup
 
-        result: str
-        page_url: str = ""
-        invalid_response_msg = (
-            f'Wikipedia search failed for entity "{entity}": received an '
-            "invalid or empty response from Wikipedia."
-        )
+        baike_url = f"https://baike.baidu.com/item/{quote(entity, safe='')}"
+        failure_prefix = f'Baidu Baike search failed for entity "{entity}"'
+        headers = {
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/124.0 Safari/537.36"
+            ),
+            "Accept": (
+                "text/html,application/xhtml+xml,application/xml;q=0.9,"
+                "image/avif,image/webp,*/*;q=0.8"
+            ),
+            "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+        }
 
         try:
-            # 获取页面摘要
-            result = wikipedia.summary(entity, sentences=5, auto_suggest=False)
-            # 获取页面URL
-            page = wikipedia.page(entity, auto_suggest=False)
-            page_url = page.url
-        except wikipedia.exceptions.DisambiguationError as e:
-            # 如果有歧义，选择第一个选项
-            try:
-                result = wikipedia.summary(
-                    e.options[0], sentences=5, auto_suggest=False
-                )
-                page = wikipedia.page(e.options[0], auto_suggest=False)
-                page_url = page.url
-            except (
-                requests.exceptions.JSONDecodeError,
-                requests.exceptions.RequestException,
-                json.JSONDecodeError,
-                wikipedia.exceptions.WikipediaException,
-            ):
-                logger.warning(invalid_response_msg, exc_info=True)
-                result = invalid_response_msg
-            except Exception as disambiguation_error:
-                logger.error(
-                    "Unexpected Wikipedia disambiguation search failure for "
-                    f'entity "{entity}": {disambiguation_error}',
-                    exc_info=True
-                )
-                result = (
-                    f'Wikipedia search failed for entity "{entity}": '
-                    f"{disambiguation_error}"
-                )
-        except wikipedia.exceptions.PageError:
-            result = (
-                "There is no page in Wikipedia corresponding to entity "
-                f"{entity}, please specify another word to describe the"
-                " entity to be searched."
+            response = requests.get(
+                baike_url,
+                headers=headers,
+                timeout=10,
+                proxies=self.proxies,
             )
-        except wikipedia.exceptions.WikipediaException as e:
-            result = f"An exception occurred during the search: {e}"
-        except (
-            requests.exceptions.JSONDecodeError,
-            requests.exceptions.RequestException,
-            json.JSONDecodeError,
-        ):
-            logger.warning(invalid_response_msg, exc_info=True)
-            result = invalid_response_msg
+            response.raise_for_status()
+            response.encoding = response.apparent_encoding or "utf-8"
+
+            soup = BeautifulSoup(response.text, "html.parser")
+            for element in soup(["script", "style", "noscript"]):
+                element.decompose()
+
+            title = ""
+            title_element = soup.select_one("h1")
+            if title_element:
+                title = title_element.get_text(" ", strip=True)
+
+            summary_parts = []
+            selectors = [
+                ".lemma-summary",
+                "[class*='lemmaSummary']",
+                "[class*='lemma-summary']",
+                "[class*='basic-info']",
+                "[class*='J-lemma-content'] p",
+                "main p",
+                "article p",
+            ]
+            for selector in selectors:
+                for element in soup.select(selector):
+                    text = element.get_text(" ", strip=True)
+                    if text and text not in summary_parts:
+                        summary_parts.append(text)
+                    if len(summary_parts) >= 5:
+                        break
+                if summary_parts:
+                    break
+
+            if not summary_parts:
+                meta_description = soup.find("meta", attrs={"name": "description"})
+                if meta_description:
+                    content = meta_description.get("content", "").strip()
+                    if content:
+                        summary_parts.append(content)
+
+            summary = "\n".join(summary_parts).strip()
+            if not summary:
+                result = f"{failure_prefix}: empty or unparseable Baidu Baike response."
+            else:
+                if title and title != entity:
+                    summary = f"{title}\n{summary}"
+                result = f"Baidu Baike URL: {response.url}\n\nSummary:\n{summary}"
+        except requests.exceptions.RequestException as e:
+            logger.warning("%s: %s", failure_prefix, e)
+            result = f"{failure_prefix}: request failed: {e!s}"
         except Exception as e:
             logger.error(
-                f'Unexpected Wikipedia search failure for entity "{entity}": {e}',
+                f'Unexpected Baidu Baike search failure for entity "{entity}": {e}',
                 exc_info=True
             )
-            result = f'Wikipedia search failed for entity "{entity}": {e}'
-        
-        # 如果有URL，将URL信息添加到结果中
-        if page_url:
-            result = f"Wikipedia URL: {page_url}\n\nSummary:\n{result}"
-        
+            result = f"{failure_prefix}: {e!s}"
+
         logger.info(f'search_wiki result = {result}')
         return result
 
@@ -734,12 +750,31 @@ class SearchToolkit:
                 "Get `TAVILY_API_KEY` here: `https://www.tavily.com/api/`."
             )
 
-        client = TavilyClient(Tavily_API_KEY)
+        client = TavilyClient(Tavily_API_KEY, proxies=self.proxies)
 
-        try:
-            results = client.search(query, max_results=num_results, **kwargs)
-            logger.info(f'tavily_search result = {results}')
-            return results
-        except Exception as e:
-            logger.error(f'error": f"An unexpected error occurred: {str(e)}', exc_info=True)
-            return [{"error": f"An unexpected error occurred: {e!s}"}]
+        attempts = 2
+        for attempt in range(1, attempts + 1):
+            try:
+                results = client.search(
+                    query,
+                    max_results=num_results,
+                    **kwargs
+                )
+                logger.info(f'tavily_search result = {results}')
+                return results
+            except requests.exceptions.RequestException as e:
+                error = (
+                    "Tavily search failed because the remote API request "
+                    f"did not complete: {e!s}"
+                )
+                logger.warning("%s (attempt %s/%s)", error, attempt, attempts)
+                if attempt < attempts:
+                    time.sleep(1)
+                    continue
+                return [{"error": error}]
+            except Exception as e:
+                logger.error(
+                    f"Unexpected Tavily search failure: {e!s}",
+                    exc_info=True
+                )
+                return [{"error": f"An unexpected error occurred: {e!s}"}]
