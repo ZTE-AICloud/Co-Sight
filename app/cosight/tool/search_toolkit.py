@@ -18,7 +18,6 @@ import os
 import time
 import xml.etree.ElementTree as ET
 from typing import Any, Dict, List, Literal, Optional, TypeAlias, Union
-from urllib.parse import quote
 
 import requests
 
@@ -28,7 +27,7 @@ class SearchToolkit:
     r"""A class representing a toolkit for web search.
 
     This class provides methods for searching information on the web using
-    search engines like Google, DuckDuckGo, Baidu Baike and Wolfram Alpha, Brave.
+    search engines like Google, DuckDuckGo, Wikipedia and Wolfram Alpha, Brave.
     """
 
     def __init__(self):
@@ -36,7 +35,7 @@ class SearchToolkit:
         self.proxies = {"http": proxy, "https": proxy} if proxy else None
 
     def search_wiki(self, entity: str) -> str:
-        r"""Search the entity in Baidu Baike and return the summary of the
+        r"""Search the entity in Wikipedia and return the summary of the
             required page, containing factual information about the given
             entity.
 
@@ -44,86 +43,67 @@ class SearchToolkit:
             entity (str): The entity to be searched.
 
         Returns:
-            str: The search result. If the Baidu Baike page corresponding to
-                the entity exists, return the summary of this entity in a
-                string.
+            str: The search result. If the Wikipedia page corresponding to the
+                entity exists, return the summary and URL in a string.
         """
-        from bs4 import BeautifulSoup
+        import wikipedia
 
-        baike_url = f"https://baike.baidu.com/item/{quote(entity, safe='')}"
-        failure_prefix = f'Baidu Baike search failed for entity "{entity}"'
-        headers = {
-            "User-Agent": (
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/124.0 Safari/537.36"
-            ),
-            "Accept": (
-                "text/html,application/xhtml+xml,application/xml;q=0.9,"
-                "image/avif,image/webp,*/*;q=0.8"
-            ),
-            "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
-        }
-
+        failure_prefix = f'Wikipedia search failed for entity "{entity}"'
         try:
-            response = requests.get(
-                baike_url,
-                headers=headers,
-                timeout=10,
-                proxies=self.proxies,
-            )
-            response.raise_for_status()
-            response.encoding = response.apparent_encoding or "utf-8"
-
-            soup = BeautifulSoup(response.text, "html.parser")
-            for element in soup(["script", "style", "noscript"]):
-                element.decompose()
-
-            title = ""
-            title_element = soup.select_one("h1")
-            if title_element:
-                title = title_element.get_text(" ", strip=True)
-
-            summary_parts = []
-            selectors = [
-                ".lemma-summary",
-                "[class*='lemmaSummary']",
-                "[class*='lemma-summary']",
-                "[class*='basic-info']",
-                "[class*='J-lemma-content'] p",
-                "main p",
-                "article p",
-            ]
-            for selector in selectors:
-                for element in soup.select(selector):
-                    text = element.get_text(" ", strip=True)
-                    if text and text not in summary_parts:
-                        summary_parts.append(text)
-                    if len(summary_parts) >= 5:
-                        break
-                if summary_parts:
-                    break
-
-            if not summary_parts:
-                meta_description = soup.find("meta", attrs={"name": "description"})
-                if meta_description:
-                    content = meta_description.get("content", "").strip()
-                    if content:
-                        summary_parts.append(content)
-
-            summary = "\n".join(summary_parts).strip()
-            if not summary:
-                result = f"{failure_prefix}: empty or unparseable Baidu Baike response."
+            summary = wikipedia.summary(entity, sentences=5, auto_suggest=False)
+            page = wikipedia.page(entity, auto_suggest=False)
+            result = f"Wikipedia URL: {page.url}\n\nSummary:\n{summary}"
+        except wikipedia.exceptions.DisambiguationError as e:
+            if not e.options:
+                result = f"{failure_prefix}: ambiguous entity with no options."
             else:
-                if title and title != entity:
-                    summary = f"{title}\n{summary}"
-                result = f"Baidu Baike URL: {response.url}\n\nSummary:\n{summary}"
-        except requests.exceptions.RequestException as e:
+                selected_entity = e.options[0]
+                try:
+                    summary = wikipedia.summary(
+                        selected_entity, sentences=5, auto_suggest=False
+                    )
+                    page = wikipedia.page(selected_entity, auto_suggest=False)
+                    result = f"Wikipedia URL: {page.url}\n\nSummary:\n{summary}"
+                except wikipedia.exceptions.PageError as page_error:
+                    result = (
+                        f'Wikipedia page not found for entity "{selected_entity}": '
+                        f"{page_error!s}"
+                    )
+                except (
+                    requests.exceptions.RequestException,
+                    json.JSONDecodeError,
+                    ValueError,
+                    KeyError,
+                    wikipedia.exceptions.WikipediaException,
+                ) as retry_error:
+                    logger.warning(
+                        '%s after disambiguation to "%s": %s',
+                        failure_prefix,
+                        selected_entity,
+                        retry_error,
+                    )
+                    result = f"{failure_prefix}: {retry_error!s}"
+                except Exception as retry_error:
+                    logger.error(
+                        'Unexpected Wikipedia disambiguation search failure '
+                        f'for entity "{entity}": {retry_error}',
+                        exc_info=True,
+                    )
+                    result = f"{failure_prefix}: {retry_error!s}"
+        except wikipedia.exceptions.PageError as e:
+            result = f'Wikipedia page not found for entity "{entity}": {e!s}'
+        except (
+            requests.exceptions.RequestException,
+            json.JSONDecodeError,
+            ValueError,
+            KeyError,
+            wikipedia.exceptions.WikipediaException,
+        ) as e:
             logger.warning("%s: %s", failure_prefix, e)
-            result = f"{failure_prefix}: request failed: {e!s}"
+            result = f"{failure_prefix}: {e!s}"
         except Exception as e:
             logger.error(
-                f'Unexpected Baidu Baike search failure for entity "{entity}": {e}',
+                f'Unexpected Wikipedia search failure for entity "{entity}": {e}',
                 exc_info=True
             )
             result = f"{failure_prefix}: {e!s}"

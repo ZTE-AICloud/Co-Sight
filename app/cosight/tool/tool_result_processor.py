@@ -488,6 +488,48 @@ class ToolResultProcessor:
             return path_value
 
     @staticmethod
+    def _is_probable_workspace_directory(path_value: str) -> bool:
+        if not isinstance(path_value, str) or len(path_value) == 0:
+            return False
+
+        normalized = path_value.replace("\\", "/").rstrip("/")
+        basename = normalized.rsplit("/", 1)[-1]
+        return basename.startswith("work_space_") and "." not in basename
+
+    @staticmethod
+    def _get_invalid_website_content_reason(tool_result: str, url: str = "") -> Optional[str]:
+        if not isinstance(tool_result, str):
+            return "empty or non-text response"
+
+        normalized = re.sub(r"\s+", " ", tool_result).strip()
+        lowered = normalized.lower()
+        lowered_url = (url or "").lower()
+
+        if not normalized:
+            return "empty response"
+
+        invalid_patterns = (
+            "fetch_website_content error",
+            "please click here if not redirected",
+            "verify you are human",
+            "just a moment",
+            "enable javascript and cookies",
+            "checking your browser",
+            "403 forbidden",
+            "404 not found",
+            "access denied",
+            "百度安全验证",
+        )
+        for pattern in invalid_patterns:
+            if pattern.lower() in lowered:
+                return f"blocked or invalid page content matched: {pattern}"
+
+        if "google." in lowered_url and "/search" in lowered_url:
+            return "Google search result pages are not valid fetched source content"
+
+        return None
+
+    @staticmethod
     def process_tool_result(tool_name: str, tool_args: str, tool_result: str, task_title: str = "") -> Dict[str, Any]:
         """
         根据工具类型处理结果
@@ -511,7 +553,7 @@ class ToolResultProcessor:
                 return ToolResultProcessor._process_file_result(tool_name, tool_args, tool_result, task_title)
             elif tool_name == 'browser_use':
                 return ToolResultProcessor._process_web_result(tool_name, tool_args, tool_result, task_title)
-            elif tool_name == 'fetch_website_content':
+            elif tool_name in ['fetch_website_content', 'fetch_website_content_with_images', 'fetch_website_images_only']:
                 return ToolResultProcessor._process_website_content_result(tool_name, tool_args, tool_result, task_title)
             elif tool_name in ['ask_question_about_image', 'ask_question_about_video']:
                 return ToolResultProcessor._process_image_result(tool_name, tool_args, tool_result, task_title)
@@ -576,7 +618,7 @@ class ToolResultProcessor:
                 # 方法5: 专门处理百科搜索的URL格式
                 if tool_name == 'search_wiki':
                     wiki_url_pattern = (
-                        r'(?:Baidu Baike|Wikipedia) URL:\s*'
+                        r'Wikipedia URL:\s*'
                         r'(https?://[^\s\n]+)'
                     )
                     wiki_matches = re.findall(wiki_url_pattern, tool_result)
@@ -714,6 +756,11 @@ class ToolResultProcessor:
                     file_path = tool_args
 
             # 将本地路径改写为前端URL
+            is_probable_directory = ToolResultProcessor._is_probable_workspace_directory(file_path)
+            is_error_result = (
+                isinstance(tool_result, str)
+                and tool_result.strip().lower().startswith("error:")
+            )
             file_path = ToolResultProcessor._to_frontend_url(file_path)
             
             # 判断操作类型并生成摘要
@@ -745,6 +792,9 @@ class ToolResultProcessor:
                 "summary": summary,
                 "operation": operation,
                 "file_path": file_path,
+                "is_success": not is_error_result,
+                "is_previewable": not is_error_result and not is_probable_directory,
+                "error_message": tool_result if is_error_result else None,
                 "content_length": len(tool_result) if 'read' in tool_name.lower() else None
             }
         except Exception as e:
@@ -814,14 +864,15 @@ class ToolResultProcessor:
                 try:
                     # 尝试解析JSON格式的tool_args
                     parsed_args = json.loads(tool_args)
-                    if isinstance(parsed_args, dict) and 'website_url' in parsed_args:
-                        url = parsed_args['website_url']
+                    if isinstance(parsed_args, dict):
+                        url = parsed_args.get('website_url') or parsed_args.get('url') or url
                 except json.JSONDecodeError:
                     # 如果不是JSON格式，直接使用tool_args作为URL
                     url = tool_args
             
             # # 检查是否有错误
-            is_error =  "fetch_website_content error" in tool_result
+            invalid_reason = ToolResultProcessor._get_invalid_website_content_reason(tool_result, url)
+            is_error = invalid_reason is not None
             
             # 计算内容长度
             content_length = len(tool_result)
@@ -848,8 +899,8 @@ class ToolResultProcessor:
             english_summary = f"Website content scraping {'successful' if not is_error else 'failed'}, content length: {content_length} characters"
             
             if is_error:
-                chinese_summary += f"，错误信息: {tool_result}"
-                english_summary += f", error: {tool_result}"
+                chinese_summary += f"，错误信息: {invalid_reason}"
+                english_summary += f", error: {invalid_reason}"
             
             summary = ToolResultProcessor._get_localized_summary(chinese_summary, english_summary, task_title)
             
@@ -864,7 +915,9 @@ class ToolResultProcessor:
                 "content_preview": content_preview,
                 "potential_titles": potential_titles[:3],  # 最多返回3个可能的标题
                 "is_success": not is_error,
-                "has_content": content_length > 0 and not is_error
+                "has_content": content_length > 0 and not is_error,
+                "is_previewable": not is_error,
+                "error_message": invalid_reason if is_error else None
             }
         except Exception as e:
             logger.error(f"Error processing website content result: {e}")

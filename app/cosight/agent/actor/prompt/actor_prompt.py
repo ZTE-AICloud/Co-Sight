@@ -203,7 +203,7 @@ def actor_execute_task_prompt(task, step_index, plan, workspace_path: str):
 # TURBO MODE - Final Step Instructions:
 1. This is the FINAL step - create the final output now
 2. Gather all necessary information efficiently
-3. Save the final result using file_saver with Mode="w" (this is the ONLY file you should create)
+3. Save the final result using file_saver with Mode="w" (this is the ONLY file you should create). Use the tool name file_saver exactly; do not call file_save.
 4. Call mark_step with the file path when done
 5. If both full and concise reports are required, put them in one Markdown file under "## Full Report" and "## Concise Report"
 6. If searches are used in this final step, include sources and extracted evidence inside the final result file instead of creating a separate search summary file
@@ -243,6 +243,7 @@ Work efficiently with minimal tool calls. No file generation in intermediate ste
   * Create a well-structured report using file_saver directly
   * Format as markdown or plain text with clear sections and organization
   * Save all findings directly to a single output file with Mode="w"
+  * If source data is insufficient or blocked, still save a Markdown report explaining missing data, failed sources, and next steps before calling mark_step
   * If both full and concise versions are needed, use one Markdown file with "## Full Report" and "## Concise Report" sections
 """
     
@@ -298,6 +299,7 @@ Follow the general task execution rules above.
      * Content: All organized extracted information with proper source attribution
      * Mode: "w" (write mode)
      * If this same step will also produce a final report or task summary, do not create a separate search summary file. Put the search evidence into a "Sources and Extracted Evidence" section or appendix in the final report, and save only that final report.
+     * If sources are blocked or insufficient, save a Markdown failure report that lists failed sources and data gaps; do not finish with raw search or fetch output only.
   5. Do not add personal interpretations, conclusions, or anything not explicitly stated in sources
   6. IMPORTANT: All extracted information must be 100% faithful to the original search results
   7. Never skip this extraction step after search operations
@@ -459,7 +461,7 @@ def actor_execute_task_prompt_zh(task, step_index, plan, workspace_path):
 # 急速模式 - 最后一步指令：
 1. 这是最后一步 - 现在创建最终输出
 2. 高效收集所有必要信息
-3. 使用 file_saver 和 Mode="w" 保存最终结果（这是你应该创建的唯一文件）
+3. 使用 file_saver 和 Mode="w" 保存最终结果（这是你应该创建的唯一文件）。工具名必须精确使用 file_saver，不要调用 file_save。
 4. 完成后使用文件路径调用 mark_step
 5. 如果需要完整报告和精简报告，将它们写入同一个 Markdown 文件的 "## 完整报告" 和 "## 精简报告" 分区
 6. 如果最后一步使用了搜索工具，将来源和提取证据写入最终结果文件，不要另外创建搜索结果汇总文件
@@ -496,6 +498,7 @@ def actor_execute_task_prompt_zh(task, step_index, plan, workspace_path):
   * 直接使用 file_saver 创建结构化报告
   * 以 Markdown 或纯文本格式保存，包含清晰章节和组织
   * 使用 Mode="w" 将所有发现保存到单个输出文件中
+  * 如果资料不足或来源被阻断，也必须先保存一份 Markdown 失败报告，说明缺失数据、失败来源和后续建议，再调用 mark_step
   * 如果需要完整报告和精简报告，将它们写入同一个 Markdown 文件的 "## 完整报告" 和 "## 精简报告" 分区
 """
 
@@ -536,6 +539,7 @@ def actor_execute_task_prompt_zh(task, step_index, plan, workspace_path):
      * 内容: 按来源和主题组织所有结构化提取信息
      * 模式: "w"（写入模式）
      * 如果同一步骤还会生成最终报告或任务总结，不要再创建单独的搜索结果汇总文件；将搜索证据写入最终报告的“来源与证据”章节或附录，只保存最终报告
+     * 如果来源被阻断或信息不足，保存一份 Markdown 失败报告，列出失败来源和数据缺口；不要只用原始搜索或网页抓取结果结束步骤
   5. 不添加个人解释、结论或来源中未明确提及的内容
   6. 重要提示：所有提取的信息必须完全忠实于原始搜索结果
   7. 不得跳过搜索操作后的提取步骤

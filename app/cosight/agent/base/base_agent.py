@@ -34,6 +34,10 @@ from config.config import get_turbo_mode
 
 
 class BaseAgent:
+    TOOL_NAME_ALIASES = {
+        "file_save": "file_saver",
+    }
+
     def __init__(self, agent_instance: AgentInstance, llm: ChatLLM, functions: {}, plan_id: str = None):
         self.agent_instance = agent_instance
         self.llm = llm
@@ -51,6 +55,12 @@ class BaseAgent:
         # Only set plan to None if it hasn't been set by subclass
         if not hasattr(self, 'plan'):
             self.plan = None  # Will be set by subclasses that have access to Plan
+
+    def _normalize_tool_name(self, function_name: str) -> str:
+        normalized_name = self.TOOL_NAME_ALIASES.get(function_name, function_name)
+        if normalized_name != function_name:
+            logger.info("Tool name normalized: %s -> %s", function_name, normalized_name)
+        return normalized_name
 
     def _normalize_tool_args(self, function_to_call, raw_args: Dict[str, Any], function_name: str = "") -> Dict[str, Any]:
         """
@@ -262,7 +272,7 @@ class BaseAgent:
             "search_baidu": "百度搜索",
             "search_google": "谷歌搜索", 
             "tavily_search": "Tavily搜索",
-            "search_wiki": "百度百科搜索",
+            "search_wiki": "维基百科搜索",
             "image_search": "图片搜索",
             "audio_recognition": "音频识别",
             
@@ -439,38 +449,46 @@ class BaseAgent:
     def _execute_tool_calls(self, tool_calls, step_index):
         results = []
         with ThreadPoolExecutor() as executor:
-            futures = []
-            for tool_call in tool_calls:
-                function_name = tool_call.function.name
+            def submit_tool_call(tool_call):
+                function_name = self._normalize_tool_name(tool_call.function.name)
                 function_args = tool_call.function.arguments
 
                 if function_name in self.functions:
-                    futures.append(executor.submit(
+                    return executor.submit(
                         self._execute_tool_call,
                         function_name=function_name,
                         function_args=function_args,
                         tool_call_id=tool_call.id,
                         step_index=step_index
-                    ))
-                else:
-                    futures.append(executor.submit(
+                    )
+                return executor.submit(
                         self._execute_mcp_tool_call,
                         function_name=function_name,
                         function_args=function_args,
                         tool_call_id=tool_call.id
-                    ))
+                    )
 
-            for future in futures:
-                try:
-                    results.append(future.result())
-                except Exception as e:
-                    logger.error(f"Unhandled exception: {e}", exc_info=True)
-                    results.append({
-                        "role": "tool",
-                        "name": function_name,
-                        "tool_call_id": tool_call.id,
-                        "content": f"Execution error: {str(e)}"
-                    })
+            normalized_tool_calls = [
+                (self._normalize_tool_name(tool_call.function.name), tool_call)
+                for tool_call in tool_calls
+            ]
+            non_mark_calls = [tool_call for name, tool_call in normalized_tool_calls if name != "mark_step"]
+            mark_calls = [tool_call for name, tool_call in normalized_tool_calls if name == "mark_step"]
+
+            for call_batch in (non_mark_calls, mark_calls):
+                futures = [(tool_call, submit_tool_call(tool_call)) for tool_call in call_batch]
+                for tool_call, future in futures:
+                    function_name = self._normalize_tool_name(tool_call.function.name)
+                    try:
+                        results.append(future.result())
+                    except Exception as e:
+                        logger.error(f"Unhandled exception: {e}", exc_info=True)
+                        results.append({
+                            "role": "tool",
+                            "name": function_name,
+                            "tool_call_id": tool_call.id,
+                            "content": f"Execution error: {str(e)}"
+                        })
         return results
 
     def _handle_max_iteration(self, messages, step_index):
@@ -486,6 +504,7 @@ class BaseAgent:
 
     @time_record
     def _execute_tool_call(self, function_name="", function_args="", tool_call_id="", step_index=None):
+        function_name = self._normalize_tool_name(function_name)
         start_time = time.time()
         
         # 推送工具开始执行事件
@@ -639,6 +658,7 @@ class BaseAgent:
 
     @time_record
     def _execute_mcp_tool_call(self, function_name="", function_args="", tool_call_id=""):
+        function_name = self._normalize_tool_name(function_name)
         start_time = time.time()
         
         # 推送MCP工具开始执行事件
@@ -646,7 +666,20 @@ class BaseAgent:
         logger.info(f"execute_mcp_tool_call: function_name={function_name}, function_args={function_args}, tool_call_id={tool_call_id}")
         loop = None
         try:
-            mcp_tool, tool_name = self.find_mcp_tool(function_name)
+            mcp_info = self.find_mcp_tool(function_name)
+            if not mcp_info:
+                duration = time.time() - start_time
+                error_msg = f"Function {function_name} not found in available functions"
+                self._push_tool_event("tool_error", function_name, function_args,
+                                    "", -1, duration, error_msg)
+                return {
+                    "role": "tool",
+                    "name": function_name,
+                    "tool_call_id": tool_call_id,
+                    "content": error_msg
+                }
+
+            mcp_tool, tool_name = mcp_info
             if mcp_tool and tool_name:
                 cleaned_args = function_args.replace('\\\'', '\'')
                 args_dict = json.loads(cleaned_args or "{}")

@@ -145,16 +145,16 @@ def search_wiki_skill():
     return {
         'skill_name': 'search_wiki',
         'skill_type': "function",
-        'display_name_zh': '百度百科搜索',
-        'display_name_en': 'Baidu Baike Search',
-        'description_zh': '使用百度百科搜索工具搜索给定查询的信息',
-        'description_en': 'Use Baidu Baike search engine to search information for the given query',
+        'display_name_zh': '维基百科搜索',
+        'display_name_en': 'Wikipedia Search',
+        'description_zh': '使用维基百科搜索工具搜索给定查询的信息',
+        'description_en': 'Use Wikipedia search engine to search information for the given query',
         'semantic_apis': ["api_search"],
         'function': SkillFunction(
             id='3c44f9ad-be5c-4e6c-a9d8-1426b23828a0',
             name='app.cosight.search_toolkit.search_wiki',
-            description_zh='使用百度百科搜索工具搜索给定查询的信息',
-            description_en='Get search results using Baidu Baike search engine',
+            description_zh='使用维基百科搜索工具搜索给定查询的信息',
+            description_en='Get search results using Wikipedia search engine',
             parameters={
                 "type": "object",
                 "properties": {
@@ -318,13 +318,13 @@ def file_saver_skill():
         'display_name_zh': '文件保存（内容必填）',
         'display_name_en': 'File Saver (content required)',
         'description_zh': '将内容保存到指定路径的本地文件中，必须提供content参数作为文件内容。性能建议：同一步骤内的相关输出应合并到一个文件中保存，完整报告和精简报告应写入同一个Markdown文件的不同章节；这不是底层强制限制。建议最终整合输出使用mode="w"。',
-        'description_en': 'Save content to a local file at a specified path. IMPORTANT: You MUST provide the content parameter with the text to save. Performance recommendation: consolidate related outputs from the same step into one file; put full and concise reports in separate sections of the same Markdown file. This is not a hard runtime limit. Prefer mode="w" for final consolidated output.',
+        'description_en': 'Save content to a local file at a specified path. IMPORTANT: You MUST provide the content parameter with the text to save. Use this tool name exactly: file_saver. Do not call file_save. Performance recommendation: consolidate related outputs from the same step into one file; put full and concise reports in separate sections of the same Markdown file. This is not a hard runtime limit. Prefer mode="w" for final consolidated output.',
         'semantic_apis': ["api_file_management"],
         'function': SkillFunction(
             id='5c44f9ad-be5c-4e6c-a9d8-1426b23828a2',
             name='app.cosight.tool.file_toolkit.FileToolkit.file_saver',
             description_zh='将内容保存到指定路径的文件中，必须提供content参数指定要保存的内容。性能建议：同一步骤内仅保存一个整合文件；如同时需要完整报告和精简报告，使用同一个Markdown文件中的“## 完整报告”和“## 精简报告”分区。这不是底层强制限制。',
-            description_en='Save content to a file at the specified path. IMPORTANT: You MUST provide the content parameter with the text to save. Performance recommendation: use one consolidated file per step; if both full and concise reports are required, use "## Full Report" and "## Concise Report" sections in the same Markdown file. This is not a hard runtime limit.',
+            description_en='Save content to a file at the specified path. IMPORTANT: You MUST provide the content parameter with the text to save. Use this tool name exactly: file_saver. Do not call file_save. Performance recommendation: use one consolidated file per step; if both full and concise reports are required, use "## Full Report" and "## Concise Report" sections in the same Markdown file. This is not a hard runtime limit.',
             parameters={
                 "type": "object",
                 "properties": {

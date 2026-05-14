@@ -71,6 +71,76 @@ class SearchContext:
         self.action_executor = ActionExecutor(tools)
         self.search_sources = search_sources or []
 
+    async def _compress_single_page(self, query: str, page_block: str) -> str:
+        """并发精简单篇网页块的内容"""
+        prompt = f"""目标：为回答问题做信息压缩。
+问题：{query}
+
+下面是一段网页块（包含标题、链接、正文）。请只保留与问题强相关的信息点与关键数据，删除无关背景与重复表述。
+要求：
+1. 输出为中文要点，最多8条。
+2. 总长度不超过400字。
+3. 不要编造，不要补充原文没有的信息。
+4. 必须保持原有格式结构，不要改变 [webpage X begin] 和 [webpage X end] 标记，以及标题和链接。
+
+网页块原文：
+{page_block}
+"""
+        messages = [
+            {"role": "system", "content": "你是一个网页内容精简助手。只输出精简后的内容本身，不要输出任何额外解释。"},
+            {"role": "user", "content": prompt}
+        ]
+        try:
+            # 优先使用一个更快的模型，或者复用 process_model
+            llm = self.models_used.get('summary_generator')
+            compressed_content = await llm.chat(messages)
+            return compressed_content if compressed_content else page_block
+        except Exception as e:
+            logger.error(f"网页精简失败: {e}", exc_info=True)
+            return page_block
+
+    async def _compress_all_results(self, query: str, formatted_results: List[str], concurrency: int = 4) -> List[str]:
+        """并发精简所有的网页块"""
+        if not formatted_results:
+            return []
+
+        logger.info(f"开始对 {len(formatted_results)} 个网页内容进行并发精简压缩...")
+        start_time = time.time()
+
+        sem = asyncio.Semaphore(concurrency)
+
+        async def _worker(i: int, page_block: str) -> tuple:
+            async with sem:
+                # 提取纯正文长度做个粗略过滤，太短的可以跳过精简
+                if len(page_block) < 500:
+                    return i, page_block
+                try:
+                    compressed = await asyncio.wait_for(
+                        self._compress_single_page(query, page_block),
+                        timeout=45.0
+                    )
+                    return i, compressed
+                except asyncio.TimeoutError:
+                    logger.warning(f"网页块 {i} 压缩超时，保留原文")
+                    return i, page_block
+                except Exception as e:
+                    logger.error(f"网页块 {i} 压缩异常: {e}")
+                    return i, page_block
+
+        tasks = [_worker(i, block) for i, block in enumerate(formatted_results)]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        compressed_list = list(formatted_results)
+        for r in results:
+            if isinstance(r, Exception):
+                continue
+            idx, compressed_content = r
+            compressed_list[idx] = compressed_content
+
+        total_time = time.time() - start_time
+        logger.info(f"网页精简完成，耗时 {total_time:.2f}s")
+        return compressed_list
+
     async def search(self, query: str):
         """执行搜索"""
         try:
@@ -107,7 +177,7 @@ class SearchContext:
 
             # 并发执行所有搜索任务
             start_time = time.time()
-            
+
             results = await asyncio.gather(*search_tasks)
             # 解包结果
             search_results_list, self.images = results[-1]
@@ -150,6 +220,18 @@ class SearchContext:
                         "source_name": source_name,
                         "source_type": source.get('type')
                     })
+
+            # 并发精简：在所有网页块拼完之后、交给最后汇总之前执行
+            # 只有当总字符数过大时（例如超过 5000 字符），才触发压缩
+            total_content_len = sum(len(block) for block in all_formatted_results)
+            if total_content_len > 5000:
+                current_locale = i18n.get_locale()
+                translations = i18n.TRANSLATIONS.get(current_locale, i18n.TRANSLATIONS.get(i18n.default_locale, {}))
+                if 'compressing_content' in translations:
+                    yield i18n.t('compressing_content', total_content_len)
+                else:
+                    yield f"检索内容较长（{total_content_len}字），正在为您进行要点精简..."
+                all_formatted_results = await self._compress_all_results(query, all_formatted_results)
 
             # 如果没有找到任何结果
             if not all_results:
@@ -229,7 +311,7 @@ class SearchContext:
 
             images = search_results.get('images', [])
             search_results = search_results.get('content', {})
-            
+
             # 检查搜索结果是否为空
             if list(search_results.keys()) == ['0'] and search_results['0']['summ'] == "unknown":
                 return {"type": "unknown_result"}
@@ -295,6 +377,97 @@ class SearchContext:
 
     def add_context(self, text):
         self.context += "\n" + text
+
+    async def simplify_all_formatted_results(self, all_formatted_results: List[str], llm) -> List[str]:
+        """使用多线程并发简化网页内容
+
+        Args:
+            all_formatted_results: 原始的网页内容列表
+            llm: 用于简化的LLM模型
+
+        Returns:
+            简化后的网页内容列表
+        """
+        if not all_formatted_results:
+            return all_formatted_results
+
+        logger.info(f"开始简化 {len(all_formatted_results)} 个网页内容")
+
+        # 创建并发简化任务
+        simplify_tasks = []
+        for idx, webpage_content in enumerate(all_formatted_results):
+            simplify_tasks.append(self.simplify_single_webpage(webpage_content, idx, llm))
+
+        # 并发执行所有简化任务
+        try:
+            simplified_results = await asyncio.gather(*simplify_tasks)
+            logger.info(f"完成简化 {len(simplified_results)} 个网页内容")
+            return simplified_results
+        except Exception as e:
+            logger.error(f"简化网页内容时出错: {str(e)}", exc_info=True)
+            return all_formatted_results  # 出错时返回原始内容
+
+    async def simplify_single_webpage(self, webpage_content: str, idx: int, llm) -> str:
+        """简化单个网页内容
+
+        Args:
+            webpage_content: 原始网页内容
+            idx: 网页索引
+            llm: 用于简化的LLM模型
+
+        Returns:
+            简化后的网页内容
+        """
+        try:
+            # 提取标题、链接和正文
+            title_match = re.search(r'\*\*标题：(.*?)\*\*', webpage_content)
+            url_match = re.search(r'链接：(.*?)\n', webpage_content)
+            content_match = re.search(r'正文：(.*?)\n\[webpage', webpage_content, re.DOTALL)
+
+            if not all([title_match, url_match, content_match]):
+                logger.warning(f"无法解析网页 {idx + 1} 的结构，返回原始内容")
+                return webpage_content
+
+            title = title_match.group(1)
+            url = url_match.group(1)
+            original_content = content_match.group(1)
+
+            # 如果内容已经很短（少于500字符），直接返回
+            if len(original_content) < 500:
+                return webpage_content
+
+            # 构建简化提示
+            simplify_prompt = f"""请简化以下网页内容，保留关键信息，删除冗余和重复内容，使内容更精炼但保持完整性。
+
+原始内容：
+{original_content}
+
+请提供简化后的内容，要求：
+1. 保留核心观点和关键信息
+2. 删除重复和冗余的描述
+3. 保持内容逻辑清晰
+4. 长度控制在原始内容的30-50%
+
+只返回简化后的内容，不要包含任何解释或其他文字。"""
+
+            messages = [
+                {"role": "system", "content": "你是一个专业的内容简化助手，擅长提取和精简文本的核心信息。"},
+                {"role": "user", "content": simplify_prompt}
+            ]
+
+            # 调用LLM进行简化
+            simplified_content = await llm.chat(messages)
+            simplified_content = clear_model_response(simplified_content)
+
+            # 构建简化后的网页内容，保持原有结构
+            simplified_webpage = f"[webpage {idx + 1} begin]\n**标题：{title}**\n链接：{url}\n正文：{simplified_content}\n[webpage {idx + 1} end]"
+
+            logger.info(f"网页 {idx + 1} 简化完成：{len(original_content)} -> {len(simplified_content)} 字符")
+            return simplified_webpage
+
+        except Exception as e:
+            logger.error(f"简化网页 {idx + 1} 时出错: {str(e)}", exc_info=True)
+            return webpage_content  # 出错时返回原始内容
 
 
 async def rewrite_question(query: str, llm, chat_history) -> list:
@@ -423,19 +596,19 @@ async def extract_search_keywords(query: str, llm) -> list:
 
 以下是几个示例（few-shot）供参考：
 
-**示例1**  
-用户问题：如何在中国农村地区推广新能源电动车？  
+**示例1**
+用户问题：如何在中国农村地区推广新能源电动车？
 输出：新能源电动车 中国农村, 推广策略 农村市场, new energy electric vehicles rural China, promotion strategies rural market
 
-**示例2**  
-用户问题：人工智能在医疗诊断中的最新进展是什么？  
+**示例2**
+用户问题：人工智能在医疗诊断中的最新进展是什么？
 输出：人工智能 医疗诊断, 最新进展 技术应用, artificial intelligence medical diagnosis, latest advancements technology application
 
-**示例3**  
-用户问题：我想了解上海的房价趋势和政策影响  
+**示例3**
+用户问题：我想了解上海的房价趋势和政策影响
 输出：上海房价 趋势, 政策影响 房地产, Shanghai housing prices trends, policy impact real estate
 
-现在，请根据以下用户问题提取关键词并按要求输出：  
+现在，请根据以下用户问题提取关键词并按要求输出：
 **用户问题：{query}**
     """
 
@@ -538,10 +711,10 @@ async def stream_llm_chat(query: str, llm, context: str = "", system_prompt: str
 
 
 async def flash_search_handler(
-    query: str, 
-    params: Any, 
-    question_with_source: str, 
-    system_prompt: str, 
+    query: str,
+    params: Any,
+    question_with_source: str,
+    system_prompt: str,
     history: List[Dict[str, Any]],
     web_search_info: WebSearchInfo,
     model_service: ModelService) -> SearchResult:
@@ -584,7 +757,7 @@ async def flash_search_handler(
         final_result = {"analysis": "", "summary": ""}
 
         analysis_messages.append(i18n.t('rewrite_question_start'))
-        
+
         start_time = time.time()
         rewrited_query = await rewrite_question(query, models_used.get('question_rewriter'), chat_history)
         total_time = time.time() - start_time

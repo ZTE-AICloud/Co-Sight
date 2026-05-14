@@ -101,6 +101,7 @@ async def websocket_handler(
                 f"cookie: {cookie}")
 
     try:
+        #=================未被使用的发包======================
         welcome_message = {
             "data": {
                 "type": "welcome",
@@ -113,6 +114,7 @@ async def websocket_handler(
             }
         }
         await manager.send_json(welcome_message, websocket)
+        #=====================================================
         # Started by AICoder, pid:cd2a2pa21827c9b148ae08eff0221b0be93612b0
         while True:
             data = await websocket.receive_json()
@@ -130,6 +132,7 @@ async def websocket_handler(
                 manager.bind_topic(data.get("topic"), websocket)
 
                 # 推送时间更新的消息给前端
+                # =============前端不处理的human发包===============
                 await manager.send_json_to_topic(data.get("topic"), {
                     "topic": data.get("topic"),
                     "data": {
@@ -143,7 +146,7 @@ async def websocket_handler(
                         "status": "in_progress"
                     }
                 }, websocket)
-
+                #==================================================
                 await _send_resp(websocket, cookie, data.get("topic"), message, lang)
 
 
@@ -260,8 +263,63 @@ async def _stream_handler(params, url, headers, topic, websocket):
                 except Exception:
                     pass
                 control_sent = False
+                final_result_seen = False
+                plan_result_seen = False
+                steps_all_completed_seen = False
+                last_message_type = None
+                warned_waiting_final = False
                 # 为规避 aiohttp 对单行的内置限制，这里改为按块读取并按换行还原行，不会拆分业务消息
                 buffer = b''
+
+                def _is_final_plan_message(line_data: dict, message_type: str, content_data) -> bool:
+                    if message_type == "lui-message-tool-event":
+                        return False
+                    if isinstance(content_data, dict):
+                        if content_data.get("event_type") in ["tool_start", "tool_complete", "tool_error"]:
+                            return False
+                        if content_data.get("result"):
+                            return True
+                        if content_data.get("type") in ("plan_result", "final_result"):
+                            return True
+                    status = line_data.get("status")
+                    return bool(
+                        status in ("finished_successfully", "final", "completed")
+                        and isinstance(content_data, dict)
+                        and content_data.get("result")
+                    )
+
+                async def _send_control_status(status: str, message_text: str = None):
+                    payload = {
+                        "topic": topic,
+                        "data": {
+                            "type": "control-status-message",
+                            "initData": {
+                                "status": status
+                            }
+                        }
+                    }
+                    if message_text:
+                        payload["data"]["initData"]["message"] = message_text
+                    await manager.send_json_to_topic(topic, payload, websocket)
+
+                async def _send_waiting_final(progress: dict):
+                    await manager.send_json_to_topic(topic, {
+                        "topic": topic,
+                        "data": {
+                            "type": "lui-message-manus-step",
+                            "uuid": msg_uuid,
+                            "timestamp": get_timestamp(),
+                            "from": "ai",
+                            "changeType": "replace",
+                            "initData": {
+                                "title": "正在整理最终结果...",
+                                "statusText": "正在整理最终结果...",
+                                "progress": progress or {}
+                            },
+                            "status": "in_progress",
+                            "styles": {"width": "100%"}
+                        }
+                    }, websocket)
                 try:
                     async for chunk in response.content.iter_chunked(64 * 1024):
                         if not chunk:
@@ -284,6 +342,10 @@ async def _stream_handler(params, url, headers, topic, websocket):
                             init_data = line_json.get("content") if line_json.get("content") is not None else [
                                 {"type": "text", "value": i18n.t('unknown_message')}]
                             change_type = line_json.get("changeType") if line_json.get("changeType") is not None else "append"
+                            last_message_type = msg_type
+                            if _is_final_plan_message(line_json, msg_type, init_data):
+                                final_result_seen = True
+                                plan_result_seen = True
 
                             await manager.send_json_to_topic(topic, {
                                 "topic": topic,
@@ -301,6 +363,12 @@ async def _stream_handler(params, url, headers, topic, websocket):
                                     "styles": {"width": "100%"}
                                 }
                             }, websocket)
+                            if (not control_sent) and (final_result_seen or plan_result_seen):
+                                import asyncio as _asyncio
+                                await _asyncio.sleep(0)
+                                await _send_control_status("finished_successfully")
+                                control_sent = True
+                                logger.info(f"final control sent after final result, topic={topic}, msg_uuid={msg_uuid}")
 
                             # 如果这是plan更新数据，且progress显示已全部完成，则发送结束控制
                             try:
@@ -308,7 +376,7 @@ async def _stream_handler(params, url, headers, topic, websocket):
                                     progress = init_data.get("progress") or {}
                                     total = int(progress.get("total") or 0)
                                     completed = int(progress.get("completed") or 0)
-                                    if total > 0 and completed >= total:
+                                    if total > 0 and completed >= total and (final_result_seen or plan_result_seen):
                                         # 先让出事件循环，确保上面的最终PLAN更新已被前端渲染
                                         import asyncio as _asyncio
                                         await _asyncio.sleep(0)
@@ -322,6 +390,16 @@ async def _stream_handler(params, url, headers, topic, websocket):
                                             }
                                         }, websocket)
                                         control_sent = True
+                                        logger.info(f"final control sent after final result, topic={topic}, msg_uuid={msg_uuid}")
+                                    elif total > 0 and completed >= total:
+                                        steps_all_completed_seen = True
+                                        if not warned_waiting_final:
+                                            logger.warning(
+                                                f"steps completed but final result not seen, topic={topic}, "
+                                                f"msg_uuid={msg_uuid}, progress={progress}"
+                                            )
+                                            await _send_waiting_final(progress)
+                                            warned_waiting_final = True
                                         # 计划已完成，后续如仍有流数据，继续透传；不强制关闭连接
                             except Exception:
                                 # 解析或字段缺失不阻断主流程
@@ -359,7 +437,37 @@ async def _stream_handler(params, url, headers, topic, websocket):
                                 "styles": {"width": "100%"}
                             }
                         }, websocket)
+                        last_message_type = msg_type
+                        if _is_final_plan_message(line_json, msg_type, init_data):
+                            final_result_seen = True
+                            plan_result_seen = True
+                            if not control_sent:
+                                await _send_control_status("finished_successfully")
+                                control_sent = True
+                    if not control_sent:
+                        logger.warning(
+                            f"stream ended after read exception without final result, topic={topic}, "
+                            f"msg_uuid={msg_uuid}, steps_all_completed_seen={steps_all_completed_seen}, "
+                            f"last_message_type={last_message_type}"
+                        )
+                        await _send_control_status(
+                            "finished_with_warning",
+                            "任务步骤已结束，但未收到最终报告结果，请检查执行日志或重试。"
+                        )
                     return
+                if not control_sent:
+                    if final_result_seen or plan_result_seen:
+                        await _send_control_status("finished_successfully")
+                        control_sent = True
+                    else:
+                        logger.warning(
+                            f"stream ended without final result, topic={topic}, msg_uuid={msg_uuid}, "
+                            f"steps_all_completed_seen={steps_all_completed_seen}, last_message_type={last_message_type}"
+                        )
+                        await _send_control_status(
+                            "finished_with_warning",
+                            "任务步骤已结束，但未收到最终报告结果，请检查执行日志或重试。"
+                        )
     finally:
         # 恢复原始限制
         aiohttp.streams._DEFAULT_LIMIT = original_limit

@@ -80,8 +80,40 @@
                     </div>
                 </div>
 
-                <div class="dag-container">
-                    <div class="controls" style="display: none;">
+                <div class="chat-message" id="chat-message">
+                    <!-- 独立的打开/隐藏按钮，放在外层div上 -->
+                    <button class="chat-action-btn" id="toggle-dag-btn-outer" onclick="toggleDagContainer()" style="position: absolute; right: 16px; top: 16px; z-index: 1300;">
+                        <i class="fas fa-diagram-project"></i>
+                        <span>隐藏流程</span>
+                    </button>
+
+                    <div class="chat-message-header" id="chat-message-header" style="display: none;">
+                        <div class="chat-message-title">
+                            <i class="fas fa-comments"></i>
+                            <span>模型回显</span>
+                        </div>
+                        <div class="chat-message-actions">
+                            <button class="chat-action-btn" id="toggle-task-list-btn" onclick="toggleTaskListPanel()">
+                                <i class="fas fa-list"></i>
+                                <span>任务</span>
+                            </button>
+                            <!-- 原有的 toggle-dag-btn 被移除或保留但不用 -->
+                        </div>
+                    </div>
+                    <div class="chat-message-feed" id="chat-message-feed" style="display: none;"></div>
+                    <div class="chat-task-panel collapsed" id="chat-task-panel" style="display: none;">
+                        <div class="chat-task-panel-header" onclick="toggleTaskListPanel()">
+                            <div class="chat-task-panel-title">
+                                <i class="fas fa-folder-open"></i>
+                                <span>任务列表</span>
+                            </div>
+                            <i class="fas fa-chevron-down" id="chat-task-panel-arrow"></i>
+                        </div>
+                        <div class="chat-task-panel-body" id="chat-task-list"></div>
+                    </div>
+
+                    <div class="dag-container" id="dag-container">
+                    <div class="controls">
                         <button class="btn" onclick="startSimulateWorkflow()">
                             <i class="fas fa-play-circle"></i> <span class="btn-text">开始运行</span>
                         </button>
@@ -152,6 +184,7 @@
                         <h3 id="step-title">选择节点查看详情</h3>
                         <p id="step-description">点击上方的节点来查看该步骤的详细信息。</p>
                     </div>
+                </div>
                 </div>
             </div>
 
