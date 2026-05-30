@@ -146,15 +146,15 @@ def search_wiki_skill():
         'skill_name': 'search_wiki',
         'skill_type': "function",
         'display_name_zh': '维基百科搜索',
-        'display_name_en': 'Google Search',
+        'display_name_en': 'Wikipedia Search',
         'description_zh': '使用维基百科搜索工具搜索给定查询的信息',
-        'description_en': 'Use wiki search engine to search information for the given query',
+        'description_en': 'Use Wikipedia search engine to search information for the given query',
         'semantic_apis': ["api_search"],
         'function': SkillFunction(
             id='3c44f9ad-be5c-4e6c-a9d8-1426b23828a0',
-            name='app.cosight.search_toolkit.search_google',
+            name='app.cosight.search_toolkit.search_wiki',
             description_zh='使用维基百科搜索工具搜索给定查询的信息',
-            description_en='Get search results using wiki search engine',
+            description_en='Get search results using Wikipedia search engine',
             parameters={
                 "type": "object",
                 "properties": {
@@ -317,14 +317,14 @@ def file_saver_skill():
         'skill_type': "function",
         'display_name_zh': '文件保存（内容必填）',
         'display_name_en': 'File Saver (content required)',
-        'description_zh': '将内容保存到指定路径的本地文件中，必须提供content参数作为文件内容。支持文本和二进制文件（如图片、音频、视频）。默认模式为追加，以保留文件原有内容',
-        'description_en': 'Save content to a local file at a specified path. IMPORTANT: You MUST provide the content parameter with the text to save. Supports both text and binary files (e.g., images, audio, video). Default mode is append to preserve existing file content',
+        'description_zh': '将内容保存到指定路径的本地文件中，必须提供content参数作为文件内容。性能建议：同一步骤内的相关输出应合并到一个文件中保存，完整报告和精简报告应写入同一个Markdown文件的不同章节；这不是底层强制限制。建议最终整合输出使用mode="w"。',
+        'description_en': 'Save content to a local file at a specified path. IMPORTANT: You MUST provide the content parameter with the text to save. Use this tool name exactly: file_saver. Do not call file_save. Performance recommendation: consolidate related outputs from the same step into one file; put full and concise reports in separate sections of the same Markdown file. This is not a hard runtime limit. Prefer mode="w" for final consolidated output.',
         'semantic_apis': ["api_file_management"],
         'function': SkillFunction(
             id='5c44f9ad-be5c-4e6c-a9d8-1426b23828a2',
             name='app.cosight.tool.file_toolkit.FileToolkit.file_saver',
-            description_zh='将内容保存到指定路径的文件中，必须提供content参数指定要保存的内容。支持文本和二进制文件。默认模式为追加',
-            description_en='Save content to a file at the specified path. IMPORTANT: You MUST provide the content parameter with the text to save. Supports both text and binary files. Default mode is append',
+            description_zh='将内容保存到指定路径的文件中，必须提供content参数指定要保存的内容。性能建议：同一步骤内仅保存一个整合文件；如同时需要完整报告和精简报告，使用同一个Markdown文件中的“## 完整报告”和“## 精简报告”分区。这不是底层强制限制。',
+            description_en='Save content to a file at the specified path. IMPORTANT: You MUST provide the content parameter with the text to save. Use this tool name exactly: file_saver. Do not call file_save. Performance recommendation: use one consolidated file per step; if both full and concise reports are required, use "## Full Report" and "## Concise Report" sections in the same Markdown file. This is not a hard runtime limit.',
             parameters={
                 "type": "object",
                 "properties": {
@@ -340,8 +340,8 @@ def file_saver_skill():
                     },
                     "mode": {
                         "type": "string",
-                        "description_zh": "文件打开模式：'a' 追加（默认），'w' 写入",
-                        "description_en": "File opening mode: 'a' for append (default), 'w' for write",
+                        "description_zh": "文件打开模式：'a' 追加（默认），'w' 写入。最终整合同一步骤输出时优先使用'w'",
+                        "description_en": "File opening mode: 'a' for append (default), 'w' for write. Prefer 'w' for final consolidated output in a step",
                         "enum": ["a", "w"],
                         "default": "a"
                     },
@@ -364,21 +364,21 @@ def file_read_skill():
         'skill_type': "function",
         'display_name_zh': '文件读取',
         'display_name_en': 'File Read',
-        'description_zh': '读取指定路径的本地文件内容，支持文本和二进制文件（如图片、音频、视频）',
-        'description_en': 'Read content from a local file at a specified path. Supports both text and binary files (e.g., images, audio, video)',
+        'description_zh': '读取指定路径的本地文件内容，必须传入具体文件路径（如 .md、.txt、.json），不要传工作区根目录或目录路径。支持文本和二进制文件（如图片、音频、视频）',
+        'description_en': 'Read content from a local file at a specified path. Pass a concrete file path (for example .md, .txt, .json), not the workspace root or a directory. Supports both text and binary files (e.g., images, audio, video)',
         'semantic_apis': ["api_file_management"],
         'function': SkillFunction(
             id='6c44f9ad-be5c-4e6c-a9d8-1426b23828a3',
             name='app.cosight.tool.file_toolkit.FileToolkit.file_read',
-            description_zh='读取指定路径的文件内容，支持文本和二进制文件',
-            description_en='Read content from a file at the specified path. Supports both text and binary files',
+            description_zh='读取指定路径的文件内容。必须指定具体文件路径，不要传工作区根目录或目录路径。支持文本和二进制文件',
+            description_en='Read content from a file at the specified path. Specify a concrete file path, not the workspace root or a directory. Supports both text and binary files',
             parameters={
                 "type": "object",
                 "properties": {
                     "file": {
                         "type": "string",
-                        "description_zh": "要读取的文件的绝对路径（需在工作区内，WORKSPACE_PATH环境变量指定）",
-                        "description_en": "Absolute path of the file to read (must be within workspace specified by WORKSPACE_PATH environment variable)"
+                        "description_zh": "要读取的具体文件绝对路径（需在工作区内，WORKSPACE_PATH环境变量指定）。应指向 .md、.txt、.json 等文件，不要传工作区根目录或目录路径",
+                        "description_en": "Absolute path of the concrete file to read (must be within workspace specified by WORKSPACE_PATH environment variable). Point to a file such as .md, .txt, or .json, not the workspace root or a directory"
                     },
                     "start_line": {
                         "type": "integer",

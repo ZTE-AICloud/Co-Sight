@@ -18,6 +18,7 @@ import json
 import sys
 import time
 from typing import List, Dict, Any
+from json import JSONDecodeError
 
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
@@ -34,6 +35,10 @@ from config.config import get_turbo_mode
 
 
 class BaseAgent:
+    TOOL_NAME_ALIASES = {
+        "file_save": "file_saver",
+    }
+
     def __init__(self, agent_instance: AgentInstance, llm: ChatLLM, functions: {}, plan_id: str = None):
         self.agent_instance = agent_instance
         self.llm = llm
@@ -51,6 +56,12 @@ class BaseAgent:
         # Only set plan to None if it hasn't been set by subclass
         if not hasattr(self, 'plan'):
             self.plan = None  # Will be set by subclasses that have access to Plan
+
+    def _normalize_tool_name(self, function_name: str) -> str:
+        normalized_name = self.TOOL_NAME_ALIASES.get(function_name, function_name)
+        if normalized_name != function_name:
+            logger.info("Tool name normalized: %s -> %s", function_name, normalized_name)
+        return normalized_name
 
     def _normalize_tool_args(self, function_to_call, raw_args: Dict[str, Any], function_name: str = "") -> Dict[str, Any]:
         """
@@ -144,6 +155,113 @@ class BaseAgent:
         except Exception as e:
             logger.warning(f"args normalization failed: {e}")
             return raw_args
+
+    def _get_required_tool_args(self, function_to_call, function_name: str = "") -> List[str]:
+        required = []
+
+        if hasattr(self, 'tools') and self.tools:
+            for tool in self.tools:
+                if isinstance(tool, dict) and tool.get('function', {}).get('name') == function_name:
+                    params_schema = tool.get('function', {}).get('parameters', {})
+                    schema_required = params_schema.get('required', [])
+                    if isinstance(schema_required, list):
+                        required.extend(schema_required)
+                    break
+
+        mapping_cfg = FUNCTION_ARG_MAPPING.get((function_name or '').lower(), {})
+        required.extend(mapping_cfg.get('required', []))
+
+        try:
+            signature = inspect.signature(function_to_call)
+            for name, param in signature.parameters.items():
+                if name == 'self':
+                    continue
+                if param.kind in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD):
+                    continue
+                if param.default is inspect.Parameter.empty:
+                    required.append(name)
+        except Exception as e:
+            logger.warning(f"failed to inspect required args for {function_name}: {e}")
+
+        return list(dict.fromkeys(required))
+
+    def _parse_tool_args(self, function_args, function_name: str = "", function_to_call=None) -> Dict[str, Any]:
+        cleaned_args = function_args if function_args is not None else "{}"
+        if isinstance(cleaned_args, bytes):
+            cleaned_args = cleaned_args.decode('utf-8', errors='ignore')
+        cleaned_args = str(cleaned_args).strip()
+
+        if cleaned_args.startswith("```"):
+            tmp = cleaned_args.strip('`')
+            if "\n" in tmp:
+                tmp = tmp.split("\n", 1)[1]
+            cleaned_args = tmp.strip()
+            if cleaned_args.endswith("```"):
+                cleaned_args = cleaned_args[:-3].strip()
+
+        if cleaned_args == "" or cleaned_args.lower() in ("null", "none"):
+            return {}
+
+        for candidate in (cleaned_args, cleaned_args.replace("'", '"').rstrip(',').strip()):
+            if not candidate:
+                continue
+            if not (candidate.startswith('{') or candidate.startswith('[')):
+                candidate = '{' + candidate + '}'
+            try:
+                parsed = json.loads(candidate)
+                return parsed if isinstance(parsed, dict) else {}
+            except JSONDecodeError:
+                continue
+
+        recovered = self._recover_single_arg_tool_args(cleaned_args, function_name, function_to_call)
+        if recovered:
+            logger.warning(f"Recovered malformed arguments for {function_name}: {list(recovered.keys())}")
+            return recovered
+
+        logger.warning(f"Unable to parse arguments for {function_name}; using empty args. Raw arguments: {cleaned_args}")
+        return {}
+
+    def _recover_single_arg_tool_args(self, cleaned_args: str, function_name: str = "", function_to_call=None) -> Dict[str, Any]:
+        if function_to_call is None:
+            return {}
+
+        required = self._get_required_tool_args(function_to_call, function_name)
+        if len(required) != 1:
+            return {}
+
+        arg_name = required[0]
+        normalized_arg_name = arg_name.replace('_', '').lower()
+        aliases = FUNCTION_ARG_MAPPING.get((function_name or '').lower(), {}).get('aliases', {}).get(arg_name, [])
+        lookup_names = [arg_name, *aliases]
+
+        for name in lookup_names:
+            key_pattern = f'"{name}"'
+            start = cleaned_args.find(key_pattern)
+            if start == -1:
+                key_pattern = f"'{name}'"
+                start = cleaned_args.find(key_pattern)
+            if start == -1:
+                continue
+
+            colon = cleaned_args.find(':', start + len(key_pattern))
+            if colon == -1:
+                continue
+            value = cleaned_args[colon + 1:].strip()
+            value = value[:-1].rstrip() if value.endswith('}') else value
+            value = value[:-1].rstrip() if value.endswith(',') else value
+            if (value.startswith('"') and value.endswith('"')) or (value.startswith("'") and value.endswith("'")):
+                value = value[1:-1]
+            elif value.startswith('"') or value.startswith("'"):
+                value = value[1:]
+            return {arg_name: value}
+
+        raw_key = cleaned_args.replace('_', '').lower()
+        if normalized_arg_name in raw_key:
+            return {}
+        if not cleaned_args.startswith('{') and not cleaned_args.startswith('['):
+            return {arg_name: cleaned_args}
+
+        return {}
 
     def find_mcp_tool(self, tool_name):
         for tool in self.mcp_tools:
@@ -439,38 +557,46 @@ class BaseAgent:
     def _execute_tool_calls(self, tool_calls, step_index):
         results = []
         with ThreadPoolExecutor() as executor:
-            futures = []
-            for tool_call in tool_calls:
-                function_name = tool_call.function.name
+            def submit_tool_call(tool_call):
+                function_name = self._normalize_tool_name(tool_call.function.name)
                 function_args = tool_call.function.arguments
 
                 if function_name in self.functions:
-                    futures.append(executor.submit(
+                    return executor.submit(
                         self._execute_tool_call,
                         function_name=function_name,
                         function_args=function_args,
                         tool_call_id=tool_call.id,
                         step_index=step_index
-                    ))
-                else:
-                    futures.append(executor.submit(
+                    )
+                return executor.submit(
                         self._execute_mcp_tool_call,
                         function_name=function_name,
                         function_args=function_args,
                         tool_call_id=tool_call.id
-                    ))
+                    )
 
-            for future in futures:
-                try:
-                    results.append(future.result())
-                except Exception as e:
-                    logger.error(f"Unhandled exception: {e}", exc_info=True)
-                    results.append({
-                        "role": "tool",
-                        "name": function_name,
-                        "tool_call_id": tool_call.id,
-                        "content": f"Execution error: {str(e)}"
-                    })
+            normalized_tool_calls = [
+                (self._normalize_tool_name(tool_call.function.name), tool_call)
+                for tool_call in tool_calls
+            ]
+            non_mark_calls = [tool_call for name, tool_call in normalized_tool_calls if name != "mark_step"]
+            mark_calls = [tool_call for name, tool_call in normalized_tool_calls if name == "mark_step"]
+
+            for call_batch in (non_mark_calls, mark_calls):
+                futures = [(tool_call, submit_tool_call(tool_call)) for tool_call in call_batch]
+                for tool_call, future in futures:
+                    function_name = self._normalize_tool_name(tool_call.function.name)
+                    try:
+                        results.append(future.result())
+                    except Exception as e:
+                        logger.error(f"Unhandled exception: {e}", exc_info=True)
+                        results.append({
+                            "role": "tool",
+                            "name": function_name,
+                            "tool_call_id": tool_call.id,
+                            "content": f"Execution error: {str(e)}"
+                        })
         return results
 
     def _handle_max_iteration(self, messages, step_index):
@@ -486,37 +612,16 @@ class BaseAgent:
 
     @time_record
     def _execute_tool_call(self, function_name="", function_args="", tool_call_id="", step_index=None):
+        function_name = self._normalize_tool_name(function_name)
         start_time = time.time()
         
         # 推送工具开始执行事件
         self._push_tool_event("tool_start", function_name, function_args, step_index=step_index)
         
         try:
+            function_to_call = self.functions[function_name]
             # Robust JSON arg parsing: tolerate code fences/None/empty/single quotes/trailing commas
-            cleaned_args = function_args if function_args is not None else "{}"
-            if isinstance(cleaned_args, bytes):
-                cleaned_args = cleaned_args.decode('utf-8', errors='ignore')
-            cleaned_args = str(cleaned_args).strip()
-            # strip markdown fences
-            if cleaned_args.startswith("```"):
-                tmp = cleaned_args.strip('`')
-                if "\n" in tmp:
-                    tmp = tmp.split("\n", 1)[1]
-                cleaned_args = tmp.strip()
-                if cleaned_args.endswith("```"):
-                    cleaned_args = cleaned_args[:-3]
-            if cleaned_args == "" or cleaned_args.lower() in ("null", "none"):
-                cleaned_args = "{}"
-            try:
-                args_dict = json.loads(cleaned_args)
-            except Exception:
-                repaired = cleaned_args.replace("'", '"').rstrip(',').strip()
-                if repaired and not (repaired.startswith('{') or repaired.startswith('[')):
-                    repaired = '{' + repaired + '}'
-                try:
-                    args_dict = json.loads(repaired)
-                except Exception:
-                    args_dict = {}
+            args_dict = self._parse_tool_args(function_args, function_name, function_to_call)
 
             if step_index is not None and 'step_index' not in args_dict and function_name in ['mark_step']:
                 args_dict['step_index'] = step_index
@@ -542,12 +647,18 @@ class BaseAgent:
                     asyncio.set_event_loop(loop)
                     # 归一化参数键（含函数名定制映射）
                     norm_args = self._normalize_tool_args(function_to_call, args_dict, function_name)
+                    missing_args = [arg for arg in self._get_required_tool_args(function_to_call, function_name) if arg not in norm_args]
+                    if missing_args:
+                        raise ValueError(f"Missing required tool argument(s) for {function_name}: {', '.join(missing_args)}")
                     result = loop.run_until_complete(function_to_call(**norm_args))
                 finally:
                     loop.close()
             else:
                 # 同步函数直接调用
                 norm_args = self._normalize_tool_args(function_to_call, args_dict, function_name)
+                missing_args = [arg for arg in self._get_required_tool_args(function_to_call, function_name) if arg not in norm_args]
+                if missing_args:
+                    raise ValueError(f"Missing required tool argument(s) for {function_name}: {', '.join(missing_args)}")
                 result = function_to_call(**norm_args)
 
             # 计算执行时间
@@ -578,7 +689,10 @@ class BaseAgent:
             self._push_tool_event("tool_error", function_name, function_args, 
                                 "", step_index, duration, error_msg)
             
-            logger.error(f"Unhandled exception: {e}", exc_info=True)
+            if isinstance(e, ValueError) and str(e).startswith("Missing required tool argument"):
+                logger.warning(f"Tool call rejected: {e}")
+            else:
+                logger.error(f"Unhandled exception: {e}", exc_info=True)
             return {
                 "role": "tool",
                 "name": function_name,
@@ -639,6 +753,7 @@ class BaseAgent:
 
     @time_record
     def _execute_mcp_tool_call(self, function_name="", function_args="", tool_call_id=""):
+        function_name = self._normalize_tool_name(function_name)
         start_time = time.time()
         
         # 推送MCP工具开始执行事件
@@ -646,7 +761,20 @@ class BaseAgent:
         logger.info(f"execute_mcp_tool_call: function_name={function_name}, function_args={function_args}, tool_call_id={tool_call_id}")
         loop = None
         try:
-            mcp_tool, tool_name = self.find_mcp_tool(function_name)
+            mcp_info = self.find_mcp_tool(function_name)
+            if not mcp_info:
+                duration = time.time() - start_time
+                error_msg = f"Function {function_name} not found in available functions"
+                self._push_tool_event("tool_error", function_name, function_args,
+                                    "", -1, duration, error_msg)
+                return {
+                    "role": "tool",
+                    "name": function_name,
+                    "tool_call_id": tool_call_id,
+                    "content": error_msg
+                }
+
+            mcp_tool, tool_name = mcp_info
             if mcp_tool and tool_name:
                 cleaned_args = function_args.replace('\\\'', '\'')
                 args_dict = json.loads(cleaned_args or "{}")

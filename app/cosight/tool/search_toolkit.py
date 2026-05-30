@@ -13,7 +13,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import json
 import os
+import time
 import xml.etree.ElementTree as ET
 from typing import Any, Dict, List, Literal, Optional, TypeAlias, Union
 
@@ -33,51 +35,79 @@ class SearchToolkit:
         self.proxies = {"http": proxy, "https": proxy} if proxy else None
 
     def search_wiki(self, entity: str) -> str:
-        r"""Search the entity in WikiPedia and return the summary of the
-            required page, containing factual information about
-            the given entity.
+        r"""Search the entity in Wikipedia and return the summary of the
+            required page, containing factual information about the given
+            entity.
 
         Args:
             entity (str): The entity to be searched.
 
         Returns:
-            str: The search result. If the page corresponding to the entity
-                exists, return the summary of this entity in a string.
+            str: The search result. If the Wikipedia page corresponding to the
+                entity exists, return the summary and URL in a string.
         """
         import wikipedia
 
-        result: str
-        page_url: str = ""
-
+        failure_prefix = f'Wikipedia search failed for entity "{entity}"'
         try:
-            # 获取页面摘要
-            result = wikipedia.summary(entity, sentences=5, auto_suggest=False)
-            # 获取页面URL
+            summary = wikipedia.summary(entity, sentences=5, auto_suggest=False)
             page = wikipedia.page(entity, auto_suggest=False)
-            page_url = page.url
+            result = f"Wikipedia URL: {page.url}\n\nSummary:\n{summary}"
         except wikipedia.exceptions.DisambiguationError as e:
-            # 如果有歧义，选择第一个选项
-            result = wikipedia.summary(
-                e.options[0], sentences=5, auto_suggest=False
+            if not e.options:
+                result = f"{failure_prefix}: ambiguous entity with no options."
+            else:
+                selected_entity = e.options[0]
+                try:
+                    summary = wikipedia.summary(
+                        selected_entity, sentences=5, auto_suggest=False
+                    )
+                    page = wikipedia.page(selected_entity, auto_suggest=False)
+                    result = f"Wikipedia URL: {page.url}\n\nSummary:\n{summary}"
+                except wikipedia.exceptions.PageError as page_error:
+                    result = (
+                        f'Wikipedia page not found for entity "{selected_entity}": '
+                        f"{page_error!s}"
+                    )
+                except (
+                    requests.exceptions.RequestException,
+                    json.JSONDecodeError,
+                    ValueError,
+                    KeyError,
+                    wikipedia.exceptions.WikipediaException,
+                ) as retry_error:
+                    logger.warning(
+                        '%s after disambiguation to "%s": %s',
+                        failure_prefix,
+                        selected_entity,
+                        retry_error,
+                    )
+                    result = f"{failure_prefix}: {retry_error!s}"
+                except Exception as retry_error:
+                    logger.error(
+                        'Unexpected Wikipedia disambiguation search failure '
+                        f'for entity "{entity}": {retry_error}',
+                        exc_info=True,
+                    )
+                    result = f"{failure_prefix}: {retry_error!s}"
+        except wikipedia.exceptions.PageError as e:
+            result = f'Wikipedia page not found for entity "{entity}": {e!s}'
+        except (
+            requests.exceptions.RequestException,
+            json.JSONDecodeError,
+            ValueError,
+            KeyError,
+            wikipedia.exceptions.WikipediaException,
+        ) as e:
+            logger.warning("%s: %s", failure_prefix, e)
+            result = f"{failure_prefix}: {e!s}"
+        except Exception as e:
+            logger.error(
+                f'Unexpected Wikipedia search failure for entity "{entity}": {e}',
+                exc_info=True
             )
-            try:
-                page = wikipedia.page(e.options[0], auto_suggest=False)
-                page_url = page.url
-            except:
-                pass
-        except wikipedia.exceptions.PageError:
-            result = (
-                "There is no page in Wikipedia corresponding to entity "
-                f"{entity}, please specify another word to describe the"
-                " entity to be searched."
-            )
-        except wikipedia.exceptions.WikipediaException as e:
-            result = f"An exception occurred during the search: {e}"
-        
-        # 如果有URL，将URL信息添加到结果中
-        if page_url:
-            result = f"Wikipedia URL: {page_url}\n\nSummary:\n{result}"
-        
+            result = f"{failure_prefix}: {e!s}"
+
         logger.info(f'search_wiki result = {result}')
         return result
 
@@ -700,12 +730,31 @@ class SearchToolkit:
                 "Get `TAVILY_API_KEY` here: `https://www.tavily.com/api/`."
             )
 
-        client = TavilyClient(Tavily_API_KEY)
+        client = TavilyClient(Tavily_API_KEY, proxies=self.proxies)
 
-        try:
-            results = client.search(query, max_results=num_results, **kwargs)
-            logger.info(f'tavily_search result = {results}')
-            return results
-        except Exception as e:
-            logger.error(f'error": f"An unexpected error occurred: {str(e)}', exc_info=True)
-            return [{"error": f"An unexpected error occurred: {e!s}"}]
+        attempts = 2
+        for attempt in range(1, attempts + 1):
+            try:
+                results = client.search(
+                    query,
+                    max_results=num_results,
+                    **kwargs
+                )
+                logger.info(f'tavily_search result = {results}')
+                return results
+            except requests.exceptions.RequestException as e:
+                error = (
+                    "Tavily search failed because the remote API request "
+                    f"did not complete: {e!s}"
+                )
+                logger.warning("%s (attempt %s/%s)", error, attempt, attempts)
+                if attempt < attempts:
+                    time.sleep(1)
+                    continue
+                return [{"error": error}]
+            except Exception as e:
+                logger.error(
+                    f"Unexpected Tavily search failure: {e!s}",
+                    exc_info=True
+                )
+                return [{"error": f"An unexpected error occurred: {e!s}"}]

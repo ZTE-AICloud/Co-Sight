@@ -32,6 +32,12 @@
     color: #667eea;
 }
 
+.replay-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
 .btn-back {
     padding: 10px 20px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);

@@ -15,12 +15,14 @@
 
 from datetime import datetime
 from typing import Dict
+from urllib.parse import urlparse
 from fastapi import APIRouter
 from fastapi.params import Body
 
 from cosight_server.sdk.common.api_result import json_result
 from cosight_server.sdk.common.cache import Cache
 from app.common.logger_util import logger
+from app.cosight.tool.tool_result_processor import ToolResultProcessor
 
 commonRouter = APIRouter()
 
@@ -41,3 +43,21 @@ async def stop_message(body: Dict = Body(...)):
     return json_result(0, 'success', {
         'status': 'stopped'
     })
+
+@commonRouter.post("/check-iframe-embedding")
+async def check_iframe_embedding(body: Dict = Body(...)):
+    url = body.get("url")
+    if not url:
+        return {"allowed": False, "reason": "No URL provided"}
+
+    parsed_url = urlparse(url)
+    if not parsed_url.scheme and url.startswith("/") and not url.startswith("//"):
+        return {"allowed": True, "reason": "Same-origin relative URL"}
+
+    try:
+        allowed = ToolResultProcessor.check_embeddable(url)
+        reason = "" if allowed else "Forbidden by policy, not accessible, or invalid content type"
+        return {"allowed": allowed, "reason": reason}
+    except Exception as e:
+        logger.error(f"Error checking iframe embedding for {url}: {e}")
+        return {"allowed": True, "reason": str(e)}

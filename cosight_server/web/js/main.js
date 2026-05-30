@@ -344,7 +344,11 @@ function getWorkflowByNodeId(nodeId) {
                 const args = JSON.parse(toolEvent.tool_args || "{}");
                 filePath = args.file || args.path || null;
               }
-              if (filePath) {
+              if (
+                filePath &&
+                !(processed && (processed.is_previewable === false || processed.is_success === false)) &&
+                !isWorkspaceDirectoryPath(filePath)
+              ) {
                 path = buildApiWorkspacePath(filePath);
               }
             } catch (e) {
@@ -637,6 +641,15 @@ function getWorkflowByNodeId(nodeId) {
             filePath = args.file || args.path || null;
           }
           if (filePath) {
+            if (
+              typeof toolResult === "object" &&
+              toolResult &&
+              (toolResult.is_previewable === false || toolResult.is_success === false)
+            ) {
+              filePath = null;
+            }
+          }
+          if (filePath && !isWorkspaceDirectoryPath(filePath)) {
             path = buildApiWorkspacePath(filePath);
           }
         } catch (e) {
@@ -897,7 +910,24 @@ function normalizeFilePathForFrontend(originalPath) {
 
 // 从原始绝对路径构造 API 工作区路径：/api/nae-deep-research/v1/work_space/...
 function buildApiWorkspacePath(originalPath) {
-  return originalPath;
+  if (!originalPath || typeof originalPath !== "string") return originalPath;
+  if (originalPath.startsWith("/api/")) return originalPath;
+
+  const unified = originalPath.replace(/\\/g, "/");
+  let workspaceIndex = unified.indexOf("work_space");
+  if (workspaceIndex === -1) {
+    workspaceIndex = unified.indexOf("workspace");
+  }
+
+  if (workspaceIndex === -1) {
+    return originalPath;
+  }
+
+  let relativePath = unified.substring(workspaceIndex);
+  if (!relativePath.startsWith("/")) {
+    relativePath = "/" + relativePath;
+  }
+  return `/api/nae-deep-research/v1${relativePath}`;
 }
 
 // 提取文件名（兼容 \ 与 /）
@@ -906,6 +936,33 @@ function extractFileName(p) {
   const unified = p.replace(/\\/g, "/");
   const idx = unified.lastIndexOf("/");
   return idx >= 0 ? unified.substring(idx + 1) : unified;
+}
+
+function isWorkspaceDirectoryPath(p) {
+  if (!p || typeof p !== "string") return false;
+  const unified = p.replace(/\\/g, "/").replace(/[?#].*$/, "").replace(/\/+$/, "");
+  const name = unified.split("/").pop() || "";
+  return name.startsWith("work_space_") && !name.includes(".");
+}
+
+function getFilePreviewBlockReason(filePath, toolCall) {
+  const result =
+    toolCall?.raw_result || toolCall?.result || toolCall?.tool_result || null;
+  if (
+    result &&
+    typeof result === "object" &&
+    (result.is_previewable === false || result.is_success === false)
+  ) {
+    return (
+      result.error_message ||
+      result.summary ||
+      "This file operation result is not previewable."
+    );
+  }
+  if (isWorkspaceDirectoryPath(filePath)) {
+    return "This path is a workspace directory, not a concrete file. Please select a file inside the workspace.";
+  }
+  return null;
 }
 
 // 工具调用状态管理函数
@@ -2317,6 +2374,25 @@ function showRightPanel() {
   return true;
 }
 
+function isSameOriginUrl(url) {
+  if (!url || typeof url !== "string") {
+    return false;
+  }
+
+  try {
+    return new URL(url, window.location.origin).origin === window.location.origin;
+  } catch (error) {
+    return url.startsWith("/") && !url.startsWith("//");
+  }
+}
+
+function removeIframeAlternativePanel() {
+  const existingPanel = document.querySelector(".iframe-alternative-panel");
+  if (existingPanel) {
+    existingPanel.remove();
+  }
+}
+
 function showRightPanelForTool(toolCall) {
   const result = showRightPanel();
   if (!result) {
@@ -2329,6 +2405,7 @@ function showRightPanelForTool(toolCall) {
   const iframe = document.getElementById("content-iframe");
   const markdownContent = document.getElementById("markdown-content");
   const statusElement = document.getElementById("right-container-status");
+  removeIframeAlternativePanel();
 
   if (url) {
     // 显示加载提示
@@ -2356,21 +2433,25 @@ function showRightPanelForTool(toolCall) {
     iframe.src = "about:blank";
 
     // 检查iframe嵌入是否被允许
-    checkIframeEmbedding(url)
-      .then((allowed) => {
-        if (allowed) {
-          // 允许嵌入，继续加载
+    if (isSameOriginUrl(url)) {
+      loadIframeContent(url, iframe, statusElement, tool, path);
+    } else {
+      checkIframeEmbedding(url)
+        .then((checkResult) => {
+          if (checkResult.allowed) {
+            // 允许嵌入，继续加载
+            loadIframeContent(url, iframe, statusElement, tool, path);
+          } else {
+            showIframeEmbeddingError(url, statusElement, checkResult.reason);
+            // 不允许嵌入，显示错误和替代方案
+          }
+        })
+        .catch((error) => {
+          console.warn("iframe嵌入检查失败，尝试直接加载:", error);
+          // 检查失败时允许尝试加载
           loadIframeContent(url, iframe, statusElement, tool, path);
-        } else {
-          // 不允许嵌入，显示错误和替代方案
-          showIframeEmbeddingError(url, statusElement);
-        }
-      })
-      .catch((error) => {
-        console.warn("iframe嵌入检查失败，尝试直接加载:", error);
-        // 检查失败时允许尝试加载
-        loadIframeContent(url, iframe, statusElement, tool, path);
-      });
+        });
+    }
   } else if (path) {
     // 处理代码执行工具的特殊情况
     if (path === "code://execute_code") {
@@ -2410,13 +2491,13 @@ function showRightPanelForTool(toolCall) {
       // 提取work_space之后的路径部分
       const workspaceIndex = relativePath.indexOf("work_space");
       if (workspaceIndex !== -1) {
-        relativePath = relativePath.substring(workspaceIndex);
+        relativePath = buildApiWorkspacePath(relativePath);
       }
     } else if (relativePath.includes("workspace")) {
       // 兼容旧的workspace命名
       const workspaceIndex = relativePath.indexOf("workspace");
       if (workspaceIndex !== -1) {
-        relativePath = relativePath.substring(workspaceIndex);
+        relativePath = buildApiWorkspacePath(relativePath);
       }
     }
 
@@ -2834,6 +2915,26 @@ function escapeHtml(text) {
 function loadMarkdownFile(filePath, tool, toolCall) {
   const markdownContent = document.getElementById("markdown-content");
   const statusElement = document.getElementById("right-container-status");
+  const previewBlockReason = getFilePreviewBlockReason(filePath, toolCall);
+
+  if (previewBlockReason) {
+    markdownContent.innerHTML = `
+      <div style="text-align: center; padding: 50px; color: #f44336;">
+        <i class="fas fa-exclamation-triangle"></i>
+        <h3>${
+          window.I18nService
+            ? window.I18nService.t("file_load_failed_title")
+            : "文件加载失败"
+        }</h3>
+        <p>${escapeHtml(previewBlockReason)}</p>
+      </div>
+    `;
+    if (statusElement) {
+      statusElement.textContent = previewBlockReason;
+      statusElement.className = "error";
+    }
+    return;
+  }
 
   // 显示加载状态
   markdownContent.innerHTML = `<div style="text-align: center; padding: 50px;"><i class="fas fa-spinner fa-spin"></i> ${
@@ -2865,13 +2966,13 @@ function loadMarkdownFile(filePath, tool, toolCall) {
     // 提取work_space之后的路径部分
     const workspaceIndex = filePath.indexOf("work_space");
     if (workspaceIndex !== -1) {
-      relativePath = filePath.substring(workspaceIndex);
+      relativePath = buildApiWorkspacePath(filePath);
     }
   } else if (filePath.includes("workspace")) {
     // 兼容旧的workspace命名
     const workspaceIndex = filePath.indexOf("workspace");
     if (workspaceIndex !== -1) {
-      relativePath = filePath.substring(workspaceIndex);
+      relativePath = buildApiWorkspacePath(filePath);
     }
   }
 
@@ -2994,6 +3095,47 @@ function toggleRightContainer() {
       }, 500);
     }, timeout);
   }
+}
+
+function toggleDagContainer() {
+  const dagContainer = document.getElementById("dag-container");
+  const toggleBtn = document.getElementById("toggle-dag-btn-outer") || document.getElementById("toggle-dag-btn");
+  if (!dagContainer || !toggleBtn) return;
+
+  const isCollapsed = dagContainer.classList.toggle("dag-collapsed");
+  const label = toggleBtn.querySelector("span");
+  if (label) {
+    label.textContent = isCollapsed ? "显示流程" : "隐藏流程";
+  }
+
+  // Hide other modules when DAG is shown
+  const chatFeed = document.getElementById("chat-message-feed");
+  const taskPanel = document.getElementById("chat-task-panel");
+  const chatHeader = document.getElementById("chat-message-header");
+
+  if (!isCollapsed) {
+    if (chatFeed) chatFeed.style.display = "none";
+    if (taskPanel) taskPanel.style.display = "none";
+    if (chatHeader) chatHeader.style.display = "none";
+  } else {
+    if (chatFeed) chatFeed.style.display = "";
+    if (taskPanel) taskPanel.style.display = "";
+    if (chatHeader) chatHeader.style.display = "";
+  }
+
+  setTimeout(() => {
+    try {
+      if (typeof handleResize === "function") {
+        handleResize();
+      }
+    } catch (_) {}
+  }, 380);
+}
+
+function toggleTaskListPanel() {
+  const panel = document.getElementById("chat-task-panel");
+  if (!panel) return;
+  panel.classList.toggle("collapsed");
 }
 
 function toggleMaximizePanel() {
@@ -3431,11 +3573,17 @@ async function checkIframeEmbedding(url) {
       console.warn(`iframe嵌入被拒绝: ${url}, 原因: ${result.reason}`);
     }
 
-    return result.allowed;
+    return {
+      allowed: !!result.allowed,
+      reason: result.reason || "",
+    };
   } catch (error) {
     console.warn("iframe嵌入检查失败:", error);
     // 检查失败时允许尝试加载
-    return true;
+    return {
+      allowed: true,
+      reason: error && error.message ? error.message : "iframe check failed",
+    };
   }
 }
 
@@ -3516,25 +3664,25 @@ function loadIframeContent(url, iframe, statusElement, tool, path) {
  * @param {string} url - 无法嵌入的URL
  * @param {HTMLElement} statusElement - 状态显示元素
  */
-function showIframeEmbeddingError(url, statusElement) {
+function showIframeEmbeddingError(url, statusElement, reason) {
   // 隐藏加载提示
   toggleLoadingIndicator(false);
 
   // 更新状态文本
   if (statusElement) {
-    statusElement.textContent = `网页不允许嵌入iframe: ${url}`;
-    statusElement.className = "error";
+    statusElement.textContent = `已获取网页信息，原站不支持嵌入: ${url}`;
+    statusElement.className = "warning";
   }
 
   // 显示替代方案
-  showAlternativeOptions(url);
+  showAlternativeOptions(url, reason);
 }
 
 /**
  * 显示替代操作选项
  * @param {string} url - 无法嵌入的URL
  */
-function showAlternativeOptions(url) {
+function showAlternativeOptions(url, reason) {
   const rightContent = document.querySelector(".right-content");
   if (!rightContent) return;
 
@@ -3543,7 +3691,13 @@ function showAlternativeOptions(url) {
   if (iframe) {
     iframe.style.display = "none";
   }
-
+  const markdownContent = document.getElementById("markdown-content");
+  if (markdownContent) {
+    markdownContent.style.display = "none";
+  }
+  removeIframeAlternativePanel();
+  const safeUrl = escapeHtml(url || "");
+  const safeReason = escapeHtml(reason || "Forbidden by policy, not accessible, or invalid content type");
   // 显示替代操作面板
   const alternativePanel = document.createElement("div");
   alternativePanel.className = "iframe-alternative-panel";
@@ -3679,8 +3833,59 @@ function showAlternativeOptions(url) {
     `;
 
   // 清空现有内容并添加替代面板
-  rightContent.innerHTML = "";
+  alternativePanel.innerHTML = `
+        <div class="alternative-content">
+            <h3><i class="fas fa-exclamation-triangle"></i> 此网站不支持嵌入</h3>
+            <p>原站设置了安全策略，不能在 iframe 中直接显示。已保留可用的本地抓取结果。</p>
+            <p class="url-info"><strong>网址:</strong> ${safeUrl}</p>
+            <p class="url-info"><strong>原因:</strong> ${safeReason}</p>
+
+            <div class="alternative-actions">
+                <button class="action-btn primary iframe-open-btn" type="button">
+                    <i class="fas fa-external-link-alt"></i> 在新窗口打开
+                </button>
+                <button class="action-btn secondary iframe-copy-btn" type="button">
+                    <i class="fas fa-copy"></i> 复制链接
+                </button>
+            </div>
+
+            <div class="help-info">
+                <h4><i class="fas fa-info-circle"></i> 为什么无法嵌入？</h4>
+                <ul>
+                    <li>网站设置了 <code>X-Frame-Options</code> 安全策略</li>
+                    <li>网站使用了 <code>Content-Security-Policy</code> 限制</li>
+                    <li>网站主动禁止第三方页面嵌入</li>
+                </ul>
+            </div>
+        </div>
+
+        <style>
+            .iframe-alternative-panel { padding: 30px; text-align: center; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+            .alternative-content h3 { color: #f39c12; margin-bottom: 15px; font-size: 1.3em; }
+            .alternative-content p { color: #666; margin: 10px 0; line-height: 1.6; }
+            .url-info { background: #f8f9fa; padding: 10px; border-radius: 5px; margin: 15px 0; word-break: break-all; font-family: monospace; font-size: 0.9em; }
+            .alternative-actions { margin: 25px 0; display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; }
+            .action-btn { padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 8px; }
+            .action-btn.primary { background: #007bff; color: white; }
+            .action-btn.primary:hover { background: #0056b3; transform: translateY(-2px); }
+            .action-btn.secondary { background: #6c757d; color: white; }
+            .action-btn.secondary:hover { background: #545b62; transform: translateY(-2px); }
+            .help-info { margin-top: 24px; text-align: left; background: #f8f9fa; padding: 18px; border-radius: 8px; border-left: 4px solid #007bff; }
+            .help-info h4 { color: #495057; margin: 0 0 10px 0; font-size: 1.1em; }
+            .help-info ul { margin: 0; padding-left: 20px; color: #666; }
+            .help-info li { margin: 8px 0; line-height: 1.5; }
+            .help-info code { background: #e9ecef; padding: 2px 6px; border-radius: 3px; font-family: 'Courier New', Courier, monospace; font-size: 0.9em; }
+        </style>
+    `;
   rightContent.appendChild(alternativePanel);
+  const openBtn = alternativePanel.querySelector(".iframe-open-btn");
+  const copyBtn = alternativePanel.querySelector(".iframe-copy-btn");
+  if (openBtn) {
+    openBtn.addEventListener("click", () => openInNewWindow(url));
+  }
+  if (copyBtn) {
+    copyBtn.addEventListener("click", (evt) => copyUrlToClipboard(url, evt));
+  }
 }
 
 /**
@@ -3695,12 +3900,13 @@ function openInNewWindow(url) {
  * 复制URL到剪贴板
  * @param {string} url - 要复制的URL
  */
-async function copyUrlToClipboard(url) {
+async function copyUrlToClipboard(url, evt) {
   try {
     await navigator.clipboard.writeText(url);
 
     // 显示复制成功提示
-    const button = event.target.closest(".action-btn");
+    const button = evt && evt.target ? evt.target.closest(".action-btn") : null;
+    if (!button) return;
     const originalText = button.innerHTML;
     button.innerHTML = '<i class="fas fa-check"></i> 已复制!';
     button.style.background = "#28a745";

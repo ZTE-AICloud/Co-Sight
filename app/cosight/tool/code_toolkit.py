@@ -16,6 +16,7 @@
 import shlex
 import sys
 import threading
+import functools
 from functools import partial
 from typing import List, Literal, Optional, Union
 from app.cosight.tool.interpreters.internal_python_interpreter import InternalPythonInterpreter

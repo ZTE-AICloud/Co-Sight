@@ -742,6 +742,7 @@ Keep facts, data, file paths. Remove redundancy. Output summary only:"""
 
     def check_and_fix_tool_call_params(self, response):
         if response.choices[0].message.tool_calls:
+            original_arguments = response.choices[0].message.tool_calls[0].function.arguments
             for attempt in range(3):
                 try:
                     tool_call = response.choices[0].message.tool_calls[0].function
@@ -763,9 +764,9 @@ Keep facts, data, file paths. Remove redundancy. Output summary only:"""
                     except Exception as fix_error:
                         logger.error(f"Failed to fix tool call arguments on attempt {attempt + 1}: {fix_error}")
                         if attempt == 2:  # 最后一次尝试
-                            # 如果修复失败，使用默认的空JSON对象
-                            tool_call.arguments = "{}"
-                            logger.warning("Using empty JSON object as fallback for tool call arguments")
+                            # Keep the original payload so tool execution can still recover single-arg tools.
+                            tool_call.arguments = original_arguments
+                            logger.warning("Keeping original malformed tool arguments for executor-side recovery")
                             break
 
     @time_record

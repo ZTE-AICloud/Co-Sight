@@ -23,6 +23,40 @@ from bs4 import BeautifulSoup
 from app.common.logger_util import logger
 
 
+INVALID_CONTENT_PATTERNS = (
+    "please click here if not redirected",
+    "verify you are human",
+    "just a moment",
+    "enable javascript and cookies",
+    "checking your browser",
+    "403 forbidden",
+    "404 not found",
+    "access denied",
+    "百度安全验证",
+)
+
+
+def _looks_like_invalid_content(text: str, website_url: str = "") -> str | None:
+    if not isinstance(text, str):
+        return "empty or non-text response"
+
+    normalized_text = re.sub(r"\s+", " ", text).strip()
+    lowered_text = normalized_text.lower()
+    lowered_url = (website_url or "").lower()
+
+    if not normalized_text:
+        return "empty response"
+
+    for pattern in INVALID_CONTENT_PATTERNS:
+        if pattern.lower() in lowered_text:
+            return f"blocked or invalid page content matched: {pattern}"
+
+    if "google." in lowered_url and "/search" in lowered_url:
+        return "Google search result pages are not valid fetched source content"
+
+    return None
+
+
 class ScrapeWebsiteTool:
     name: str = "Read website content"
     description: str = "A tool that can be used to read a website content."
@@ -55,26 +89,65 @@ class ScrapeWebsiteTool:
             "Upgrade-Insecure-Requests": "1",
         }
 
+    def _fetch_text(
+            self,
+            website_url: str,
+    ) -> str:
+        try:
+            page = requests.get(
+                website_url,
+                timeout=15,
+                verify=False,
+                headers=self.headers,
+                cookies=self.cookies if self.cookies else {},
+                proxies=self.proxies
+            )
+            if page.status_code >= 400:
+                logger.warning(
+                    f"fetch_website_content HTTP {page.status_code} for {website_url}"
+                )
+                return f"fetch_website_content error: HTTP status {page.status_code} for {website_url}"
+
+            page.encoding = page.apparent_encoding
+            parsed = BeautifulSoup(page.text, "html.parser")
+
+            text = parsed.get_text(" ")
+            text = re.sub("[ \t]+", " ", text)
+            text = re.sub("\\s+\n\\s+", "\n", text)
+            invalid_reason = _looks_like_invalid_content(text, website_url)
+            if invalid_reason:
+                logger.warning(
+                    f"fetch_website_content invalid content for {website_url}: {invalid_reason}"
+                )
+                return f"fetch_website_content error: {invalid_reason}"
+            return text
+        except requests.exceptions.ReadTimeout as e:
+            logger.warning(f"fetch_website_content timeout for {website_url}: {e}")
+            return f"fetch_website_content error: {e}"
+        except requests.exceptions.Timeout as e:
+            logger.warning(f"fetch_website_content timeout for {website_url}: {e}")
+            return f"fetch_website_content error: {e}"
+        except requests.exceptions.ConnectionError as e:
+            logger.warning(f"fetch_website_content connection failed for {website_url}: {e}")
+            return f"fetch_website_content error: {e}"
+        except requests.exceptions.SSLError as e:
+            logger.warning(f"fetch_website_content SSL error for {website_url}: {e}")
+            return f"fetch_website_content error: {e}"
+        except requests.exceptions.TooManyRedirects as e:
+            logger.warning(f"fetch_website_content too many redirects for {website_url}: {e}")
+            return f"fetch_website_content error: {e}"
+        except requests.exceptions.RequestException as e:
+            logger.warning(f"fetch_website_content request failed for {website_url}: {e}")
+            return f"fetch_website_content error: {e}"
+        except Exception as e:
+            logger.error(f"fetch_website_content unexpected error {str(e)}", exc_info=True)
+            return f"fetch_website_content error: {e}"
+
     async def _run(
             self,
             website_url: str,
     ) -> Any:
-        page = requests.get(
-            website_url,
-            timeout=15,
-            verify=False,
-            headers=self.headers,
-            cookies=self.cookies if self.cookies else {},
-            proxies=self.proxies
-        )
-
-        page.encoding = page.apparent_encoding
-        parsed = BeautifulSoup(page.text, "html.parser")
-
-        text = parsed.get_text(" ")
-        text = re.sub("[ \t]+", " ", text)
-        text = re.sub("\\s+\n\\s+", "\n", text)
-        return text
+        return await asyncio.to_thread(self._fetch_text, website_url)
 
 
 def fetch_website_content(website_url):
@@ -90,16 +163,7 @@ def fetch_website_content(website_url):
         # 对于普通网页，使用原有的抓取逻辑
         scrapeWebsiteTool = ScrapeWebsiteTool(website_url)
         logger.info(f'starting fetch {website_url} Content')
-        # 检查是否在事件循环中
-        try:
-            loop = asyncio.get_running_loop()
-            # 如果已经在事件循环中，创建新任务
-            task = loop.create_task(scrapeWebsiteTool._run(website_url))
-            return loop.run_until_complete(task)
-        except RuntimeError:
-            # 如果没有事件循环，创建新的
-            loop = asyncio.new_event_loop()
-            return loop.run_until_complete(scrapeWebsiteTool._run(website_url))
+        return scrapeWebsiteTool._fetch_text(website_url)
     except Exception as e:
         logger.error(f"fetch_website_content error {str(e)}", exc_info=True)
         # 确保返回的是字符串而不是协程

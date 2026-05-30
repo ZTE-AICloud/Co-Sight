@@ -7,6 +7,245 @@ class MessageService {
 
         // 恢复本地存储的step tool events
         this.restoreStepToolEvents();
+
+        this._chatTasks = new Map();
+        this._chatTaskOrder = [];
+    }
+
+    _ensureChatElements() {
+        try {
+            const feed = document.getElementById('chat-message-feed');
+            const list = document.getElementById('chat-task-list');
+            if (!feed || !list) return null;
+            return { feed, list };
+        } catch (_) {
+            return null;
+        }
+    }
+
+    _formatTime(ts) {
+        try {
+            const d = new Date(ts);
+            const hh = String(d.getHours()).padStart(2, '0');
+            const mm = String(d.getMinutes()).padStart(2, '0');
+            const ss = String(d.getSeconds()).padStart(2, '0');
+            return `${hh}:${mm}:${ss}`;
+        } catch (_) {
+            return '';
+        }
+    }
+
+    _isWorkspaceDirectoryPath(p) {
+        if (!p || typeof p !== 'string') return false;
+        const unified = p.replace(/\\/g, '/').replace(/[?#].*$/, '').replace(/\/+$/, '');
+        const name = unified.split('/').pop() || '';
+        return name.startsWith('work_space_') && !name.includes('.');
+    }
+
+    _extractText(initData) {
+        try {
+            if (typeof initData === 'string') return initData;
+            if (Array.isArray(initData)) {
+                const texts = initData
+                    .filter(it => it && (it.type === 'text' || typeof it.value === 'string'))
+                    .map(it => typeof it === 'string' ? it : (it.value != null ? String(it.value) : ''))
+                    .filter(Boolean);
+                if (texts.length > 0) return texts.join('\n');
+            }
+            if (initData && typeof initData === 'object') return JSON.stringify(initData);
+        } catch (_) {}
+        return '';
+    }
+
+    _registerTask(topic, planId, title) {
+        const els = this._ensureChatElements();
+        if (!els) return;
+
+        if (!topic) return;
+        if (this._chatTasks.has(topic)) return;
+
+        const startedAt = Date.now();
+        const task = {
+            topic,
+            planId: planId || '',
+            title: title || '',
+            status: 'running',
+            startedAt,
+            rounds: []
+        };
+        this._chatTasks.set(topic, task);
+        this._chatTaskOrder.push(topic);
+
+        const details = document.createElement('details');
+        details.className = 'task-item';
+        details.open = false;
+        details.dataset.topic = topic;
+
+        const summary = document.createElement('summary');
+        const left = document.createElement('div');
+        left.textContent = title ? title : `任务 ${this._chatTaskOrder.length}`;
+        const meta = document.createElement('div');
+        meta.className = 'task-summary-meta';
+        const planSpan = document.createElement('span');
+        planSpan.textContent = planId ? planId : topic;
+        planSpan.title = planSpan.textContent;
+        const status = document.createElement('span');
+        status.className = 'task-status running';
+        status.textContent = '进行中';
+        meta.appendChild(planSpan);
+        meta.appendChild(status);
+        summary.appendChild(left);
+        summary.appendChild(meta);
+
+        const rounds = document.createElement('div');
+        rounds.className = 'task-rounds';
+
+        details.appendChild(summary);
+        details.appendChild(rounds);
+        els.list.prepend(details);
+    }
+
+    _setTaskStatus(topic, status) {
+        try {
+            const task = this._chatTasks.get(topic);
+            if (task) task.status = status;
+            const els = this._ensureChatElements();
+            if (!els) return;
+            const details = els.list.querySelector(`details.task-item[data-topic="${topic}"]`);
+            if (!details) return;
+            const statusEl = details.querySelector('.task-status');
+            if (!statusEl) return;
+
+            statusEl.classList.remove('running', 'success', 'failed', 'timeout');
+            if (status === 'success') {
+                statusEl.classList.add('success');
+                statusEl.textContent = '成功';
+            } else if (status === 'failed') {
+                statusEl.classList.add('failed');
+                statusEl.textContent = '失败';
+            } else if (status === 'timeout') {
+                statusEl.classList.add('timeout');
+                statusEl.textContent = '超时';
+            } else {
+                statusEl.classList.add('running');
+                statusEl.textContent = '进行中';
+            }
+        } catch (_) {}
+    }
+
+    _appendTaskRound(topic, payload) {
+        const els = this._ensureChatElements();
+        if (!els) return;
+        const details = els.list.querySelector(`details.task-item[data-topic="${topic}"]`);
+        if (!details) return;
+        const rounds = details.querySelector('.task-rounds');
+        if (!rounds) return;
+
+        const roundEl = document.createElement('div');
+        roundEl.className = 'task-round';
+
+        const header = document.createElement('div');
+        header.className = 'task-round-header';
+        const title = document.createElement('div');
+        title.textContent = payload.title || '工具调用';
+        const status = document.createElement('span');
+        status.className = `task-status ${payload.statusClass || 'running'}`;
+        status.textContent = payload.statusText || '进行中';
+        header.appendChild(title);
+        header.appendChild(status);
+
+        const body = document.createElement('div');
+        body.className = 'task-round-body';
+        body.textContent = payload.body || '';
+
+        roundEl.appendChild(header);
+        roundEl.appendChild(body);
+        rounds.prepend(roundEl);
+    }
+
+    _appendChatBubble(topic, from, text, ts) {
+        const els = this._ensureChatElements();
+        if (!els) return;
+        if (!text) return;
+        const bubble = document.createElement('div');
+        bubble.className = `chat-bubble ${from === 'human' ? 'human' : 'ai'}`;
+
+        const meta = document.createElement('div');
+        meta.className = 'chat-bubble-meta';
+        const who = document.createElement('span');
+        who.textContent = from === 'human' ? '用户' : '模型';
+        const time = document.createElement('span');
+        time.textContent = this._formatTime(ts || Date.now());
+        meta.appendChild(who);
+        meta.appendChild(time);
+
+        const body = document.createElement('div');
+        body.className = 'chat-bubble-text';
+        body.textContent = text;
+
+        bubble.appendChild(meta);
+        bubble.appendChild(body);
+        els.feed.appendChild(bubble);
+        els.feed.scrollTop = els.feed.scrollHeight;
+    }
+
+    chatMessageWebsocketPlaceholder(messageData) {
+        try {
+            const topic = messageData?.topic;
+            const data = messageData?.data;
+            if (!data) return;
+
+            const messageType = data?.contentType || data?.type;
+            if (messageType === 'control-status-message') {
+                const statusValue = data?.initData?.status || data?.status;
+                if (topic) {
+                    if (statusValue === 'finished_successfully') {
+                        this._setTaskStatus(topic, 'success');
+                    } else if (statusValue === 'finished_with_warning') {
+                        this._setTaskStatus(topic, 'failed');
+                    } else {
+                        this._setTaskStatus(topic, 'running');
+                    }
+                }
+                return;
+            }
+
+            if (messageType === 'lui-message-tool-event') {
+                return;
+            }
+
+            if (messageType === 'lui-message-credibility-analysis') {
+                return;
+            }
+
+            if (messageType === 'lui-message-manus-step') {
+                const initData = data?.content || data?.initData;
+                const title = initData?.title;
+                if (topic && title) {
+                    const task = this._chatTasks.get(topic);
+                    if (task && !task.title) {
+                        task.title = title;
+                        const els = this._ensureChatElements();
+                        if (els) {
+                            const details = els.list.querySelector(`details.task-item[data-topic="${topic}"]`);
+                            if (details) {
+                                const summaryTitle = details.querySelector('summary > div');
+                                if (summaryTitle) summaryTitle.textContent = title;
+                            }
+                        }
+                    }
+                }
+                return;
+            }
+
+            const from = data?.from;
+            if (from !== 'ai' && from !== 'human') return;
+            const initData = data?.initData || data?.content;
+            const text = this._extractText(initData);
+            if (text) {
+                this._appendChatBubble(topic, from, text, data?.timestamp);
+            }
+        } catch (_) {}
     }
 
     receiveMessage(message) {
@@ -15,6 +254,8 @@ class MessageService {
         try {
             // 解析消息
             const messageData = typeof message === 'string' ? JSON.parse(message) : message;
+
+            this.chatMessageWebsocketPlaceholder(messageData);
 
             // 首次收到该topic的任意消息则清除stillPending标记
             try {
@@ -157,6 +398,42 @@ class MessageService {
         
         console.log(`处理tool event: ${eventType}, step: ${stepIndex}, tool: ${toolEventData.tool_name}`);
         console.log('完整的toolEventData:', toolEventData);
+
+        try {
+            const topic = messageData?.topic;
+            if (topic) {
+                const toolName = toolEventData.tool_name || 'unknown_tool';
+                const thought = toolEventData.thought || toolEventData.reasoning || '';
+                const argsText = toolEventData.tool_args || '';
+                const resultText = toolEventData.processed_result || toolEventData.raw_result || '';
+
+                let statusClass = 'running';
+                let statusText = '进行中';
+                if (eventType === 'tool_complete') {
+                    statusClass = 'success';
+                    statusText = '成功';
+                } else if (eventType === 'tool_error') {
+                    statusClass = 'failed';
+                    statusText = '失败';
+                }
+
+                const bodyParts = [];
+                bodyParts.push(`step: ${stepIndex}`);
+                bodyParts.push(`tool: ${toolName}`);
+                if (thought) bodyParts.push(`thought: ${typeof thought === 'string' ? thought : JSON.stringify(thought)}`);
+                if (argsText) bodyParts.push(`args: ${typeof argsText === 'string' ? argsText : JSON.stringify(argsText)}`);
+                if (resultText && eventType !== 'tool_start') {
+                    bodyParts.push(`result: ${typeof resultText === 'string' ? resultText : JSON.stringify(resultText)}`);
+                }
+
+                this._appendTaskRound(topic, {
+                    title: toolName,
+                    statusClass,
+                    statusText,
+                    body: bodyParts.join('\n')
+                });
+            }
+        } catch (_) {}
         
         // 特殊处理 mark_step 工具事件，更新节点的 step_notes
         if (toolEventData.tool_name === 'mark_step' && eventType === 'tool_complete') {
@@ -381,7 +658,12 @@ class MessageService {
         // 处理网页抓取工具，提取URL
         if (['fetch_website_content', 'fetch_website_content_with_images', 'fetch_website_images_only'].includes(toolCallRecord.tool_name)) {
             const processedResult = toolCallRecord.tool_result;
-            if (processedResult && processedResult.url) {
+            if (
+                processedResult &&
+                processedResult.url &&
+                processedResult.is_success !== false &&
+                processedResult.is_previewable !== false
+            ) {
                 url = processedResult.url;
             }
         }
@@ -403,9 +685,9 @@ class MessageService {
                         filePath = buildApiWorkspacePath(args.file_path);
                     }
                 }
-                
+
                 if (filePath) {
-                    path = filePath;
+                    path = buildApiWorkspacePath(filePath);
                     const filename = extractFileName(filePath);
                     if (filename) {
                         descriptionOverride = (window.I18nService ? `${window.I18nService.t('info_saved_to')}${filename}` : `信息保存到:${filename}`);
@@ -427,7 +709,11 @@ class MessageService {
                     const args = JSON.parse(toolCallRecord.tool_args || '{}');
                     filePath = args.file || args.path || null;
                 }
-                if (filePath) {
+                if (
+                    filePath &&
+                    !(processed && (processed.is_previewable === false || processed.is_success === false)) &&
+                    !this._isWorkspaceDirectoryPath(filePath)
+                ) {
                     path = buildApiWorkspacePath(filePath);
                 }
             } catch (e) {
@@ -449,8 +735,18 @@ class MessageService {
         }
         
         // 结果文本
+        let finalStatus = toolCallRecord.status;
+        if (
+            finalStatus === 'completed' &&
+            toolCallRecord.tool_result &&
+            typeof toolCallRecord.tool_result === 'object' &&
+            toolCallRecord.tool_result.is_success === false
+        ) {
+            finalStatus = 'failed';
+        }
+
         let resultText = '';
-        if (toolCallRecord.status === 'running') {
+        if (finalStatus === 'running') {
             // 运行中状态的描述
             resultText = toolCallRecord.start_event?.status_text || (window.I18nService ? window.I18nService.t('running') : '正在执行中...');
         } else if (toolCallRecord.tool_result) {
@@ -472,8 +768,16 @@ class MessageService {
         // 处理网页抓取类工具：从参数或结果中提取原始 website_url，用于在右侧 iframe 中直接打开
         if (['fetch_website_content', 'fetch_website_content_with_images', 'fetch_website_images_only'].includes(toolCallRecord.tool_name)) {
             try {
+                const websiteResultIsPreviewable = !(
+                    toolCallRecord.tool_result &&
+                    typeof toolCallRecord.tool_result === 'object' &&
+                    (
+                        toolCallRecord.tool_result.is_success === false ||
+                        toolCallRecord.tool_result.is_previewable === false
+                    )
+                );
                 // 优先从 tool_args 中解析 website_url
-                if (!url && toolCallRecord.tool_args) {
+                if (!url && websiteResultIsPreviewable && toolCallRecord.tool_args) {
                     try {
                         const args = JSON.parse(toolCallRecord.tool_args || '{}');
                         url = args.website_url || args.url || url;
@@ -482,7 +786,14 @@ class MessageService {
                     }
                 }
                 // 再从结构化结果中兜底提取 url（with_images / images_only 会返回 dict，包含 url 字段）
-                if (!url && toolCallRecord.tool_result && typeof toolCallRecord.tool_result === 'object') {
+                if (
+                    !url &&
+                    websiteResultIsPreviewable &&
+                    toolCallRecord.tool_result &&
+                    typeof toolCallRecord.tool_result === 'object' &&
+                    toolCallRecord.tool_result.is_success !== false &&
+                    toolCallRecord.tool_result.is_previewable !== false
+                ) {
                     url = toolCallRecord.tool_result.url || toolCallRecord.tool_result.website_url || url;
                 }
             } catch (e) {
@@ -492,11 +803,11 @@ class MessageService {
 
         // 根据状态生成合适的描述
         let statusDescription = '';
-        if (toolCallRecord.status === 'running') {
+        if (finalStatus === 'running') {
             statusDescription = (window.I18nService ? `${window.I18nService.t('executing')}${getToolDisplayName(toolCallRecord.tool_name)}` : `正在执行: ${getToolDisplayName(toolCallRecord.tool_name)}`);
-        } else if (toolCallRecord.status === 'completed') {
+        } else if (finalStatus === 'completed') {
             statusDescription = (window.I18nService ? `${window.I18nService.t('execution_completed')}${getToolDisplayName(toolCallRecord.tool_name)}` : `执行完成: ${getToolDisplayName(toolCallRecord.tool_name)}`);
-        } else if (toolCallRecord.status === 'failed') {
+        } else if (finalStatus === 'failed') {
             statusDescription = (window.I18nService ? `${window.I18nService.t('execution_failed')}${getToolDisplayName(toolCallRecord.tool_name)}` : `执行失败: ${getToolDisplayName(toolCallRecord.tool_name)}`);
         } else {
             statusDescription = (window.I18nService ? `${window.I18nService.t('execute_tool')}${getToolDisplayName(toolCallRecord.tool_name)}` : `执行工具: ${getToolDisplayName(toolCallRecord.tool_name)}`);
@@ -509,11 +820,11 @@ class MessageService {
             tool: toolCallRecord.tool_name,
             toolName: getToolDisplayName(toolCallRecord.tool_name),
             description: descriptionOverride || statusDescription,
-            status: toolCallRecord.status,
+            status: finalStatus,
             startTime: Date.now() - (toolCallRecord.duration || 0) * 1000,
-            endTime: toolCallRecord.status === 'running' ? null : Date.now(),
+            endTime: finalStatus === 'running' ? null : Date.now(),
             result: resultText,
-            error: toolCallRecord.status === 'failed' ? (window.I18nService ? window.I18nService.t('tool_execution_failed') : '工具执行失败') : null,
+            error: finalStatus === 'failed' ? (window.I18nService ? window.I18nService.t('tool_execution_failed') : '工具执行失败') : null,
             url: url,
             path: path,
             timestamp: toolCallRecord.timestamp,
@@ -643,6 +954,7 @@ class MessageService {
 
         // 生成并复用稳定的 planId 作为 messageSerialNumber
         const planId = this.ensurePlanIdForTopic(topic);
+        this._registerTask(topic, planId, content);
 
         const message = {
             uuid: WebSocketService.generateUUID(),
@@ -770,6 +1082,7 @@ class MessageService {
             // 生成新的 topic 用于订阅这次回放
             const topic = WebSocketService.generateUUID();
             WebSocketService.subscribe(topic, this.receiveMessage.bind(this));
+            this._registerTask(topic, replayPlanId, '[Replay]');
 
             const message = {
                 uuid: WebSocketService.generateUUID(),

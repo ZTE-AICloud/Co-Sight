@@ -28,6 +28,22 @@ class FileToolkit:
     def __init__(self, work_space_path: str = None):
         self.work_space_path = work_space_path if work_space_path else os.environ.get("WORKSPACE_PATH") or os.getcwd()
 
+    def _format_directory_entries(self, directory_path: str, limit: int = 20) -> str:
+        try:
+            entries = sorted(os.listdir(directory_path))
+        except Exception as e:
+            logger.error(f"Error listing directory {directory_path}: {str(e)}", exc_info=True)
+            return f"Directory entries could not be listed: {str(e)}"
+
+        if not entries:
+            return "Directory is empty."
+
+        preview = entries[:limit]
+        lines = [f"  - {entry}" for entry in preview]
+        if len(entries) > limit:
+            lines.append(f"  ... and {len(entries) - limit} more entries")
+        return "Directory entries:\n" + "\n".join(lines)
+
     def file_saver(self, content: str | bytes, file_path: str, mode: str = "a", binary: bool = False) -> str:
         r"""Save content to a file at the specified path. Supports both text and binary files. Default mode is append to preserve existing content.
 
@@ -92,7 +108,7 @@ class FileToolkit:
         r"""Read file content. Supports both text and binary files.
 
         Args:
-            file (str): Absolute path of the file to read. The file must be in workspace.
+            file (str): Absolute path of the concrete file to read. The file must be in workspace.
             start_line (int, optional): Starting line to read from, 0-based (text files only)
             end_line (int, optional): Ending line number (exclusive, text files only)
             sudo (bool, optional): Whether to use sudo privileges
@@ -111,7 +127,17 @@ class FileToolkit:
 
             # Verify file exists
             if not os.path.exists(absolute_path):
-                return f"Error: File not found at {absolute_path}"
+                return f"Error: 文件不存在: {absolute_path}"
+
+            if os.path.isdir(absolute_path):
+                directory_entries = self._format_directory_entries(absolute_path)
+                return (
+                    f"Error: 目标是目录，请指定具体文件路径: {absolute_path}\n"
+                    f"{directory_entries}"
+                )
+
+            if not os.path.isfile(absolute_path):
+                return f"Error: 目标不是普通文件，请指定具体文件路径: {absolute_path}"
 
             # Read file content
             with open(absolute_path, 'rb' if binary else 'r', encoding=None if binary else 'utf-8') as f:

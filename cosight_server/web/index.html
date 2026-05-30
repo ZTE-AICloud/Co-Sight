@@ -13,13 +13,6 @@
 
     <link rel="stylesheet" href="styles/styles.css">
     <link rel="stylesheet" href="styles/md.css">
-    
-    <!-- 页面刷新时清空localStorage -->
-    <script>
-        // 页面刷新时清空localStorage中的所有内容
-        localStorage.clear();
-        console.log('页面刷新，已清空localStorage');
-    </script>
 </head>
 
 <body>
@@ -87,8 +80,40 @@
                     </div>
                 </div>
 
-                <div class="dag-container">
-                    <div class="controls" style="display: none;">
+                <div class="chat-message" id="chat-message">
+                    <!-- 独立的打开/隐藏按钮，放在外层div上 -->
+                    <button class="chat-action-btn" id="toggle-dag-btn-outer" onclick="toggleDagContainer()" style="position: absolute; right: 16px; top: 16px; z-index: 1300;">
+                        <i class="fas fa-diagram-project"></i>
+                        <span>隐藏流程</span>
+                    </button>
+
+                    <div class="chat-message-header" id="chat-message-header" style="display: none;">
+                        <div class="chat-message-title">
+                            <i class="fas fa-comments"></i>
+                            <span>模型回显</span>
+                        </div>
+                        <div class="chat-message-actions">
+                            <button class="chat-action-btn" id="toggle-task-list-btn" onclick="toggleTaskListPanel()">
+                                <i class="fas fa-list"></i>
+                                <span>任务</span>
+                            </button>
+                            <!-- 原有的 toggle-dag-btn 被移除或保留但不用 -->
+                        </div>
+                    </div>
+                    <div class="chat-message-feed" id="chat-message-feed" style="display: none;"></div>
+                    <div class="chat-task-panel collapsed" id="chat-task-panel" style="display: none;">
+                        <div class="chat-task-panel-header" onclick="toggleTaskListPanel()">
+                            <div class="chat-task-panel-title">
+                                <i class="fas fa-folder-open"></i>
+                                <span>任务列表</span>
+                            </div>
+                            <i class="fas fa-chevron-down" id="chat-task-panel-arrow"></i>
+                        </div>
+                        <div class="chat-task-panel-body" id="chat-task-list"></div>
+                    </div>
+
+                    <div class="dag-container" id="dag-container">
+                    <div class="controls">
                         <button class="btn" onclick="startSimulateWorkflow()">
                             <i class="fas fa-play-circle"></i> <span class="btn-text">开始运行</span>
                         </button>
@@ -160,6 +185,7 @@
                         <p id="step-description">点击上方的节点来查看该步骤的详细信息。</p>
                     </div>
                 </div>
+                </div>
             </div>
 
             <div class="right-container" id="right-container">
@@ -195,6 +221,11 @@
         </div>
     </div>
 
+    <div class="replay-overlay" id="replay-overlay" aria-hidden="true">
+        <div class="replay-overlay-panel">
+        </div>
+    </div>
+
     <div class="tooltip" id="tooltip"></div>
     <div class="steps-tooltip" id="steps-tooltip"></div>
     <div class="verification-tooltip" id="verification-tooltip"></div>
@@ -214,15 +245,61 @@
     <script>
         // 跳转到回放历史页面
         function goToReplayHistory() {
-            const targetPage = window.location.pathname.includes('/cosight/') 
-                ? 'replay.html' 
-                : '/cosight/replay.html';
-            window.location.href = targetPage;
+            const basePage = window.location.pathname.includes('/cosight/') 
+                ? 'replay.html?embedded=true' 
+                : '/cosight/replay.html?embedded=true';
+            const targetPage = `${basePage}&_ts=${Date.now()}`;
+            const overlay = document.getElementById('replay-overlay');
+            const panel = overlay ? overlay.querySelector('.replay-overlay-panel') : null;
+            if (!overlay || !panel) return;
+            const oldIframe = document.getElementById('replay-overlay-iframe');
+            if (oldIframe) {
+                oldIframe.remove();
+            }
+            overlay.classList.remove('show');
+            const iframe = document.createElement('iframe');
+            iframe.id = 'replay-overlay-iframe';
+            iframe.title = '任务回放历史';
+            iframe.frameBorder = '0';
+            iframe.src = targetPage;
+            panel.appendChild(iframe);
+            overlay.classList.add('show');
+            overlay.setAttribute('aria-hidden', 'false');
         }
+
+        function closeReplayOverlay() {
+            const overlay = document.getElementById('replay-overlay');
+            const iframe = document.getElementById('replay-overlay-iframe');
+            if (!overlay) return;
+            overlay.classList.remove('show');
+            overlay.setAttribute('aria-hidden', 'true');
+            if (iframe) {
+                iframe.remove();
+            }
+        }
+
+        window.addEventListener('message', (event) => {
+            if (event.origin !== window.location.origin) return;
+            if (event.data && event.data.type === 'cosight:closeReplayOverlay') {
+                closeReplayOverlay();
+            }
+        });
+
+        window.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                const overlay = document.getElementById('replay-overlay');
+                if (overlay && overlay.classList.contains('show')) {
+                    closeReplayOverlay();
+                }
+            }
+        });
     </script>
     <script>
         (function restoreFromStorage() {
             try {
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.get('replay') === 'true') return;
+
                 const raw = localStorage.getItem('cosight:lastManusStep');
                 const pendingRaw = localStorage.getItem('cosight:pendingRequests');
                 const pendings = pendingRaw ? JSON.parse(pendingRaw) : {};

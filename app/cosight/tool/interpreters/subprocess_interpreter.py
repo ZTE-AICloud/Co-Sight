@@ -106,7 +106,7 @@ class SubprocessInterpreter(BaseInterpreter):
 
             import astor
 
-            with open(file, 'r') as f:
+            with open(file, 'r', encoding="utf-8") as f:
                 source = f.read()
 
             # Parse the source code
@@ -258,7 +258,7 @@ class SubprocessInterpreter(BaseInterpreter):
 
     def _create_temp_file(self, code: str, extension: str) -> Path:
         with tempfile.NamedTemporaryFile(
-            mode="w", delete=False, suffix=f".{extension}"
+            mode="w", delete=False, suffix=f".{extension}", encoding="utf-8"
         ) as f:
             f.write(code)
             name = f.name
