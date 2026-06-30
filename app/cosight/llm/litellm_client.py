@@ -40,6 +40,10 @@ class _Completions:
         if self._api_base:
             kwargs.setdefault("api_base", self._api_base)
 
+        extra_body = kwargs.pop("extra_body", None)
+        if extra_body and "thinking" in extra_body:
+            kwargs["thinking"] = extra_body["thinking"]
+
         return litellm.completion(**kwargs)
 
 
