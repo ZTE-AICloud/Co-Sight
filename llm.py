@@ -36,38 +36,47 @@ else:
 
 
 def set_model(model_config: dict[str, Optional[str | int | float]]):
-    # 从环境变量读取超时配置（秒），默认180秒（3分钟）
-    timeout_seconds = float(os.environ.get("LLM_TIMEOUT", "180"))
-    
-    http_client_kwargs = {
-        "headers": {
-            'Content-Type': 'application/json',
-            'Authorization': model_config['api_key']
-        },
-        "verify": False,
-        "trust_env": False,
-        "timeout": httpx.Timeout(
-            connect=30.0,        # 连接超时：30秒
-            read=timeout_seconds,    # 读取超时：可配置，默认180秒
-            write=30.0,          # 写入超时：30秒
-            pool=10.0            # 连接池超时：10秒
+    provider = model_config.get('provider', 'openai')
+
+    if provider == 'litellm':
+        from app.cosight.llm.litellm_client import LiteLLMClient
+        llm_client = LiteLLMClient(
+            api_key=model_config['api_key'],
+            api_base=model_config['base_url'],
         )
-    }
+    else:
+        # 从环境变量读取超时配置（秒），默认180秒（3分钟）
+        timeout_seconds = float(os.environ.get("LLM_TIMEOUT", "180"))
 
-    if model_config['proxy']:
-        http_client_kwargs["proxy"] = model_config['proxy']
+        http_client_kwargs = {
+            "headers": {
+                'Content-Type': 'application/json',
+                'Authorization': model_config['api_key']
+            },
+            "verify": False,
+            "trust_env": False,
+            "timeout": httpx.Timeout(
+                connect=30.0,        # 连接超时：30秒
+                read=timeout_seconds,    # 读取超时：可配置，默认180秒
+                write=30.0,          # 写入超时：30秒
+                pool=10.0            # 连接池超时：10秒
+            )
+        }
 
-    openai_llm = OpenAI(
-        base_url=model_config['base_url'],
-        api_key=model_config['api_key'],
-        http_client=httpx.Client(**http_client_kwargs)
-    )
+        if model_config['proxy']:
+            http_client_kwargs["proxy"] = model_config['proxy']
+
+        llm_client = OpenAI(
+            base_url=model_config['base_url'],
+            api_key=model_config['api_key'],
+            http_client=httpx.Client(**http_client_kwargs)
+        )
 
     chat_llm_kwargs = {
         "model": model_config['model'],
         "base_url": model_config['base_url'],
         "api_key": model_config['api_key'],
-        "client": openai_llm
+        "client": llm_client
     }
 
     if model_config.get('max_tokens') is not None:

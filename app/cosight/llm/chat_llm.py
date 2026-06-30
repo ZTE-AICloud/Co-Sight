@@ -20,7 +20,7 @@ from typing import List, Dict, Any, Optional
 from contextvars import ContextVar
 
 from openai import OpenAI
-from openai.types.chat import ChatCompletion
+
 
 from app.agent_dispatcher.infrastructure.entity.exception.ZaeFrameworkException import ZaeFrameworkException
 from app.cosight.task.time_record_util import time_record
@@ -731,7 +731,7 @@ Keep facts, data, file paths. Remove redundancy. Output summary only:"""
                     raise ZaeFrameworkException(400, f"chat with LLM failed, please check LLM config. reason：{e}")
                 time.sleep(3)  # 增加等待时间，避免频繁重试
 
-        if response and isinstance(response, ChatCompletion):
+        if response and hasattr(response, 'choices') and response.choices:
             # 去除think标签
             content = response.choices[0].message.content
             if content is not None and '</think>' in content:

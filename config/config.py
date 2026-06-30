@@ -35,7 +35,8 @@ def get_model_config() -> dict[str, Optional[str | int | float | bool]]:
         "max_tokens": int(max_tokens) if max_tokens and max_tokens.strip() else None,
         "temperature": float(temperature) if temperature and temperature.strip() else None,
         "proxy": os.environ.get("PROXY"),
-        "thinking_mode": thinking_mode in ("1", "true", "yes", "enabled", "on")
+        "thinking_mode": thinking_mode in ("1", "true", "yes", "enabled", "on"),
+        "provider": os.environ.get("PROVIDER", "openai").strip().lower()
     }
 
 
@@ -54,6 +55,7 @@ def get_plan_model_config() -> dict[str, Optional[str | int | float | bool]]:
     temperature = os.environ.get("PLAN_TEMPERATURE")
     thinking_mode = os.environ.get("PLAN_THINKING_MODE", "").strip().lower()
 
+    provider = os.environ.get("PLAN_PROVIDER", "").strip().lower()
     return {
         "api_key": plan_api_key,
         "base_url": plan_base_url,
@@ -61,7 +63,8 @@ def get_plan_model_config() -> dict[str, Optional[str | int | float | bool]]:
         "max_tokens": int(max_tokens) if max_tokens and max_tokens.strip() else None,
         "temperature": float(temperature) if temperature and temperature.strip() else None,
         "proxy": os.environ.get("PLAN_PROXY"),
-        "thinking_mode": thinking_mode in ("1", "true", "yes", "enabled", "on") if thinking_mode else get_model_config().get("thinking_mode", False)
+        "thinking_mode": thinking_mode in ("1", "true", "yes", "enabled", "on") if thinking_mode else get_model_config().get("thinking_mode", False),
+        "provider": provider if provider else get_model_config().get("provider", "openai")
     }
 
 
@@ -80,6 +83,7 @@ def get_act_model_config() -> dict[str, Optional[str | int | float | bool]]:
     temperature = os.environ.get("ACT_TEMPERATURE")
     thinking_mode = os.environ.get("ACT_THINKING_MODE", "").strip().lower()
 
+    provider = os.environ.get("ACT_PROVIDER", "").strip().lower()
     return {
         "api_key": act_api_key,
         "base_url": act_base_url,
@@ -87,7 +91,8 @@ def get_act_model_config() -> dict[str, Optional[str | int | float | bool]]:
         "max_tokens": int(max_tokens) if max_tokens and max_tokens.strip() else None,
         "temperature": float(temperature) if temperature and temperature.strip() else None,
         "proxy": os.environ.get("ACT_PROXY"),
-        "thinking_mode": thinking_mode in ("1", "true", "yes", "enabled", "on") if thinking_mode else get_model_config().get("thinking_mode", False)
+        "thinking_mode": thinking_mode in ("1", "true", "yes", "enabled", "on") if thinking_mode else get_model_config().get("thinking_mode", False),
+        "provider": provider if provider else get_model_config().get("provider", "openai")
     }
 
 
@@ -106,6 +111,7 @@ def get_tool_model_config() -> dict[str, Optional[str | int | float | bool]]:
     temperature = os.environ.get("TOOL_TEMPERATURE")
     thinking_mode = os.environ.get("TOOL_THINKING_MODE", "").strip().lower()
 
+    provider = os.environ.get("TOOL_PROVIDER", "").strip().lower()
     return {
         "api_key": tool_api_key,
         "base_url": tool_base_url,
@@ -113,7 +119,8 @@ def get_tool_model_config() -> dict[str, Optional[str | int | float | bool]]:
         "max_tokens": int(max_tokens) if max_tokens and max_tokens.strip() else None,
         "temperature": float(temperature) if temperature and temperature.strip() else None,
         "proxy": os.environ.get("TOOL_PROXY"),
-        "thinking_mode": thinking_mode in ("1", "true", "yes", "enabled", "on") if thinking_mode else get_model_config().get("thinking_mode", False)
+        "thinking_mode": thinking_mode in ("1", "true", "yes", "enabled", "on") if thinking_mode else get_model_config().get("thinking_mode", False),
+        "provider": provider if provider else get_model_config().get("provider", "openai")
     }
 
 
@@ -132,6 +139,7 @@ def get_vision_model_config() -> dict[str, Optional[str | int | float | bool]]:
     temperature = os.environ.get("VISION_TEMPERATURE")
     thinking_mode = os.environ.get("VISION_THINKING_MODE", "").strip().lower()
 
+    provider = os.environ.get("VISION_PROVIDER", "").strip().lower()
     return {
         "api_key": vision_api_key,
         "base_url": vision_base_url,
@@ -139,7 +147,8 @@ def get_vision_model_config() -> dict[str, Optional[str | int | float | bool]]:
         "max_tokens": int(max_tokens) if max_tokens and max_tokens.strip() else None,
         "temperature": float(temperature) if temperature and temperature.strip() else None,
         "proxy": os.environ.get("VISION_PROXY"),
-        "thinking_mode": thinking_mode in ("1", "true", "yes", "enabled", "on") if thinking_mode else get_model_config().get("thinking_mode", False)
+        "thinking_mode": thinking_mode in ("1", "true", "yes", "enabled", "on") if thinking_mode else get_model_config().get("thinking_mode", False),
+        "provider": provider if provider else get_model_config().get("provider", "openai")
     }
 
 
@@ -158,6 +167,7 @@ def get_credibility_model_config() -> dict[str, Optional[str | int | float | boo
     temperature = os.environ.get("CREDIBILITY_TEMPERATURE")
     thinking_mode = os.environ.get("CREDIBILITY_THINKING_MODE", "").strip().lower()
 
+    provider = os.environ.get("CREDIBILITY_PROVIDER", "").strip().lower()
     return {
         "api_key": credibility_api_key,
         "base_url": credibility_base_url,
@@ -165,7 +175,8 @@ def get_credibility_model_config() -> dict[str, Optional[str | int | float | boo
         "max_tokens": int(max_tokens) if max_tokens and max_tokens.strip() else None,
         "temperature": float(temperature) if temperature and temperature.strip() else None,
         "proxy": os.environ.get("CREDIBILITY_PROXY"),
-        "thinking_mode": thinking_mode in ("1", "true", "yes", "enabled", "on") if thinking_mode else get_model_config().get("thinking_mode", False)
+        "thinking_mode": thinking_mode in ("1", "true", "yes", "enabled", "on") if thinking_mode else get_model_config().get("thinking_mode", False),
+        "provider": provider if provider else get_model_config().get("provider", "openai")
     }
 
 
@@ -184,6 +195,7 @@ def get_browser_model_config() -> dict[str, Optional[str | int | float | bool]]:
     temperature = os.environ.get("BROWSER_TEMPERATURE")
     thinking_mode = os.environ.get("BROWSER_THINKING_MODE", "").strip().lower()
 
+    provider = os.environ.get("BROWSER_PROVIDER", "").strip().lower()
     return {
         "api_key": browser_api_key,
         "base_url": browser_base_url,
@@ -191,7 +203,8 @@ def get_browser_model_config() -> dict[str, Optional[str | int | float | bool]]:
         "max_tokens": int(max_tokens) if max_tokens and max_tokens.strip() else None,
         "temperature": float(temperature) if temperature and temperature.strip() else None,
         "proxy": os.environ.get("BROWSER_PROXY"),
-        "thinking_mode": thinking_mode in ("1", "true", "yes", "enabled", "on") if thinking_mode else get_model_config().get("thinking_mode", False)
+        "thinking_mode": thinking_mode in ("1", "true", "yes", "enabled", "on") if thinking_mode else get_model_config().get("thinking_mode", False),
+        "provider": provider if provider else get_model_config().get("provider", "openai")
     }
 
 
