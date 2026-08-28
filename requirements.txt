@@ -11,7 +11,7 @@ ffmpeg-python==0.2.0
 baidusearch==1.0.3
 retry==0.9.2
 googlesearch-python==1.3.0
-browser-use==0.7.9
+browser-use==0.13.8
 xmltodict==0.14.2
 soundfile==0.13.1
 wikipedia==1.4.0

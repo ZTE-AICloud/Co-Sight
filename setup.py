@@ -37,7 +37,7 @@ setup(
                         "retry==0.9.2",
                         "loguru==0.7.3",
                         "googlesearch-python==1.3.0",
-                        "browser-use==0.1.41",
+                        "browser-use==0.13.8",
                         "xmltodict==0.14.2",
                         "soundfile==0.13.1",
                         "pysqlite3==0.5.4",
