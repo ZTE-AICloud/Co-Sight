@@ -1,5 +1,8 @@
 aiohttp==3.12.15
 fastapi==0.115.12
+# pydantic 必须 <2.12:mcp 1.18.0 依赖 pydantic._internal._typing_extra.eval_type_backport,
+# 该符号在 pydantic 2.12.0 被移除。不 pin 会导致 uv 装上 alpha/新版而触发 ImportError。
+pydantic>=2.11,<2.12
 bottle==0.13.2
 requests==2.32.3
 wheel==0.45.1
@@ -28,3 +31,14 @@ minify-html==0.16.4
 pdfplumber==0.11.0
 PyMuPDF==1.24.0
 langfuse==3.10.5
+# ---- 工具箱(toolkits)运行时依赖:task_actor_agent 顶层导入各 toolkit,缺这些会 ImportError ----
+nest-asyncio==1.6.0
+openpyxl==3.1.5
+tabulate==0.10.0
+fpdf2==2.8.7
+xls2xlsx==0.2.0
+pycryptodome==3.23.0
+wolframalpha==5.1.3
+langchain-core==1.4.8
+langchain-experimental==0.4.2
+langchain-community==0.4.2
