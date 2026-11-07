@@ -1,0 +1,252 @@
+diff --git a/node_modules/@antv/x6-vue-shape/es/teleport.d.ts b/node_modules/@antv/x6-vue-shape/es/teleport.d.ts
+index 6ef5ca8..4224e46 100644
+--- a/node_modules/@antv/x6-vue-shape/es/teleport.d.ts
++++ b/node_modules/@antv/x6-vue-shape/es/teleport.d.ts
+@@ -3,4 +3,7 @@ import { VueShape } from './node';
+ export declare function connect(id: string, component: any, container: HTMLDivElement, node: VueShape, graph: Graph): void;
+ export declare function disconnect(id: string): void;
+ export declare function isActive(): boolean;
+-export declare function getTeleport(): any;
++export declare function resetTeleportState(): void;
++export declare function resetActive(): void;
++export declare function resetItemComponets(): void;
++export declare function getTeleport(cb?: () => void): any;
+diff --git a/node_modules/@antv/x6-vue-shape/es/teleport.js b/node_modules/@antv/x6-vue-shape/es/teleport.js
+index 9c7e309..b0fb348 100644
+--- a/node_modules/@antv/x6-vue-shape/es/teleport.js
++++ b/node_modules/@antv/x6-vue-shape/es/teleport.js
+@@ -1,10 +1,12 @@
+-import { defineComponent, h, reactive, isVue3, Teleport, markRaw, Fragment } from 'vue-demi';
++import { defineComponent, h, reactive, isVue3, Teleport, markRaw, Fragment, onBeforeUnmount, } from 'vue-demi';
+ let active = false;
+ const items = reactive({});
+ export function connect(id, component, container, node, graph) {
+     if (active) {
+         items[id] = markRaw(defineComponent({
+-            render: () => h(Teleport, { to: container }, [h(component, { node, graph })]),
++            render: () => h(Teleport, { to: container }, [
++                h(component, { node, graph }),
++            ]),
+             provide: () => ({
+                 getNode: () => node,
+                 getGraph: () => graph,
+@@ -20,15 +22,32 @@ export function disconnect(id) {
+ export function isActive() {
+     return active;
+ }
+-export function getTeleport() {
++let itemComponets = null;
++export function resetTeleportState() {
++    Object.keys(items).forEach((id) => delete items[id]);
++}
++export function resetActive() {
++    active = false;
++}
++export function resetItemComponets() {
++    itemComponets = null;
++}
++export function getTeleport(cb = () => { }) {
+     if (!isVue3) {
+         throw new Error('teleport is only available in Vue3');
+     }
++    if (itemComponets && active) {
++        return null;
++    }
+     active = true;
+-    return defineComponent({
++    itemComponets = defineComponent({
+         setup() {
++            onBeforeUnmount(() => {
++                cb();
++            });
+             return () => h(Fragment, {}, Object.keys(items).map((id) => h(items[id])));
+         },
+     });
++    return itemComponets;
+ }
+ //# sourceMappingURL=teleport.js.map
+\ No newline at end of file
+diff --git a/node_modules/@antv/x6-vue-shape/es/teleport.js.map b/node_modules/@antv/x6-vue-shape/es/teleport.js.map
+index ae75168..9ace442 100644
+--- a/node_modules/@antv/x6-vue-shape/es/teleport.js.map
++++ b/node_modules/@antv/x6-vue-shape/es/teleport.js.map
+@@ -1 +1 @@
+-{"version":3,"file":"teleport.js","sourceRoot":"","sources":["../src/teleport.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,eAAe,EAAE,CAAC,EAAE,QAAQ,EAAE,MAAM,EAAE,QAAQ,EAAE,OAAO,EAAE,QAAQ,EAAE,MAAM,UAAU,CAAA;AAI5F,IAAI,MAAM,GAAG,KAAK,CAAA;AAClB,MAAM,KAAK,GAAG,QAAQ,CAAyB,EAAE,CAAC,CAAA;AAElD,MAAM,UAAU,OAAO,CACrB,EAAU,EACV,SAAc,EACd,SAAyB,EACzB,IAAc,EACd,KAAY;IAEZ,IAAI,MAAM,EAAE;QACV,KAAK,CAAC,EAAE,CAAC,GAAG,OAAO,CACjB,eAAe,CAAC;YACd,MAAM,EAAE,GAAG,EAAE,CAAC,CAAC,CAAC,QAAQ,EAAE,EAAE,EAAE,EAAE,SAAS,EAAS,EAAE,CAAC,CAAC,CAAC,SAAS,EAAE,EAAE,IAAI,EAAE,KAAK,EAAE,CAAC,CAAC,CAAC;YACpF,OAAO,EAAE,GAAG,EAAE,CAAC,CAAC;gBACd,OAAO,EAAE,GAAG,EAAE,CAAC,IAAI;gBACnB,QAAQ,EAAE,GAAG,EAAE,CAAC,KAAK;aACtB,CAAC;SACH,CAAC,CACH,CAAA;KACF;AACH,CAAC;AAED,MAAM,UAAU,UAAU,CAAC,EAAU;IACnC,IAAI,MAAM,EAAE;QACV,OAAO,KAAK,CAAC,EAAE,CAAC,CAAA;KACjB;AACH,CAAC;AAED,MAAM,UAAU,QAAQ;IACtB,OAAO,MAAM,CAAA;AACf,CAAC;AAED,MAAM,UAAU,WAAW;IACzB,IAAI,CAAC,MAAM,EAAE;QACX,MAAM,IAAI,KAAK,CAAC,oCAAoC,CAAC,CAAA;KACtD;IACD,MAAM,GAAG,IAAI,CAAA;IAEb,OAAO,eAAe,CAAC;QACrB,KAAK;YACH,OAAO,GAAG,EAAE,CACV,CAAC,CACC,QAAQ,EACR,EAAE,EACF,MAAM,CAAC,IAAI,CAAC,KAAK,CAAC,CAAC,GAAG,CAAC,CAAC,EAAE,EAAE,EAAE,CAAC,CAAC,CAAC,KAAK,CAAC,EAAE,CAAC,CAAC,CAAC,CAC7C,CAAA;QACL,CAAC;KACF,CAAC,CAAA;AACJ,CAAC"}
+\ No newline at end of file
++{"version":3,"file":"teleport.js","sourceRoot":"","sources":["../src/teleport.ts"],"names":[],"mappings":"AAAA,OAAO,EACL,eAAe,EACf,CAAC,EACD,QAAQ,EACR,MAAM,EACN,QAAQ,EACR,OAAO,EACP,QAAQ,EACR,eAAe,GAChB,MAAM,UAAU,CAAA;AAIjB,IAAI,MAAM,GAAG,KAAK,CAAA;AAClB,MAAM,KAAK,GAAG,QAAQ,CAAyB,EAAE,CAAC,CAAA;AAElD,MAAM,UAAU,OAAO,CACrB,EAAU,EACV,SAAc,EACd,SAAyB,EACzB,IAAc,EACd,KAAY;IAEZ,IAAI,MAAM,EAAE,CAAC;QACX,KAAK,CAAC,EAAE,CAAC,GAAG,OAAO,CACjB,eAAe,CAAC;YACd,MAAM,EAAE,GAAG,EAAE,CACX,CAAC,CAAC,QAAQ,EAAE,EAAE,EAAE,EAAE,SAAS,EAAS,EAAE;gBACpC,CAAC,CAAC,SAAS,EAAE,EAAE,IAAI,EAAE,KAAK,EAAE,CAAC;aAC9B,CAAC;YACJ,OAAO,EAAE,GAAG,EAAE,CAAC,CAAC;gBACd,OAAO,EAAE,GAAG,EAAE,CAAC,IAAI;gBACnB,QAAQ,EAAE,GAAG,EAAE,CAAC,KAAK;aACtB,CAAC;SACH,CAAC,CACH,CAAA;IACH,CAAC;AACH,CAAC;AAED,MAAM,UAAU,UAAU,CAAC,EAAU;IACnC,IAAI,MAAM,EAAE,CAAC;QACX,OAAO,KAAK,CAAC,EAAE,CAAC,CAAA;IAClB,CAAC;AACH,CAAC;AAED,MAAM,UAAU,QAAQ;IACtB,OAAO,MAAM,CAAA;AACf,CAAC;AAED,IAAI,aAAa,GAAQ,IAAI,CAAA;AAE7B,MAAM,UAAU,kBAAkB;IAChC,MAAM,CAAC,IAAI,CAAC,KAAK,CAAC,CAAC,OAAO,CAAC,CAAC,EAAE,EAAE,EAAE,CAAC,OAAO,KAAK,CAAC,EAAE,CAAC,CAAC,CAAA;AACtD,CAAC;AAED,MAAM,UAAU,WAAW;IACzB,MAAM,GAAG,KAAK,CAAA;AAChB,CAAC;AAED,MAAM,UAAU,kBAAkB;IAChC,aAAa,GAAG,IAAI,CAAA;AACtB,CAAC;AAED,MAAM,UAAU,WAAW,CAAC,KAAiB,GAAG,EAAE,GAAE,CAAC;IACnD,IAAI,CAAC,MAAM,EAAE,CAAC;QACZ,MAAM,IAAI,KAAK,CAAC,oCAAoC,CAAC,CAAA;IACvD,CAAC;IAED,IAAI,aAAa,IAAI,MAAM,EAAE,CAAC;QAC5B,OAAO,IAAI,CAAA;IACb,CAAC;IAED,MAAM,GAAG,IAAI,CAAA;IAEb,aAAa,GAAG,eAAe,CAAC;QAC9B,KAAK;YACH,eAAe,CAAC,GAAG,EAAE;gBACnB,EAAE,EAAE,CAAA;YACN,CAAC,CAAC,CAAA;YAEF,OAAO,GAAG,EAAE,CACV,CAAC,CACC,QAAQ,EACR,EAAE,EACF,MAAM,CAAC,IAAI,CAAC,KAAK,CAAC,CAAC,GAAG,CAAC,CAAC,EAAE,EAAE,EAAE,CAAC,CAAC,CAAC,KAAK,CAAC,EAAE,CAAC,CAAC,CAAC,CAC7C,CAAA;QACL,CAAC;KACF,CAAC,CAAA;IACF,OAAO,aAAa,CAAA;AACtB,CAAC"}
+\ No newline at end of file
+diff --git a/node_modules/@antv/x6-vue-shape/lib/teleport.d.ts b/node_modules/@antv/x6-vue-shape/lib/teleport.d.ts
+index 6ef5ca8..4224e46 100644
+--- a/node_modules/@antv/x6-vue-shape/lib/teleport.d.ts
++++ b/node_modules/@antv/x6-vue-shape/lib/teleport.d.ts
+@@ -3,4 +3,7 @@ import { VueShape } from './node';
+ export declare function connect(id: string, component: any, container: HTMLDivElement, node: VueShape, graph: Graph): void;
+ export declare function disconnect(id: string): void;
+ export declare function isActive(): boolean;
+-export declare function getTeleport(): any;
++export declare function resetTeleportState(): void;
++export declare function resetActive(): void;
++export declare function resetItemComponets(): void;
++export declare function getTeleport(cb?: () => void): any;
+diff --git a/node_modules/@antv/x6-vue-shape/lib/teleport.js b/node_modules/@antv/x6-vue-shape/lib/teleport.js
+index 0917c07..33251a6 100644
+--- a/node_modules/@antv/x6-vue-shape/lib/teleport.js
++++ b/node_modules/@antv/x6-vue-shape/lib/teleport.js
+@@ -1,13 +1,21 @@
+ "use strict";
+ Object.defineProperty(exports, "__esModule", { value: true });
+-exports.getTeleport = exports.isActive = exports.disconnect = exports.connect = void 0;
++exports.connect = connect;
++exports.disconnect = disconnect;
++exports.isActive = isActive;
++exports.resetTeleportState = resetTeleportState;
++exports.resetActive = resetActive;
++exports.resetItemComponets = resetItemComponets;
++exports.getTeleport = getTeleport;
+ const vue_demi_1 = require("vue-demi");
+ let active = false;
+ const items = (0, vue_demi_1.reactive)({});
+ function connect(id, component, container, node, graph) {
+     if (active) {
+         items[id] = (0, vue_demi_1.markRaw)((0, vue_demi_1.defineComponent)({
+-            render: () => (0, vue_demi_1.h)(vue_demi_1.Teleport, { to: container }, [(0, vue_demi_1.h)(component, { node, graph })]),
++            render: () => (0, vue_demi_1.h)(vue_demi_1.Teleport, { to: container }, [
++                (0, vue_demi_1.h)(component, { node, graph }),
++            ]),
+             provide: () => ({
+                 getNode: () => node,
+                 getGraph: () => graph,
+@@ -15,27 +23,40 @@ function connect(id, component, container, node, graph) {
+         }));
+     }
+ }
+-exports.connect = connect;
+ function disconnect(id) {
+     if (active) {
+         delete items[id];
+     }
+ }
+-exports.disconnect = disconnect;
+ function isActive() {
+     return active;
+ }
+-exports.isActive = isActive;
+-function getTeleport() {
++let itemComponets = null;
++function resetTeleportState() {
++    Object.keys(items).forEach((id) => delete items[id]);
++}
++function resetActive() {
++    active = false;
++}
++function resetItemComponets() {
++    itemComponets = null;
++}
++function getTeleport(cb = () => { }) {
+     if (!vue_demi_1.isVue3) {
+         throw new Error('teleport is only available in Vue3');
+     }
++    if (itemComponets && active) {
++        return null;
++    }
+     active = true;
+-    return (0, vue_demi_1.defineComponent)({
++    itemComponets = (0, vue_demi_1.defineComponent)({
+         setup() {
++            (0, vue_demi_1.onBeforeUnmount)(() => {
++                cb();
++            });
+             return () => (0, vue_demi_1.h)(vue_demi_1.Fragment, {}, Object.keys(items).map((id) => (0, vue_demi_1.h)(items[id])));
+         },
+     });
++    return itemComponets;
+ }
+-exports.getTeleport = getTeleport;
+ //# sourceMappingURL=teleport.js.map
+\ No newline at end of file
+diff --git a/node_modules/@antv/x6-vue-shape/lib/teleport.js.map b/node_modules/@antv/x6-vue-shape/lib/teleport.js.map
+index b8a891c..3312740 100644
+--- a/node_modules/@antv/x6-vue-shape/lib/teleport.js.map
++++ b/node_modules/@antv/x6-vue-shape/lib/teleport.js.map
+@@ -1 +1 @@
+-{"version":3,"file":"teleport.js","sourceRoot":"","sources":["../src/teleport.ts"],"names":[],"mappings":";;;AAAA,uCAA4F;AAI5F,IAAI,MAAM,GAAG,KAAK,CAAA;AAClB,MAAM,KAAK,GAAG,IAAA,mBAAQ,EAAyB,EAAE,CAAC,CAAA;AAElD,SAAgB,OAAO,CACrB,EAAU,EACV,SAAc,EACd,SAAyB,EACzB,IAAc,EACd,KAAY;IAEZ,IAAI,MAAM,EAAE;QACV,KAAK,CAAC,EAAE,CAAC,GAAG,IAAA,kBAAO,EACjB,IAAA,0BAAe,EAAC;YACd,MAAM,EAAE,GAAG,EAAE,CAAC,IAAA,YAAC,EAAC,mBAAQ,EAAE,EAAE,EAAE,EAAE,SAAS,EAAS,EAAE,CAAC,IAAA,YAAC,EAAC,SAAS,EAAE,EAAE,IAAI,EAAE,KAAK,EAAE,CAAC,CAAC,CAAC;YACpF,OAAO,EAAE,GAAG,EAAE,CAAC,CAAC;gBACd,OAAO,EAAE,GAAG,EAAE,CAAC,IAAI;gBACnB,QAAQ,EAAE,GAAG,EAAE,CAAC,KAAK;aACtB,CAAC;SACH,CAAC,CACH,CAAA;KACF;AACH,CAAC;AAlBD,0BAkBC;AAED,SAAgB,UAAU,CAAC,EAAU;IACnC,IAAI,MAAM,EAAE;QACV,OAAO,KAAK,CAAC,EAAE,CAAC,CAAA;KACjB;AACH,CAAC;AAJD,gCAIC;AAED,SAAgB,QAAQ;IACtB,OAAO,MAAM,CAAA;AACf,CAAC;AAFD,4BAEC;AAED,SAAgB,WAAW;IACzB,IAAI,CAAC,iBAAM,EAAE;QACX,MAAM,IAAI,KAAK,CAAC,oCAAoC,CAAC,CAAA;KACtD;IACD,MAAM,GAAG,IAAI,CAAA;IAEb,OAAO,IAAA,0BAAe,EAAC;QACrB,KAAK;YACH,OAAO,GAAG,EAAE,CACV,IAAA,YAAC,EACC,mBAAQ,EACR,EAAE,EACF,MAAM,CAAC,IAAI,CAAC,KAAK,CAAC,CAAC,GAAG,CAAC,CAAC,EAAE,EAAE,EAAE,CAAC,IAAA,YAAC,EAAC,KAAK,CAAC,EAAE,CAAC,CAAC,CAAC,CAC7C,CAAA;QACL,CAAC;KACF,CAAC,CAAA;AACJ,CAAC;AAhBD,kCAgBC"}
+\ No newline at end of file
++{"version":3,"file":"teleport.js","sourceRoot":"","sources":["../src/teleport.ts"],"names":[],"mappings":";;AAgBA,0BAqBC;AAED,gCAIC;AAED,4BAEC;AAID,gDAEC;AAED,kCAEC;AAED,gDAEC;AAED,kCA0BC;AAzFD,uCASiB;AAIjB,IAAI,MAAM,GAAG,KAAK,CAAA;AAClB,MAAM,KAAK,GAAG,IAAA,mBAAQ,EAAyB,EAAE,CAAC,CAAA;AAElD,SAAgB,OAAO,CACrB,EAAU,EACV,SAAc,EACd,SAAyB,EACzB,IAAc,EACd,KAAY;IAEZ,IAAI,MAAM,EAAE,CAAC;QACX,KAAK,CAAC,EAAE,CAAC,GAAG,IAAA,kBAAO,EACjB,IAAA,0BAAe,EAAC;YACd,MAAM,EAAE,GAAG,EAAE,CACX,IAAA,YAAC,EAAC,mBAAQ,EAAE,EAAE,EAAE,EAAE,SAAS,EAAS,EAAE;gBACpC,IAAA,YAAC,EAAC,SAAS,EAAE,EAAE,IAAI,EAAE,KAAK,EAAE,CAAC;aAC9B,CAAC;YACJ,OAAO,EAAE,GAAG,EAAE,CAAC,CAAC;gBACd,OAAO,EAAE,GAAG,EAAE,CAAC,IAAI;gBACnB,QAAQ,EAAE,GAAG,EAAE,CAAC,KAAK;aACtB,CAAC;SACH,CAAC,CACH,CAAA;IACH,CAAC;AACH,CAAC;AAED,SAAgB,UAAU,CAAC,EAAU;IACnC,IAAI,MAAM,EAAE,CAAC;QACX,OAAO,KAAK,CAAC,EAAE,CAAC,CAAA;IAClB,CAAC;AACH,CAAC;AAED,SAAgB,QAAQ;IACtB,OAAO,MAAM,CAAA;AACf,CAAC;AAED,IAAI,aAAa,GAAQ,IAAI,CAAA;AAE7B,SAAgB,kBAAkB;IAChC,MAAM,CAAC,IAAI,CAAC,KAAK,CAAC,CAAC,OAAO,CAAC,CAAC,EAAE,EAAE,EAAE,CAAC,OAAO,KAAK,CAAC,EAAE,CAAC,CAAC,CAAA;AACtD,CAAC;AAED,SAAgB,WAAW;IACzB,MAAM,GAAG,KAAK,CAAA;AAChB,CAAC;AAED,SAAgB,kBAAkB;IAChC,aAAa,GAAG,IAAI,CAAA;AACtB,CAAC;AAED,SAAgB,WAAW,CAAC,KAAiB,GAAG,EAAE,GAAE,CAAC;IACnD,IAAI,CAAC,iBAAM,EAAE,CAAC;QACZ,MAAM,IAAI,KAAK,CAAC,oCAAoC,CAAC,CAAA;IACvD,CAAC;IAED,IAAI,aAAa,IAAI,MAAM,EAAE,CAAC;QAC5B,OAAO,IAAI,CAAA;IACb,CAAC;IAED,MAAM,GAAG,IAAI,CAAA;IAEb,aAAa,GAAG,IAAA,0BAAe,EAAC;QAC9B,KAAK;YACH,IAAA,0BAAe,EAAC,GAAG,EAAE;gBACnB,EAAE,EAAE,CAAA;YACN,CAAC,CAAC,CAAA;YAEF,OAAO,GAAG,EAAE,CACV,IAAA,YAAC,EACC,mBAAQ,EACR,EAAE,EACF,MAAM,CAAC,IAAI,CAAC,KAAK,CAAC,CAAC,GAAG,CAAC,CAAC,EAAE,EAAE,EAAE,CAAC,IAAA,YAAC,EAAC,KAAK,CAAC,EAAE,CAAC,CAAC,CAAC,CAC7C,CAAA;QACL,CAAC;KACF,CAAC,CAAA;IACF,OAAO,aAAa,CAAA;AACtB,CAAC"}
+\ No newline at end of file
+diff --git a/node_modules/@antv/x6-vue-shape/src/teleport.ts b/node_modules/@antv/x6-vue-shape/src/teleport.ts
+index a6f957f..2e69367 100644
+--- a/node_modules/@antv/x6-vue-shape/src/teleport.ts
++++ b/node_modules/@antv/x6-vue-shape/src/teleport.ts
+@@ -1,4 +1,13 @@
+-import { defineComponent, h, reactive, isVue3, Teleport, markRaw, Fragment } from 'vue-demi'
++import {
++  defineComponent,
++  h,
++  reactive,
++  isVue3,
++  Teleport,
++  markRaw,
++  Fragment,
++  onBeforeUnmount,
++} from 'vue-demi'
+ import { Graph } from '@antv/x6'
+ import { VueShape } from './node'
+ 
+@@ -15,7 +24,10 @@ export function connect(
+   if (active) {
+     items[id] = markRaw(
+       defineComponent({
+-        render: () => h(Teleport, { to: container } as any, [h(component, { node, graph })]),
++        render: () =>
++          h(Teleport, { to: container } as any, [
++            h(component, { node, graph }),
++          ]),
+         provide: () => ({
+           getNode: () => node,
+           getGraph: () => graph,
+@@ -35,14 +47,37 @@ export function isActive() {
+   return active
+ }
+ 
+-export function getTeleport(): any {
++let itemComponets: any = null
++
++export function resetTeleportState() {
++  Object.keys(items).forEach((id) => delete items[id])
++}
++
++export function resetActive() {
++  active = false
++}
++
++export function resetItemComponets() {
++  itemComponets = null
++}
++
++export function getTeleport(cb: () => void = () => {}): any {
+   if (!isVue3) {
+     throw new Error('teleport is only available in Vue3')
+   }
++
++  if (itemComponets && active) {
++    return null
++  }
++
+   active = true
+ 
+-  return defineComponent({
++  itemComponets = defineComponent({
+     setup() {
++      onBeforeUnmount(() => {
++        cb()
++      })
++
+       return () =>
+         h(
+           Fragment,
+@@ -51,4 +86,5 @@ export function getTeleport(): any {
+         )
+     },
+   })
++  return itemComponets
+ }

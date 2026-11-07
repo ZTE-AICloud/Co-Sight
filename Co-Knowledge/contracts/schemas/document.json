@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ragstudio.dev/schemas/document.json",
+  "title": "Document",
+  "description": "文档/目录节点。文件与目录同一模型，用 type 区分。",
+  "type": "object",
+  "required": ["id", "kbId", "type"],
+  "properties": {
+    "id":         { "type": "string", "description": "fileId，UUID" },
+    "kbId":       { "type": "string" },
+    "title":      { "type": "string", "description": "文件名或目录名" },
+    "parentId":   { "type": "string" },
+    "parentPath": { "type": "string" },
+    "type":       { "type": "string", "enum": ["file", "folder"] },
+    "status":     { "type": "integer", "description": "FileUploadStatusEnum：0 init / -1 云盘 / -2 解析 / -3 切分 / -4 embedding / -5 落库 / 1 成功 / 2 失败" },
+    "failReason": { "type": "string" },
+    "fileFrom":   { "type": "string" },
+    "enabledFlag":{ "type": "string" }
+  },
+  "additionalProperties": false
+}

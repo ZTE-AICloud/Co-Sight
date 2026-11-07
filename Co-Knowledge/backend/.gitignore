@@ -1,0 +1,12 @@
+.idea/
+**/__pycache__
+.specstory
+.cursor
+.design
+.cursorindexingignore
+co-spec
+logs
+file_track
+.coverage
+# 解析/切分运行时临时目录（parsing.common.pathutil.get_workdir()）
+src/parsing/temp/

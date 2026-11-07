@@ -1,0 +1,118 @@
+* { box-sizing: border-box; }
+html, body, #app { height: 100%; margin: 0; }
+body { font-family: var(--rs-font-family); font-synthesis: none; color: var(--rs-text); background: var(--rs-bg-page); font-size: var(--rs-font-size-body); -webkit-font-smoothing: antialiased; }
+button, input, textarea, select { font: inherit; }
+code, pre, kbd, samp { font-family: var(--rs-font-family-mono); }
+.metric-value, .trace-metrics b, .table-time, .canvas-zoom { font-variant-numeric: tabular-nums; }
+button, a, input, textarea { -webkit-tap-highlight-color: transparent; }
+button { cursor: pointer; }
+a { color: var(--rs-primary); text-decoration: none; }
+svg:not(.x6-graph-svg) { width: 18px; height: 18px; flex-shrink: 0; vertical-align: middle; }
+/* X6 画布的根 SVG 靠 width/height=100% 撑满容器；上面的图标默认尺寸会把它压成
+   18×18（overflow:hidden 之后节点全被裁掉，画布看起来是空白），这里排除掉。 */
+svg.x6-graph-svg { width: 100%; height: 100%; flex-shrink: 0; }
+button:focus-visible, a:focus-visible { outline: 2px solid #8abaff; outline-offset: 3px; }
+.app-shell { display: flex; height: 100%; overflow: hidden; }
+.main-shell { flex: 1; min-width: 0; }
+.page { height: 100vh; overflow: auto; padding: 32px 28px 22px; background: radial-gradient(ellipse at 90% 100%, var(--rs-page-glow) 0, transparent 60%); }
+.page-inner { max-width: 1800px; margin: 0 auto; }
+.page-title { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; margin: 2px 0 28px; }
+.title-left { display: flex; align-items: center; gap: 18px; min-width: 0; }
+.title-icon { width: 46px; height: 54px; border-radius: 12px; color: var(--rs-primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.title-icon svg { width: 36px; height: 36px; stroke: currentColor; stroke-width: .4; filter: drop-shadow(2px 3px 0 var(--rs-bg-selected)); }
+.page-title h1 { font-size: var(--rs-font-size-page-title); line-height: 1.3; margin: 0 0 5px; font-weight: 750; letter-spacing: -.6px; }
+.page-title p { margin: 0; color: var(--rs-text-2); font-size: var(--rs-font-size-body); line-height: 1.6; }
+.page-title > .el-button { margin-top: 2px; height: 34px; font-size: 12px; }
+.toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 22px 0 20px; }
+.toolbar-left, .toolbar-right { display: flex; align-items: center; gap: 12px; }
+.toolbar-right { min-width: 0; }
+.search-field { width: 330px; }
+.content-card { background: var(--rs-bg-card); border: 1px solid var(--rs-border); border-radius: var(--rs-radius); overflow: auto; }
+.tinted-icon { width: 58px; height: 58px; border-radius: 15px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.blue { --tone: var(--rs-tone-blue); --tone-ink: var(--rs-tone-blue-ink); --tint: var(--rs-tint-blue); }
+.green { --tone: var(--rs-tone-green); --tone-ink: var(--rs-tone-green-ink); --tint: var(--rs-tint-green); }
+.purple { --tone: var(--rs-tone-purple); --tone-ink: var(--rs-tone-purple-ink); --tint: var(--rs-tint-purple); }
+.cyan { --tone: var(--rs-tone-cyan); --tone-ink: var(--rs-tone-cyan-ink); --tint: var(--rs-tint-cyan); }
+.orange { --tone: var(--rs-tone-orange); --tone-ink: var(--rs-tone-orange-ink); --tint: var(--rs-tint-orange); }
+.tinted-icon { background: var(--tint); color: var(--tone); }
+.metric-delta { font-size: 13px; color: var(--rs-success); white-space: nowrap; }
+.status-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin-right: 7px; }
+.status-dot.success { background: var(--rs-success); }
+.status-dot.warning { background: var(--rs-warning); }
+.status-dot.danger { background: var(--rs-danger); }
+.status-dot.muted { background: #a6afc0; }
+.muted { color: var(--rs-text-3); }
+.tag-soft { display: inline-flex; align-items: center; gap: 5px; border-radius: 4px; background: var(--rs-bg-soft); color: var(--rs-text-2); padding: 4px 7px; font-size: 12px; white-space: nowrap; line-height: 1.4; }
+.tag-soft + .tag-soft { margin-left: 5px; }
+.tag-soft.blue, .tag-soft.green, .tag-soft.purple, .tag-soft.orange, .tag-soft.cyan { background: var(--tint); color: var(--tone-ink, var(--tone)); }
+.tag-soft svg { width: 14px; height: 14px; }
+.entity { display: flex; align-items: center; gap: 16px; }
+.avatar-square { width: 50px; height: 50px; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-weight: 600; color: #fff; font-size: 24px; flex: 0 0 auto; box-shadow: inset 0 1px 6px #ffffff35; }
+.avatar-square svg { width: 27px; height: 27px; }
+.av-blue { background: linear-gradient(135deg,#327fff,#68a0ff); }
+.av-purple { background: linear-gradient(135deg,#895cff,#a382ff); }
+.av-green { background: linear-gradient(135deg,#2bb36d,#62c793); }
+.av-orange { background: linear-gradient(135deg,#ff9333,#ffad3b); }
+.entity-title { color: var(--rs-text); font-weight: 650; font-size: 14px; overflow-wrap: anywhere; }
+.entity-sub { font-size: 12px; color: var(--rs-text-3); margin-top: 5px; line-height: 1.45; }
+.nowrap { white-space: nowrap; }
+.icon-button { border: 0; background: transparent; color: var(--rs-text-2); width: 28px; height: 30px; display: inline-flex; align-items: center; justify-content: center; border-radius: 5px; padding: 4px; }
+.icon-button:hover { color: var(--rs-primary); background: var(--rs-bg-selected); }
+.icon-button.copy { color: var(--rs-primary); width: 22px; height: 22px; }
+.icon-button.copy svg { width: 14px; height: 14px; }
+/* Use vertical dots for record actions; panel and toolbar menus keep horizontal dots. */
+.more-icon { transform: rotate(90deg); width: 19px; height: 19px; }
+.row-actions { display: flex; gap: 16px; align-items: center; white-space: nowrap; }
+.row-actions .el-button + .el-button { margin-left: 0; }
+.row-actions .el-button { font-size: 13px; }
+.mini-flow { display: flex; align-items: center; gap: 9px; white-space: nowrap; }
+.flow-chip { display: inline-flex; align-items: center; gap: 8px; padding: 10px 11px; border-radius: 8px; background: var(--tint); border: 1px solid color-mix(in srgb, var(--tone) 12%, var(--rs-bg-card)); font-size: 12px; color: var(--rs-text); }
+.flow-chip svg { color: var(--tone); width: 20px; height: 20px; }
+.flow-arrow { width: 13px; height: 13px; color: var(--rs-text-3); }
+.right-panel { background: var(--rs-bg-card); border: 1px solid var(--rs-border); border-radius: 8px; padding: 20px; }
+.section-title { font-size: var(--rs-font-size-section-title); font-weight: 650; margin: 0 0 16px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.section-title a, .section-title .el-button { font-size: 12px; font-weight: 500; }
+.code-card { border: 1px solid var(--rs-border); border-radius: 8px; padding: 10px 12px; background: var(--rs-bg-card); min-width: 0; }
+.code-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 2px 8px; font-weight: 600; }
+.code-head > span { display: flex; align-items: center; gap: 12px; }
+.code { background: var(--rs-bg-soft); border-radius: 6px; padding: 14px; margin: 0; font-family: var(--rs-font-family-mono); font-size: var(--rs-font-size-code); line-height: 1.65; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--rs-text-2); }
+.code-key { color: var(--rs-primary); }.code-string { color: var(--rs-danger); }
+.el-button { font-weight: 500; gap: 8px; padding: 10px 18px; height: 40px; }
+.el-button > span { gap: 8px; }
+.el-button + .el-button { margin-left: 0; }
+/* MessageBox footer is a plain flex row (no gap of its own); restore the spacing the reset above removed. */
+.el-message-box__btns { gap: 10px; }
+.el-button--primary { background: linear-gradient(110deg,#1680ff,#0664ff); border-color: var(--rs-primary); box-shadow: 0 3px 8px #1677ff12, inset 0 1px 3px #ffffff25; }
+.el-button--primary.is-plain { background: var(--rs-bg-card); color: var(--rs-primary); border-color: var(--rs-primary-border); box-shadow: none; }
+.el-button.is-link, .el-button.is-text { padding: 3px 0; height: auto; box-shadow: none; background: transparent; }
+.el-input__wrapper, .el-select__wrapper { box-shadow: 0 0 0 1px var(--rs-border) inset!important; padding-left: 14px; }
+.el-input__prefix { margin-right: 6px; color: var(--rs-text-3); }
+.el-input__prefix svg { width: 18px; height: 18px; }
+.el-input__inner::placeholder { color: var(--rs-text-3); font-size: 13px; }
+.el-tabs__nav-wrap:after { height: 1px; background: var(--rs-border); }
+.el-tabs__header { margin: 0; }
+.el-tabs__item { height: 48px; padding: 0 26px!important; font-size: var(--rs-font-size-tab); color: var(--rs-text-2); }
+.el-tabs__item.is-active { font-weight: 600; color: var(--rs-primary); }
+.el-tabs__active-bar { height: 2px; }
+.el-alert--info.is-light { background: var(--rs-bg-selected); border: 1px solid var(--rs-primary-border); color: var(--rs-text-2); }
+.el-alert { padding: 16px 18px; border-radius: 6px; }
+.el-alert .el-alert__title { font-size: 14px; font-weight: 400; line-height: 1.6; }
+.el-alert .el-alert__icon { color: var(--rs-primary); margin-right: 12px; }
+.el-switch { --el-switch-on-color: var(--rs-primary); --el-switch-off-color: var(--rs-switch-off); }
+.el-dropdown-menu__item { gap: 10px; padding: 10px 18px; }
+.el-dialog { border-radius: 12px; }
+.el-dialog__body .el-input, .el-dialog__body .el-select { width: 100%; }
+.form-label { display: block; color: var(--rs-text-2); margin: 16px 0 8px; }
+@media(min-width:1600px) { .page { padding-top: 34px; } }
+@media(max-width:1450px) { .page { padding: 28px 24px 20px; }.search-field { width: 280px; } }
+@media(max-width:1100px) { .page { padding: 24px 20px; }.toolbar { flex-wrap: wrap; }.toolbar-right { margin-left: auto; }.page-title h1 { font-size: 26px; } }
+@media(max-width:800px) {.page-title { flex-wrap: wrap; }.page-title p { font-size: 12px; }.title-left { gap: 10px; }.toolbar-left,.toolbar-right { gap: 8px; }.search-field { width: 250px; } }
+
+/* Shared typography roles. Page styles should only handle layout and emphasis colors. */
+.text-body { font-size: var(--rs-font-size-body); line-height: 1.6; }
+.text-secondary { font-size: var(--rs-font-size-secondary); line-height: 1.6; }
+.text-caption { font-size: var(--rs-font-size-caption); line-height: 1.6; }
+.text-section-title { font-size: var(--rs-font-size-section-title); font-weight: 650; line-height: 1.4; }
+.text-label { font-weight: 600; }
+.text-code { font-family: var(--rs-font-family-mono); font-size: inherit; }
+.el-button.button-compact { font-size: var(--rs-font-size-secondary); height: 32px; padding: 6px 12px; }

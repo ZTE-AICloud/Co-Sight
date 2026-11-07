@@ -1,0 +1,870 @@
+{
+  "flowType": "workflow",
+  "version": 2,
+  "nodeConfigDTOList": [
+    {
+      "position": {
+        "x": 30,
+        "y": 40
+      },
+      "size": {
+        "width": 1,
+        "height": 1
+      },
+      "view": "vue-shape-view",
+      "shape": "QUERY",
+      "id": "fbf5a406-374a-4ae4-ae22-a8cb5eceda25",
+      "nodeId": "fbf5a406-374a-4ae4-ae22-a8cb5eceda25",
+      "flowId": "6e7a1837b7d31114d649a3b600fcf9f7",
+      "label": "QUERY",
+      "componentType": "QUERY",
+      "variables": null,
+      "inputVariables": [],
+      "outputVariables": [
+        {
+          "key": "text",
+          "targetNode": "a5328210-e9bd-423d-bd79-af7b75e4384a"
+        }
+      ],
+      "parentNodes": "",
+      "xPosition": 30,
+      "yPosition": 40,
+      "ports": {
+        "groups": {
+          "out": {
+            "position": {
+              "args": {
+                "x": 0,
+                "y": 0
+              },
+              "name": "absolute"
+            },
+            "attrs": {
+              "circle": {
+                "strokeWidth": 1,
+                "r": 6,
+                "fill": "#E6F1FF",
+                "magnet": true,
+                "stroke": "#0077FF"
+              }
+            }
+          }
+        },
+        "items": [
+          {
+            "args": {
+              "x": 212,
+              "y": 70
+            },
+            "id": "text",
+            "group": "out"
+          }
+        ]
+      },
+      "zIndex": 1,
+      "data": {
+        "type": "displayData",
+        "variables": null
+      }
+    },
+    {
+      "position": {
+        "x": 440,
+        "y": 50
+      },
+      "size": {
+        "width": 1,
+        "height": 1
+      },
+      "view": "vue-shape-view",
+      "shape": "RETRIEVER",
+      "id": "0b7f1e88-3831-4fb1-8737-86f86572a3af",
+      "nodeId": "0b7f1e88-3831-4fb1-8737-86f86572a3af",
+      "flowId": "6e7a1837b7d31114d649a3b600fcf9f7",
+      "label": "RE-14e",
+      "componentType": "RETRIEVER",
+      "variables": {
+        "retriever": [
+          {
+            "package": "core.rag.retriever.vector_retriever",
+            "kwargs": {
+              "desc_info": "",
+              "knowledge_info_list": [
+                {
+                  "score": 0.3,
+                  "knowledge_base_name": [],
+                  "top_k": 30,
+                  "priority": 10
+                }
+              ],
+              "embedding": "",
+              "strategy": 0
+            },
+            "id": "0b7f1e88-3831-4fb1-8737-86f86572a3af_0e2",
+            "operator": "VectorRetriever"
+          }
+        ]
+      },
+      "inputVariables": [
+        {
+          "key": "preretriever_output",
+          "sourceNode": "a5328210-e9bd-423d-bd79-af7b75e4384a",
+          "label": "PRE-35d"
+        }
+      ],
+      "outputVariables": [
+        {
+          "key": "retriever_output",
+          "targetNode": "9f3cc37c-b2a5-41e7-801f-b9e8572c999b"
+        }
+      ],
+      "parentNodes": "a5328210-e9bd-423d-bd79-af7b75e4384a",
+      "xPosition": 440,
+      "yPosition": 50,
+      "ports": {
+        "groups": {
+          "in": {
+            "markup": [
+              {
+                "selector": "circle",
+                "tagName": "circle"
+              },
+              {
+                "selector": "dot",
+                "tagName": "circle"
+              }
+            ],
+            "position": {
+              "args": {
+                "x": 0,
+                "y": 0
+              },
+              "name": "absolute"
+            },
+            "attrs": {
+              "dot": {
+                "r": 0,
+                "fill": "#0077FF",
+                "magnet": true
+              },
+              "circle": {
+                "strokeWidth": 1,
+                "r": 6,
+                "fill": "#E6F1FF",
+                "magnet": true,
+                "stroke": "#0077FF"
+              }
+            }
+          },
+          "out": {
+            "markup": [
+              {
+                "selector": "circle",
+                "tagName": "circle"
+              },
+              {
+                "selector": "dot",
+                "tagName": "circle"
+              }
+            ],
+            "position": {
+              "args": {
+                "x": 0,
+                "y": 0
+              },
+              "name": "absolute"
+            },
+            "attrs": {
+              "dot": {
+                "r": 0,
+                "fill": "#0077FF",
+                "magnet": true
+              },
+              "circle": {
+                "strokeWidth": 1,
+                "r": 6,
+                "fill": "#E6F1FF",
+                "magnet": true,
+                "stroke": "#0077FF"
+              }
+            }
+          }
+        },
+        "items": [
+          {
+            "args": {
+              "x": 28,
+              "y": 217
+            },
+            "id": "retriever_input",
+            "attrs": {
+              "dot": {
+                "r": 4,
+                "fill": "#0077FF",
+                "magnet": true
+              }
+            },
+            "group": "in"
+          },
+          {
+            "args": {
+              "x": 214,
+              "y": 308
+            },
+            "id": "retriever_output",
+            "group": "out"
+          }
+        ]
+      },
+      "zIndex": 1,
+      "data": {
+        "type": "displayData",
+        "variables": {
+          "retriever": [
+            {
+              "package": "core.rag.retriever.vector_retriever",
+              "kwargs": {
+                "desc_info": "",
+                "knowledge_info_list": [
+                  {
+                    "score": 0.3,
+                    "knowledge_base_name": [],
+                    "top_k": 30,
+                    "priority": 10
+                  }
+                ],
+                "embedding": "",
+                "strategy": 0
+              },
+              "id": "0b7f1e88-3831-4fb1-8737-86f86572a3af_0e2",
+              "operator": "VectorRetriever"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "position": {
+        "x": 1250,
+        "y": 430
+      },
+      "size": {
+        "width": 1,
+        "height": 1
+      },
+      "view": "vue-shape-view",
+      "shape": "RESPONSE",
+      "id": "42d14237-ee3c-492b-8621-1798b28d4526",
+      "nodeId": "42d14237-ee3c-492b-8621-1798b28d4526",
+      "flowId": "6e7a1837b7d31114d649a3b600fcf9f7",
+      "label": null,
+      "componentType": "RESPONSE",
+      "variables": null,
+      "inputVariables": [
+        {
+          "key": "responsesynthesizer_output",
+          "sourceNode": "b8e283f8-38a9-4666-be1a-247aeecd658a",
+          "label": "SYN-32c"
+        }
+      ],
+      "outputVariables": [],
+      "parentNodes": "b8e283f8-38a9-4666-be1a-247aeecd658a",
+      "xPosition": 1250,
+      "yPosition": 430,
+      "ports": {
+        "groups": {
+          "in": {
+            "markup": [
+              {
+                "selector": "circle",
+                "tagName": "circle"
+              },
+              {
+                "selector": "dot",
+                "tagName": "circle"
+              }
+            ],
+            "position": {
+              "args": {
+                "x": 0,
+                "y": 0
+              },
+              "name": "absolute"
+            },
+            "attrs": {
+              "dot": {
+                "r": 0,
+                "fill": "#0077FF",
+                "magnet": true
+              },
+              "circle": {
+                "strokeWidth": 1,
+                "r": 6,
+                "fill": "#E6F1FF",
+                "magnet": true,
+                "stroke": "#0077FF"
+              }
+            }
+          }
+        },
+        "items": [
+          {
+            "args": {
+              "x": 22,
+              "y": 88
+            },
+            "id": "target-port",
+            "attrs": {
+              "dot": {
+                "r": 4,
+                "fill": "#0077FF",
+                "magnet": true
+              }
+            },
+            "group": "in"
+          }
+        ]
+      },
+      "zIndex": 1,
+      "data": {
+        "type": "displayData",
+        "variables": null
+      }
+    },
+    {
+      "position": {
+        "x": 1030,
+        "y": 40
+      },
+      "size": {
+        "width": 1,
+        "height": 1
+      },
+      "view": "vue-shape-view",
+      "shape": "RESPONSE_SYNTHESIZER",
+      "id": "b8e283f8-38a9-4666-be1a-247aeecd658a",
+      "nodeId": "b8e283f8-38a9-4666-be1a-247aeecd658a",
+      "flowId": "6e7a1837b7d31114d649a3b600fcf9f7",
+      "label": "SYN-32c",
+      "componentType": "RESPONSE_SYNTHESIZER",
+      "variables": {
+        "responsesynthesizer": [
+          {
+            "package": "core.rag.response_synthesizer.simple_summarizer",
+            "kwargs": {
+              "generator-config": [
+                {
+                  "knowledge_base_name": [],
+                  "top_k": 5,
+                  "llm": "",
+                  "prompt": "You are an intelligent Q&A assistant skilled at combining retrieved context with your own knowledge to deliver accurate, concise, and reliable responses. Please strictly follow these principles for every query:\n\n1. **Context is complete and relevant**  \n   If the retrieved information directly and fully answers the user’s question, provide a clear, concise answer based on it—do not cite sources or use redundant phrases like “according to the context.”\n\n2. **Context is partial or insufficient**  \n   If the context offers some clues but not enough to fully answer, and you possess complementary knowledge, seamlessly integrate both into a complete, coherent response. If the context is outdated, biased, or misleading—and you are confident your own knowledge is more accurate—prioritize your authoritative knowledge, and do not mention the context at all.\n\n3. **Context is irrelevant**  \n   If the retrieved content has no meaningful connection to the question in terms of topic, entities, time, or domain, ignore it entirely and respond as follows:  \n   - **Can answer clearly**: Provide a concise, well-supported answer directly.  \n   - **Question is ambiguous**: Ask 1–2 specific, targeted questions to help the user clarify their needs.  \n   - **Beyond your capability**: Politely decline, explaining you cannot provide a reliable answer. If you can offer related background or a reasonable inference, clearly label it as “possible,” “likely,” or “possibly,” and invite the user to provide additional details.\n\nAlways prioritize the user’s intent. Use natural, professional, and friendly language—avoid technical jargon (e.g., RAG, retrieval-augmented). Every response should sound as if it came from a knowledgeable, trustworthy expert.  \n\n**User query**: {query_str}  \n**Relevant context**: {context_str}",
+                  "temperature": 0.01,
+                  "no_context_prompt": "You are an intelligent Q&A assistant tasked with accurately, concisely, and efficiently responding to user inquiries. Please strictly adhere to the following principles when answering:\n\n1. **When able to answer accurately**: If the question falls within the realm of general knowledge (e.g., science, history, culture, common sense) and you are confident in possessing reliable, complete knowledge, provide a clear, concise, and evidence-based answer directly, avoiding unnecessary elaboration.\n\n2. **When the question is ambiguous or unclear**: If the user’s query is poorly phrased, lacks sufficient information, or admits multiple interpretations, proactively ask 1–2 specific, targeted clarification questions to guide the user in providing essential details, enabling a more precise response.\n\n3. **When beyond your knowledge scope**: If the question involves a professional, cutting-edge, private, or obscure topic for which you lack confirmed or reliable information, politely apologize and state that you cannot provide a definitive answer. If you can offer partial relevant information or a reasonable inference, briefly indicate this and invite the user to confirm or provide additional context.\n\nUser query: {query_str}"
+                }
+              ]
+            },
+            "id": "b8e283f8-38a9-4666-be1a-247aeecd658a_7d9",
+            "operator": "RagSimpleSummarizer"
+          }
+        ]
+      },
+      "inputVariables": [
+        {
+          "key": "postretriever_output",
+          "sourceNode": "9f3cc37c-b2a5-41e7-801f-b9e8572c999b",
+          "label": "POST-550"
+        }
+      ],
+      "outputVariables": [
+        {
+          "key": "responsesynthesizer_output",
+          "targetNode": "42d14237-ee3c-492b-8621-1798b28d4526"
+        }
+      ],
+      "parentNodes": "9f3cc37c-b2a5-41e7-801f-b9e8572c999b",
+      "xPosition": 1030,
+      "yPosition": 40,
+      "ports": {
+        "groups": {
+          "in": {
+            "markup": [
+              {
+                "selector": "circle",
+                "tagName": "circle"
+              },
+              {
+                "selector": "dot",
+                "tagName": "circle"
+              }
+            ],
+            "position": {
+              "args": {
+                "x": 0,
+                "y": 0
+              },
+              "name": "absolute"
+            },
+            "attrs": {
+              "dot": {
+                "r": 0,
+                "fill": "#0077FF",
+                "magnet": true
+              },
+              "circle": {
+                "strokeWidth": 1,
+                "r": 6,
+                "fill": "#E6F1FF",
+                "magnet": true,
+                "stroke": "#0077FF"
+              }
+            }
+          },
+          "out": {
+            "markup": [
+              {
+                "selector": "circle",
+                "tagName": "circle"
+              },
+              {
+                "selector": "dot",
+                "tagName": "circle"
+              }
+            ],
+            "position": {
+              "args": {
+                "x": 0,
+                "y": 0
+              },
+              "name": "absolute"
+            },
+            "attrs": {
+              "dot": {
+                "r": 0,
+                "fill": "#0077FF",
+                "magnet": true
+              },
+              "circle": {
+                "strokeWidth": 1,
+                "r": 6,
+                "fill": "#E6F1FF",
+                "magnet": true,
+                "stroke": "#0077FF"
+              }
+            }
+          }
+        },
+        "items": [
+          {
+            "args": {
+              "x": 28,
+              "y": 217
+            },
+            "id": "responsesynthesizer_input",
+            "attrs": {
+              "dot": {
+                "r": 4,
+                "fill": "#0077FF",
+                "magnet": true
+              }
+            },
+            "group": "in"
+          },
+          {
+            "args": {
+              "x": 214,
+              "y": 308
+            },
+            "id": "responsesynthesizer_output",
+            "group": "out"
+          }
+        ]
+      },
+      "zIndex": 1,
+      "data": {
+        "type": "displayData",
+        "variables": {
+          "responsesynthesizer": [
+            {
+              "package": "core.rag.response_synthesizer.simple_summarizer",
+              "kwargs": {
+                "generator-config": [
+                  {
+                    "knowledge_base_name": [],
+                    "top_k": 5,
+                    "llm": "",
+                    "prompt": "You are an intelligent Q&A assistant skilled at combining retrieved context with your own knowledge to deliver accurate, concise, and reliable responses. Please strictly follow these principles for every query:\n\n1. **Context is complete and relevant**  \n   If the retrieved information directly and fully answers the user’s question, provide a clear, concise answer based on it—do not cite sources or use redundant phrases like “according to the context.”\n\n2. **Context is partial or insufficient**  \n   If the context offers some clues but not enough to fully answer, and you possess complementary knowledge, seamlessly integrate both into a complete, coherent response. If the context is outdated, biased, or misleading—and you are confident your own knowledge is more accurate—prioritize your authoritative knowledge, and do not mention the context at all.\n\n3. **Context is irrelevant**  \n   If the retrieved content has no meaningful connection to the question in terms of topic, entities, time, or domain, ignore it entirely and respond as follows:  \n   - **Can answer clearly**: Provide a concise, well-supported answer directly.  \n   - **Question is ambiguous**: Ask 1–2 specific, targeted questions to help the user clarify their needs.  \n   - **Beyond your capability**: Politely decline, explaining you cannot provide a reliable answer. If you can offer related background or a reasonable inference, clearly label it as “possible,” “likely,” or “possibly,” and invite the user to provide additional details.\n\nAlways prioritize the user’s intent. Use natural, professional, and friendly language—avoid technical jargon (e.g., RAG, retrieval-augmented). Every response should sound as if it came from a knowledgeable, trustworthy expert.  \n\n**User query**: {query_str}  \n**Relevant context**: {context_str}",
+                    "temperature": 0.01,
+                    "no_context_prompt": "You are an intelligent Q&A assistant tasked with accurately, concisely, and efficiently responding to user inquiries. Please strictly adhere to the following principles when answering:\n\n1. **When able to answer accurately**: If the question falls within the realm of general knowledge (e.g., science, history, culture, common sense) and you are confident in possessing reliable, complete knowledge, provide a clear, concise, and evidence-based answer directly, avoiding unnecessary elaboration.\n\n2. **When the question is ambiguous or unclear**: If the user’s query is poorly phrased, lacks sufficient information, or admits multiple interpretations, proactively ask 1–2 specific, targeted clarification questions to guide the user in providing essential details, enabling a more precise response.\n\n3. **When beyond your knowledge scope**: If the question involves a professional, cutting-edge, private, or obscure topic for which you lack confirmed or reliable information, politely apologize and state that you cannot provide a definitive answer. If you can offer partial relevant information or a reasonable inference, briefly indicate this and invite the user to confirm or provide additional context.\n\nUser query: {query_str}"
+                  }
+                ]
+              },
+              "id": "b8e283f8-38a9-4666-be1a-247aeecd658a_7d9",
+              "operator": "RagSimpleSummarizer"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "position": {
+        "x": 740,
+        "y": 380
+      },
+      "size": {
+        "width": 1,
+        "height": 1
+      },
+      "view": "vue-shape-view",
+      "shape": "POST_RETRIEVER",
+      "id": "9f3cc37c-b2a5-41e7-801f-b9e8572c999b",
+      "nodeId": "9f3cc37c-b2a5-41e7-801f-b9e8572c999b",
+      "flowId": "6e7a1837b7d31114d649a3b600fcf9f7",
+      "label": "POST-550",
+      "componentType": "POST_RETRIEVER",
+      "variables": {
+        "postretriever": [
+          {
+            "package": "core.rag.post_retriever.llm_reranker",
+            "kwargs": {
+              "top_n": 5,
+              "score": 0
+            },
+            "id": "9f3cc37c-b2a5-41e7-801f-b9e8572c999b_a66",
+            "operator": "LLMReranker"
+          }
+        ]
+      },
+      "inputVariables": [
+        {
+          "key": "retriever_output",
+          "sourceNode": "0b7f1e88-3831-4fb1-8737-86f86572a3af",
+          "label": "RE-14e"
+        }
+      ],
+      "outputVariables": [
+        {
+          "key": "postretriever_output",
+          "targetNode": "b8e283f8-38a9-4666-be1a-247aeecd658a"
+        }
+      ],
+      "parentNodes": "0b7f1e88-3831-4fb1-8737-86f86572a3af",
+      "xPosition": 740,
+      "yPosition": 380,
+      "ports": {
+        "groups": {
+          "in": {
+            "markup": [
+              {
+                "selector": "circle",
+                "tagName": "circle"
+              },
+              {
+                "selector": "dot",
+                "tagName": "circle"
+              }
+            ],
+            "position": {
+              "args": {
+                "x": 0,
+                "y": 0
+              },
+              "name": "absolute"
+            },
+            "attrs": {
+              "dot": {
+                "r": 0,
+                "fill": "#0077FF",
+                "magnet": true
+              },
+              "circle": {
+                "strokeWidth": 1,
+                "r": 6,
+                "fill": "#E6F1FF",
+                "magnet": true,
+                "stroke": "#0077FF"
+              }
+            }
+          },
+          "out": {
+            "markup": [
+              {
+                "selector": "circle",
+                "tagName": "circle"
+              },
+              {
+                "selector": "dot",
+                "tagName": "circle"
+              }
+            ],
+            "position": {
+              "args": {
+                "x": 0,
+                "y": 0
+              },
+              "name": "absolute"
+            },
+            "attrs": {
+              "dot": {
+                "r": 0,
+                "fill": "#0077FF",
+                "magnet": true
+              },
+              "circle": {
+                "strokeWidth": 1,
+                "r": 6,
+                "fill": "#E6F1FF",
+                "magnet": true,
+                "stroke": "#0077FF"
+              }
+            }
+          }
+        },
+        "items": [
+          {
+            "args": {
+              "x": 28,
+              "y": 217
+            },
+            "id": "postretriever_input",
+            "attrs": {
+              "dot": {
+                "r": 4,
+                "fill": "#0077FF",
+                "magnet": true
+              }
+            },
+            "group": "in"
+          },
+          {
+            "args": {
+              "x": 214,
+              "y": 308
+            },
+            "id": "postretriever_output",
+            "group": "out"
+          }
+        ]
+      },
+      "zIndex": 1,
+      "data": {
+        "type": "displayData",
+        "variables": {
+          "postretriever": [
+            {
+              "package": "core.rag.post_retriever.llm_reranker",
+              "kwargs": {
+                "top_n": 5,
+                "score": 0
+              },
+              "id": "9f3cc37c-b2a5-41e7-801f-b9e8572c999b_a66",
+              "operator": "LLMReranker"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "position": {
+        "x": 140,
+        "y": 380
+      },
+      "size": {
+        "width": 1,
+        "height": 1
+      },
+      "view": "vue-shape-view",
+      "shape": "PRE_RETRIEVER",
+      "id": "a5328210-e9bd-423d-bd79-af7b75e4384a",
+      "nodeId": "a5328210-e9bd-423d-bd79-af7b75e4384a",
+      "flowId": "6e7a1837b7d31114d649a3b600fcf9f7",
+      "label": "PRE-35d",
+      "componentType": "PRE_RETRIEVER",
+      "variables": {
+        "preretriever": [
+          {
+            "package": "core.rag.pre_retriever.query_transform.query_rewrite",
+            "kwargs": {
+              "llm": "",
+              "prompt": "You are an expert in question completion and reconstruction. I will tell you the questions from the previous rounds and the current round. Please complete the following question completion and reconstruction tasks according to the set steps.\n    ###\n    The steps for question completion and reconstruction are as follows, please execute them strictly in order:\n    1. When the current round question is a grammatically complete question, directly execute step 3.\n    2. When the current round question is not a grammatically complete question, it is necessary to judge whether the current round question and the previous rounds of questions have a direct relationship. If so, complete the current round question based on the semantics of the previous rounds of questions. If there is no relationship, skip the current step.\n    3. Reconstruct the current round question. When reconstructing, there is no need to combine the semantics of the previous rounds of questions. Return with a simple and understandable grammatical structure.\n    ###\n    Previous questions:\n    ###\n    {last_question}\n    ###\n    Current question:\n    ###￥\n    {current_question}\n    ###\n    Return the current round question as the answer, formatted as a JSON object, for example: {{\"question\": \"xxxx\"}}",
+              "multi_chat_limit": 8
+            },
+            "id": "a5328210-e9bd-423d-bd79-af7b75e4384a_ae4",
+            "operator": "LLMQueryRewriter"
+          }
+        ]
+      },
+      "inputVariables": [
+        {
+          "key": "text",
+          "sourceNode": "fbf5a406-374a-4ae4-ae22-a8cb5eceda25",
+          "label": "QUERY"
+        }
+      ],
+      "outputVariables": [
+        {
+          "key": "preretriever_output",
+          "targetNode": "0b7f1e88-3831-4fb1-8737-86f86572a3af"
+        }
+      ],
+      "parentNodes": "fbf5a406-374a-4ae4-ae22-a8cb5eceda25",
+      "xPosition": 140,
+      "yPosition": 380,
+      "ports": {
+        "groups": {
+          "in": {
+            "markup": [
+              {
+                "selector": "circle",
+                "tagName": "circle"
+              },
+              {
+                "selector": "dot",
+                "tagName": "circle"
+              }
+            ],
+            "position": {
+              "args": {
+                "x": 0,
+                "y": 0
+              },
+              "name": "absolute"
+            },
+            "attrs": {
+              "dot": {
+                "r": 0,
+                "fill": "#0077FF",
+                "magnet": true
+              },
+              "circle": {
+                "strokeWidth": 1,
+                "r": 6,
+                "fill": "#E6F1FF",
+                "magnet": true,
+                "stroke": "#0077FF"
+              }
+            }
+          },
+          "out": {
+            "markup": [
+              {
+                "selector": "circle",
+                "tagName": "circle"
+              },
+              {
+                "selector": "dot",
+                "tagName": "circle"
+              }
+            ],
+            "position": {
+              "args": {
+                "x": 0,
+                "y": 0
+              },
+              "name": "absolute"
+            },
+            "attrs": {
+              "dot": {
+                "r": 0,
+                "fill": "#0077FF",
+                "magnet": true
+              },
+              "circle": {
+                "strokeWidth": 1,
+                "r": 6,
+                "fill": "#E6F1FF",
+                "magnet": true,
+                "stroke": "#0077FF"
+              }
+            }
+          }
+        },
+        "items": [
+          {
+            "args": {
+              "x": 28,
+              "y": 217
+            },
+            "id": "preretriever_input",
+            "attrs": {
+              "dot": {
+                "r": 4,
+                "fill": "#0077FF",
+                "magnet": true
+              }
+            },
+            "group": "in"
+          },
+          {
+            "args": {
+              "x": 214,
+              "y": 308
+            },
+            "id": "preretriever_output",
+            "group": "out"
+          }
+        ]
+      },
+      "zIndex": 1,
+      "data": {
+        "type": "displayData",
+        "variables": {
+          "preretriever": [
+            {
+              "package": "core.rag.pre_retriever.query_transform.query_rewrite",
+              "kwargs": {
+                "llm": "",
+                "prompt": "You are an expert in question completion and reconstruction. I will tell you the questions from the previous rounds and the current round. Please complete the following question completion and reconstruction tasks according to the set steps.\n    ###\n    The steps for question completion and reconstruction are as follows, please execute them strictly in order:\n    1. When the current round question is a grammatically complete question, directly execute step 3.\n    2. When the current round question is not a grammatically complete question, it is necessary to judge whether the current round question and the previous rounds of questions have a direct relationship. If so, complete the current round question based on the semantics of the previous rounds of questions. If there is no relationship, skip the current step.\n    3. Reconstruct the current round question. When reconstructing, there is no need to combine the semantics of the previous rounds of questions. Return with a simple and understandable grammatical structure.\n    ###\n    Previous questions:\n    ###\n    {last_question}\n    ###\n    Current question:\n    ###￥\n    {current_question}\n    ###\n    Return the current round question as the answer, formatted as a JSON object, for example: {{\"question\": \"xxxx\"}}",
+                "multi_chat_limit": 8
+              },
+              "id": "a5328210-e9bd-423d-bd79-af7b75e4384a_ae4",
+              "operator": "LLMQueryRewriter"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "otherNodeConfigList": [
+    {
+      "componentType": "QUERY_ENGINE",
+      "inputVariables": [],
+      "variables": {
+        "queryengine": {
+          "id": 0,
+          "package": "core.rag.query_engine.sequential_query_engine",
+          "operator": "SequentialQueryEngine",
+          "desc": "",
+          "kwargs": {}
+        }
+      }
+    },
+    {
+      "componentType": "EDGES",
+      "inputVariables": [],
+      "variables": {
+        "edges": [
+          {
+            "source": "fbf5a406-374a-4ae4-ae22-a8cb5eceda25",
+            "target": "a5328210-e9bd-423d-bd79-af7b75e4384a"
+          },
+          {
+            "source": "0b7f1e88-3831-4fb1-8737-86f86572a3af",
+            "target": "9f3cc37c-b2a5-41e7-801f-b9e8572c999b"
+          },
+          {
+            "source": "b8e283f8-38a9-4666-be1a-247aeecd658a",
+            "target": "42d14237-ee3c-492b-8621-1798b28d4526"
+          },
+          {
+            "source": "9f3cc37c-b2a5-41e7-801f-b9e8572c999b",
+            "target": "b8e283f8-38a9-4666-be1a-247aeecd658a"
+          },
+          {
+            "source": "a5328210-e9bd-423d-bd79-af7b75e4384a",
+            "target": "0b7f1e88-3831-4fb1-8737-86f86572a3af"
+          }
+        ]
+      }
+    }
+  ]
+}

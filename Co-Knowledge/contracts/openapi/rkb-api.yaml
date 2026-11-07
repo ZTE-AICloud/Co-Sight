@@ -1,0 +1,3564 @@
+# 由 tools/verify/generate-rkb-openapi.py 从 FastAPI 路由生成；改动接口后重新生成并跑 test_rkb_openapi_snapshot.py。
+openapi: 3.0.3
+info:
+  title: Knowledge Studio API
+  description: 'Knowledge Studio 对外 REST API。成功体是纯 JSON（单资源 / 数组 / {items,total,page,pageSize}）；错误是真实
+    HTTP 状态码 + RFC 9457 `application/problem+json`。
+
+
+    协议端点（不属于本 REST 契约）：`POST /query` 的流式模式是标准 SSE、`GET /health` 是纯文本、`/mcp` 是 MCP
+    Streamable HTTP（见 `contracts/openapi/agent-api.yaml` 之外另有 MCP 规范）。'
+  version: 2.3.0
+paths:
+  /agent-keys:
+    get:
+      summary: List Keys
+      operationId: list_keys_api_co_knowledge_v1_agent_keys_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - agent-keys
+    post:
+      summary: Create Key
+      operationId: create_key_api_co_knowledge_v1_agent_keys_post
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - agent-keys
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentKeyCreateRequest'
+  /agent-keys/stats:
+    get:
+      summary: Usage Stats
+      description: 调用量指标（累计 / 最近 7 天）。与列表同受管理开关限制。
+      operationId: usage_stats_api_co_knowledge_v1_agent_keys_stats_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - agent-keys
+  /agent-keys/status:
+    get:
+      summary: Status
+      description: 服务状态。**不受管理开关限制**，否则页面无法解释为什么被禁用。
+      operationId: status_api_co_knowledge_v1_agent_keys_status_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - agent-keys
+  /agent-keys/{key_prefix}:
+    patch:
+      summary: Update Key
+      operationId: update_key_api_co_knowledge_v1_agent_keys__key_prefix__patch
+      parameters:
+      - name: key_prefix
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Key Prefix
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - agent-keys
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentKeyUpdateRequest'
+    delete:
+      summary: Delete Key
+      operationId: delete_key_api_co_knowledge_v1_agent_keys__key_prefix__delete
+      parameters:
+      - name: key_prefix
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Key Prefix
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - agent-keys
+  /auth/login:
+    post:
+      summary: Login
+      operationId: login_api_co_knowledge_v1_auth_login_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - auth
+      security: []
+  /auth/logout:
+    post:
+      summary: Logout
+      operationId: logout_api_co_knowledge_v1_auth_logout_post
+      responses:
+        '204':
+          description: No Content
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - auth
+      security: []
+  /auth/me:
+    get:
+      summary: Me
+      operationId: me_api_co_knowledge_v1_auth_me_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - auth
+  /auth/password:
+    post:
+      summary: Change Password
+      operationId: change_password_api_co_knowledge_v1_auth_password_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+        required: true
+      responses:
+        '204':
+          description: No Content
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - auth
+  /auth/status:
+    get:
+      summary: Status
+      description: 公开：前端据此决定是否启用登录守卫（同一份构建支持三种模式）。
+      operationId: status_api_co_knowledge_v1_auth_status_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - auth
+      security: []
+  /graph-extractions:
+    post:
+      summary: Graph Extract
+      operationId: graph_extract_api_co_knowledge_v1_graph_extractions_post
+      responses:
+        '202':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - graph-extractions
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/GraphExtractionForm'
+  /graph-imports:
+    post:
+      summary: Graph Import
+      operationId: graph_import_api_co_knowledge_v1_graph_imports_post
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Body_graph_import_api_co_knowledge_v1_graph_imports_post'
+        required: true
+      responses:
+        '202':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - graph-imports
+  /graph-schemas:
+    get:
+      summary: Graph Schema List
+      operationId: graph_schema_list_api_co_knowledge_v1_graph_schemas_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - graph-schemas
+    post:
+      summary: Graph Schema Create
+      operationId: graph_schema_create_api_co_knowledge_v1_graph_schemas_post
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - graph-schemas
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GraphSchemaRequest'
+  /graph-schemas/import:
+    post:
+      summary: Graph Schema Import
+      operationId: graph_schema_import_api_co_knowledge_v1_graph_schemas_import_post
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Body_graph_schema_import_api_co_knowledge_v1_graph_schemas_import_post'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - graph-schemas
+  /graph-schemas/{schema_id}:
+    get:
+      summary: Graph Schema Detail
+      operationId: graph_schema_detail_api_co_knowledge_v1_graph_schemas__schema_id__get
+      parameters:
+      - name: schema_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Schema Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - graph-schemas
+    patch:
+      summary: Graph Schema Update
+      operationId: graph_schema_update_api_co_knowledge_v1_graph_schemas__schema_id__patch
+      parameters:
+      - name: schema_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Schema Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - graph-schemas
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GraphSchemaRequest'
+    delete:
+      summary: Graph Schema Delete
+      operationId: graph_schema_delete_api_co_knowledge_v1_graph_schemas__schema_id__delete
+      parameters:
+      - name: schema_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Schema Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - graph-schemas
+  /health:
+    get:
+      summary: Health
+      operationId: health_api_co_knowledge_v1_health_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            text/plain:
+              schema:
+                type: string
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - health
+      security: []
+  /knowledge-bases:
+    get:
+      summary: List Kbases
+      operationId: list_kbases_api_co_knowledge_v1_knowledge_bases_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - knowledge-bases
+    post:
+      summary: Create Kbase
+      operationId: create_kbase_api_co_knowledge_v1_knowledge_bases_post
+      parameters:
+      - name: type
+        in: query
+        required: false
+        schema:
+          type: string
+          default: document
+          title: Type
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - knowledge-bases
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KbaseCreateRequest'
+  /knowledge-bases/stats:
+    get:
+      summary: Kbase Stats
+      operationId: kbase_stats_api_co_knowledge_v1_knowledge_bases_stats_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - knowledge-bases
+  /knowledge-bases/{kbase_id}:
+    get:
+      summary: Kbase Detail
+      operationId: kbase_detail_api_co_knowledge_v1_knowledge_bases__kbase_id__get
+      parameters:
+      - name: kbase_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Kbase Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - knowledge-bases
+    patch:
+      summary: Update Kbase
+      operationId: update_kbase_api_co_knowledge_v1_knowledge_bases__kbase_id__patch
+      parameters:
+      - name: kbase_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Kbase Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - knowledge-bases
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KbaseUpdateRequest'
+    delete:
+      summary: Delete Kbase
+      operationId: delete_kbase_api_co_knowledge_v1_knowledge_bases__kbase_id__delete
+      parameters:
+      - name: kbase_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Kbase Id
+      responses:
+        '204':
+          description: No Content
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - knowledge-bases
+  /knowledge-bases/{kbase_id}/chunks:
+    get:
+      summary: Chunk List
+      operationId: chunk_list_api_co_knowledge_v1_knowledge_bases__kbase_id__chunks_get
+      parameters:
+      - name: kbase_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Kbase Id
+      - name: keyword
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Keyword
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 1
+          title: Page
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 20
+          title: Size
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - knowledge-bases
+    post:
+      summary: Chunk Add
+      description: 手工切片（评测导入链也走这条，见 `tools/rag-metrics/rkb_client.py`）。
+      operationId: chunk_add_api_co_knowledge_v1_knowledge_bases__kbase_id__chunks_post
+      parameters:
+      - name: kbase_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Kbase Id
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - knowledge-bases
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChunkCreateRequest'
+  /knowledge-bases/{kbase_id}/directories:
+    get:
+      summary: Directory Descendants
+      operationId: directory_descendants_api_co_knowledge_v1_knowledge_bases__kbase_id__directories_get
+      parameters:
+      - name: kbase_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Kbase Id
+      - name: parentId
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Parentid
+      - name: type
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Type
+      - name: sort
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+          title: Sort
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - knowledge-bases
+    post:
+      summary: Create Directory
+      operationId: create_directory_api_co_knowledge_v1_knowledge_bases__kbase_id__directories_post
+      parameters:
+      - name: kbase_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Kbase Id
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - knowledge-bases
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DirectoryCreateRequest'
+  /knowledge-bases/{kbase_id}/directories/{directory_id}:
+    get:
+      summary: Directory Detail
+      operationId: directory_detail_api_co_knowledge_v1_knowledge_bases__kbase_id__directories__directory_id__get
+      parameters:
+      - name: kbase_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Kbase Id
+      - name: directory_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Directory Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - knowledge-bases
+    patch:
+      summary: Update Directory
+      operationId: update_directory_api_co_knowledge_v1_knowledge_bases__kbase_id__directories__directory_id__patch
+      parameters:
+      - name: kbase_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Kbase Id
+      - name: directory_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Directory Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - knowledge-bases
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DirectoryUpdateRequest'
+    delete:
+      summary: Delete Directory
+      operationId: delete_directory_api_co_knowledge_v1_knowledge_bases__kbase_id__directories__directory_id__delete
+      parameters:
+      - name: kbase_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Kbase Id
+      - name: directory_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Directory Id
+      responses:
+        '204':
+          description: No Content
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - knowledge-bases
+  /knowledge-bases/{kbase_id}/documents:
+    get:
+      summary: Documents Page
+      operationId: documents_page_api_co_knowledge_v1_knowledge_bases__kbase_id__documents_get
+      parameters:
+      - name: kbase_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Kbase Id
+      - name: keyword
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Keyword
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 1
+          title: Page
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 50
+          title: Size
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - knowledge-bases
+    post:
+      summary: Upload Document
+      operationId: upload_document_api_co_knowledge_v1_knowledge_bases__kbase_id__documents_post
+      parameters:
+      - name: kbase_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Kbase Id
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DocumentUploadForm'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - knowledge-bases
+    patch:
+      summary: Move Documents
+      operationId: move_documents_api_co_knowledge_v1_knowledge_bases__kbase_id__documents_patch
+      parameters:
+      - name: kbase_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Kbase Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - knowledge-bases
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DocumentMoveRequest'
+  /knowledge-bases/{kbase_id}/documents/{document_id}:
+    delete:
+      summary: Delete Document
+      operationId: delete_document_api_co_knowledge_v1_knowledge_bases__kbase_id__documents__document_id__delete
+      parameters:
+      - name: kbase_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Kbase Id
+      - name: document_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Document Id
+      responses:
+        '204':
+          description: No Content
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - knowledge-bases
+  /knowledge-bases/{kbase_id}/documents/{document_id}/chunks:
+    get:
+      summary: Document Chunks
+      operationId: document_chunks_api_co_knowledge_v1_knowledge_bases__kbase_id__documents__document_id__chunks_get
+      parameters:
+      - name: kbase_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Kbase Id
+      - name: document_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Document Id
+      - name: keyword
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Keyword
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 1
+          title: Page
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 10
+          title: Size
+      - name: order
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Order
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - knowledge-bases
+  /knowledge-bases/{kbase_id}/documents/{document_id}/content:
+    get:
+      summary: Download Document
+      description: 回上传的原文件流。
+      operationId: download_document_api_co_knowledge_v1_knowledge_bases__kbase_id__documents__document_id__content_get
+      parameters:
+      - name: kbase_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Kbase Id
+      - name: document_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Document Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - knowledge-bases
+  /knowledge-bases/{kbase_id}/documents/{document_id}/retry:
+    post:
+      summary: Retry Document
+      description: 重新解析一篇失败文档（异步，202）。只允许 ``status = 2`` 的文档。
+      operationId: retry_document_api_co_knowledge_v1_knowledge_bases__kbase_id__documents__document_id__retry_post
+      parameters:
+      - name: kbase_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Kbase Id
+      - name: document_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Document Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - knowledge-bases
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /knowledge-bases/{kbase_id}/graph:
+    get:
+      summary: Kbase Graph Detail
+      operationId: kbase_graph_detail_api_co_knowledge_v1_knowledge_bases__kbase_id__graph_get
+      parameters:
+      - name: kbase_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Kbase Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - knowledge-bases
+    put:
+      summary: Graph Extract Update
+      operationId: graph_extract_update_api_co_knowledge_v1_knowledge_bases__kbase_id__graph_put
+      parameters:
+      - name: kbase_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Kbase Id
+      responses:
+        '202':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - knowledge-bases
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/GraphUpdateForm'
+  /knowledge-bases/{kbase_id}/graph/edges:
+    post:
+      summary: Graph Edge Create
+      operationId: graph_edge_create_api_co_knowledge_v1_knowledge_bases__kbase_id__graph_edges_post
+      parameters:
+      - name: kbase_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Kbase Id
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - knowledge-bases
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GraphEdgeCreateRequest'
+  /knowledge-bases/{kbase_id}/graph/edges/{edge_id}:
+    patch:
+      summary: Graph Edge Update
+      operationId: graph_edge_update_api_co_knowledge_v1_knowledge_bases__kbase_id__graph_edges__edge_id__patch
+      parameters:
+      - name: kbase_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Kbase Id
+      - name: edge_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Edge Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - knowledge-bases
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GraphEdgeUpdateRequest'
+    delete:
+      summary: Graph Edge Delete
+      operationId: graph_edge_delete_api_co_knowledge_v1_knowledge_bases__kbase_id__graph_edges__edge_id__delete
+      parameters:
+      - name: kbase_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Kbase Id
+      - name: edge_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Edge Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - knowledge-bases
+  /knowledge-bases/{kbase_id}/graph/entities:
+    post:
+      summary: Graph Entity Create
+      operationId: graph_entity_create_api_co_knowledge_v1_knowledge_bases__kbase_id__graph_entities_post
+      parameters:
+      - name: kbase_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Kbase Id
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - knowledge-bases
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GraphEntityCreateRequest'
+  /knowledge-bases/{kbase_id}/graph/entities/{entity_id}:
+    patch:
+      summary: Graph Entity Update
+      operationId: graph_entity_update_api_co_knowledge_v1_knowledge_bases__kbase_id__graph_entities__entity_id__patch
+      parameters:
+      - name: kbase_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Kbase Id
+      - name: entity_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Entity Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - knowledge-bases
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GraphEntityUpdateRequest'
+    delete:
+      summary: Graph Entity Delete
+      operationId: graph_entity_delete_api_co_knowledge_v1_knowledge_bases__kbase_id__graph_entities__entity_id__delete
+      parameters:
+      - name: kbase_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Kbase Id
+      - name: entity_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Entity Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - knowledge-bases
+  /knowledge-bases/{kbase_id}/graph/export:
+    get:
+      summary: Graph Export
+      operationId: graph_export_api_co_knowledge_v1_knowledge_bases__kbase_id__graph_export_get
+      parameters:
+      - name: kbase_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Kbase Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - knowledge-bases
+  /knowledge-bases/{kbase_id}/graph/query:
+    post:
+      summary: Graph Query
+      operationId: graph_query_api_co_knowledge_v1_knowledge_bases__kbase_id__graph_query_post
+      parameters:
+      - name: kbase_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Kbase Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - knowledge-bases
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GraphQueryRequest'
+  /models:
+    get:
+      summary: List Models
+      operationId: list_models_api_co_knowledge_v1_models_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - models
+    post:
+      summary: Create Model
+      operationId: create_model_api_co_knowledge_v1_models_post
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - models
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModelCreateRequest'
+  /models/test:
+    post:
+      summary: Test Unsaved
+      operationId: test_unsaved_api_co_knowledge_v1_models_test_post
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - models
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModelTestRequest'
+  /models/thinking-presets:
+    get:
+      summary: Thinking Presets
+      operationId: thinking_presets_api_co_knowledge_v1_models_thinking_presets_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - models
+  /models/{model_id}:
+    get:
+      summary: Get Model
+      operationId: get_model_api_co_knowledge_v1_models__model_id__get
+      parameters:
+      - name: model_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Model Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - models
+    put:
+      summary: Update Model
+      operationId: update_model_api_co_knowledge_v1_models__model_id__put
+      parameters:
+      - name: model_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Model Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - models
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModelUpdateRequest'
+    delete:
+      summary: Delete Model
+      operationId: delete_model_api_co_knowledge_v1_models__model_id__delete
+      parameters:
+      - name: model_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Model Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - models
+  /models/{model_id}/test:
+    post:
+      summary: Test Saved
+      operationId: test_saved_api_co_knowledge_v1_models__model_id__test_post
+      parameters:
+      - name: model_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Model Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - models
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SavedModelTestRequest'
+  /operators:
+    get:
+      summary: List Operators
+      operationId: list_operators_api_co_knowledge_v1_operators_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - operators
+    post:
+      summary: Operator Import
+      operationId: operator_import_api_co_knowledge_v1_operators_post
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Body_operator_import_api_co_knowledge_v1_operators_post'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - operators
+  /operators/available:
+    get:
+      summary: Operator Available
+      description: 按文件格式批量取「已发布算子 + 系统算子」（建库快速配置用）。
+      operationId: operator_available_api_co_knowledge_v1_operators_available_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - operators
+  /operators/supported:
+    get:
+      summary: Operator Supported
+      operationId: operator_supported_api_co_knowledge_v1_operators_supported_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - operators
+  /operators/template:
+    get:
+      summary: Operator Template Download
+      operationId: operator_template_download_api_co_knowledge_v1_operators_template_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - operators
+  /operators/types:
+    get:
+      summary: Operator Types
+      operationId: operator_types_api_co_knowledge_v1_operators_types_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - operators
+  /operators/{operator_id}:
+    get:
+      summary: Operator Detail
+      operationId: operator_detail_api_co_knowledge_v1_operators__operator_id__get
+      parameters:
+      - name: operator_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Operator Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - operators
+    delete:
+      summary: Operator Delete
+      operationId: operator_delete_api_co_knowledge_v1_operators__operator_id__delete
+      parameters:
+      - name: operator_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Operator Id
+      responses:
+        '204':
+          description: No Content
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - operators
+  /operators/{operator_id}/export:
+    get:
+      summary: Operator Export
+      operationId: operator_export_api_co_knowledge_v1_operators__operator_id__export_get
+      parameters:
+      - name: operator_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Operator Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - operators
+  /operators/{operator_id}/publish:
+    post:
+      summary: Operator Publish
+      operationId: operator_publish_api_co_knowledge_v1_operators__operator_id__publish_post
+      parameters:
+      - name: operator_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Operator Id
+      responses:
+        '204':
+          description: No Content
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - operators
+    delete:
+      summary: Operator Un Publish
+      operationId: operator_un_publish_api_co_knowledge_v1_operators__operator_id__publish_delete
+      parameters:
+      - name: operator_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Operator Id
+      responses:
+        '204':
+          description: No Content
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - operators
+  /operators/{operator_id}/visibility:
+    put:
+      summary: Operator Visibility
+      operationId: operator_visibility_api_co_knowledge_v1_operators__operator_id__visibility_put
+      parameters:
+      - name: operator_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Operator Id
+      responses:
+        '204':
+          description: No Content
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - operators
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OperatorVisibilityRequest'
+  /query:
+    post:
+      summary: Chat
+      description: 原生编排端点（浏览器会话 / 网关）；Agent Key 走 `/agent/query`。
+      operationId: chat_api_co_knowledge_v1_query_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RagRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+            text/event-stream:
+              schema:
+                type: string
+              description: 'event: retrieval|token|done|error，data 为 JSON'
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - query
+  /query-traces:
+    get:
+      summary: List query traces
+      operationId: query_traces_list_api_co_knowledge_v1_query_traces_get
+      parameters:
+      - name: workflowId
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            maxLength: 128
+          - type: 'null'
+          title: Workflowid
+      - name: conversationId
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            maxLength: 128
+          - type: 'null'
+          title: Conversationid
+      - name: traceId
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            maxLength: 64
+          - type: 'null'
+          title: Traceid
+      - name: orgId
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            maxLength: 128
+          - type: 'null'
+          title: Orgid
+      - name: status
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - enum:
+            - ok
+            - error
+            - client_disconnect
+            type: string
+          - type: 'null'
+          title: Status
+      - name: from
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: From
+      - name: to
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: To
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+          title: Page
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 200
+          minimum: 1
+          default: 20
+          title: Size
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueryTracePage'
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - query-traces
+  /query-traces/stats:
+    get:
+      summary: Aggregate query trace latency and hit rate
+      operationId: query_traces_stats_api_co_knowledge_v1_query_traces_stats_get
+      parameters:
+      - name: workflowId
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            maxLength: 128
+          - type: 'null'
+          title: Workflowid
+      - name: orgId
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            maxLength: 128
+          - type: 'null'
+          title: Orgid
+      - name: from
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: From
+      - name: to
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: To
+      - name: bucket
+        in: query
+        required: false
+        schema:
+          enum:
+          - hour
+          - day
+          type: string
+          default: day
+          title: Bucket
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueryTraceStats'
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - query-traces
+  /query-traces/{trace_row_id}:
+    get:
+      summary: Get one query trace
+      operationId: query_traces_detail_api_co_knowledge_v1_query_traces__trace_row_id__get
+      parameters:
+      - name: trace_row_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Trace Row Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueryTraceItem'
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - query-traces
+  /retrieval:
+    post:
+      summary: Retrieve
+      operationId: retrieve_api_co_knowledge_v1_retrieval_post
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - retrieval
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RetrievalRequest'
+  /retrieval/graph:
+    post:
+      summary: Graph Retrieve
+      description: '图检索接口 - 通过向量检索找到种子节点，然后按深度传播获取子图
+
+
+        实现在 `graph.service.graph_retrieve_gateway`，编排在同进程内走**同一份**。
+
+        成功直接返回检索结果对象，失败返回真实状态码 + ``application/problem+json``
+
+        （不是 ``{code:0|-1,...}`` 信封）。入参绑定失败由 ``http_api`` 的异常处理器
+
+        转成 422 problem。'
+      operationId: graph_retrieve_api_co_knowledge_v1_retrieval_graph_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GraphRetrieveDto'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - retrieval
+  /system/embedding-models:
+    get:
+      summary: Embedding Models
+      operationId: embedding_models_api_co_knowledge_v1_system_embedding_models_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - system
+  /system/file-size-limits:
+    get:
+      summary: File Size Limits
+      operationId: file_size_limits_api_co_knowledge_v1_system_file_size_limits_get
+      parameters:
+      - name: category
+        in: query
+        required: false
+        schema:
+          type: string
+          default: '1'
+          title: Category
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - system
+  /system/info:
+    get:
+      summary: System Info
+      operationId: system_info_api_co_knowledge_v1_system_info_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - system
+  /system/llm-models:
+    get:
+      summary: Llm Models
+      operationId: llm_models_api_co_knowledge_v1_system_llm_models_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - system
+  /system/rerank-models:
+    get:
+      summary: Rerank Models
+      operationId: rerank_models_api_co_knowledge_v1_system_rerank_models_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - system
+  /workflows:
+    get:
+      summary: Page Workflows
+      operationId: page_workflows_api_co_knowledge_v1_workflows_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - workflows
+    post:
+      summary: Create Workflow
+      operationId: create_workflow_api_co_knowledge_v1_workflows_post
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - workflows
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkflowCreateRequest'
+  /workflows/knowledge-bases:
+    get:
+      summary: All Status Kbase
+      operationId: all_status_kbase_api_co_knowledge_v1_workflows_knowledge_bases_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - workflows
+  /workflows/{workflow_id}:
+    patch:
+      summary: Update Workflow
+      operationId: update_workflow_api_co_knowledge_v1_workflows__workflow_id__patch
+      parameters:
+      - name: workflow_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Workflow Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - workflows
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkflowUpdateRequest'
+    delete:
+      summary: Delete Workflow
+      operationId: delete_workflow_api_co_knowledge_v1_workflows__workflow_id__delete
+      parameters:
+      - name: workflow_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Workflow Id
+      responses:
+        '204':
+          description: No Content
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - workflows
+  /workflows/{workflow_id}/export:
+    get:
+      summary: Download Asset
+      description: '导出画布 JSON。
+
+
+        响应体**不能**是 ``application/json`` —— 前端 axios 拦截器会把 json 的 blob
+
+        当成错误信封解析，然后 ``download()`` 拿到一个普通对象、下载出 ``[object Object]``。
+
+        但**出错时**必须回信封（JSON），否则前端只会看到「下载失败」，
+
+        拿不到「工作流不存在」。'
+      operationId: download_asset_api_co_knowledge_v1_workflows__workflow_id__export_get
+      parameters:
+      - name: workflow_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Workflow Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - workflows
+  /workflows/{workflow_id}/flow:
+    get:
+      summary: Get Flow Config
+      operationId: get_flow_config_api_co_knowledge_v1_workflows__workflow_id__flow_get
+      parameters:
+      - name: workflow_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Workflow Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - workflows
+    put:
+      summary: Save Flow Config
+      operationId: save_flow_config_api_co_knowledge_v1_workflows__workflow_id__flow_put
+      parameters:
+      - name: workflow_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Workflow Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - workflows
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkflowCanvasRequest'
+  /workflows/{workflow_id}/publication:
+    get:
+      summary: Get Published Flow Config
+      operationId: get_published_flow_config_api_co_knowledge_v1_workflows__workflow_id__publication_get
+      parameters:
+      - name: workflow_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Workflow Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - workflows
+    post:
+      summary: Publish
+      operationId: publish_api_co_knowledge_v1_workflows__workflow_id__publication_post
+      parameters:
+      - name: workflow_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Workflow Id
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - workflows
+    delete:
+      summary: Unpublish
+      operationId: unpublish_api_co_knowledge_v1_workflows__workflow_id__publication_delete
+      parameters:
+      - name: workflow_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Workflow Id
+      responses:
+        '204':
+          description: No Content
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - workflows
+  /workflows/{workflow_id}/validate:
+    post:
+      summary: Pre Check
+      operationId: pre_check_api_co_knowledge_v1_workflows__workflow_id__validate_post
+      parameters:
+      - name: workflow_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Workflow Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - workflows
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkflowCanvasRequest'
+components:
+  schemas:
+    Body_graph_import_api_co_knowledge_v1_graph_imports_post:
+      properties:
+        file:
+          type: string
+          title: File
+          format: binary
+      type: object
+      required:
+      - file
+      title: Body_graph_import_api_co_knowledge_v1_graph_imports_post
+    Body_graph_schema_import_api_co_knowledge_v1_graph_schemas_import_post:
+      properties:
+        schema_file:
+          type: string
+          title: Schema File
+          format: binary
+      type: object
+      required:
+      - schema_file
+      title: Body_graph_schema_import_api_co_knowledge_v1_graph_schemas_import_post
+    Body_operator_import_api_co_knowledge_v1_operators_post:
+      properties:
+        file:
+          type: string
+          title: File
+          format: binary
+      type: object
+      required:
+      - file
+      title: Body_operator_import_api_co_knowledge_v1_operators_post
+    ChangePasswordRequest:
+      properties:
+        currentPassword:
+          type: string
+          maxLength: 1024
+          title: Currentpassword
+          default: ''
+        newPassword:
+          type: string
+          maxLength: 1024
+          title: Newpassword
+          default: ''
+      type: object
+      title: ChangePasswordRequest
+    GraphRetrieveDto:
+      properties:
+        query:
+          type: string
+          title: Query
+          description: 用于检索的自然语言
+        embedding:
+          type: string
+          title: Embedding
+          description: embedding模型服务名称
+        bases:
+          items:
+            type: string
+          type: array
+          title: Bases
+          description: 知识库标识列表
+        seed_k:
+          anyOf:
+          - type: integer
+            maximum: 50.0
+            minimum: 1.0
+          - type: 'null'
+          title: Seed K
+          description: 种子节点个数
+          default: 5
+        depth:
+          anyOf:
+          - type: integer
+            maximum: 10.0
+            minimum: 1.0
+          - type: 'null'
+          title: Depth
+          description: 种子节点传播的深度
+          default: 1
+        limit:
+          anyOf:
+          - type: integer
+            maximum: 5000.0
+            minimum: 1.0
+          - type: 'null'
+          title: Limit
+          description: 边数预算上限（深图可调大；实体只带返回边端点）
+          default: 1000
+        score:
+          anyOf:
+          - type: number
+            maximum: 1.0
+            minimum: 0.0
+          - type: 'null'
+          title: Score
+          description: 种子节点相似性分数（余弦值）过滤阈值
+          default: 0.0
+        labels:
+          anyOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+          title: Labels
+          description: 标签列表，用于前置过滤，最多10个字符串标签
+      type: object
+      required:
+      - query
+      - embedding
+      - bases
+      title: GraphRetrieveDto
+      description: 图检索请求DTO
+    LoginRequest:
+      properties:
+        username:
+          type: string
+          maxLength: 255
+          title: Username
+          default: ''
+        password:
+          type: string
+          maxLength: 1024
+          title: Password
+          default: ''
+      type: object
+      title: LoginRequest
+    QueryTraceItem:
+      properties:
+        id:
+          type: integer
+          title: Id
+        traceId:
+          type: string
+          title: Traceid
+        conversationId:
+          type: string
+          title: Conversationid
+        workflowId:
+          type: string
+          title: Workflowid
+        orgId:
+          type: string
+          title: Orgid
+        isStream:
+          type: boolean
+          title: Isstream
+        status:
+          type: string
+          title: Status
+        errorCode:
+          type: string
+          title: Errorcode
+        httpStatus:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Httpstatus
+        errorStatus:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Errorstatus
+        questionLen:
+          type: integer
+          title: Questionlen
+        answerLen:
+          type: integer
+          title: Answerlen
+        understandingMs:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Understandingms
+        retrievalMs:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Retrievalms
+        rerankMs:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Rerankms
+        generateMs:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Generatems
+        firstTokenMs:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Firsttokenms
+        totalMs:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Totalms
+        hitCount:
+          type: integer
+          title: Hitcount
+        sourceCount:
+          type: integer
+          title: Sourcecount
+        kbCount:
+          type: integer
+          title: Kbcount
+        topScore:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Topscore
+        createdAt:
+          type: string
+          format: date-time
+          title: Createdat
+      type: object
+      required:
+      - id
+      - traceId
+      - conversationId
+      - workflowId
+      - orgId
+      - isStream
+      - status
+      - errorCode
+      - questionLen
+      - answerLen
+      - hitCount
+      - sourceCount
+      - kbCount
+      - createdAt
+      title: QueryTraceItem
+    QueryTracePage:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/QueryTraceItem'
+          type: array
+          title: Items
+        total:
+          type: integer
+          title: Total
+        page:
+          type: integer
+          title: Page
+        pageSize:
+          type: integer
+          title: Pagesize
+      type: object
+      required:
+      - items
+      - total
+      - page
+      - pageSize
+      title: QueryTracePage
+    QueryTraceStats:
+      properties:
+        summary:
+          $ref: '#/components/schemas/TraceSummary'
+        series:
+          items:
+            $ref: '#/components/schemas/TraceBucket'
+          type: array
+          title: Series
+      type: object
+      required:
+      - summary
+      - series
+      title: QueryTraceStats
+    RagRequest:
+      properties:
+        question:
+          type: string
+          title: Question
+        llm:
+          type: string
+          title: Llm
+          default: ''
+        stream:
+          type: boolean
+          title: Stream
+          default: false
+        workflow_id:
+          type: string
+          title: Workflow Id
+          default: default_workflow_id
+        conversation_id:
+          type: string
+          title: Conversation Id
+        chat_history:
+          items: {}
+          type: array
+          title: Chat History
+        kwargs:
+          additionalProperties: true
+          type: object
+          title: Kwargs
+          default: {}
+        chatbot_scene:
+          type: boolean
+          title: Chatbot Scene
+          default: false
+        session_info:
+          additionalProperties: true
+          type: object
+          title: Session Info
+          default: {}
+        scope:
+          type: string
+          title: Scope
+          default: ''
+        safe_mode:
+          type: string
+          title: Safe Mode
+          default: ''
+        enableWebSearch:
+          type: boolean
+          title: Enablewebsearch
+          default: false
+        apiKey:
+          type: string
+          title: Apikey
+          default: ''
+        include_retrieval:
+          type: boolean
+          title: Include Retrieval
+          default: false
+      type: object
+      required:
+      - question
+      - conversation_id
+      title: RagRequest
+    StageStats:
+      properties:
+        count:
+          type: integer
+          title: Count
+        p50:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: P50
+        p95:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: P95
+        p99:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: P99
+      type: object
+      required:
+      - count
+      title: StageStats
+    TraceBucket:
+      properties:
+        count:
+          type: integer
+          title: Count
+        okCount:
+          type: integer
+          title: Okcount
+        errorCount:
+          type: integer
+          title: Errorcount
+        clientDisconnectCount:
+          type: integer
+          title: Clientdisconnectcount
+        hitRate:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Hitrate
+        avgHitCount:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Avghitcount
+        avgSourceCount:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Avgsourcecount
+        understanding:
+          $ref: '#/components/schemas/StageStats'
+        retrieval:
+          $ref: '#/components/schemas/StageStats'
+        rerank:
+          $ref: '#/components/schemas/StageStats'
+        generate:
+          $ref: '#/components/schemas/StageStats'
+        firstToken:
+          $ref: '#/components/schemas/StageStats'
+        total:
+          $ref: '#/components/schemas/StageStats'
+        bucket:
+          type: string
+          format: date-time
+          title: Bucket
+      type: object
+      required:
+      - count
+      - okCount
+      - errorCount
+      - clientDisconnectCount
+      - understanding
+      - retrieval
+      - rerank
+      - generate
+      - firstToken
+      - total
+      - bucket
+      title: TraceBucket
+    TraceSummary:
+      properties:
+        count:
+          type: integer
+          title: Count
+        okCount:
+          type: integer
+          title: Okcount
+        errorCount:
+          type: integer
+          title: Errorcount
+        clientDisconnectCount:
+          type: integer
+          title: Clientdisconnectcount
+        hitRate:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Hitrate
+        avgHitCount:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Avghitcount
+        avgSourceCount:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Avgsourcecount
+        understanding:
+          $ref: '#/components/schemas/StageStats'
+        retrieval:
+          $ref: '#/components/schemas/StageStats'
+        rerank:
+          $ref: '#/components/schemas/StageStats'
+        generate:
+          $ref: '#/components/schemas/StageStats'
+        firstToken:
+          $ref: '#/components/schemas/StageStats'
+        total:
+          $ref: '#/components/schemas/StageStats'
+      type: object
+      required:
+      - count
+      - okCount
+      - errorCount
+      - clientDisconnectCount
+      - understanding
+      - retrieval
+      - rerank
+      - generate
+      - firstToken
+      - total
+      title: TraceSummary
+    Problem:
+      type: object
+      required:
+      - type
+      - title
+      - status
+      - detail
+      - code
+      properties:
+        type:
+          type: string
+          example: urn:ragstudio:problem:knowledge_base_not_found
+        title:
+          type: string
+          example: Knowledge base not found
+        status:
+          type: integer
+          example: 404
+        detail:
+          type: string
+          example: 知识库不存在
+        instance:
+          type: string
+          example: /api/co-knowledge/v1/knowledge-bases/nope
+        code:
+          type: string
+          example: knowledge_base_not_found
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              loc:
+                type: array
+                items:
+                  type: string
+              type:
+                type: string
+              message:
+                type: string
+    KbaseCreateRequest:
+      type: object
+      required:
+      - name
+      - props
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 30
+          description: 允许中文/字母/数字/_ . - 与空白
+        description:
+          type: string
+          maxLength: 1000
+        headIcon:
+          type: string
+          maxLength: 255
+        kbtype:
+          type: string
+          description: 子类型标识，默认 document
+        category:
+          type: integer
+          enum:
+          - 1
+          - 10
+          description: 1 文档库 / 10 图谱库；文档库链路忽略此字段
+        props:
+          type: object
+          description: 建库属性；只认 embeddingModel，其余键被丢弃
+          required:
+          - embeddingModel
+          properties:
+            embeddingModel:
+              type: string
+              description: embedding 注册名
+    KbaseUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 30
+        description:
+          type: string
+          maxLength: 1000
+          description: 出现即更新，空串表示清空
+        headIcon:
+          type: string
+          maxLength: 255
+    DirectoryCreateRequest:
+      type: object
+      required:
+      - title
+      properties:
+        title:
+          type: string
+          minLength: 2
+          maxLength: 30
+        parentId:
+          type: string
+          nullable: true
+          description: 省略/空串 = 根目录
+    DirectoryUpdateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          description: 空名或同名时原样返回
+    DocumentMoveRequest:
+      type: object
+      required:
+      - ids
+      - parentId
+      properties:
+        ids:
+          type: array
+          items:
+            type: string
+          minItems: 1
+        parentId:
+          type: string
+          description: 目标文件夹 ID
+    DocumentUploadForm:
+      type: object
+      required:
+      - files
+      - metadata
+      properties:
+        files:
+          type: array
+          items:
+            type: string
+            format: binary
+        metadata:
+          type: string
+          description: JSON 字符串：directoryId / kType / splitType 必填，splitOperator 缺键走
+            NPE（500），coverFlag 可选
+    ChunkCreateRequest:
+      type: object
+      required:
+      - documentId
+      - content
+      properties:
+        documentId:
+          type: string
+          description: 所属文档 ID
+        content:
+          type: string
+          description: 切片正文，用于生成向量
+        supplement:
+          type: string
+          description: 补充文本，缺省回落 content
+    GraphExtractionForm:
+      type: object
+      required:
+      - file
+      - data
+      properties:
+        file:
+          type: array
+          items:
+            type: string
+            format: binary
+        data:
+          type: string
+          description: JSON 字符串：name/category/props/operatorId/schemaId 必填
+    GraphUpdateForm:
+      type: object
+      required:
+      - data
+      - deleteFiles
+      - localFiles
+      properties:
+        data:
+          type: string
+          description: JSON 字符串，结构同抽图建库
+        deleteFiles:
+          type: string
+          description: JSON 数组字符串
+        localFiles:
+          type: string
+          description: JSON 数组字符串
+        files:
+          type: array
+          items:
+            type: string
+            format: binary
+    RetrievalRequest:
+      type: object
+      required:
+      - question
+      - bases
+      properties:
+        question:
+          type: string
+          description: 检索问题，不能为空白
+        type:
+          type: integer
+          enum:
+          - 0
+          - 1
+          description: 0 向量（默认）/ 1 关键词
+        model:
+          type: string
+          description: embedding 注册名
+        bases:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required:
+            - baseList
+            properties:
+              baseList:
+                type: array
+                minItems: 1
+                items:
+                  type: string
+                description: 文档库 base 名：doc_<kb_id>
+              priority:
+                type: integer
+                minimum: 0
+                maximum: 10
+              top_k:
+                type: integer
+                minimum: 1
+                maximum: 80
+                default: 8
+              score_threshold:
+                type: number
+                minimum: 0
+                maximum: 1
+                default: 0
+                description: 仅向量路生效
+    GraphQueryRequest:
+      type: object
+      required:
+      - query_type
+      properties:
+        query_type:
+          type: string
+          enum:
+          - entity
+          - edge
+          - path
+          - sub_graph
+        filters:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+          description: 过滤条件；类型类字段必须是数组
+        depth:
+          type: integer
+          minimum: 1
+          maximum: 100
+        direction:
+          type: string
+          enum:
+          - both
+          - in
+          - out
+          default: both
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 1000
+          default: 100
+        offset:
+          type: integer
+          minimum: 0
+          default: 0
+        cursor:
+          type: string
+          description: 给出时优先于 offset
+        keyword:
+          type: string
+          description: 实体名称/ID/描述模糊匹配
+    GraphEntityCreateRequest:
+      type: object
+      required:
+      - entityId
+      - entityType
+      - properties
+      properties:
+        entityId:
+          type: string
+          description: 格式 {实体类型}_{序号}
+        entityType:
+          type: string
+          description: 必须是模板已声明的实体类型
+        properties:
+          type: object
+          additionalProperties: true
+        edgeInfo:
+          type: object
+          description: 可选：同时建一条边
+          properties:
+            edgeId:
+              type: string
+            edgeType:
+              type: string
+            currentEntityId:
+              type: string
+            direction:
+              type: string
+              enum:
+              - in
+              - out
+            properties:
+              type: object
+              additionalProperties: true
+    GraphEntityUpdateRequest:
+      type: object
+      required:
+      - entityType
+      - properties
+      properties:
+        entityType:
+          type: string
+        properties:
+          type: object
+          additionalProperties: true
+    GraphEdgeCreateRequest:
+      type: object
+      required:
+      - edgeId
+      - edgeType
+      - sourceId
+      - targetId
+      - properties
+      properties:
+        edgeId:
+          type: string
+          description: 格式 {边类型}_{序号}
+        edgeType:
+          type: string
+        sourceId:
+          type: string
+        targetId:
+          type: string
+        properties:
+          type: object
+          additionalProperties: true
+    GraphEdgeUpdateRequest:
+      type: object
+      required:
+      - edgeType
+      - properties
+      properties:
+        edgeType:
+          type: string
+        properties:
+          type: object
+          additionalProperties: true
+    GraphSchemaRequest:
+      type: object
+      description: 创建时 schema_id 必填；PATCH 时路径参数覆盖同名字段
+      required:
+      - schema_name
+      - schema_desc
+      - entities
+      - edges
+      properties:
+        schema_id:
+          type: string
+        schema_name:
+          type: string
+        schema_desc:
+          type: string
+        entities:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+          description: 实体类型；不能为空数组
+        edges:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+          description: 必须出现（可为 []）；缺键走 NPE（500）
+    OperatorVisibilityRequest:
+      type: object
+      required:
+      - public
+      properties:
+        public:
+          type: boolean
+    ModelCreateRequest:
+      type: object
+      required:
+      - modelKind
+      - modelName
+      - baseUrl
+      properties:
+        modelKind:
+          type: string
+          enum:
+          - llm
+          - embedding
+          - rerank
+        modelName:
+          type: string
+          description: 注册名，同 kind 下唯一
+        displayName:
+          type: string
+        apiModel:
+          type: string
+        baseUrl:
+          type: string
+          format: uri
+        apiKey:
+          type: string
+          description: 加密存储，读取接口不回明文
+        chatPath:
+          type: string
+        embeddingsPath:
+          type: string
+        modelsPath:
+          type: string
+        rerankPath:
+          type: string
+        dimension:
+          type: integer
+          description: embedding 必填
+        maxTokens:
+          type: integer
+        temperature:
+          type: number
+        timeout:
+          type: integer
+          description: 秒
+        isReasoning:
+          type: boolean
+        thinkingMode:
+          type: string
+          enum:
+          - none
+          - auto
+          - preset
+          - custom
+        thinkingPreset:
+          type: string
+        thinkingPayload:
+          type: object
+          additionalProperties: true
+        isDefault:
+          type: boolean
+        enabled:
+          type: boolean
+          default: true
+        remark:
+          type: string
+    ModelUpdateRequest:
+      type: object
+      description: 部分合并；apiKey 缺席/空串保持原值，clearApiKey=true 清空
+      properties:
+        modelName:
+          type: string
+        displayName:
+          type: string
+        apiModel:
+          type: string
+        baseUrl:
+          type: string
+          format: uri
+        apiKey:
+          type: string
+        clearApiKey:
+          type: boolean
+        chatPath:
+          type: string
+        embeddingsPath:
+          type: string
+        modelsPath:
+          type: string
+        rerankPath:
+          type: string
+        dimension:
+          type: integer
+        maxTokens:
+          type: integer
+        temperature:
+          type: number
+        timeout:
+          type: integer
+        isReasoning:
+          type: boolean
+        thinkingMode:
+          type: string
+          enum:
+          - none
+          - auto
+          - preset
+          - custom
+        thinkingPreset:
+          type: string
+        thinkingPayload:
+          type: object
+          additionalProperties: true
+        isDefault:
+          type: boolean
+        enabled:
+          type: boolean
+        remark:
+          type: string
+    ModelTestRequest:
+      type: object
+      required:
+      - modelKind
+      - baseUrl
+      description: 与建模型同形；modelName 缺省用 probe
+      properties:
+        modelKind:
+          type: string
+          enum:
+          - llm
+          - embedding
+          - rerank
+        modelName:
+          type: string
+        apiModel:
+          type: string
+        baseUrl:
+          type: string
+          format: uri
+        apiKey:
+          type: string
+        chatPath:
+          type: string
+        embeddingsPath:
+          type: string
+        modelsPath:
+          type: string
+        rerankPath:
+          type: string
+        dimension:
+          type: integer
+    SavedModelTestRequest:
+      type: object
+      description: 全部字段可选；不提供 apiKey 时服务端丢弃 baseUrl 与各路径，按已保存配置测试（防止用已存密钥请求任意主机）
+      properties:
+        baseUrl:
+          type: string
+          format: uri
+        apiKey:
+          type: string
+        chatPath:
+          type: string
+        embeddingsPath:
+          type: string
+        modelsPath:
+          type: string
+        rerankPath:
+          type: string
+    WorkflowCreateRequest:
+      type: object
+      required:
+      - workFlowId
+      - name
+      - template
+      properties:
+        workFlowId:
+          type: string
+          maxLength: 128
+          description: 也接受 workflowId / appId；只允许 [A-Za-z0-9_]
+        name:
+          type: string
+          maxLength: 255
+        template:
+          type: string
+          maxLength: 64
+          enum:
+          - Sequential
+          - Blended
+          - Conditional
+        knowledgeType:
+          type: string
+        description:
+          type: string
+          maxLength: 1000
+        boundInfo:
+          type: object
+          description: 按分组 running/dev 放知识库选项；元素至少带 tableName、embeddingModel、type
+          additionalProperties: true
+    WorkflowUpdateRequest:
+      type: object
+      required:
+      - name
+      properties:
+        name:
+          type: string
+          maxLength: 255
+        template:
+          type: string
+          maxLength: 64
+        knowledgeType:
+          type: string
+        description:
+          type: string
+          maxLength: 1000
+    WorkflowCanvasRequest:
+      type: object
+      required:
+      - nodeConfigDTOList
+      - otherNodeConfigList
+      properties:
+        flowType:
+          type: string
+        version:
+          type: integer
+          description: 草稿保存不使用，仅发布推进版本
+        nodeConfigDTOList:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            additionalProperties: true
+          description: 可视节点；data.variables 内放算子
+        otherNodeConfigList:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+          description: 必须包含 QUERY_ENGINE 节点
+    AgentKeyCreateRequest:
+      type: object
+      required:
+      - name
+      - scopes
+      properties:
+        name:
+          type: string
+          maxLength: 128
+        description:
+          type: string
+          maxLength: 200
+        scopes:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            enum:
+            - kb:list
+            - kb:search
+            - kb:answer
+            - workflow:read
+            - workflow:run
+        kbIds:
+          type: array
+          items:
+            type: string
+          description: 白名单；空数组 = 全部文档库
+        rateLimitPerMin:
+          type: integer
+          minimum: 0
+          maximum: 100000
+          default: 60
+          description: 0 表示不限
+        expiresAt:
+          type: string
+          nullable: true
+          description: ISO 8601 或 YYYY-MM-DD；null = 永不过期
+    AgentKeyUpdateRequest:
+      type: object
+      description: 部分更新；expiresAt 显式 null 表示清空过期时间
+      properties:
+        name:
+          type: string
+          maxLength: 128
+        description:
+          type: string
+          maxLength: 200
+        scopes:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            enum:
+            - kb:list
+            - kb:search
+            - kb:answer
+            - workflow:read
+            - workflow:run
+        kbIds:
+          type: array
+          items:
+            type: string
+        rateLimitPerMin:
+          type: integer
+          minimum: 0
+          maximum: 100000
+        expiresAt:
+          type: string
+          nullable: true
+        enabled:
+          type: boolean
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: ragstudio_session
+      description: 本地账号登录后由服务端下发的 HttpOnly 会话 Cookie。
+  responses:
+    Problem:
+      description: RFC 9457 问题体
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+servers:
+- url: /api/co-knowledge/v1
+security:
+- cookieAuth: []

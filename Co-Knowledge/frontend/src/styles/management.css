@@ -1,0 +1,90 @@
+/* Shared shell for list-management pages; page-specific CSS only arranges content. */
+.management-page {
+  scrollbar-gutter: stable;
+  padding: var(--rs-management-padding-block) var(--rs-management-padding-inline) 24px;
+}
+.management-page > .page-inner { container: management / inline-size; }
+.management-page .page-title {
+  min-height: 80px;
+  margin: 0 0 var(--rs-management-section-gap);
+  align-items: center;
+}
+.management-page .title-left { gap: 16px; }
+.management-page .title-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: var(--rs-bg-selected);
+}
+.management-page .title-icon svg { width: 30px; height: 30px; filter: none; }
+.management-page .toolbar { margin: 24px 0 20px; flex-wrap: wrap; }
+.management-page .toolbar-left, .management-page .toolbar-right { flex-wrap: wrap; }
+.management-page .toolbar-right { margin-left: auto; }
+.management-page .toolbar-right { max-width:100%;min-width:0; }
+.management-page .toolbar .search-field { max-width:100%; }
+.management-page .toolbar .el-input__wrapper,
+.management-page .toolbar .el-select__wrapper {
+  min-height: var(--el-component-size);
+}
+.management-page .metric-grid + .toolbar,
+.management-main > .toolbar:first-child { margin-top: 0; }
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--rs-overview-gap);
+  margin-bottom: 24px;
+}
+.metric-card {
+  container: overview-card / inline-size;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+  min-height: var(--rs-overview-card-min-height);
+  padding: var(--rs-overview-card-padding);
+  border: 1px solid var(--rs-border);
+  border-radius: var(--rs-radius);
+  background: var(--rs-bg-card);
+}
+.metric-label { min-width: 0; margin-bottom: 13px; font-size: var(--rs-font-size-secondary); line-height: 1.5; color: var(--rs-text-2); }
+.metric-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 48px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: var(--tint);
+  color: var(--tone);
+}
+.metric-icon svg { width: 26px; height: 26px; stroke: currentColor; stroke-width: .4; }
+.metric-body { flex: 1; min-width: 0; }
+.metric-bottom { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; column-gap: 8px; row-gap: 6px; }
+.metric-value { display: block; font-size: var(--rs-overview-value-size); line-height: 1.2; font-weight: 650; letter-spacing: -.6px; white-space: nowrap; }
+.metric-change { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; flex-shrink: 0; }
+.metric-change .metric-delta { font-size: var(--rs-font-size-secondary); line-height: 1.5; }
+.metric-foot { font-size: var(--rs-font-size-caption); line-height: 1.5; color: var(--rs-text-3); }
+@container overview-card (max-width: 210px) {
+  .metric-icon { width: 32px; height: 38px; }
+  .metric-icon svg { width: 22px; height: 22px; }
+  .metric-label { margin-bottom: 13px; }
+  .metric-value { font-size: var(--rs-overview-value-size-compact); }
+  .metric-bottom { column-gap: 6px; }
+  .metric-change .metric-delta { font-size: 11px; }
+}
+@container management (max-width: 960px) {
+  .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@container management (max-width: 540px) {
+  .metric-card { padding: 16px; gap: 8px; }
+}
+@container management (max-width: 340px) {
+  .metric-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 1450px) {
+  .management-page { --rs-management-padding-block: 28px; --rs-management-padding-inline: 24px; }
+}
+@media (max-width: 1100px) {
+  .management-page { --rs-management-padding-block: 24px; --rs-management-padding-inline: 20px; }
+}

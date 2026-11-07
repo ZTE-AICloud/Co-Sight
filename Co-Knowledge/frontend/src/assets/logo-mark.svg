@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+  <!-- document + folded corner -->
+  <path d="M8.5 5.5h9.7L23.5 10.8v8.4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M18.2 5.5v5.3h5.3" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M8.5 5.5v21h11" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- knowledge node growing out of the page -->
+  <path d="m19.7 26.5 4.2-4.4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+  <circle cx="25.2" cy="20.7" r="2.35" fill="#41B883"/>
+</svg>

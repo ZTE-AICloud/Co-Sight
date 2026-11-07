@@ -1,0 +1,23 @@
+# rag-knowledge-base · 开发镜像（源码挂载 + 热重载）
+# 与 Dockerfile 保持同一基础镜像 patch（钉死，避免重建时静默升级）。
+FROM python:3.11.18-slim
+
+WORKDIR /app
+
+ENV PYTHONPATH=/app/src \
+    PYTHONUNBUFFERED=1 \
+    DEV_MODE=true
+
+COPY requirements.lock ./
+# pip 源经 build ARG 注入（默认留空，见 Dockerfile 同名段说明）
+ARG PIP_INDEX_URL=
+ARG PIP_TRUSTED_HOST=
+ENV PIP_INDEX_URL=${PIP_INDEX_URL} PIP_TRUSTED_HOST=${PIP_TRUSTED_HOST}
+RUN pip install --no-cache-dir -r requirements.lock
+
+RUN mkdir -p /data/rkb/plugins/sourcefile /data/rkb/plugins/zedx /data/rkb/logs
+
+EXPOSE 8091
+
+# 开发态直接用 uvicorn --reload（不走 main.py 的常驻线程），改源码即生效
+CMD ["sh", "-c", "uvicorn app:app --host 0.0.0.0 --port ${KNOWLEDGE_BASE_PORT:-8091} --reload"]

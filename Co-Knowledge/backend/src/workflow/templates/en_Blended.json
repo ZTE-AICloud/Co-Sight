@@ -1,0 +1,1209 @@
+{
+  "flowType": "workflow",
+  "version": 2,
+  "nodeConfigDTOList": [
+    {
+      "position": {
+        "x": 750,
+        "y": 230
+      },
+      "size": {
+        "width": 1,
+        "height": 1
+      },
+      "view": "vue-shape-view",
+      "shape": "RETRIEVER",
+      "id": "9ff1431c-d75b-488c-ac35-a07a65d1a9d7",
+      "nodeId": "9ff1431c-d75b-488c-ac35-a07a65d1a9d7",
+      "flowId": "a02acd232ede203c75486909982c3d7e",
+      "label": "RE-a42",
+      "componentType": "RETRIEVER",
+      "variables": {
+        "retriever": [
+          {
+            "package": "core.rag.retriever.fusion_retriever",
+            "kwargs": {
+              "desc_info": "",
+              "top_k": 30
+            },
+            "id": "9ff1431c-d75b-488c-ac35-a07a65d1a9d7_4f1",
+            "operator": "FusionRetriever"
+          }
+        ]
+      },
+      "inputVariables": [
+        {
+          "key": "retriever_output",
+          "sourceNode": "14f7353d-729d-4580-9f20-419439cb1db5",
+          "label": "RE-1ca"
+        },
+        {
+          "key": "retriever_output",
+          "sourceNode": "00e875f5-5fe0-415c-96e3-7d6f0fe19226",
+          "label": "RE-400"
+        }
+      ],
+      "outputVariables": [
+        {
+          "key": "retriever_output",
+          "targetNode": "36ad4304-e0ed-4ffb-9e8c-66f594dd1964"
+        }
+      ],
+      "parentNodes": "14f7353d-729d-4580-9f20-419439cb1db5,00e875f5-5fe0-415c-96e3-7d6f0fe19226",
+      "xPosition": 750,
+      "yPosition": 230,
+      "ports": {
+        "groups": {
+          "in": {
+            "markup": [
+              {
+                "selector": "circle",
+                "tagName": "circle"
+              },
+              {
+                "selector": "dot",
+                "tagName": "circle"
+              }
+            ],
+            "position": {
+              "args": {
+                "x": 0,
+                "y": 0
+              },
+              "name": "absolute"
+            },
+            "attrs": {
+              "dot": {
+                "r": 0,
+                "fill": "#0077FF",
+                "magnet": true
+              },
+              "circle": {
+                "strokeWidth": 1,
+                "r": 6,
+                "fill": "#E6F1FF",
+                "magnet": true,
+                "stroke": "#0077FF"
+              }
+            }
+          },
+          "out": {
+            "markup": [
+              {
+                "selector": "circle",
+                "tagName": "circle"
+              },
+              {
+                "selector": "dot",
+                "tagName": "circle"
+              }
+            ],
+            "position": {
+              "args": {
+                "x": 0,
+                "y": 0
+              },
+              "name": "absolute"
+            },
+            "attrs": {
+              "dot": {
+                "r": 0,
+                "fill": "#0077FF",
+                "magnet": true
+              },
+              "circle": {
+                "strokeWidth": 1,
+                "r": 6,
+                "fill": "#E6F1FF",
+                "magnet": true,
+                "stroke": "#0077FF"
+              }
+            }
+          }
+        },
+        "items": [
+          {
+            "args": {
+              "x": 28,
+              "y": 217
+            },
+            "id": "retriever_input",
+            "attrs": {
+              "dot": {
+                "r": 4,
+                "fill": "#0077FF",
+                "magnet": true
+              }
+            },
+            "group": "in"
+          },
+          {
+            "args": {
+              "x": 214,
+              "y": 337
+            },
+            "id": "retriever_output",
+            "group": "out"
+          }
+        ]
+      },
+      "zIndex": 1,
+      "data": {
+        "type": "displayData",
+        "variables": {
+          "retriever": [
+            {
+              "package": "core.rag.retriever.fusion_retriever",
+              "kwargs": {
+                "desc_info": "",
+                "top_k": 30
+              },
+              "id": "9ff1431c-d75b-488c-ac35-a07a65d1a9d7_4f1",
+              "operator": "FusionRetriever"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "position": {
+        "x": 420,
+        "y": 420
+      },
+      "size": {
+        "width": 1,
+        "height": 1
+      },
+      "view": "vue-shape-view",
+      "shape": "RETRIEVER",
+      "id": "14f7353d-729d-4580-9f20-419439cb1db5",
+      "nodeId": "14f7353d-729d-4580-9f20-419439cb1db5",
+      "flowId": "a02acd232ede203c75486909982c3d7e",
+      "label": "RE-1ca",
+      "componentType": "RETRIEVER",
+      "variables": {
+        "retriever": [
+          {
+            "package": "core.rag.retriever.keyword_retriever",
+            "kwargs": {
+              "knowledge_base_name": [],
+              "desc_info": "",
+              "top_k": 15
+            },
+            "id": "14f7353d-729d-4580-9f20-419439cb1db5_76b",
+            "operator": "KeywordRetriever"
+          }
+        ]
+      },
+      "inputVariables": [
+        {
+          "key": "preretriever_output",
+          "sourceNode": "a0871825-da8a-4cff-9521-ca51fbfb62c7",
+          "label": "PRE-d0e"
+        }
+      ],
+      "outputVariables": [
+        {
+          "key": "retriever_output",
+          "targetNode": "9ff1431c-d75b-488c-ac35-a07a65d1a9d7"
+        }
+      ],
+      "parentNodes": "a0871825-da8a-4cff-9521-ca51fbfb62c7",
+      "xPosition": 420,
+      "yPosition": 420,
+      "ports": {
+        "groups": {
+          "in": {
+            "markup": [
+              {
+                "selector": "circle",
+                "tagName": "circle"
+              },
+              {
+                "selector": "dot",
+                "tagName": "circle"
+              }
+            ],
+            "position": {
+              "args": {
+                "x": 0,
+                "y": 0
+              },
+              "name": "absolute"
+            },
+            "attrs": {
+              "dot": {
+                "r": 0,
+                "fill": "#0077FF",
+                "magnet": true
+              },
+              "circle": {
+                "strokeWidth": 1,
+                "r": 6,
+                "fill": "#E6F1FF",
+                "magnet": true,
+                "stroke": "#0077FF"
+              }
+            }
+          },
+          "out": {
+            "markup": [
+              {
+                "selector": "circle",
+                "tagName": "circle"
+              },
+              {
+                "selector": "dot",
+                "tagName": "circle"
+              }
+            ],
+            "position": {
+              "args": {
+                "x": 0,
+                "y": 0
+              },
+              "name": "absolute"
+            },
+            "attrs": {
+              "dot": {
+                "r": 0,
+                "fill": "#0077FF",
+                "magnet": true
+              },
+              "circle": {
+                "strokeWidth": 1,
+                "r": 6,
+                "fill": "#E6F1FF",
+                "magnet": true,
+                "stroke": "#0077FF"
+              }
+            }
+          }
+        },
+        "items": [
+          {
+            "args": {
+              "x": 28,
+              "y": 217
+            },
+            "id": "retriever_input",
+            "attrs": {
+              "dot": {
+                "r": 4,
+                "fill": "#0077FF",
+                "magnet": true
+              }
+            },
+            "group": "in"
+          },
+          {
+            "args": {
+              "x": 214,
+              "y": 308
+            },
+            "id": "retriever_output",
+            "group": "out"
+          }
+        ]
+      },
+      "zIndex": 1,
+      "data": {
+        "type": "displayData",
+        "variables": {
+          "retriever": [
+            {
+              "package": "core.rag.retriever.keyword_retriever",
+              "kwargs": {
+                "knowledge_base_name": [],
+                "desc_info": "",
+                "top_k": 15
+              },
+              "id": "14f7353d-729d-4580-9f20-419439cb1db5_76b",
+              "operator": "KeywordRetriever"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "position": {
+        "x": 1730,
+        "y": 190
+      },
+      "size": {
+        "width": 1,
+        "height": 1
+      },
+      "view": "vue-shape-view",
+      "shape": "RESPONSE",
+      "id": "42d14237-ee3c-492b-8621-1798b28d4526",
+      "nodeId": "42d14237-ee3c-492b-8621-1798b28d4526",
+      "flowId": "a02acd232ede203c75486909982c3d7e",
+      "label": null,
+      "componentType": "RESPONSE",
+      "variables": null,
+      "inputVariables": [
+        {
+          "key": "responsesynthesizer_output",
+          "sourceNode": "2c8c13ac-b23f-4186-aa4f-131aa4cdf97c",
+          "label": "SYN-990"
+        }
+      ],
+      "outputVariables": [],
+      "parentNodes": "2c8c13ac-b23f-4186-aa4f-131aa4cdf97c",
+      "xPosition": 1730,
+      "yPosition": 190,
+      "ports": {
+        "groups": {
+          "in": {
+            "markup": [
+              {
+                "selector": "circle",
+                "tagName": "circle"
+              },
+              {
+                "selector": "dot",
+                "tagName": "circle"
+              }
+            ],
+            "position": {
+              "args": {
+                "x": 0,
+                "y": 0
+              },
+              "name": "absolute"
+            },
+            "attrs": {
+              "dot": {
+                "r": 0,
+                "fill": "#0077FF",
+                "magnet": true
+              },
+              "circle": {
+                "strokeWidth": 1,
+                "r": 6,
+                "fill": "#E6F1FF",
+                "magnet": true,
+                "stroke": "#0077FF"
+              }
+            }
+          }
+        },
+        "items": [
+          {
+            "args": {
+              "x": 22,
+              "y": 88
+            },
+            "id": "target-port",
+            "attrs": {
+              "dot": {
+                "r": 4,
+                "fill": "#0077FF",
+                "magnet": true
+              }
+            },
+            "group": "in"
+          }
+        ]
+      },
+      "zIndex": 1,
+      "data": {
+        "type": "displayData",
+        "variables": null
+      }
+    },
+    {
+      "position": {
+        "x": 420,
+        "y": -20
+      },
+      "size": {
+        "width": 1,
+        "height": 1
+      },
+      "view": "vue-shape-view",
+      "shape": "RETRIEVER",
+      "id": "00e875f5-5fe0-415c-96e3-7d6f0fe19226",
+      "nodeId": "00e875f5-5fe0-415c-96e3-7d6f0fe19226",
+      "flowId": "a02acd232ede203c75486909982c3d7e",
+      "label": "RE-400",
+      "componentType": "RETRIEVER",
+      "variables": {
+        "retriever": [
+          {
+            "package": "core.rag.retriever.vector_retriever",
+            "kwargs": {
+              "desc_info": "",
+              "knowledge_info_list": [
+                {
+                  "score": 0.3,
+                  "knowledge_base_name": [],
+                  "top_k": 15,
+                  "priority": 10
+                }
+              ],
+              "embedding": "",
+              "strategy": 0
+            },
+            "id": "00e875f5-5fe0-415c-96e3-7d6f0fe19226_dc5",
+            "operator": "VectorRetriever"
+          }
+        ]
+      },
+      "inputVariables": [
+        {
+          "key": "preretriever_output",
+          "sourceNode": "a0871825-da8a-4cff-9521-ca51fbfb62c7",
+          "label": "PRE-d0e"
+        }
+      ],
+      "outputVariables": [
+        {
+          "key": "retriever_output",
+          "targetNode": "9ff1431c-d75b-488c-ac35-a07a65d1a9d7"
+        }
+      ],
+      "parentNodes": "a0871825-da8a-4cff-9521-ca51fbfb62c7",
+      "xPosition": 420,
+      "yPosition": -20,
+      "ports": {
+        "groups": {
+          "in": {
+            "markup": [
+              {
+                "selector": "circle",
+                "tagName": "circle"
+              },
+              {
+                "selector": "dot",
+                "tagName": "circle"
+              }
+            ],
+            "position": {
+              "args": {
+                "x": 0,
+                "y": 0
+              },
+              "name": "absolute"
+            },
+            "attrs": {
+              "dot": {
+                "r": 0,
+                "fill": "#0077FF",
+                "magnet": true
+              },
+              "circle": {
+                "strokeWidth": 1,
+                "r": 6,
+                "fill": "#E6F1FF",
+                "magnet": true,
+                "stroke": "#0077FF"
+              }
+            }
+          },
+          "out": {
+            "markup": [
+              {
+                "selector": "circle",
+                "tagName": "circle"
+              },
+              {
+                "selector": "dot",
+                "tagName": "circle"
+              }
+            ],
+            "position": {
+              "args": {
+                "x": 0,
+                "y": 0
+              },
+              "name": "absolute"
+            },
+            "attrs": {
+              "dot": {
+                "r": 0,
+                "fill": "#0077FF",
+                "magnet": true
+              },
+              "circle": {
+                "strokeWidth": 1,
+                "r": 6,
+                "fill": "#E6F1FF",
+                "magnet": true,
+                "stroke": "#0077FF"
+              }
+            }
+          }
+        },
+        "items": [
+          {
+            "args": {
+              "x": 28,
+              "y": 217
+            },
+            "id": "retriever_input",
+            "attrs": {
+              "dot": {
+                "r": 4,
+                "fill": "#0077FF",
+                "magnet": true
+              }
+            },
+            "group": "in"
+          },
+          {
+            "args": {
+              "x": 214,
+              "y": 308
+            },
+            "id": "retriever_output",
+            "group": "out"
+          }
+        ]
+      },
+      "zIndex": 1,
+      "data": {
+        "type": "displayData",
+        "variables": {
+          "retriever": [
+            {
+              "package": "core.rag.retriever.vector_retriever",
+              "kwargs": {
+                "desc_info": "",
+                "knowledge_info_list": [
+                  {
+                    "score": 0.3,
+                    "knowledge_base_name": [],
+                    "top_k": 15,
+                    "priority": 10
+                  }
+                ],
+                "embedding": "",
+                "strategy": 0
+              },
+              "id": "00e875f5-5fe0-415c-96e3-7d6f0fe19226_dc5",
+              "operator": "VectorRetriever"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "position": {
+        "x": 40,
+        "y": 40
+      },
+      "size": {
+        "width": 1,
+        "height": 1
+      },
+      "view": "vue-shape-view",
+      "shape": "QUERY",
+      "id": "fbf5a406-374a-4ae4-ae22-a8cb5eceda25",
+      "nodeId": "fbf5a406-374a-4ae4-ae22-a8cb5eceda25",
+      "flowId": "a02acd232ede203c75486909982c3d7e",
+      "label": "QUERY",
+      "componentType": "QUERY",
+      "variables": null,
+      "inputVariables": [],
+      "outputVariables": [
+        {
+          "key": "text",
+          "targetNode": "a0871825-da8a-4cff-9521-ca51fbfb62c7"
+        }
+      ],
+      "parentNodes": "",
+      "xPosition": 40,
+      "yPosition": 40,
+      "ports": {
+        "groups": {
+          "out": {
+            "position": {
+              "args": {
+                "x": 0,
+                "y": 0
+              },
+              "name": "absolute"
+            },
+            "attrs": {
+              "circle": {
+                "strokeWidth": 1,
+                "r": 6,
+                "fill": "#E6F1FF",
+                "magnet": true,
+                "stroke": "#0077FF"
+              }
+            }
+          }
+        },
+        "items": [
+          {
+            "args": {
+              "x": 212,
+              "y": 70
+            },
+            "id": "text",
+            "group": "out"
+          }
+        ]
+      },
+      "zIndex": 1,
+      "data": {
+        "type": "displayData",
+        "variables": null
+      }
+    },
+    {
+      "position": {
+        "x": 1400,
+        "y": 230
+      },
+      "size": {
+        "width": 1,
+        "height": 1
+      },
+      "view": "vue-shape-view",
+      "shape": "RESPONSE_SYNTHESIZER",
+      "id": "2c8c13ac-b23f-4186-aa4f-131aa4cdf97c",
+      "nodeId": "2c8c13ac-b23f-4186-aa4f-131aa4cdf97c",
+      "flowId": "a02acd232ede203c75486909982c3d7e",
+      "label": "SYN-990",
+      "componentType": "RESPONSE_SYNTHESIZER",
+      "variables": {
+        "responsesynthesizer": [
+          {
+            "package": "core.rag.response_synthesizer.simple_summarizer",
+            "kwargs": {
+              "generator-config": [
+                {
+                  "knowledge_base_name": [],
+                  "top_k": 5,
+                  "llm": "",
+                  "prompt": "You are an intelligent Q&A assistant skilled at combining retrieved context with your own knowledge to deliver accurate, concise, and reliable responses. Please strictly follow these principles for every query:\n\n1. **Context is complete and relevant**  \n   If the retrieved information directly and fully answers the user’s question, provide a clear, concise answer based on it—do not cite sources or use redundant phrases like “according to the context.”\n\n2. **Context is partial or insufficient**  \n   If the context offers some clues but not enough to fully answer, and you possess complementary knowledge, seamlessly integrate both into a complete, coherent response. If the context is outdated, biased, or misleading—and you are confident your own knowledge is more accurate—prioritize your authoritative knowledge, and do not mention the context at all.\n\n3. **Context is irrelevant**  \n   If the retrieved content has no meaningful connection to the question in terms of topic, entities, time, or domain, ignore it entirely and respond as follows:  \n   - **Can answer clearly**: Provide a concise, well-supported answer directly.  \n   - **Question is ambiguous**: Ask 1–2 specific, targeted questions to help the user clarify their needs.  \n   - **Beyond your capability**: Politely decline, explaining you cannot provide a reliable answer. If you can offer related background or a reasonable inference, clearly label it as “possible,” “likely,” or “possibly,” and invite the user to provide additional details.\n\nAlways prioritize the user’s intent. Use natural, professional, and friendly language—avoid technical jargon (e.g., RAG, retrieval-augmented). Every response should sound as if it came from a knowledgeable, trustworthy expert.  \n\n**User query**: {query_str}  \n**Relevant context**: {context_str}",
+                  "temperature": 0.01,
+                  "no_context_prompt": "You are an intelligent Q&A assistant tasked with accurately, concisely, and efficiently responding to user inquiries. Please strictly adhere to the following principles when answering:\n\n1. **When able to answer accurately**: If the question falls within the realm of general knowledge (e.g., science, history, culture, common sense) and you are confident in possessing reliable, complete knowledge, provide a clear, concise, and evidence-based answer directly, avoiding unnecessary elaboration.\n\n2. **When the question is ambiguous or unclear**: If the user’s query is poorly phrased, lacks sufficient information, or admits multiple interpretations, proactively ask 1–2 specific, targeted clarification questions to guide the user in providing essential details, enabling a more precise response.\n\n3. **When beyond your knowledge scope**: If the question involves a professional, cutting-edge, private, or obscure topic for which you lack confirmed or reliable information, politely apologize and state that you cannot provide a definitive answer. If you can offer partial relevant information or a reasonable inference, briefly indicate this and invite the user to confirm or provide additional context.\n\nUser query: {query_str}"
+                }
+              ]
+            },
+            "id": "2c8c13ac-b23f-4186-aa4f-131aa4cdf97c_563",
+            "operator": "RagSimpleSummarizer"
+          }
+        ]
+      },
+      "inputVariables": [
+        {
+          "key": "postretriever_output",
+          "sourceNode": "36ad4304-e0ed-4ffb-9e8c-66f594dd1964",
+          "label": "POST-85a"
+        }
+      ],
+      "outputVariables": [
+        {
+          "key": "responsesynthesizer_output",
+          "targetNode": "42d14237-ee3c-492b-8621-1798b28d4526"
+        }
+      ],
+      "parentNodes": "36ad4304-e0ed-4ffb-9e8c-66f594dd1964",
+      "xPosition": 1400,
+      "yPosition": 230,
+      "ports": {
+        "groups": {
+          "in": {
+            "markup": [
+              {
+                "selector": "circle",
+                "tagName": "circle"
+              },
+              {
+                "selector": "dot",
+                "tagName": "circle"
+              }
+            ],
+            "position": {
+              "args": {
+                "x": 0,
+                "y": 0
+              },
+              "name": "absolute"
+            },
+            "attrs": {
+              "dot": {
+                "r": 0,
+                "fill": "#0077FF",
+                "magnet": true
+              },
+              "circle": {
+                "strokeWidth": 1,
+                "r": 6,
+                "fill": "#E6F1FF",
+                "magnet": true,
+                "stroke": "#0077FF"
+              }
+            }
+          },
+          "out": {
+            "markup": [
+              {
+                "selector": "circle",
+                "tagName": "circle"
+              },
+              {
+                "selector": "dot",
+                "tagName": "circle"
+              }
+            ],
+            "position": {
+              "args": {
+                "x": 0,
+                "y": 0
+              },
+              "name": "absolute"
+            },
+            "attrs": {
+              "dot": {
+                "r": 0,
+                "fill": "#0077FF",
+                "magnet": true
+              },
+              "circle": {
+                "strokeWidth": 1,
+                "r": 6,
+                "fill": "#E6F1FF",
+                "magnet": true,
+                "stroke": "#0077FF"
+              }
+            }
+          }
+        },
+        "items": [
+          {
+            "args": {
+              "x": 28,
+              "y": 217
+            },
+            "id": "responsesynthesizer_input",
+            "attrs": {
+              "dot": {
+                "r": 4,
+                "fill": "#0077FF",
+                "magnet": true
+              }
+            },
+            "group": "in"
+          },
+          {
+            "args": {
+              "x": 214,
+              "y": 308
+            },
+            "id": "responsesynthesizer_output",
+            "group": "out"
+          }
+        ]
+      },
+      "zIndex": 1,
+      "data": {
+        "type": "displayData",
+        "variables": {
+          "responsesynthesizer": [
+            {
+              "package": "core.rag.response_synthesizer.simple_summarizer",
+              "kwargs": {
+                "generator-config": [
+                  {
+                    "knowledge_base_name": [],
+                    "top_k": 5,
+                    "llm": "",
+                    "prompt": "You are an intelligent Q&A assistant skilled at combining retrieved context with your own knowledge to deliver accurate, concise, and reliable responses. Please strictly follow these principles for every query:\n\n1. **Context is complete and relevant**  \n   If the retrieved information directly and fully answers the user’s question, provide a clear, concise answer based on it—do not cite sources or use redundant phrases like “according to the context.”\n\n2. **Context is partial or insufficient**  \n   If the context offers some clues but not enough to fully answer, and you possess complementary knowledge, seamlessly integrate both into a complete, coherent response. If the context is outdated, biased, or misleading—and you are confident your own knowledge is more accurate—prioritize your authoritative knowledge, and do not mention the context at all.\n\n3. **Context is irrelevant**  \n   If the retrieved content has no meaningful connection to the question in terms of topic, entities, time, or domain, ignore it entirely and respond as follows:  \n   - **Can answer clearly**: Provide a concise, well-supported answer directly.  \n   - **Question is ambiguous**: Ask 1–2 specific, targeted questions to help the user clarify their needs.  \n   - **Beyond your capability**: Politely decline, explaining you cannot provide a reliable answer. If you can offer related background or a reasonable inference, clearly label it as “possible,” “likely,” or “possibly,” and invite the user to provide additional details.\n\nAlways prioritize the user’s intent. Use natural, professional, and friendly language—avoid technical jargon (e.g., RAG, retrieval-augmented). Every response should sound as if it came from a knowledgeable, trustworthy expert.  \n\n**User query**: {query_str}  \n**Relevant context**: {context_str}",
+                    "temperature": 0.01,
+                    "no_context_prompt": "You are an intelligent Q&A assistant tasked with accurately, concisely, and efficiently responding to user inquiries. Please strictly adhere to the following principles when answering:\n\n1. **When able to answer accurately**: If the question falls within the realm of general knowledge (e.g., science, history, culture, common sense) and you are confident in possessing reliable, complete knowledge, provide a clear, concise, and evidence-based answer directly, avoiding unnecessary elaboration.\n\n2. **When the question is ambiguous or unclear**: If the user’s query is poorly phrased, lacks sufficient information, or admits multiple interpretations, proactively ask 1–2 specific, targeted clarification questions to guide the user in providing essential details, enabling a more precise response.\n\n3. **When beyond your knowledge scope**: If the question involves a professional, cutting-edge, private, or obscure topic for which you lack confirmed or reliable information, politely apologize and state that you cannot provide a definitive answer. If you can offer partial relevant information or a reasonable inference, briefly indicate this and invite the user to confirm or provide additional context.\n\nUser query: {query_str}"
+                  }
+                ]
+              },
+              "id": "2c8c13ac-b23f-4186-aa4f-131aa4cdf97c_563",
+              "operator": "RagSimpleSummarizer"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "position": {
+        "x": 1080,
+        "y": 150
+      },
+      "size": {
+        "width": 1,
+        "height": 1
+      },
+      "view": "vue-shape-view",
+      "shape": "POST_RETRIEVER",
+      "id": "36ad4304-e0ed-4ffb-9e8c-66f594dd1964",
+      "nodeId": "36ad4304-e0ed-4ffb-9e8c-66f594dd1964",
+      "flowId": "a02acd232ede203c75486909982c3d7e",
+      "label": "POST-85a",
+      "componentType": "POST_RETRIEVER",
+      "variables": {
+        "postretriever": [
+          {
+            "package": "core.rag.post_retriever.llm_reranker",
+            "kwargs": {
+              "top_n": 5,
+              "score": 0.01
+            },
+            "id": "36ad4304-e0ed-4ffb-9e8c-66f594dd1964_15d",
+            "operator": "LLMReranker"
+          }
+        ]
+      },
+      "inputVariables": [
+        {
+          "key": "retriever_output",
+          "sourceNode": "9ff1431c-d75b-488c-ac35-a07a65d1a9d7",
+          "label": "RE-a42"
+        }
+      ],
+      "outputVariables": [
+        {
+          "key": "postretriever_output",
+          "targetNode": "2c8c13ac-b23f-4186-aa4f-131aa4cdf97c"
+        }
+      ],
+      "parentNodes": "9ff1431c-d75b-488c-ac35-a07a65d1a9d7",
+      "xPosition": 1080,
+      "yPosition": 150,
+      "ports": {
+        "groups": {
+          "in": {
+            "markup": [
+              {
+                "selector": "circle",
+                "tagName": "circle"
+              },
+              {
+                "selector": "dot",
+                "tagName": "circle"
+              }
+            ],
+            "position": {
+              "args": {
+                "x": 0,
+                "y": 0
+              },
+              "name": "absolute"
+            },
+            "attrs": {
+              "dot": {
+                "r": 0,
+                "fill": "#0077FF",
+                "magnet": true
+              },
+              "circle": {
+                "strokeWidth": 1,
+                "r": 6,
+                "fill": "#E6F1FF",
+                "magnet": true,
+                "stroke": "#0077FF"
+              }
+            }
+          },
+          "out": {
+            "markup": [
+              {
+                "selector": "circle",
+                "tagName": "circle"
+              },
+              {
+                "selector": "dot",
+                "tagName": "circle"
+              }
+            ],
+            "position": {
+              "args": {
+                "x": 0,
+                "y": 0
+              },
+              "name": "absolute"
+            },
+            "attrs": {
+              "dot": {
+                "r": 0,
+                "fill": "#0077FF",
+                "magnet": true
+              },
+              "circle": {
+                "strokeWidth": 1,
+                "r": 6,
+                "fill": "#E6F1FF",
+                "magnet": true,
+                "stroke": "#0077FF"
+              }
+            }
+          }
+        },
+        "items": [
+          {
+            "args": {
+              "x": 28,
+              "y": 217
+            },
+            "id": "postretriever_input",
+            "attrs": {
+              "dot": {
+                "r": 4,
+                "fill": "#0077FF",
+                "magnet": true
+              }
+            },
+            "group": "in"
+          },
+          {
+            "args": {
+              "x": 214,
+              "y": 308
+            },
+            "id": "postretriever_output",
+            "group": "out"
+          }
+        ]
+      },
+      "zIndex": 1,
+      "data": {
+        "type": "displayData",
+        "variables": {
+          "postretriever": [
+            {
+              "package": "core.rag.post_retriever.llm_reranker",
+              "kwargs": {
+                "top_n": 5,
+                "score": 0.01
+              },
+              "id": "36ad4304-e0ed-4ffb-9e8c-66f594dd1964_15d",
+              "operator": "LLMReranker"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "position": {
+        "x": 70,
+        "y": 280
+      },
+      "size": {
+        "width": 1,
+        "height": 1
+      },
+      "view": "vue-shape-view",
+      "shape": "PRE_RETRIEVER",
+      "id": "a0871825-da8a-4cff-9521-ca51fbfb62c7",
+      "nodeId": "a0871825-da8a-4cff-9521-ca51fbfb62c7",
+      "flowId": "a02acd232ede203c75486909982c3d7e",
+      "label": "PRE-d0e",
+      "componentType": "PRE_RETRIEVER",
+      "variables": {
+        "preretriever": [
+          {
+            "package": "core.rag.pre_retriever.query_transform.query_rewrite",
+            "kwargs": {
+              "llm": "",
+              "prompt": "You are an expert in question completion and reconstruction. I will tell you the questions from the previous rounds and the current round. Please complete the following question completion and reconstruction tasks according to the set steps.\n    ###\n    The steps for question completion and reconstruction are as follows, please execute them strictly in order:\n    1. When the current round question is a grammatically complete question, directly execute step 3.\n    2. When the current round question is not a grammatically complete question, it is necessary to judge whether the current round question and the previous rounds of questions have a direct relationship. If so, complete the current round question based on the semantics of the previous rounds of questions. If there is no relationship, skip the current step.\n    3. Reconstruct the current round question. When reconstructing, there is no need to combine the semantics of the previous rounds of questions. Return with a simple and understandable grammatical structure.\n    ###\n    Previous questions:\n    ###\n    {last_question}\n    ###\n    Current question:\n    ###￥\n    {current_question}\n    ###\n    Return the current round question as the answer, formatted as a JSON object, for example: {{\"question\": \"xxxx\"}}",
+              "multi_chat_limit": 8
+            },
+            "id": "a0871825-da8a-4cff-9521-ca51fbfb62c7_501",
+            "operator": "LLMQueryRewriter"
+          }
+        ]
+      },
+      "inputVariables": [
+        {
+          "key": "text",
+          "sourceNode": "fbf5a406-374a-4ae4-ae22-a8cb5eceda25",
+          "label": "QUERY"
+        }
+      ],
+      "outputVariables": [
+        {
+          "key": "preretriever_output",
+          "targetNode": "00e875f5-5fe0-415c-96e3-7d6f0fe19226"
+        },
+        {
+          "key": "preretriever_output",
+          "targetNode": "14f7353d-729d-4580-9f20-419439cb1db5"
+        }
+      ],
+      "parentNodes": "fbf5a406-374a-4ae4-ae22-a8cb5eceda25",
+      "xPosition": 70,
+      "yPosition": 280,
+      "ports": {
+        "groups": {
+          "in": {
+            "markup": [
+              {
+                "selector": "circle",
+                "tagName": "circle"
+              },
+              {
+                "selector": "dot",
+                "tagName": "circle"
+              }
+            ],
+            "position": {
+              "args": {
+                "x": 0,
+                "y": 0
+              },
+              "name": "absolute"
+            },
+            "attrs": {
+              "dot": {
+                "r": 0,
+                "fill": "#0077FF",
+                "magnet": true
+              },
+              "circle": {
+                "strokeWidth": 1,
+                "r": 6,
+                "fill": "#E6F1FF",
+                "magnet": true,
+                "stroke": "#0077FF"
+              }
+            }
+          },
+          "out": {
+            "markup": [
+              {
+                "selector": "circle",
+                "tagName": "circle"
+              },
+              {
+                "selector": "dot",
+                "tagName": "circle"
+              }
+            ],
+            "position": {
+              "args": {
+                "x": 0,
+                "y": 0
+              },
+              "name": "absolute"
+            },
+            "attrs": {
+              "dot": {
+                "r": 0,
+                "fill": "#0077FF",
+                "magnet": true
+              },
+              "circle": {
+                "strokeWidth": 1,
+                "r": 6,
+                "fill": "#E6F1FF",
+                "magnet": true,
+                "stroke": "#0077FF"
+              }
+            }
+          }
+        },
+        "items": [
+          {
+            "args": {
+              "x": 28,
+              "y": 217
+            },
+            "id": "preretriever_input",
+            "attrs": {
+              "dot": {
+                "r": 4,
+                "fill": "#0077FF",
+                "magnet": true
+              }
+            },
+            "group": "in"
+          },
+          {
+            "args": {
+              "x": 214,
+              "y": 308
+            },
+            "id": "preretriever_output",
+            "group": "out"
+          }
+        ]
+      },
+      "zIndex": 1,
+      "data": {
+        "type": "displayData",
+        "variables": {
+          "preretriever": [
+            {
+              "package": "core.rag.pre_retriever.query_transform.query_rewrite",
+              "kwargs": {
+                "llm": "",
+                "prompt": "You are an expert in question completion and reconstruction. I will tell you the questions from the previous rounds and the current round. Please complete the following question completion and reconstruction tasks according to the set steps.\n    ###\n    The steps for question completion and reconstruction are as follows, please execute them strictly in order:\n    1. When the current round question is a grammatically complete question, directly execute step 3.\n    2. When the current round question is not a grammatically complete question, it is necessary to judge whether the current round question and the previous rounds of questions have a direct relationship. If so, complete the current round question based on the semantics of the previous rounds of questions. If there is no relationship, skip the current step.\n    3. Reconstruct the current round question. When reconstructing, there is no need to combine the semantics of the previous rounds of questions. Return with a simple and understandable grammatical structure.\n    ###\n    Previous questions:\n    ###\n    {last_question}\n    ###\n    Current question:\n    ###￥\n    {current_question}\n    ###\n    Return the current round question as the answer, formatted as a JSON object, for example: {{\"question\": \"xxxx\"}}",
+                "multi_chat_limit": 8
+              },
+              "id": "a0871825-da8a-4cff-9521-ca51fbfb62c7_501",
+              "operator": "LLMQueryRewriter"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "otherNodeConfigList": [
+    {
+      "componentType": "QUERY_ENGINE",
+      "inputVariables": [],
+      "variables": {
+        "queryengine": {
+          "id": 0,
+          "package": "core.rag.query_engine.blended_query_engine",
+          "operator": "BlendedQueryEngine",
+          "desc": "",
+          "kwargs": {}
+        }
+      }
+    },
+    {
+      "componentType": "EDGES",
+      "inputVariables": [],
+      "variables": {
+        "edges": [
+          {
+            "source": "9ff1431c-d75b-488c-ac35-a07a65d1a9d7",
+            "target": "36ad4304-e0ed-4ffb-9e8c-66f594dd1964"
+          },
+          {
+            "source": "14f7353d-729d-4580-9f20-419439cb1db5",
+            "target": "9ff1431c-d75b-488c-ac35-a07a65d1a9d7"
+          },
+          {
+            "source": "00e875f5-5fe0-415c-96e3-7d6f0fe19226",
+            "target": "9ff1431c-d75b-488c-ac35-a07a65d1a9d7"
+          },
+          {
+            "source": "fbf5a406-374a-4ae4-ae22-a8cb5eceda25",
+            "target": "a0871825-da8a-4cff-9521-ca51fbfb62c7"
+          },
+          {
+            "source": "2c8c13ac-b23f-4186-aa4f-131aa4cdf97c",
+            "target": "42d14237-ee3c-492b-8621-1798b28d4526"
+          },
+          {
+            "source": "36ad4304-e0ed-4ffb-9e8c-66f594dd1964",
+            "target": "2c8c13ac-b23f-4186-aa4f-131aa4cdf97c"
+          },
+          {
+            "source": "a0871825-da8a-4cff-9521-ca51fbfb62c7",
+            "target": "00e875f5-5fe0-415c-96e3-7d6f0fe19226"
+          },
+          {
+            "source": "a0871825-da8a-4cff-9521-ca51fbfb62c7",
+            "target": "14f7353d-729d-4580-9f20-419439cb1db5"
+          }
+        ]
+      }
+    }
+  ]
+}

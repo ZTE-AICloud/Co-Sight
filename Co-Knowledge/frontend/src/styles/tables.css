@@ -1,0 +1,43 @@
+.list-table { width: 100%; border-collapse: separate; border-spacing: 0; text-align: left; font-size: var(--rs-table-font-size); line-height: 1.5; }
+.list-table th { height: var(--rs-table-header-height); background: var(--rs-bg-soft); color: var(--rs-text-2); font-size: var(--rs-table-header-font-size); font-weight: 600; padding: 10px var(--rs-table-cell-padding); border-bottom: 1px solid var(--rs-border); white-space: nowrap; }
+.list-table td { height: var(--rs-table-row-height); padding: var(--rs-table-cell-padding); border-bottom: 1px solid var(--rs-border-soft); font-size: var(--rs-table-font-size); color: var(--rs-text-2); vertical-align: middle; line-height: 1.5; }
+.list-table .entity-title { font-size: inherit; font-weight: 650; line-height: 1.5; }
+.list-table .entity-sub { font-size: var(--rs-table-secondary-font-size); margin-top: 4px; line-height: 1.45; }
+/* 知识库名称下方的描述固定单行，超出用省略号；全量文本挂在 title 上。
+   不定长会让一行描述把表格行撑成两三行。 */
+.list-table .entity-desc { max-width: 420px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.list-table tr:last-child td { border-bottom: none; }
+.list-table tbody tr:hover td { background: var(--rs-bg-hover); }
+.list-table .check-cell { width: 44px; padding-left: 18px; padding-right: 8px; }
+.list-table input[type=checkbox] { appearance: none; width: 17px; height: 17px; border: 1px solid var(--rs-border); border-radius: 4px; margin: 0; background: var(--rs-bg-card); vertical-align: middle; cursor: pointer; }
+.list-table input[type=checkbox]:checked { background: var(--rs-primary); border-color: var(--rs-primary); }
+.list-table input[type=checkbox]:checked:after { content: '✓'; display: block; color: #fff; text-align: center; font-size: 12px; line-height: 15px; }
+.list-table b { color: var(--rs-text); font-weight: 550; }
+.table-card { background: var(--rs-bg-card); border: 1px solid var(--rs-border); border-radius: var(--rs-radius); overflow: auto; }
+.list-table .entity { align-items: center; gap: 12px; }
+.list-table .avatar-square, .list-table .tinted-icon { width: var(--rs-table-icon-size); height: var(--rs-table-icon-size); border-radius: 10px; flex-shrink: 0; font-size: 24px; }
+.list-table .avatar-square svg, .list-table .tinted-icon svg { width: 24px; height: 24px; }
+.list-table .tag-soft { font-size: var(--rs-table-tag-font-size); padding: 4px 7px; line-height: 1.4; }
+.list-table .table-tags { margin-top: 6px; white-space: nowrap; }
+.list-table .row-actions { gap: 16px; }
+.list-table .el-button { height: 32px; padding: 6px 12px; font-size: var(--rs-table-font-size); }
+.list-table .el-button.is-link, .list-table .el-button.is-text { height: auto; padding: 3px 0; }
+.list-table .el-switch { height: 24px; }
+.list-table code { font-size: inherit; }
+.list-table .table-header-sub { font-size: var(--rs-table-secondary-font-size); font-weight: 400; }
+.list-table .status-sub { padding-left: 16px; }
+.list-table .table-status { display: flex; align-items: center; gap: 8px; }
+.list-table .table-time { white-space: nowrap; }
+.list-table .empty-row { height: 160px; text-align: center; padding: 60px; color: var(--rs-text-3); }
+.list-table .sort-icon { width: 11px; height: 11px; }
+
+/* 名称是行内跳转链接。列表用 `<a @click>` 做路由跳转，没有 href 时浏览器给的是
+   `cursor:auto`，所以显式补 pointer，保证各列表名称的悬停手感一致。 */
+.list-table .entity-link { display: inline-block; color: var(--rs-text); cursor: pointer; }
+.list-table .entity-link:hover { color: var(--rs-primary); text-decoration: underline; }
+
+/* 0.1.7：可排序表头（密钥等列表） */
+.table-sort-button { display:inline-flex;align-items:center;gap:5px;border:0;background:transparent;padding:0;color:inherit;font:inherit;text-align:left; }
+.table-sort-button svg { width:13px;height:13px;color:var(--rs-text-3); }
+th[aria-sort='ascending'] .table-sort-button, th[aria-sort='descending'] .table-sort-button { color:var(--rs-primary); }
+th[aria-sort='ascending'] .table-sort-button svg, th[aria-sort='descending'] .table-sort-button svg { color:var(--rs-primary); }

@@ -1,0 +1,74 @@
+/* All surfaces, including Element Plus overlays teleported to body, share this palette. */
+html.dark {
+  color-scheme: dark;
+  --rs-primary: #6aa9ff;
+  --rs-primary-hover: #91bfff;
+  --rs-primary-text: #6aa9ff;
+  --rs-primary-border: #3b6398;
+  --rs-bg-page: #111722;
+  --rs-bg-card: #192230;
+  --rs-bg-soft: #202c3d;
+  --rs-bg-hover: #24334a;
+  --rs-bg-selected: #203957;
+  --rs-page-glow: #152133;
+  --rs-text: #e8eef8;
+  --rs-text-2: #b3c0d5;
+  --rs-text-3: #8f9fb8;
+  --rs-border: #354459;
+  --rs-border-soft: #2b384b;
+  --rs-success: #59d993;
+  --rs-warning: #ffc16b;
+  --rs-danger: #ff8797;
+  --rs-canvas-bg: #121b29;
+  --rs-canvas-dot: #304058;
+  --rs-edge: #7290b7;
+  --rs-switch-off: #4d607c;
+  --rs-tone-blue: #78b3ff;
+  --rs-tint-blue: #203957;
+  --rs-tone-blue-ink: var(--rs-tone-blue);
+  --rs-tone-green: #69dba4;
+  --rs-tint-green: #1c3c34;
+  --rs-tone-green-ink: var(--rs-tone-green);
+  --rs-tone-purple: #bb9aff;
+  --rs-tint-purple: #352b50;
+  --rs-tone-purple-ink: var(--rs-tone-purple);
+  --rs-tone-cyan: #6bcbd8;
+  --rs-tint-cyan: #1d3b45;
+  --rs-tone-cyan-ink: var(--rs-tone-cyan);
+  --rs-tone-orange: #ffb46d;
+  --rs-tint-orange: #453326;
+  --rs-tone-orange-ink: var(--rs-tone-orange);
+  --el-color-primary: var(--rs-primary);
+  --el-color-primary-dark-2: #91bfff;
+  --el-color-primary-light-3: #537fb9;
+  --el-color-primary-light-5: #3b6398;
+  --el-color-primary-light-7: #29466b;
+  --el-color-primary-light-8: #243d5e;
+  --el-color-primary-light-9: var(--rs-bg-selected);
+  --el-color-success: var(--rs-success);
+  --el-color-warning: var(--rs-warning);
+  --el-color-danger: var(--rs-danger);
+  --el-bg-color-page: var(--rs-bg-page);
+  --el-bg-color: var(--rs-bg-card);
+  --el-bg-color-overlay: var(--rs-bg-card);
+  --el-text-color-primary: var(--rs-text);
+  --el-text-color-regular: var(--rs-text-2);
+  --el-text-color-secondary: var(--rs-text-3);
+  --el-text-color-placeholder: var(--rs-text-3);
+  --el-border-color: var(--rs-border);
+  --el-border-color-light: var(--rs-border-soft);
+  --el-border-color-lighter: var(--rs-border-soft);
+  --el-border-color-extra-light: var(--rs-border-soft);
+  --el-fill-color-blank: var(--rs-bg-card);
+  --el-fill-color: var(--rs-bg-hover);
+  --el-fill-color-light: var(--rs-bg-soft);
+  --el-fill-color-lighter: var(--rs-bg-soft);
+  --el-fill-color-extra-light: var(--rs-bg-soft);
+  --el-mask-color: #060b14b3;
+}
+
+/* Keep action buttons readable on the shared blue gradient in either theme. */
+html.dark .el-button--primary:not(.is-plain):not(.is-link):not(.is-text) { color: #fff; }
+html.dark .el-button--primary:not(.is-plain):not(.is-link):not(.is-text):disabled { background: var(--rs-bg-soft); border-color: var(--rs-border); color: var(--el-text-color-disabled); }
+html.dark .el-button--primary:not(.is-plain):not(.is-link):not(.is-text):hover:not(:disabled) { background: #2079e8; }
+html.dark .list-table input[type=checkbox]:checked:after { color: var(--rs-bg-page); }

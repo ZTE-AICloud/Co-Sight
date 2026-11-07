@@ -1,0 +1,25 @@
+*.pyc
+.idea/
+*.log
+*.swp
+.coverage
+venv/
+.venv/
+*.egg-info
+.obsidian
+build/
+dist/
+dist - *
+node_modules
+**/.angular
+.vscode
+**/src-tmp
+logs/
+plans/
+__pycache__
+**/work_space_*
+work_space/**
+.env
+.cursorindexingignore
+.specstory
+scripts/*

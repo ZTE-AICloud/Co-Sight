@@ -1,0 +1,932 @@
+# 由 agent.rest.build_rest_app().openapi() 生成；改动接口后重新生成并跑 verify-agent-openapi.py。
+openapi: 3.0.2
+info:
+  title: Knowledge Studio Agent API
+  description: Knowledge retrieval, citation-grounded answers, workflow discovery
+    and published workflow execution for agents. Bearer API key required; see docs/agent-integration.md.
+    Errors use application/problem+json (RFC 9457); X-Request-Id is a response header.
+  version: 1.4.0
+servers:
+- url: /api/co-knowledge/v1/agent
+paths:
+  /knowledge-bases:
+    get:
+      summary: List Knowledge Bases
+      operationId: list_knowledge_bases_knowledge_bases_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/KnowledgeBaseInfo'
+                type: array
+                title: Response List Knowledge Bases Knowledge Bases Get
+        '401':
+          description: Unauthorized
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '403':
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+      security:
+      - HTTPBearer: []
+  /knowledge-bases/{kb_id}:
+    get:
+      summary: Get Knowledge Base
+      operationId: get_knowledge_base_knowledge_bases__kb_id__get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: kb_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Kb Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KnowledgeBaseInfo'
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Unauthorized
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Forbidden
+        '404':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Not Found
+        '422':
+          description: Validation Error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /search:
+    post:
+      summary: Search
+      operationId: search_search_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchData'
+        '400':
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '401':
+          description: Unauthorized
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '403':
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '429':
+          description: Too Many Requests
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '502':
+          description: Bad Gateway
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+      security:
+      - HTTPBearer: []
+  /answer:
+    post:
+      summary: Answer
+      operationId: answer_answer_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnswerRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnswerData'
+        '400':
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '401':
+          description: Unauthorized
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '403':
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '429':
+          description: Too Many Requests
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '502':
+          description: Bad Gateway
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '503':
+          description: Service Unavailable
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+      security:
+      - HTTPBearer: []
+  /query:
+    post:
+      summary: Query Workflow
+      description: 'Execute a published workflow with the Agent API key.
+
+
+        The response is the same object as the native ``POST /query``; when
+
+        ``stream=true`` (or ``Accept: text/event-stream``) the response is SSE.'
+      operationId: query_workflow_query_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkflowQueryRequest'
+        required: true
+      responses:
+        '200':
+          description: Non-stream JSON answer, or SSE when stream=true
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowQueryAnswer'
+            text/event-stream:
+              schema:
+                type: string
+        '400':
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '401':
+          description: Unauthorized
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '403':
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '429':
+          description: Too Many Requests
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '502':
+          description: Bad Gateway
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '503':
+          description: Service Unavailable
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+      security:
+      - HTTPBearer: []
+  /workflows:
+    get:
+      summary: List Workflows
+      operationId: list_workflows_workflows_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 10000
+          minimum: 1
+          default: 1
+          title: Page
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 1000
+          minimum: 1
+          default: 10
+          title: Size
+      - name: keyword
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            maxLength: 255
+          - type: 'null'
+          title: Keyword
+      - name: publishType
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: integer
+            maximum: 2
+            minimum: 0
+          - type: 'null'
+          description: 0=unpublished, 1=published, 2=published with draft changes
+          title: Publishtype
+        description: 0=unpublished, 1=published, 2=published with draft changes
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowPage'
+        '401':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Unauthorized
+        '403':
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Forbidden
+        '422':
+          description: Validation Error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+components:
+  schemas:
+    AnswerData:
+      properties:
+        answer:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Answer
+        citations:
+          items:
+            $ref: '#/components/schemas/Citation'
+          type: array
+          title: Citations
+        model:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Model
+        usage:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          title: Usage
+        no_results:
+          type: boolean
+          title: No Results
+          default: false
+        reason:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Reason
+        warnings:
+          items:
+            $ref: '#/components/schemas/WarningItem'
+          type: array
+          title: Warnings
+      type: object
+      title: AnswerData
+    AnswerRequest:
+      properties:
+        question:
+          type: string
+          maxLength: 2000
+          minLength: 1
+          title: Question
+        knowledge_base_ids:
+          anyOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+          title: Knowledge Base Ids
+          description: Document knowledge base IDs; omitted/empty = all accessible
+        mode:
+          type: string
+          enum:
+          - auto
+          - hybrid
+          - vector
+          - keyword
+          title: Mode
+          description: Retrieval mode used before generation
+          default: auto
+        top_k:
+          type: integer
+          minimum: 1.0
+          title: Top K
+          description: Number of sources; upper bound is configurable (default 20)
+          default: 8
+        model:
+          anyOf:
+          - type: string
+            maxLength: 255
+          - type: 'null'
+          title: Model
+          description: Optional registered LLM name
+      additionalProperties: false
+      type: object
+      required:
+      - question
+      title: AnswerRequest
+    ChatHistoryItem:
+      properties:
+        question:
+          type: string
+          maxLength: 2000
+          minLength: 1
+          title: Question
+        answer:
+          type: string
+          title: Answer
+          default: ''
+      type: object
+      required:
+      - question
+      title: ChatHistoryItem
+      description: 一轮历史问答（与 ``/query`` 的 ``chat_history`` 元素同形）。
+    Citation:
+      properties:
+        citation_id:
+          type: string
+          title: Citation Id
+        knowledge_base_id:
+          type: string
+          title: Knowledge Base Id
+        document_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Document Id
+        source:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Source
+        chunk_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Chunk Id
+        text:
+          type: string
+          title: Text
+      type: object
+      required:
+      - citation_id
+      - knowledge_base_id
+      - text
+      title: Citation
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    KnowledgeBaseInfo:
+      properties:
+        id:
+          type: string
+          title: Id
+        name:
+          type: string
+          title: Name
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        type:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Type
+        embedding_model:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Embedding Model
+        status:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Status
+        created_date:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Created Date
+      type: object
+      required:
+      - id
+      - name
+      title: KnowledgeBaseInfo
+    Problem:
+      properties:
+        type:
+          type: string
+          title: Type
+        title:
+          type: string
+          title: Title
+        status:
+          type: integer
+          title: Status
+        detail:
+          type: string
+          title: Detail
+        code:
+          type: string
+          title: Code
+        instance:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Instance
+      additionalProperties: true
+      type: object
+      required:
+      - type
+      - title
+      - status
+      - detail
+      - code
+      title: Problem
+      description: RFC 9457 ``application/problem+json``（只用于 OpenAPI 文档）。
+    SearchData:
+      properties:
+        query:
+          type: string
+          title: Query
+        mode:
+          type: string
+          title: Mode
+        results:
+          items:
+            $ref: '#/components/schemas/SearchResult'
+          type: array
+          title: Results
+        degraded:
+          type: boolean
+          title: Degraded
+          default: false
+        warnings:
+          items:
+            $ref: '#/components/schemas/WarningItem'
+          type: array
+          title: Warnings
+      type: object
+      required:
+      - query
+      - mode
+      - results
+      title: SearchData
+    SearchRequest:
+      properties:
+        query:
+          type: string
+          maxLength: 2000
+          minLength: 1
+          title: Query
+          description: Natural-language query
+        knowledge_base_ids:
+          anyOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+          title: Knowledge Base Ids
+          description: Document knowledge base IDs; omitted/empty = all accessible
+        mode:
+          type: string
+          enum:
+          - auto
+          - hybrid
+          - vector
+          - keyword
+          title: Mode
+          description: auto|hybrid|vector|keyword
+          default: auto
+        top_k:
+          type: integer
+          minimum: 1.0
+          title: Top K
+          description: Number of results; upper bound is configurable (default 20)
+          default: 8
+        score_threshold:
+          type: number
+          maximum: 1.0
+          minimum: 0.0
+          title: Score Threshold
+          description: Vector-only cosine threshold
+          default: 0.0
+      additionalProperties: false
+      type: object
+      required:
+      - query
+      title: SearchRequest
+    SearchResult:
+      properties:
+        citation_id:
+          type: string
+          title: Citation Id
+        knowledge_base_id:
+          type: string
+          title: Knowledge Base Id
+        knowledge_base_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Knowledge Base Name
+        chunk_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Chunk Id
+        document_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Document Id
+        source:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Source
+        score:
+          type: number
+          title: Score
+        scores:
+          anyOf:
+          - additionalProperties:
+              type: number
+            type: object
+          - type: 'null'
+          title: Scores
+        text:
+          type: string
+          title: Text
+        metadata:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          title: Metadata
+      type: object
+      required:
+      - citation_id
+      - knowledge_base_id
+      - score
+      - text
+      title: SearchResult
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+      type: object
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError
+    WarningItem:
+      properties:
+        code:
+          type: string
+          title: Code
+        message:
+          type: string
+          title: Message
+        knowledge_base_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Knowledge Base Id
+      type: object
+      required:
+      - code
+      - message
+      title: WarningItem
+    WorkflowBoundKnowledgeBase:
+      properties:
+        name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Name
+        type:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Type
+        status:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Status
+        assetId:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Assetid
+        kbasePkId:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Kbasepkid
+        tableName:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Tablename
+        dbTableName:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Dbtablename
+        embeddingModel:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Embeddingmodel
+      type: object
+      title: WorkflowBoundKnowledgeBase
+      description: 工作流列表回显的绑定库（与画布下拉同一份字段）。
+    WorkflowInfo:
+      properties:
+        workFlowId:
+          type: string
+          title: Workflowid
+        name:
+          type: string
+          title: Name
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        template:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Template
+        knowledgeType:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Knowledgetype
+        publishType:
+          type: integer
+          title: Publishtype
+          default: 0
+        status:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Status
+        createdBy:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Createdby
+        createdDate:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Createddate
+        lastUpdatedDate:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Lastupdateddate
+        kbPkIds:
+          items:
+            $ref: '#/components/schemas/WorkflowBoundKnowledgeBase'
+          type: array
+          title: Kbpkids
+        graphKbPkIds:
+          items:
+            $ref: '#/components/schemas/WorkflowBoundKnowledgeBase'
+          type: array
+          title: Graphkbpkids
+      type: object
+      required:
+      - workFlowId
+      - name
+      title: WorkflowInfo
+      description: 工作流元数据（字段名与 ``/workflows`` 管理接口一致）。
+    WorkflowPage:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/WorkflowInfo'
+          type: array
+          title: Items
+        total:
+          type: integer
+          title: Total
+        page:
+          type: integer
+          title: Page
+        pageSize:
+          type: integer
+          title: Pagesize
+      type: object
+      required:
+      - items
+      - total
+      - page
+      - pageSize
+      title: WorkflowPage
+    WorkflowQueryAnswer:
+      properties:
+        conversation_id:
+          type: string
+          title: Conversation Id
+        answer:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Answer
+        retrieval:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          title: Retrieval
+      type: object
+      required:
+      - conversation_id
+      title: WorkflowQueryAnswer
+      description: 非流式回答体（Agent 面精简形状；仅用于 OpenAPI）。
+    WorkflowQueryRequest:
+      properties:
+        question:
+          type: string
+          maxLength: 2000
+          minLength: 1
+          title: Question
+        conversation_id:
+          type: string
+          maxLength: 255
+          minLength: 1
+          title: Conversation Id
+        workflow_id:
+          type: string
+          maxLength: 255
+          minLength: 1
+          title: Workflow Id
+          description: Published workflow ID
+        stream:
+          type: boolean
+          title: Stream
+          description: Return SSE when true
+          default: false
+        include_retrieval:
+          type: boolean
+          title: Include Retrieval
+          default: false
+        chat_history:
+          anyOf:
+          - items:
+              $ref: '#/components/schemas/ChatHistoryItem'
+            type: array
+          - type: 'null'
+          title: Chat History
+      additionalProperties: false
+      type: object
+      required:
+      - question
+      - conversation_id
+      - workflow_id
+      title: WorkflowQueryRequest
+      description: '``POST /agent/query`` 的请求体（只暴露外部需要的字段）。'
+  securitySchemes:
+    HTTPBearer:
+      type: http
+      scheme: bearer

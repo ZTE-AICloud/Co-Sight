@@ -1,0 +1,507 @@
+[
+  {
+    "method": "MOUNT",
+    "path": "/api/co-knowledge/v1/agent",
+    "operation_id": ""
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/agent-keys",
+    "operation_id": "list_keys_api_co_knowledge_v1_agent_keys_get"
+  },
+  {
+    "method": "POST",
+    "path": "/api/co-knowledge/v1/agent-keys",
+    "operation_id": "create_key_api_co_knowledge_v1_agent_keys_post"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/agent-keys/stats",
+    "operation_id": "usage_stats_api_co_knowledge_v1_agent_keys_stats_get"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/agent-keys/status",
+    "operation_id": "status_api_co_knowledge_v1_agent_keys_status_get"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/co-knowledge/v1/agent-keys/{key_prefix}",
+    "operation_id": "delete_key_api_co_knowledge_v1_agent_keys__key_prefix__delete"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/co-knowledge/v1/agent-keys/{key_prefix}",
+    "operation_id": "update_key_api_co_knowledge_v1_agent_keys__key_prefix__patch"
+  },
+  {
+    "method": "POST",
+    "path": "/api/co-knowledge/v1/auth/login",
+    "operation_id": "login_api_co_knowledge_v1_auth_login_post"
+  },
+  {
+    "method": "POST",
+    "path": "/api/co-knowledge/v1/auth/logout",
+    "operation_id": "logout_api_co_knowledge_v1_auth_logout_post"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/auth/me",
+    "operation_id": "me_api_co_knowledge_v1_auth_me_get"
+  },
+  {
+    "method": "POST",
+    "path": "/api/co-knowledge/v1/auth/password",
+    "operation_id": "change_password_api_co_knowledge_v1_auth_password_post"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/auth/status",
+    "operation_id": "status_api_co_knowledge_v1_auth_status_get"
+  },
+  {
+    "method": "POST",
+    "path": "/api/co-knowledge/v1/graph-extractions",
+    "operation_id": "graph_extract_api_co_knowledge_v1_graph_extractions_post"
+  },
+  {
+    "method": "POST",
+    "path": "/api/co-knowledge/v1/graph-imports",
+    "operation_id": "graph_import_api_co_knowledge_v1_graph_imports_post"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/graph-schemas",
+    "operation_id": "graph_schema_list_api_co_knowledge_v1_graph_schemas_get"
+  },
+  {
+    "method": "POST",
+    "path": "/api/co-knowledge/v1/graph-schemas",
+    "operation_id": "graph_schema_create_api_co_knowledge_v1_graph_schemas_post"
+  },
+  {
+    "method": "POST",
+    "path": "/api/co-knowledge/v1/graph-schemas/import",
+    "operation_id": "graph_schema_import_api_co_knowledge_v1_graph_schemas_import_post"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/co-knowledge/v1/graph-schemas/{schema_id}",
+    "operation_id": "graph_schema_delete_api_co_knowledge_v1_graph_schemas__schema_id__delete"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/graph-schemas/{schema_id}",
+    "operation_id": "graph_schema_detail_api_co_knowledge_v1_graph_schemas__schema_id__get"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/co-knowledge/v1/graph-schemas/{schema_id}",
+    "operation_id": "graph_schema_update_api_co_knowledge_v1_graph_schemas__schema_id__patch"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/health",
+    "operation_id": "health_api_co_knowledge_v1_health_get"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/knowledge-bases",
+    "operation_id": "list_kbases_api_co_knowledge_v1_knowledge_bases_get"
+  },
+  {
+    "method": "POST",
+    "path": "/api/co-knowledge/v1/knowledge-bases",
+    "operation_id": "create_kbase_api_co_knowledge_v1_knowledge_bases_post"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/knowledge-bases/stats",
+    "operation_id": "kbase_stats_api_co_knowledge_v1_knowledge_bases_stats_get"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/co-knowledge/v1/knowledge-bases/{kbase_id}",
+    "operation_id": "delete_kbase_api_co_knowledge_v1_knowledge_bases__kbase_id__delete"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/knowledge-bases/{kbase_id}",
+    "operation_id": "kbase_detail_api_co_knowledge_v1_knowledge_bases__kbase_id__get"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/co-knowledge/v1/knowledge-bases/{kbase_id}",
+    "operation_id": "update_kbase_api_co_knowledge_v1_knowledge_bases__kbase_id__patch"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/knowledge-bases/{kbase_id}/chunks",
+    "operation_id": "chunk_list_api_co_knowledge_v1_knowledge_bases__kbase_id__chunks_get"
+  },
+  {
+    "method": "POST",
+    "path": "/api/co-knowledge/v1/knowledge-bases/{kbase_id}/chunks",
+    "operation_id": "chunk_add_api_co_knowledge_v1_knowledge_bases__kbase_id__chunks_post"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/knowledge-bases/{kbase_id}/directories",
+    "operation_id": "directory_descendants_api_co_knowledge_v1_knowledge_bases__kbase_id__directories_get"
+  },
+  {
+    "method": "POST",
+    "path": "/api/co-knowledge/v1/knowledge-bases/{kbase_id}/directories",
+    "operation_id": "create_directory_api_co_knowledge_v1_knowledge_bases__kbase_id__directories_post"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/co-knowledge/v1/knowledge-bases/{kbase_id}/directories/{directory_id}",
+    "operation_id": "delete_directory_api_co_knowledge_v1_knowledge_bases__kbase_id__directories__directory_id__delete"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/knowledge-bases/{kbase_id}/directories/{directory_id}",
+    "operation_id": "directory_detail_api_co_knowledge_v1_knowledge_bases__kbase_id__directories__directory_id__get"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/co-knowledge/v1/knowledge-bases/{kbase_id}/directories/{directory_id}",
+    "operation_id": "update_directory_api_co_knowledge_v1_knowledge_bases__kbase_id__directories__directory_id__patch"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/knowledge-bases/{kbase_id}/documents",
+    "operation_id": "documents_page_api_co_knowledge_v1_knowledge_bases__kbase_id__documents_get"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/co-knowledge/v1/knowledge-bases/{kbase_id}/documents",
+    "operation_id": "move_documents_api_co_knowledge_v1_knowledge_bases__kbase_id__documents_patch"
+  },
+  {
+    "method": "POST",
+    "path": "/api/co-knowledge/v1/knowledge-bases/{kbase_id}/documents",
+    "operation_id": "upload_document_api_co_knowledge_v1_knowledge_bases__kbase_id__documents_post"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/co-knowledge/v1/knowledge-bases/{kbase_id}/documents/{document_id}",
+    "operation_id": "delete_document_api_co_knowledge_v1_knowledge_bases__kbase_id__documents__document_id__delete"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/knowledge-bases/{kbase_id}/documents/{document_id}/chunks",
+    "operation_id": "document_chunks_api_co_knowledge_v1_knowledge_bases__kbase_id__documents__document_id__chunks_get"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/knowledge-bases/{kbase_id}/documents/{document_id}/content",
+    "operation_id": "download_document_api_co_knowledge_v1_knowledge_bases__kbase_id__documents__document_id__content_get"
+  },
+  {
+    "method": "POST",
+    "path": "/api/co-knowledge/v1/knowledge-bases/{kbase_id}/documents/{document_id}/retry",
+    "operation_id": "retry_document_api_co_knowledge_v1_knowledge_bases__kbase_id__documents__document_id__retry_post"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/knowledge-bases/{kbase_id}/graph",
+    "operation_id": "kbase_graph_detail_api_co_knowledge_v1_knowledge_bases__kbase_id__graph_get"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/co-knowledge/v1/knowledge-bases/{kbase_id}/graph",
+    "operation_id": "graph_extract_update_api_co_knowledge_v1_knowledge_bases__kbase_id__graph_put"
+  },
+  {
+    "method": "POST",
+    "path": "/api/co-knowledge/v1/knowledge-bases/{kbase_id}/graph/edges",
+    "operation_id": "graph_edge_create_api_co_knowledge_v1_knowledge_bases__kbase_id__graph_edges_post"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/co-knowledge/v1/knowledge-bases/{kbase_id}/graph/edges/{edge_id}",
+    "operation_id": "graph_edge_delete_api_co_knowledge_v1_knowledge_bases__kbase_id__graph_edges__edge_id__delete"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/co-knowledge/v1/knowledge-bases/{kbase_id}/graph/edges/{edge_id}",
+    "operation_id": "graph_edge_update_api_co_knowledge_v1_knowledge_bases__kbase_id__graph_edges__edge_id__patch"
+  },
+  {
+    "method": "POST",
+    "path": "/api/co-knowledge/v1/knowledge-bases/{kbase_id}/graph/entities",
+    "operation_id": "graph_entity_create_api_co_knowledge_v1_knowledge_bases__kbase_id__graph_entities_post"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/co-knowledge/v1/knowledge-bases/{kbase_id}/graph/entities/{entity_id}",
+    "operation_id": "graph_entity_delete_api_co_knowledge_v1_knowledge_bases__kbase_id__graph_entities__entity_id__delete"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/co-knowledge/v1/knowledge-bases/{kbase_id}/graph/entities/{entity_id}",
+    "operation_id": "graph_entity_update_api_co_knowledge_v1_knowledge_bases__kbase_id__graph_entities__entity_id__patch"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/knowledge-bases/{kbase_id}/graph/export",
+    "operation_id": "graph_export_api_co_knowledge_v1_knowledge_bases__kbase_id__graph_export_get"
+  },
+  {
+    "method": "POST",
+    "path": "/api/co-knowledge/v1/knowledge-bases/{kbase_id}/graph/query",
+    "operation_id": "graph_query_api_co_knowledge_v1_knowledge_bases__kbase_id__graph_query_post"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/models",
+    "operation_id": "list_models_api_co_knowledge_v1_models_get"
+  },
+  {
+    "method": "POST",
+    "path": "/api/co-knowledge/v1/models",
+    "operation_id": "create_model_api_co_knowledge_v1_models_post"
+  },
+  {
+    "method": "POST",
+    "path": "/api/co-knowledge/v1/models/test",
+    "operation_id": "test_unsaved_api_co_knowledge_v1_models_test_post"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/models/thinking-presets",
+    "operation_id": "thinking_presets_api_co_knowledge_v1_models_thinking_presets_get"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/co-knowledge/v1/models/{model_id}",
+    "operation_id": "delete_model_api_co_knowledge_v1_models__model_id__delete"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/models/{model_id}",
+    "operation_id": "get_model_api_co_knowledge_v1_models__model_id__get"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/co-knowledge/v1/models/{model_id}",
+    "operation_id": "update_model_api_co_knowledge_v1_models__model_id__put"
+  },
+  {
+    "method": "POST",
+    "path": "/api/co-knowledge/v1/models/{model_id}/test",
+    "operation_id": "test_saved_api_co_knowledge_v1_models__model_id__test_post"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/operators",
+    "operation_id": "list_operators_api_co_knowledge_v1_operators_get"
+  },
+  {
+    "method": "POST",
+    "path": "/api/co-knowledge/v1/operators",
+    "operation_id": "operator_import_api_co_knowledge_v1_operators_post"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/operators/available",
+    "operation_id": "operator_available_api_co_knowledge_v1_operators_available_get"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/operators/supported",
+    "operation_id": "operator_supported_api_co_knowledge_v1_operators_supported_get"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/operators/template",
+    "operation_id": "operator_template_download_api_co_knowledge_v1_operators_template_get"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/operators/types",
+    "operation_id": "operator_types_api_co_knowledge_v1_operators_types_get"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/co-knowledge/v1/operators/{operator_id}",
+    "operation_id": "operator_delete_api_co_knowledge_v1_operators__operator_id__delete"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/operators/{operator_id}",
+    "operation_id": "operator_detail_api_co_knowledge_v1_operators__operator_id__get"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/operators/{operator_id}/export",
+    "operation_id": "operator_export_api_co_knowledge_v1_operators__operator_id__export_get"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/co-knowledge/v1/operators/{operator_id}/publish",
+    "operation_id": "operator_un_publish_api_co_knowledge_v1_operators__operator_id__publish_delete"
+  },
+  {
+    "method": "POST",
+    "path": "/api/co-knowledge/v1/operators/{operator_id}/publish",
+    "operation_id": "operator_publish_api_co_knowledge_v1_operators__operator_id__publish_post"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/co-knowledge/v1/operators/{operator_id}/visibility",
+    "operation_id": "operator_visibility_api_co_knowledge_v1_operators__operator_id__visibility_put"
+  },
+  {
+    "method": "POST",
+    "path": "/api/co-knowledge/v1/query",
+    "operation_id": "chat_api_co_knowledge_v1_query_post"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/query-traces",
+    "operation_id": "query_traces_list_api_co_knowledge_v1_query_traces_get"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/query-traces/stats",
+    "operation_id": "query_traces_stats_api_co_knowledge_v1_query_traces_stats_get"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/query-traces/{trace_row_id}",
+    "operation_id": "query_traces_detail_api_co_knowledge_v1_query_traces__trace_row_id__get"
+  },
+  {
+    "method": "POST",
+    "path": "/api/co-knowledge/v1/retrieval",
+    "operation_id": "retrieve_api_co_knowledge_v1_retrieval_post"
+  },
+  {
+    "method": "POST",
+    "path": "/api/co-knowledge/v1/retrieval/graph",
+    "operation_id": "graph_retrieve_api_co_knowledge_v1_retrieval_graph_post"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/system/embedding-models",
+    "operation_id": "embedding_models_api_co_knowledge_v1_system_embedding_models_get"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/system/file-size-limits",
+    "operation_id": "file_size_limits_api_co_knowledge_v1_system_file_size_limits_get"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/system/info",
+    "operation_id": "system_info_api_co_knowledge_v1_system_info_get"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/system/llm-models",
+    "operation_id": "llm_models_api_co_knowledge_v1_system_llm_models_get"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/system/rerank-models",
+    "operation_id": "rerank_models_api_co_knowledge_v1_system_rerank_models_get"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/workflows",
+    "operation_id": "page_workflows_api_co_knowledge_v1_workflows_get"
+  },
+  {
+    "method": "POST",
+    "path": "/api/co-knowledge/v1/workflows",
+    "operation_id": "create_workflow_api_co_knowledge_v1_workflows_post"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/workflows/knowledge-bases",
+    "operation_id": "all_status_kbase_api_co_knowledge_v1_workflows_knowledge_bases_get"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/co-knowledge/v1/workflows/{workflow_id}",
+    "operation_id": "delete_workflow_api_co_knowledge_v1_workflows__workflow_id__delete"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/co-knowledge/v1/workflows/{workflow_id}",
+    "operation_id": "update_workflow_api_co_knowledge_v1_workflows__workflow_id__patch"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/workflows/{workflow_id}/export",
+    "operation_id": "download_asset_api_co_knowledge_v1_workflows__workflow_id__export_get"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/workflows/{workflow_id}/flow",
+    "operation_id": "get_flow_config_api_co_knowledge_v1_workflows__workflow_id__flow_get"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/co-knowledge/v1/workflows/{workflow_id}/flow",
+    "operation_id": "save_flow_config_api_co_knowledge_v1_workflows__workflow_id__flow_put"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/co-knowledge/v1/workflows/{workflow_id}/publication",
+    "operation_id": "unpublish_api_co_knowledge_v1_workflows__workflow_id__publication_delete"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/workflows/{workflow_id}/publication",
+    "operation_id": "get_published_flow_config_api_co_knowledge_v1_workflows__workflow_id__publication_get"
+  },
+  {
+    "method": "POST",
+    "path": "/api/co-knowledge/v1/workflows/{workflow_id}/publication",
+    "operation_id": "publish_api_co_knowledge_v1_workflows__workflow_id__publication_post"
+  },
+  {
+    "method": "POST",
+    "path": "/api/co-knowledge/v1/workflows/{workflow_id}/validate",
+    "operation_id": "pre_check_api_co_knowledge_v1_workflows__workflow_id__validate_post"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/co-knowledge/v1/{unknown_path}",
+    "operation_id": "kb_api_catch_all_api_co_knowledge_v1__unknown_path__delete"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/{unknown_path}",
+    "operation_id": "kb_api_catch_all_api_co_knowledge_v1__unknown_path__get"
+  },
+  {
+    "method": "HEAD",
+    "path": "/api/co-knowledge/v1/{unknown_path}",
+    "operation_id": "kb_api_catch_all_api_co_knowledge_v1__unknown_path__head"
+  },
+  {
+    "method": "OPTIONS",
+    "path": "/api/co-knowledge/v1/{unknown_path}",
+    "operation_id": "kb_api_catch_all_api_co_knowledge_v1__unknown_path__options"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/co-knowledge/v1/{unknown_path}",
+    "operation_id": "kb_api_catch_all_api_co_knowledge_v1__unknown_path__patch"
+  },
+  {
+    "method": "POST",
+    "path": "/api/co-knowledge/v1/{unknown_path}",
+    "operation_id": "kb_api_catch_all_api_co_knowledge_v1__unknown_path__post"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/co-knowledge/v1/{unknown_path}",
+    "operation_id": "kb_api_catch_all_api_co_knowledge_v1__unknown_path__put"
+  }
+]

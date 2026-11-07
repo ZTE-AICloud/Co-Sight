@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta name="description" content="Knowledge Studio 开源知识工程平台：文档知识库、图谱知识库、检索编排与 Agent 接入。">
+    <link rel="icon" type="image/svg+xml" href="<%= BASE_URL %>brand/zte-mark.svg">
+    <title><%= htmlWebpackPlugin.options.title %></title>
+    <!--
+      首屏主题：必须在任何样式/脚本之前执行，否则会先白后黑。
+      存储键与默认值与 src/shared/lib/theme.ts 保持一致（ragstudio-theme / light）。
+    -->
+    <script>
+      (function () {
+        var t = 'light'
+        try {
+          var s = localStorage.getItem('ragstudio-theme')
+          if (s === 'light' || s === 'dark') t = s
+        } catch (e) {}
+        document.documentElement.classList.toggle('dark', t === 'dark')
+        document.documentElement.setAttribute('data-theme', t)
+      })()
+    </script>
+    <style>
+      html { background: #f7f8fa; }
+      html.dark { background: #08090b; }
+    </style>
+  </head>
+  <body>
+    <noscript>
+      <strong>We're sorry but <%= htmlWebpackPlugin.options.title %> doesn't work properly without JavaScript enabled. Please enable it to continue.</strong>
+    </noscript>
+    <div id="app"></div>
+    <!-- built files will be auto injected -->
+  </body>
+</html>

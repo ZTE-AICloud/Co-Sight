@@ -1,0 +1,89 @@
+# ============================================================================
+# E2E 覆盖文件（配合 deploy/docker-compose.yml 使用）
+#
+#   docker compose -p rag-studio-e2e-<id> \
+#     -f deploy/docker-compose.yml -f deploy/docker-compose.e2e.yml \
+#     --profile e2e up -d --no-build --wait
+#
+# 做三件事：
+#   1. 增加 fake-model-gateway（确定性 embedding/LLM/rerank，无外部依赖）
+#   2. 把 RKB 的模型端点全部指向替身，并补 NO_PROXY
+#   3. 把 web 从 80 挪到 18080，避免和本地已有栈冲突
+#
+# 不修改默认 compose 的语义；不启动 minio / model-gateway（未启用对应 profile）。
+# ============================================================================
+
+name: rag-studio-e2e
+
+services:
+  # 基础设施调试端口在默认 compose 里绑到宿主回环；E2E 与本地已有栈并行时会把
+  # 5432/9200/2480/2424 撞掉。E2E 只经 web 入口访问，故不向宿主发布这些端口。
+  postgresql:
+    ports: !override []
+    # 静态表快照由默认 compose 挂载（deploy/init/pg）；E2E 不再单独维护一份。
+    # 动态 data_* 表仍由应用按需创建。
+  opensearch:
+    ports: !override []
+
+  fake-model-gateway:
+    image: node:22.23.3-alpine
+    profiles: ["e2e"]
+    command: ["node", "/app/server.mjs"]
+    environment:
+      MOCK_PORT: "8000"
+      E2E_MOCK_MODELS: "e2e-llm,e2e-embedding,e2e-reranker,e2e-path-llm"
+    volumes:
+      - ../e2e/support/model-mock:/app:ro
+    expose:
+      - "8000"
+    ports:
+      # 宿主调试端口：E2E 用它读写 /__mock__/requests 与故障注入
+      - "127.0.0.1:${E2E_MOCK_PORT:-18081}:8000"
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:8000/__mock__/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
+    mem_limit: 128m
+    restart: unless-stopped
+
+  rag-knowledge-base:
+    environment:
+      # ---- embedding：base 不带 /v1，path 带 /v1 ----
+      MODEL_GATEWAY_URL: http://fake-model-gateway:8000
+      MODEL_GATEWAY_EMBEDDINGS_PATH: /v1/embeddings
+      MODEL_GATEWAY_API_KEY: ""
+      EMBEDDING_MODEL: e2e-embedding
+      EMBEDDING_MODEL_NAME: e2e-embedding
+      EMBEDDING_DIMENSION: "1024"
+      # ---- 生成：base 带 /v1，models path 用标准的 /models ----
+      GENERATION_GATEWAY_URL: http://fake-model-gateway:8000/v1
+      GENERATION_API_KEY: ""
+      GENERATION_MODELS_PATH: /models
+      GENERATION_MODELS: "e2e-llm=E2E LLM"
+      GENERATION_MODEL: e2e-llm
+      REASONING_MODELS: ""
+      GENERATION_MAX_TOKENS: "8192"
+      # base compose 的 RKB_FLOW_* 是在宿主侧展开 ${GENERATION_MODELS} 的，E2E 必须
+      # 显式覆盖，否则播种会拿到宿主的旧模型清单。
+      RKB_FLOW_LLM_MODELS: "e2e-llm=E2E LLM"
+      RKB_FLOW_REASONING_MODELS: ""
+      # ---- rerank：完整 URL，seed.split_endpoint_url 会拆成 base=/v1 + path=/rerank ----
+      RERANK_URL: http://fake-model-gateway:8000/v1/rerank
+      RERANK_MODEL: e2e-reranker
+      RKB_RERANK_URL: http://fake-model-gateway:8000/v1/rerank
+      # 容器继承宿主代理时，替身必须排除；这里覆盖 base 的整串值
+      NO_PROXY: "localhost,127.0.0.1,postgresql,opensearch,model-gateway,minio,rag-knowledge-base,fake-model-gateway,172.18.0.0/16"
+      no_proxy: "localhost,127.0.0.1,postgresql,opensearch,model-gateway,minio,rag-knowledge-base,fake-model-gateway,172.18.0.0/16"
+    depends_on:
+      fake-model-gateway:
+        condition: service_healthy
+
+  web:
+    ports: !override
+      - "127.0.0.1:${E2E_WEB_PORT:-18080}:80"

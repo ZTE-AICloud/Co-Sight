@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ragstudio.dev/schemas/knowledge-base.json",
+  "title": "KnowledgeBase",
+  "description": "知识库。",
+  "type": "object",
+  "required": ["id", "name"],
+  "properties": {
+    "id":              { "type": "string", "description": "kbaseId；新库为 16 位十六进制（64 bit），历史库为 32 位 uuid" },
+    "name":            { "type": "string", "minLength": 1 },
+    "description":     { "type": "string" },
+    "type":            { "type": "string" },
+    "headIcon":        { "type": "string" },
+    "embeddingModel":  { "type": "string", "description": "对应 kb_embedding.model_code" },
+    "embeddingDim":    { "type": "integer", "description": "建向量表时使用；须与该模型 dimension 一致" },
+    "esIndexName":     { "type": "string", "description": "doc_<kbId>（文档库，与实际 ES 索引名一致）；图谱库为 graph_<kbId>" },
+    "tableName":       { "type": "string", "description": "物理表名：文档库 doc_<kbId>_vector，图谱库 graph_<kbId>" },
+    "status":          { "type": "integer", "description": "KbaseStatusEnum 数值枚举（非字符串）" },
+    "fileCountLimit":  { "type": "integer" },
+    "category":        { "type": "integer" },
+    "orgId":           { "type": "string" },
+    "createdBy":       { "type": "string" },
+    "createdDate":     { "type": "string", "format": "date-time" },
+    "lastUpdatedBy":   { "type": "string" },
+    "lastUpdatedDate": { "type": "string", "format": "date-time" }
+  },
+  "additionalProperties": false
+}

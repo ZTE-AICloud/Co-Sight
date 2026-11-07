@@ -1,0 +1,11 @@
+RAG and Vector Retrieval: A Quick Note
+
+Retrieval-Augmented Generation (RAG) separates retrieval from generation. The system first searches a knowledge base for passages that are most relevant to the question, then passes those passages to a language model as context. This grounding reduces hallucination and makes answers verifiable.
+
+The pipeline has five stages. First, create a knowledge base. Second, upload and parse documents. Third, split the parsed text into chunks. Fourth, embed each chunk into a vector and build an index. Fifth, run retrieval and render the results.
+
+Chunking matters. If a chunk is too large, the retrieved context carries noise. If it is too small, the meaning breaks apart. A fixed-length splitter cuts text by a maximum length and can keep overlap between adjacent chunks. A structured splitter uses headings to keep semantic boundaries intact.
+
+After chunking, an embedding model maps every chunk to a fixed-dimension vector. Cosine similarity is a common measure: it compares the angle between two vectors. At query time, the question is embedded with the same model, an approximate nearest-neighbor search returns the Top-K chunks, and those chunks are joined into the context.
+
+A good test set should cover plain text, Markdown, PDF, and Word documents. 中文与 ASCII 混排的情况也要覆盖，例如 "vector database" 与 "向量数据库" 应当被同等对待。Different formats exercise different parsing and splitting branches, so a small but complete sample set is the key to reproducible acceptance testing.

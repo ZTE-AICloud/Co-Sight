@@ -1,0 +1,112 @@
+.node-drawer-form {
+  width: 518px;
+
+  :deep(.el-select) {
+    width: 100%;
+  }
+
+  :deep(.el-input-number) {
+    width: 80px;
+  }
+
+  :deep(.el-slider) {
+    width: 200px;
+  }
+
+  :deep(.el-slider__marks-text) {
+    width: max-content;
+    margin-top: 4px;
+    font-size: 12px;
+  }
+
+  :deep(.el-form-item__description) {
+    font-size: 12px;
+    line-height: 1.2;
+  }
+
+  :deep(.el-input-number__append) {
+    height: 32px;
+  }
+
+  .plx-ico-help-tip-20 {
+    vertical-align: baseline;
+  }
+
+  .temperature {
+    margin-left: 16px;
+  }
+
+  .context-description {
+    margin-left: 16px;
+    font-size: 12px;
+    color: var(--rs-text-regular);
+    line-height: 18px;
+  }
+}
+
+
+.ml4 {
+  margin-left: 8px;
+}
+.gray {
+  color: var(--rs-text-regular);
+  &:hover {
+    font-weight: bold
+  }
+}
+.red {
+  color: var(--rs-danger);
+  &:hover {
+    font-weight: bold
+  }
+}
+.pointer {
+  cursor: pointer;
+}
+.font20 {
+  font-size: 16px;
+}
+
+.divider {
+  margin-top: 8px;
+  width: calc(100% + 16px);
+  transform: translateX(-8px);
+}
+:deep(.add-operator-button) {
+  margin-top: 8px;
+  margin-bottom: 14px;
+}
+
+.operator-header{
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  .table-left{
+    display: flex;
+    align-items: center;
+  }
+  
+  .btn-drag{
+    user-select: none;
+    height:14px;  
+    &:hover{
+      transform: scale(1.1);
+    } 
+  }
+  .btn-arrow,.btn-del{
+    font-size: 14px;     
+  }
+
+  .btn-arrow {
+    transition: transform 0.1s ease-in-out; /* 添加动画效果 */
+  }
+
+  .btn-arrow.active {
+    transform: rotate(90deg); /* 悬停时旋转90度 */
+  }
+
+}
+
+.ai-json-editor--drawer {
+  height: 300px;
+}

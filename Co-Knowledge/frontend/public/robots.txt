@@ -1,0 +1,3 @@
+# 默认允许索引；私有部署可在反向代理层改成 Disallow: /。
+User-agent: *
+Allow: /

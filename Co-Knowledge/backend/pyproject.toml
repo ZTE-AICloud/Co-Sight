@@ -1,0 +1,47 @@
+# ============================================================================
+# Knowledge Studio 后端 · 静态检查配置（ruff）
+#
+# 新代码正常 lint；少数历史移植文件列入 exclude，**不要**对它们跑 `ruff --fix`
+# （会重排/改写，制造无关 diff）。
+#
+# 用法（工作目录 = backend）：
+#     ruff check src
+#     ruff check --diff src
+#     ruff check --fix <非 vendored 文件>
+#
+# 本机没装 ruff 时可在后端镜像里跑（--no-cache 避免在挂载目录留下 root 属主缓存）：
+#     docker run --rm -v <repo>:/repo -w /repo/backend \
+#       ragstudio/rag-knowledge-base:latest sh -c "pip install -q ruff==0.17.0 && ruff check src --no-cache"
+# ============================================================================
+
+# 许可证元数据（本仓库不以 Python 包形式发布，此表仅用于声明许可）。
+[project]
+name = "ragstudio-backend"
+version = "0.2.0"
+description = "Co-Knowledge backend"
+license = { text = "Apache-2.0" }
+requires-python = ">=3.11"
+
+[tool.ruff]
+target-version = "py311"
+# 本配置未启用 E501（行宽规则），此项仅作格式化预设
+line-length = 120
+
+# 排除区（不改写风格的历史移植件）——只排除、不检查、更不修：
+#   * src/engine/** —— RAG 运行时，沿用既有书写风格。
+#   * engine/common 下的契约/常量/异常模型，以及 engine 的 logutil/json_utils 等。
+exclude = [
+    "src/engine",
+    "src/engine/common/const/__init__.py",
+    "src/engine/common/beans/rag_request.py",
+    "src/engine/common/exception/rag_exception.py",
+    "src/engine/config/rag_config_bean.py",
+    "src/engine/gateways/knowledge_base_client.py",
+    "src/engine/logutil.py",
+    "src/engine/json_utils.py",
+]
+
+[tool.ruff.lint]
+# 保守集：语法/未定义名/未使用符号（E9 + F 族）+ 少量 E4/E7。
+# 刻意不开 isort(I) / pyupgrade(UP) / bugbear(B) / 行宽等会大范围重排的规则。
+select = ["E4", "E7", "E9", "F"]

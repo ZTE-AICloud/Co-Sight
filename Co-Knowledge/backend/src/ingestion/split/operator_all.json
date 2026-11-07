@@ -1,0 +1,69 @@
+[
+  {
+    "id": -1,
+    "display_name": {
+      "zh": "默认切分方法",
+      "en": "The default splitting method"
+    },
+    "desc": {
+      "zh": "先以段落，再以句子分割，单句不能超过对应设置的字符最大数。参数说明：overlap应小于maxWordCount。",
+      "en": "First, divide into paragraphs, then further split into sentences. Each sentence must not exceed the corresponding maximum character count. Parameter description: overlap should be less than maxWordCount."
+    },
+    "is_published": 1,
+    "visibleRange": "public",
+    "module": "text_split",
+    "version": "1.0.0",
+    "supportedFormat": [
+      "md",
+      "pdf",
+      "docx",
+      "txt"
+    ],
+    "defaultArgs": [
+      {
+        "argName": "maxWordCount",
+        "argType": "int",
+        "defaultValue": 512,
+        "description": "最大字符数"
+      },
+      {
+        "argName": "overlap",
+        "argType": "int",
+        "defaultValue": 128,
+        "description": "切片前后重叠的字符数量"
+      }
+    ],
+    "operator_module": "operators/text_split",
+    "operator_function": "file_split_with_chunk"
+  },
+  {
+    "id": -2,
+    "display_name": {
+      "zh": "定长切分（不重叠）",
+      "en": "Fixed-length split (no overlap)"
+    },
+    "desc": {
+      "zh": "按段落与句子切分为定长切片，默认 512 字符、相邻切片不重叠；适用于表格、演示文稿与网页等格式。",
+      "en": "Split by paragraphs and sentences into fixed-length chunks, 512 characters by default with no overlap. Intended for spreadsheets, presentations and web pages."
+    },
+    "is_published": 1,
+    "visibleRange": "public",
+    "module": "text_split",
+    "version": "1.0.0",
+    "supportedFormat": [
+      "md",
+      "docx",
+      "txt",
+      "csv",
+      "xlsx",
+      "pptx",
+      "pdf",
+      "html",
+      "zip"
+    ],
+    "defaultArgs": [
+    ],
+    "operator_module": "operators/text_split",
+    "operator_function": "file_split"
+  }
+]

@@ -1,0 +1,12 @@
+{
+  "name": "ragstudio-verify",
+  "private": true,
+  "description": "验收脚本的浏览器依赖（verify-canvas-e2e.js / verify-kb-list-regress.js 用 puppeteer-core 驱动系统自带 Chrome）",
+  "scripts": {
+    "canvas": "node verify-canvas-e2e.js http://127.0.0.1",
+    "kb-list": "node verify-kb-list-regress.js http://127.0.0.1"
+  },
+  "dependencies": {
+    "puppeteer-core": "23.11.1"
+  }
+}

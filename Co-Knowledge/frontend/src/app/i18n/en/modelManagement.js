@@ -1,0 +1,173 @@
+/**
+ * Model management page copy.
+ *
+ * ⛔ Keys must mirror `zh/modelManagement.js` one for one — the consistency spec
+ * (`tests/unit/i18n.consistency.spec.js`) diffs the two key sets recursively.
+ */
+export default {
+  // ── Page copy ───────────────────────────────────────────────
+  pageSubtitle: 'Configure LLM, embedding, and rerank model services in one place.',
+  openaiCompatible: 'OpenAI-compatible endpoint',
+  enabledSuccess: 'Model enabled',
+  disabledSuccess: 'Model disabled',
+  filterAll: 'All models',
+  filterEnabled: 'Enabled',
+  filterDisabled: 'Disabled',
+  subtitle: 'Register OpenAI-compatible model endpoints. Changes take effect immediately, no restart needed.',
+
+  refreshList: 'Refresh model list',
+  selectAllPage: 'Select all models on this page',
+  selectModel: 'Select {name}',
+  batchEnable: 'Enable selected',
+  batchDisable: 'Disable selected',
+  batchDelete: 'Delete selected',
+  batchDeleteTitle: 'Delete models',
+  batchDeleteDefaultNote: 'The selection includes default models. Set new defaults after deletion.',
+  batchUpdated: 'Updated {count} models',
+  batchPartial: '{success} succeeded, {failed} failed',
+  deleteWarning: 'Related applications will no longer be able to call this model',
+  deleteDescription: 'Knowledge bases and canvases using this model must select another one. Confirm before continuing.',
+  deleteDefaultNote: 'This is the default model for its type. Set a new default after deletion.',
+  deleteHint: 'This action cannot be undone',
+
+  tabLlm: 'LLM',
+  tabEmbedding: 'Embedding',
+  tabRerank: 'Reranker',
+
+  // (The old `emptyTip` was removed: the empty state is rendered by the shared
+  //  empty-state component; only this single line is kept inside the table.)
+  empty: 'No models registered yet',
+
+  searchPlaceholder: 'Search model name / endpoint URL',
+
+  columnIndex: '#',
+  columnHealth: 'Status',
+  healthOk: 'Enabled',
+  healthOff: 'Disabled',
+  toggleModel: 'Enable model {name}',
+  showKeyHint: 'For security, the full key is shown only at creation and is not returned by the API.',
+  dimensionTag: '{count} dims',
+  columnName: 'Model name',
+  columnNameSub: '(internal name)',
+  apiModelSameAsName: 'Same as the model name (this is what gets sent as the model field)',
+  columnApiModel: 'Endpoint model',
+  columnBaseUrl: 'Endpoint',
+  columnDimension: 'Dimension',
+  columnDefault: 'Default',
+  defaultNotConnected: 'Set as default model (unavailable)',
+  setDefault: 'Set as default model',
+  columnApiKey: 'API key',
+
+  sourceEnv: 'Deployment config',
+  sourceUser: 'Registered',
+
+  yes: 'Yes',
+  no: 'No',
+  keyMissing: 'Not configured',
+
+  create: 'Add Model',
+  edit: 'Edit',
+  test: 'Test connection',
+  testing: 'Testing…',
+  deleteConfirmTitle: 'Delete model',
+  deleteConfirmDesc: 'Knowledge bases and canvases using this model will no longer be able to call it. Delete anyway?',
+  // The "Model name: <name>" line in the delete confirmation — the colon is part
+  // of the entry (zh uses the full-width "：", en the half-width ": ").
+  deleteConfirmName: 'Model name: ',
+
+  formKind: 'Model kind',
+  formName: 'Model name',
+  formNamePlaceholder: 'e.g. deepseek-chat',
+  formDisplayNamePlaceholder: 'e.g. DeepSeek Chat',
+  formApiModelPlaceholder: 'e.g. BAAI/bge-m3',
+  formBaseUrlPlaceholder: 'e.g. https://your-llm-endpoint.example.com/v1',
+  formNameTip: 'The registered name — this is what the dropdown shows when creating a knowledge base or canvas node',
+  formDisplayName: 'Display name',
+  formApiModel: 'Endpoint model',
+  formBaseUrl: 'Endpoint URL',
+  formApiKey: 'API key',
+  formApiKeyTip: 'Leave blank to keep the stored key. When creating, blank means the endpoint needs no key',
+  formClearApiKey: 'Clear the stored key',
+  formDimension: 'Dimension',
+  formDimensionTip: 'Must match what the endpoint actually returns, or import/retrieval will fail explicitly',
+  formMaxTokens: 'Max tokens',
+  formTemperature: 'Temperature',
+  formTimeout: 'Timeout (s)',
+  formReasoning: 'Reasoning model',
+  formReasoningTip: 'Adds it to the reasoning-model list (the query-rewrite operator warns when one is selected)',
+  formThinkingMode: 'Thinking config',
+  formThinkingModeTip: 'LLM only. This config applies to answer generation; rewrite, rerank, and routing calls automatically use the off/minimal preset.',
+  thinkingModeNone: 'No config (endpoint default)',
+  thinkingModeAuto: 'Auto-match by model name',
+  thinkingModePreset: 'Use a preset',
+  thinkingModeCustom: 'Custom JSON',
+  formThinkingPreset: 'Thinking preset',
+  formThinkingPresetPlaceholder: 'Select a preset',
+  thinkingPreviewTitle: 'Request payload preview',
+  thinkingPreviewMatched: 'Matched {label}',
+  thinkingPreviewNoMatch: 'No preset matched; no thinking config will be sent. Choose a preset or custom JSON.',
+  thinkingPreviewEmpty: 'Enter a model name to preview the match',
+  thinkingPreviewLoading: 'Loading thinking presets...',
+  thinkingPreviewFailed: 'Failed to load presets; use custom JSON or no config',
+  formThinkingJson: 'Custom JSON',
+  formThinkingJsonPlaceholder: 'e.g. a JSON object with thinking.type=disabled',
+  formThinkingJsonTip: 'The object is merged into the request body. Allowed keys: {keys}',
+  thinkingPresetRequired: 'Select a thinking preset',
+  thinkingJsonRequired: 'JSON is required',
+  thinkingJsonInvalid: 'Invalid JSON',
+  thinkingJsonMustBeObject: 'JSON must be an object, not an array or null',
+  thinkingJsonEmpty: 'JSON must not be empty',
+  thinkingJsonKeyInvalid: 'Unsupported top-level key {key}',
+  thinkingJsonTooLarge: 'JSON exceeds the size limit ({max} bytes)',
+  thinkingConfidenceVerified: 'Verified in this deployment',
+  thinkingConfidenceStandard: 'Vendor documentation',
+  tagThinkingAuto: 'Auto · {label}',
+  tagThinkingPreset: 'Preset · {label}',
+  tagThinkingCustom: 'Custom',
+  tagThinkingNoMatch: 'Auto · no match',
+  formDefault: 'Set as default for this kind',
+  formEnabled: 'Enabled',
+  formRemark: 'Remark',
+
+  formChatPath: 'Chat path',
+  formEmbeddingsPath: 'Embeddings path',
+  formModelsPath: 'Models path',
+  formRerankPath: 'Rerank path',
+
+  advancedHide: 'Hide advanced',
+  advanced: 'Advanced',
+  advancedTip: 'Paths differ between OpenAI-compatible implementations (/embeddings vs /v1/embeddings, /models vs /v1/models). Leave blank to use the standard path.',
+
+  nameRequired: 'Model name is required',
+  baseUrlRequired: 'Endpoint URL is required',
+  baseUrlInvalid: 'Endpoint URL must start with http:// or https://',
+  dimensionRequired: 'Dimension is required',
+  dimensionInvalid: 'Dimension must be a positive integer',
+
+  saveSuccess: 'Saved',
+  deleteSuccess: 'Deleted',
+  testSuccess: 'Endpoint reachable',
+  // A name in the model list does not prove the model can actually infer;
+  // for LLMs the status follows the live call.
+  testCallSuccess: 'Model call succeeded',
+  testCallFailed: 'Model call failed',
+  testPartial: 'Endpoint reachable, model list undetermined',
+  testFailed: 'Endpoint unreachable',
+
+  testResultTitle: 'Connection test',
+  // The result renders as a table (column headers + row labels),
+  // so row labels carry **no trailing colon**; the "never hardcode a full-width
+  // colon in templates" rule still holds — the only
+  // colon-bearing join entry left is deleteConfirmName.
+  testResultItem: 'Item',
+  testResultValue: 'Result',
+  testResultStatus: 'Status',
+  testResultCall: 'Live call',
+  testResultCallSucceeded: 'Succeeded',
+  testResultModels: 'Models reported by the endpoint',
+  testResultDimension: 'Measured dimension',
+  testResultDimensionOk: 'Matches the registered dimension',
+  testResultDimensionMismatch: 'Differs from the registered dimension ({0})',
+  testResultUndetermined: 'Undetermined (the endpoint may not expose /models, or is temporarily unreachable) — this does not mean the model is unavailable',
+  testResultLatency: 'Latency'
+}

@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ragstudio.dev/schemas/search.json",
+  "title": "Search",
+  "$defs": {
+    "SearchRequest": {
+      "type": "object",
+      "required": ["question", "bases"],
+      "properties": {
+        "question": { "type": "string", "minLength": 1, "description": "查询词。注意现状字段名为 question（非 query）" },
+        "type":     { "type": "integer", "enum": [0, 1], "default": 0, "description": "0=向量 1=关键词。混合检索（2）为 v1 范围外" },
+        "model":    { "type": "string" },
+        "bases": {
+          "type": "array", "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["baseList", "priority"],
+            "properties": {
+              "baseList": {
+                "type": "array", "minItems": 1,
+                "items": { "type": "string" },
+                "description": "库名列表，格式必须是 doc_<kbId>（不是裸 kbaseId）。后端按 kb_kbase.table_name 解析物理向量表（文档库为 doc_<kbId>_vector）；传裸 id 会静默返回空结果。可选后缀 |#|dev 会被自动剥离。"
+              },
+              "priority":       { "type": "integer", "minimum": 0, "maximum": 10, "default": 0, "description": "必填：后端用 Collectors.groupingBy(priority) 分组，缺失会抛 element cannot be mapped to a null key" },
+              "topK":           { "type": "integer", "minimum": 1, "maximum": 80, "default": 8, "description": "JSON 名 top_k" },
+              "scoreThreshold": { "type": "number", "minimum": 0, "maximum": 1, "default": 0, "description": "JSON 名 score_threshold" }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "SearchResult": {
+      "type": "object",
+      "required": ["baseName", "docs"],
+      "description": "v1 收敛为强类型；不再透出 旧框架内部键（05 §2.5）",
+      "properties": {
+        "baseName": { "type": "string", "description": "知识库名" },
+        "docs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["content", "score"],
+            "properties": {
+              "chunkId": {
+                "type": ["string", "null"],
+                "description": "切片 ID，取自 upstream node 的 metadata.chunk_id（由文档处理服务写入，库内为整数，此处已转字符串）。向量路与关键词路都从 metadata.chunk_id 取值；ES v2 索引补齐 chunk_id 后，关键词路也会返回该字段。取不到时为 null —— 故本字段非必填。"
+              },
+              "content": {
+                "type": ["string", "null"],
+                "description": "切片正文。字段恒存在；仅当上游 node 未携带 text（畸形记录）时为 null。"
+              },
+              "score": {
+                "type": ["number", "null"],
+                "description": "相似度得分。字段恒存在；仅当上游 doc 未携带 score（畸形记录）时为 null。"
+              },
+              "sourceDocId": {
+                "type": ["string", "null"],
+                "description": "来源 file_id，取自 upstream node 的 file_id。关键词路（type=1）恒有；向量路（type=0）部分记录为 null。"
+              },
+              "metadata":    { "type": "object", "additionalProperties": true, "description": "切片元数据。已剔除 content_expand / context_expand_method 等内部键；source 为来源文件名。" }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,77 @@
+/* 危险操作统一视觉。 */
+:root {
+  --rs-danger-ink: color-mix(in srgb, var(--rs-danger) 75%, var(--rs-text));
+  --rs-danger-soft: color-mix(in srgb, var(--rs-danger) 8%, var(--rs-bg-card));
+  --rs-danger-border: color-mix(in srgb, var(--rs-danger) 25%, var(--rs-border));
+}
+.danger-action.el-button.is-link, .danger-action.el-button.is-text, button.danger-action { display: inline-flex; align-items: center; justify-content: center; gap: 5px; padding: 5px 8px; min-height: 30px; border: 0; border-radius: 6px; background: transparent; color: var(--rs-danger-ink); font-size: var(--rs-font-size-secondary); line-height: 20px; transition: background .15s, color .15s; }
+.danger-action.el-button > span { gap: 5px; }
+.danger-action svg { width: 14px; height: 14px; }
+.danger-action:hover:not(:disabled), .danger-action:focus-visible { color: var(--rs-danger-ink); background: var(--rs-danger-soft); }
+.danger-icon.icon-button { color: var(--rs-text-3); transition: background .15s, color .15s; }
+.danger-icon.icon-button:hover:not(:disabled), .danger-icon.icon-button:focus-visible { color: var(--rs-danger-ink); background: var(--rs-danger-soft); }
+svg.danger-icon { color: var(--rs-danger-ink); }
+.danger-action:focus-visible, .danger-icon:focus-visible, .danger-button:focus-visible { outline: 2px solid var(--rs-danger-ink); outline-offset: 2px; }
+.danger-action:disabled, .danger-icon:disabled { color: var(--rs-text-3); cursor: not-allowed; opacity: .45; }
+.danger-menu-item.el-dropdown-menu__item { color: var(--rs-danger-ink); }
+.danger-menu-item.el-dropdown-menu__item:not(.is-disabled):hover, .danger-menu-item.el-dropdown-menu__item:not(.is-disabled):focus { color: var(--rs-danger-ink); background: var(--rs-danger-soft); }
+.danger-button.el-button { --el-button-text-color: var(--rs-danger-ink); --el-button-bg-color: var(--rs-danger-soft); --el-button-border-color: var(--rs-danger-border); --el-button-hover-text-color: var(--rs-danger-ink); --el-button-hover-bg-color: color-mix(in srgb, var(--rs-danger) 13%, var(--rs-bg-card)); --el-button-hover-border-color: var(--rs-danger-ink); --el-button-active-text-color: var(--rs-danger-ink); --el-button-active-bg-color: var(--rs-danger-soft); --el-button-active-border-color: var(--rs-danger-ink); }
+.delete-confirm-dialog .studio-dialog-icon { color: var(--rs-danger); background: color-mix(in srgb, var(--rs-danger) 10%, var(--rs-bg-card)); }
+.delete-confirm-content { display: flex; flex-direction: column; gap: 22px; padding: 24px 0; }
+.delete-confirm-warning { display: flex; align-items: flex-start; gap: 10px; padding: 14px 16px; border: 1px solid color-mix(in srgb, var(--rs-danger) 22%, var(--rs-border)); border-radius: var(--rs-radius); background: color-mix(in srgb, var(--rs-danger) 5%, var(--rs-bg-card)); }
+.delete-confirm-warning > svg { width: 17px; height: 17px; margin-top: 3px; color: var(--rs-danger); }
+.delete-confirm-warning strong { color: var(--rs-text); font-weight: 600; }
+.delete-confirm-warning p { margin: 5px 0 0; color: var(--rs-text-2); }
+.delete-confirm-summary { padding: 16px; border: 1px solid var(--rs-border); border-radius: var(--rs-radius); background: var(--rs-bg-soft); min-width: 0; }
+.delete-confirm-items { list-style: none; padding: 0; margin: 0; }
+.delete-confirm-items.is-batch { max-height: 176px; overflow-y: auto; scrollbar-gutter: stable; }
+.delete-confirm-items.is-batch .delete-confirm-identity { padding: 12px 0; }
+.delete-confirm-items.is-batch .delete-confirm-identity + .delete-confirm-identity { border-top: 1px solid var(--rs-border); }
+.delete-confirm-items.is-batch .delete-confirm-identity:last-child { padding-bottom: 0; }
+.delete-confirm-items.is-batch h3 { font-size: var(--rs-font-size-body); }
+.delete-confirm-batch-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--rs-border); color: var(--rs-text); font-weight: 600; }
+.delete-confirm-identity { display: flex; align-items: center; gap: 12px; }
+.delete-confirm-identity .avatar-square { flex-shrink: 0; width: 42px; height: 42px; }
+.delete-confirm-name { flex: 1; min-width: 0; }
+.delete-confirm-name > span { color: var(--rs-text-3); }
+.delete-confirm-name h3 { margin: 3px 0 4px; color: var(--rs-text); overflow-wrap: anywhere; }
+.delete-confirm-name code { display: block; color: var(--rs-text-2); overflow-wrap: anywhere; }
+.delete-confirm-kind { flex-shrink: 0; align-self: flex-start; }
+.delete-confirm-endpoint { display: flex; align-items: flex-start; gap: 7px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--rs-border); color: var(--rs-text-3); }
+.delete-confirm-endpoint svg { width: 14px; height: 14px; margin-top: 3px; }
+.delete-confirm-endpoint span { overflow-wrap: anywhere; min-width: 0; }
+.delete-confirm-default { display: flex; align-items: flex-start; gap: 6px; color: var(--rs-tone-orange); margin: 12px 0 0; }
+.delete-confirm-default svg { width: 14px; height: 14px; margin-top: 3px; }
+.delete-confirm-label { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 10px; }
+.delete-confirm-label label { color: var(--rs-text); }
+.delete-confirm-label > span { color: var(--rs-text-3); white-space: nowrap; }
+.delete-confirm-code-row { display: flex; gap: 12px; }
+.delete-confirm-code-row .el-input { flex: 1; min-width: 0; }
+.delete-confirm-code-row .el-input__wrapper { min-height: 44px; background: var(--rs-bg-card); }
+.delete-confirm-code-row .el-input__wrapper.is-focus { box-shadow: 0 0 0 1px var(--rs-primary) inset !important; }
+.delete-confirm-code-row .is-invalid .el-input__wrapper { box-shadow: 0 0 0 1px var(--rs-danger) inset !important; }
+.delete-confirm-code-row .el-input__inner { font-family: var(--rs-font-family-mono); letter-spacing: 4px; }
+.delete-confirm-code-row .el-input__inner::placeholder { font-family: var(--rs-font-family); letter-spacing: 0; }
+.delete-confirm-verified { color: var(--rs-success); }
+.delete-confirm-challenge { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 12px 0 18px; border: 1px solid var(--rs-border); border-radius: 6px; background: var(--rs-bg-soft); }
+.delete-confirm-challenge code { font-size: var(--rs-font-size-section-title); font-weight: 600; letter-spacing: 5px; color: var(--rs-text-2); font-variant-numeric: tabular-nums; }
+.delete-confirm-challenge button { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border: 0; border-radius: 4px; color: var(--rs-text-3); background: transparent; }
+.delete-confirm-challenge button:hover { color: var(--rs-primary); background: var(--rs-bg-selected); }
+.delete-confirm-challenge button svg { width: 16px; height: 16px; }
+.delete-confirm-help { min-height: 20px; margin: 8px 0 0; color: var(--rs-text-3); }
+.delete-confirm-help.has-error { color: var(--rs-danger); }
+.delete-confirm-help.is-verified { color: var(--rs-success); }
+.delete-confirm-submit.el-button--danger { --delete-confirm-action: color-mix(in srgb, var(--rs-danger) 75%, var(--rs-text)); --el-button-bg-color: var(--delete-confirm-action); --el-button-border-color: var(--delete-confirm-action); --el-button-text-color: var(--rs-bg-card); --el-button-hover-bg-color: color-mix(in srgb, var(--delete-confirm-action) 90%, var(--rs-text)); --el-button-hover-border-color: var(--el-button-hover-bg-color); --el-button-hover-text-color: var(--rs-bg-card); --el-button-active-bg-color: var(--el-button-hover-bg-color); --el-button-active-border-color: var(--el-button-hover-bg-color); }
+.delete-confirm-submit.el-button--danger:disabled { background: color-mix(in srgb, var(--rs-danger) 8%, var(--rs-bg-card)); border-color: color-mix(in srgb, var(--rs-danger) 18%, var(--rs-border)); color: color-mix(in srgb, var(--rs-danger) 60%, var(--rs-text-3)); }
+@media (max-width: 600px) {
+  .delete-confirm-content { gap: 20px; padding: 20px 0; }
+  .delete-confirm-warning, .delete-confirm-summary { padding: 14px; }
+  .delete-confirm-identity { flex-wrap: wrap; }
+  .delete-confirm-name { flex-basis: calc(100% - 54px); }
+  .delete-confirm-kind { margin-left: 54px; }
+  .delete-confirm-challenge { gap: 6px; padding: 0 8px 0 12px; }
+  .delete-confirm-challenge code { letter-spacing: 3px; }
+  .delete-confirm-code-row { gap: 8px; }
+  .delete-confirm-dialog .studio-dialog-footer { flex-direction: row; align-items: center; flex-wrap: wrap; }
+  .delete-confirm-dialog .studio-footer-actions { margin-left: auto; }
+}

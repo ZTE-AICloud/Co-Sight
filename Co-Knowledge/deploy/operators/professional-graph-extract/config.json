@@ -1,0 +1,44 @@
+{
+  "id": -5,
+  "display_name": {
+    "zh": "专业知识图谱算子",
+    "en": "Specialized Knowledge Graph Generation Operator"
+  },
+  "desc": {
+    "zh": "用户提供定制的schema，算子对专业领域的文档进行知识图谱抽取",
+    "en": "Users provide a custom schema, the operator extracts knowledge graphs from domain-specific documents"
+  },
+  "is_published": 1,
+  "visibleRange": "public",
+  "module": "graph_extract",
+  "version": "1.0.0",
+  "supportedFormat": [
+    "MD"
+  ],
+  "defaultArgs": [
+    {
+      "argName": "schemaId",
+      "argType": "str",
+      "defaultValue": "",
+      "description": "知识图谱模版"
+    },
+    {
+      "argName": "llm",
+      "argType": "str",
+      "defaultValue": "",
+      "description": "大模型"
+    },
+    {
+      "argName": "chunkSize",
+      "argType": "int",
+      "defaultValue": 512,
+      "description": "最大字符数"
+    },
+    {
+      "argName": "overlap",
+      "argType": "int",
+      "defaultValue": 128,
+      "description": "切片前后重叠的字符数量"
+    }
+  ]
+}

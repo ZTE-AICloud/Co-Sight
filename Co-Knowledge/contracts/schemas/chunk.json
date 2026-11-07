@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ragstudio.dev/schemas/chunk.json",
+  "title": "Chunk",
+  "description": "切片。两种形态：(a) 解析/切分链输出的节点；(b) 持久化切片。见 05-contracts.md §2.3",
+  "oneOf": [
+    { "$ref": "#/$defs/ChunkNode" },
+    { "$ref": "#/$defs/ChunkRecord" }
+  ],
+  "$defs": {
+    "ChunkNode": {
+      "title": "ChunkNode（算子输出）",
+      "type": "object",
+      "required": ["nodeId", "text"],
+      "properties": {
+        "nodeId":   { "type": "string", "description": "UUID4，由解析/切分链生成" },
+        "text":     { "type": "string", "minLength": 1 },
+        "metadata": { "type": "object", "additionalProperties": true },
+        "embedding": { "type": ["array", "null"], "items": { "type": "number" } }
+      },
+      "additionalProperties": false
+    },
+    "ChunkRecord": {
+      "title": "ChunkRecord（持久化）",
+      "type": "object",
+      "required": ["id", "kbId", "text"],
+      "properties": {
+        "id":         { "type": "string", "description": "chunk_id，去重后确定" },
+        "kbId":       { "type": "string" },
+        "source":     { "type": "string", "description": "来源文件标识 file_id" },
+        "chunkOrder": { "type": "integer", "minimum": 0 },
+        "splitType":  { "type": "string", "description": "切分方式标识（算子 module/名）" },
+        "text":       { "type": "string", "minLength": 1 },
+        "metadata":   { "type": "object", "additionalProperties": true },
+        "tenantId":   { "type": "string" },
+        "createUser": { "type": "string" },
+        "createTime": { "type": "string", "format": "date-time" },
+        "updateUser": { "type": "string" },
+        "updateTime": { "type": "string", "format": "date-time" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

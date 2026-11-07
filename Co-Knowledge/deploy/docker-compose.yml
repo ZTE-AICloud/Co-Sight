@@ -1,0 +1,506 @@
+# ============================================================================
+# Knowledge Studio · 默认部署入口（6 个服务定义，默认起 4 个；minio / model-gateway
+# 由 profile 门控）
+#
+# 整栈只有一个前端 + 一个后端服务：
+#   web(nginx, 80) —— 唯一对外入口
+#   rag-knowledge-base(Python, 8091) —— 唯一后端：知识库 / 解析 / 切片 / 检索 /
+#     图谱 / 算子沙箱 / 画布编排 / 检索编排运行时
+#   + postgresql(pgvector) + opensearch(2.19)
+#   + model-gateway(OpenAI 兼容推理，8000，profile 下默认不启动 → 默认起 4 个)
+#
+# 对外路由前缀只有一个 `/api/co-knowledge/v1`（nginx 只反代它）；
+# 后端的单点定义见 backend/src/shared/prefixes.py。
+#
+# 知识图谱数据与向量都存 PostgreSQL，不需要独立图数据库。
+# 明确排除：redis / kafka / greenplum。
+#
+# 使用：cp deploy/.env.example deploy/.env && docker compose -f deploy/docker-compose.yml up -d
+#
+# ----------------------------------------------------------------------------
+# 兼容性说明：基础容器加了 `security_opt: [seccomp:unconfined]`
+# 原因：老内核（如 4.19，无 clone3 系统调用）+ docker 20.10 默认 seccomp 配置
+#   + glibc 2.36 posix_spawn 会阻塞 clone3，导致 initdb/popen 报
+#   "Cannot allocate memory"（本机 4.19 实测）。现代内核（≥5.3）可移除该项。
+# 代价：移除该容器的系统调用过滤（安全降级，仅用于基础数据容器）。
+# ----------------------------------------------------------------------------
+# 文件存储约定：上传落盘与解析读取必须看到同一份文件，因此所有读写方都挂
+# `kb-storage` 的同一路径（库里的 diskFileKey 是绝对路径，路径不同就会找不到文件）。
+# ============================================================================
+
+name: rag-studio
+
+services:
+  # --------------------------------------------------------------------------
+  # 1. PostgreSQL + pgvector（最先启动；业务表 + 向量表）
+  # --------------------------------------------------------------------------
+  postgresql:
+    # 钉死：pgvector 0.8.7 + PostgreSQL 16.15（原 `pg16` 是浮动标签）。
+    # 更严格可加 digest：pgvector/pgvector@sha256:7b822b0aac60967beb1ea5e576b8602c94c300a157d187f385ae3e0da199b90a
+    image: pgvector/pgvector:0.8.7-pg16
+    security_opt:
+      - seccomp:unconfined
+    # 并行 HNSW 建索引会申请 maintenance_work_mem 大小的动态共享内存；
+    # 默认 /dev/shm 只有 64MB，178k×1024 会报 "No space left on device"。
+    shm_size: ${POSTGRES_SHM_SIZE:-1g}
+    # 可观测性（P1）：慢查询/超时/IO 计时；pg_stat_statements 需要重启生效。
+    command:
+      - postgres
+      - -c
+      - shared_preload_libraries=pg_stat_statements
+      - -c
+      - pg_stat_statements.track=all
+      - -c
+      - log_min_duration_statement=200ms
+      - -c
+      - track_io_timing=on
+      - -c
+      - statement_timeout=30s
+      - -c
+      - idle_in_transaction_session_timeout=60s
+      # 批量导入期间 HNSW/btree 建索引与页缓存都吃内存；默认值保守，
+      # 可通过 .env 覆盖（改完需 recreate postgresql 才生效）。
+      - -c
+      - shared_buffers=${POSTGRES_SHARED_BUFFERS:-256MB}
+      - -c
+      - maintenance_work_mem=${POSTGRES_MAINTENANCE_WORK_MEM:-128MB}
+    environment:
+      # 全栈统一 CST：见 docs/…（timestamptz 显示 + Python 本地时间 + SQL CURRENT_TIMESTAMP 三者口径一致）
+      TZ: ${TZ:-Asia/Shanghai}
+      # 单库部署：全栈只有一个业务库 rag_studio，没有 init 建库脚本。
+      POSTGRES_DB: ${POSTGRES_DB:-rag_studio}
+      POSTGRES_USER: ${POSTGRES_USER:-rag}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      # 非 superuser 应用角色（05-app-role.sh 在空卷初始化时创建）。
+      # 留空 = 不创建，应用使用 POSTGRES_USER。
+      RKB_DB_USER: ${RKB_DB_USER:-}
+      RKB_DB_PASSWORD: ${RKB_DB_PASSWORD:-}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # 空 PGDATA 时自动建 22 张核心静态表 + kb_index schema。
+      - ./init/pg:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-rag} -d ${POSTGRES_DB:-rag_studio}"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    mem_limit: ${POSTGRES_MEM_LIMIT:-1g}
+    restart: unless-stopped
+    ports:
+      # 仅绑定宿主回环地址，供本机 psql / 客户端调试；不对外暴露
+      - "127.0.0.1:5432:5432"
+
+  # --------------------------------------------------------------------------
+  # 3. OpenSearch 2.x（关键词全文索引 kb_<kb>）
+  #    Apache-2.0 许可，规避 Elastic License 2.0 / SSPL 的再分发限制。
+  # --------------------------------------------------------------------------
+  opensearch:
+    # 官方 OpenSearch 镜像；见 deploy/opensearch/Dockerfile。
+    # 未安装 analysis-ik 时中文会被 standard 分词切成单字，关键词路只能走
+    # minimum_should_match=100% 兜底。
+    # 索引是派生数据（唯一事实源是 PG）：换存储或改 mapping 后从 PG 重建，
+    # 见 docs/opensearch.md。
+    build:
+      context: ./opensearch
+      dockerfile: Dockerfile
+      args:
+        OPENSEARCH_VERSION: ${OPENSEARCH_VERSION:-2.19.6}
+    image: ragstudio/opensearch:${OPENSEARCH_VERSION:-2.19.6}-ik
+    # 本地构建的镜像不来自 registry；显式 build，避免首次启动先去 pull 再失败。
+    pull_policy: build
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      # 全栈统一 CST：见 docs/…（timestamptz 显示 + Python 本地时间 + SQL CURRENT_TIMESTAMP 三者口径一致）
+      TZ: ${TZ:-Asia/Shanghai}
+      discovery.type: single-node
+      # 单机私有化部署：关闭 security 插件（端口只绑宿主回环，不对外）。
+      # 启用鉴权时删掉这一行并按 OpenSearch 文档配置 admin 口令 / TLS。
+      DISABLE_SECURITY_PLUGIN: "true"
+      # 不启动 performance-analyzer 代理（独立 JVM，检索链路用不到；
+      # 关掉可少一份常驻 JVM 内存）。
+      DISABLE_PERFORMANCE_ANALYZER_AGENT_CLI: "true"
+      OPENSEARCH_JAVA_OPTS: -Xms512m -Xmx512m
+      bootstrap.memory_lock: "true"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - osdata:/usr/share/opensearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:9200/_cluster/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 24
+      start_period: 30s
+    mem_limit: ${OPENSEARCH_MEM_LIMIT:-1.5g}
+    restart: unless-stopped
+    ports:
+      # 仅绑定宿主回环地址，供本机 curl / 浏览器调试；9300 传输端口不映射
+      - "127.0.0.1:9200:9200"
+  # --------------------------------------------------------------------------
+  # 4. model-gateway：本地 OpenAI 兼容推理容器（**默认不启动**，见 profiles）
+  #
+  #    embedding 默认走远端 OpenAI 兼容网关（见 deploy/.env 的 MODEL_GATEWAY_URL），
+  #    本容器默认不启动：少一个容器、少一次 HuggingFace 权重下载、省下 4G 内存限额。
+  #
+  #    **要用本地 bge（768 维）时**：
+  #      1) `docker compose --profile local-embedding up -d model-gateway`
+  #      2) .env 里把 MODEL_GATEWAY_URL 指回 http://model-gateway:8000、
+  #         MODEL_GATEWAY_EMBEDDINGS_PATH=/embeddings、EMBEDDING_* 改为 bge 的 768 维三元组
+  #
+  #    选型 Infinity（michaelf34/infinity），CPU-only；bge-* 是 PyTorch 权重。
+  #    首次启动会从 HuggingFace 下载模型到 model-cache 卷。离线环境见
+  #    docs/TECHNICAL-GUIDE.md §4.7「本地 embedding 的离线权重预置」。
+  # --------------------------------------------------------------------------
+  model-gateway:
+    profiles: ["local-embedding"]
+    image: michaelf34/infinity:0.0.77-cpu
+    security_opt:
+      - seccomp:unconfined
+    command:
+      - v2
+      - --model-id
+      - ${LOCAL_EMBEDDING_MODEL:-BAAI/bge-base-zh-v1.5}
+      - --port
+      - "8000"
+      # bge-* 是 PyTorch 权重（无 ONNX 文件），必须用 torch 引擎；optimum/ONNX 引擎会报
+      # "No onnx files found"。torch 2.8+cpu 已内置于 -cpu 镜像，CPU 可跑。
+      - --engine
+      - torch
+      # 端点路径保持 Infinity 原生 /embeddings（OpenAI 兼容「形状」，非固定 /v1 前缀）。
+      # 客户端经 MODEL_GATEWAY_EMBEDDINGS_PATH 可配置；契约见 contracts/model-gateway.md。
+    environment:
+      # 全栈统一 CST：见 docs/…（timestamptz 显示 + Python 本地时间 + SQL CURRENT_TIMESTAMP 三者口径一致）
+      TZ: ${TZ:-Asia/Shanghai}
+      HF_HOME: /data/hf-cache
+      INFINITY_PORT: "8000"
+    volumes:
+      - model-cache:/data/hf-cache
+    healthcheck:
+      # /health 返回 200 即服务就绪；模型由 v2 --model-id 启动时预加载
+      test: ["CMD-SHELL", "curl -fs http://localhost:8000/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 60
+      start_period: 60s
+    mem_limit: ${MODEL_GATEWAY_MEM_LIMIT:-4g}
+    restart: unless-stopped
+    ports:
+      # 便于 §3 首次使用 curl 验证 embedding；生产可移除该映射
+      - "127.0.0.1:8000:8000"
+
+  # --------------------------------------------------------------------------
+  # 4b. MinIO（可选）：知识库文件域的对象存储后端
+  #
+  #     **默认不启动**（profile `minio`）。要用它：
+  #       1) .env 里设 RKB_STORAGE_BACKEND=minio
+  #       2) `docker compose --profile minio up -d`
+  #     后端在首次写入时自动建桶（需要 access key 有建桶权限）。
+  #
+  #     ⚠️ 本地卷 kb-storage **仍然必须挂载**：算子包、名称锁、解析临时文件都在本地。
+  #     控制台端口 9001 不对外发布；需要调试时自行加 ports 映射。
+  #     生产务必改掉默认账号密码（.env 的 RKB_MINIO_ACCESS_KEY / _SECRET_KEY）。
+  # --------------------------------------------------------------------------
+  minio:
+    profiles: ["minio"]
+    image: minio/minio:RELEASE.2024-10-13T13-34-11Z
+    security_opt:
+      - seccomp:unconfined
+    command: server /data --console-address ":9001"
+    environment:
+      TZ: ${TZ:-Asia/Shanghai}
+      MINIO_ROOT_USER: ${RKB_MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${RKB_MINIO_SECRET_KEY:-minioadmin}
+    volumes:
+      - miniodata:/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:9000/minio/health/live || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    mem_limit: ${MINIO_MEM_LIMIT:-512m}
+    restart: unless-stopped
+
+  # --------------------------------------------------------------------------
+  # 5. rag-knowledge-base（Python）：**全栈唯一业务服务**
+  #
+  #     路由前缀 /api/co-knowledge/v1。存储口径：
+  #       - PostgreSQL：唯一业务库 rag_studio
+  #       - 文件：知识库文件在 kb-storage；运行期数据（密钥/日志/临时文件）在 rkb-storage
+  #       - 搜索引擎：与 web 共用 OpenSearch 实例
+  # --------------------------------------------------------------------------
+  rag-knowledge-base:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+      args:
+        # 包源可插拔：默认留空走官方 PyPI；内网/镜像站填 deploy/.env 的 PIP_INDEX_URL。
+        PIP_INDEX_URL: ${PIP_INDEX_URL:-}
+        PIP_TRUSTED_HOST: ${PIP_TRUSTED_HOST:-}
+    image: ragstudio/rag-knowledge-base:latest
+    pull_policy: build
+    # 同其它 Python 服务：宿主内核 4.19 无 clone3，默认 seccomp 会拦成 EPERM
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      # 全栈统一 CST：见 docs/…（timestamptz 显示 + Python 本地时间 + SQL CURRENT_TIMESTAMP 三者口径一致）
+      TZ: ${TZ:-Asia/Shanghai}
+      KNOWLEDGE_BASE_PORT: "8091"
+      # none = 关闭鉴权；local = 本地账号 + HttpOnly 会话；gateway = 信任前置网关令牌。
+      # 未知取值会让启动直接失败（不再静默变成 none）。
+      AUTH_MODE: ${AUTH_MODE:-local}
+      # 请求头里没有用户时的回落身份（workflow 与 http identity 两处共用）。
+      AUTH_DEFAULT_USER: ${AUTH_DEFAULT_USER:-admin}
+      # ---- 本地账号（AUTH_MODE=local）----
+      # 首次启动且账号表为空时创建；密码留空则生成随机值并写到 PASSWORD_FILE（0600）。
+      RKB_ADMIN_USERNAME: ${RKB_ADMIN_USERNAME:-admin}
+      RKB_ADMIN_PASSWORD: ${RKB_ADMIN_PASSWORD:-}
+      RKB_ADMIN_PASSWORD_FILE: ${RKB_ADMIN_PASSWORD_FILE:-/data/rkb/initial-admin-password}
+      RKB_ADMIN_MUST_CHANGE: ${RKB_ADMIN_MUST_CHANGE:-true}
+      RKB_AUTH_SESSION_TTL_SECONDS: ${RKB_AUTH_SESSION_TTL_SECONDS:-43200}
+      RKB_AUTH_COOKIE_SECURE: ${RKB_AUTH_COOKIE_SECURE:-auto}
+      RKB_AUTH_LOGIN_MAX_FAILURES: ${RKB_AUTH_LOGIN_MAX_FAILURES:-5}
+      RKB_AUTH_LOGIN_IP_MAX_FAILURES: ${RKB_AUTH_LOGIN_IP_MAX_FAILURES:-20}
+      RKB_AUTH_LOGIN_WINDOW_SECONDS: ${RKB_AUTH_LOGIN_WINDOW_SECONDS:-900}
+      DEV_MODE: "false"
+      # ---- Agent 接口（REST + MCP）----
+      # ⚠️ `.env` 里写了但这里没转发 = 容器看不到（与 GENERATION_* 同一个坑）。
+      # pepper 留空时 agent 路径 fail-closed 返回 503；生产必须在 deploy/.env 里设置
+      # （生成：openssl rand -hex 32）。REST 与 MCP 可分别关闭，便于分阶段上线。
+      RKB_AGENT_API_ENABLED: ${RKB_AGENT_API_ENABLED:-true}
+      RKB_AGENT_REST_ENABLED: ${RKB_AGENT_REST_ENABLED:-true}
+      RKB_AGENT_MCP_ENABLED: ${RKB_AGENT_MCP_ENABLED:-true}
+      RKB_AGENT_ANSWER_ENABLED: ${RKB_AGENT_ANSWER_ENABLED:-true}
+      RKB_AGENT_KEY_PEPPER: ${RKB_AGENT_KEY_PEPPER:-}
+      RKB_AGENT_MAX_TOP_K: ${RKB_AGENT_MAX_TOP_K:-20}
+      RKB_AGENT_MAX_KBS: ${RKB_AGENT_MAX_KBS:-50}
+      RKB_AGENT_ANSWER_TIMEOUT: ${RKB_AGENT_ANSWER_TIMEOUT:-120}
+      RKB_AGENT_ANSWER_MODEL: ${RKB_AGENT_ANSWER_MODEL:-}
+      RKB_AGENT_REASONING_EFFORT: ${RKB_AGENT_REASONING_EFFORT:-}
+      RKB_AGENT_LOG_QUERY: ${RKB_AGENT_LOG_QUERY:-false}
+      RKB_AGENT_MCP_STATELESS: ${RKB_AGENT_MCP_STATELESS:-false}
+      RKB_AGENT_MCP_JSON_RESPONSE: ${RKB_AGENT_MCP_JSON_RESPONSE:-false}
+      RKB_AGENT_MCP_DNS_REBINDING_PROTECTION: ${RKB_AGENT_MCP_DNS_REBINDING_PROTECTION:-false}
+      RKB_AGENT_MCP_ALLOWED_HOSTS: ${RKB_AGENT_MCP_ALLOWED_HOSTS:-}
+      RKB_AGENT_MCP_ALLOWED_ORIGINS: ${RKB_AGENT_MCP_ALLOWED_ORIGINS:-}
+      RKB_AGENT_PUBLIC_BASE: ${RKB_AGENT_PUBLIC_BASE:-/api/co-knowledge/v1/agent}
+      # UI「远程接入 → 密钥管理」接口开关。关闭时 status 仍可读（页面据此提示），
+      # list/create/patch/delete 返回 0005。
+      RKB_AGENT_KEY_ADMIN_ENABLED: ${RKB_AGENT_KEY_ADMIN_ENABLED:-true}
+      # 查询链路耗时入库（best-effort，不影响问答）；关闭后不写 t_query_trace。
+      RKB_QUERY_TRACE_ENABLED: ${RKB_QUERY_TRACE_ENABLED:-true}
+      # 文件域上传档位（MB）。
+      # 留空/不设 → RKB 按容器 cgroup 内存上限自动推导；< 800 才降级
+      # （文档库单次 1 个文件、单文件上限压缩）。显式设 >= 800 可强制走正常档
+      # （单次 50 个 + 原始大小上限）。别在这里写死 8 —— 那正是「只能传 1 个」的来源。
+      MEM_LIMIT: ${MEM_LIMIT:-}
+      LOG_DIR: /data/rkb/logs
+      # 运行期数据（上传源文件 / zedx 解包目录）
+      STORAGE_MAIN_PATH: /data/rkb
+      # 文件域（文件 / 目录 / 切片）的存储根。上传落盘时把**绝对路径**写进
+      # t_directory，解析侧按同一路径去读；挂到同一路径，库里的 diskFileKey
+      # 才能解析到文件。
+      # 与上面那个 STORAGE_MAIN_PATH 的区别：那个是 RKB 自己的数据/日志目录根。
+      RKB_KBASE_STORAGE_PATH: ${STORAGE_MAIN_PATH:-/data/kb}
+      # ---- 知识库文件域后端 ----
+      # local（默认）= 写上面的 kb-storage 卷；minio = 持久文件写对象存储。
+      # 两种后端下 kb-storage 都必须挂载：算子包、名称锁、解析/切片临时文件仍在本地。
+      RKB_STORAGE_BACKEND: ${RKB_STORAGE_BACKEND:-local}
+      # MinIO 模式下的本地 scratch（物化对象、清洗中间件）；建议放在 rkb-storage。
+      RKB_STORAGE_TEMP_PATH: ${RKB_STORAGE_TEMP_PATH:-/data/rkb/tmp}
+      RKB_MINIO_ENDPOINT: ${RKB_MINIO_ENDPOINT:-minio:9000}
+      RKB_MINIO_ACCESS_KEY: ${RKB_MINIO_ACCESS_KEY:-minioadmin}
+      RKB_MINIO_SECRET_KEY: ${RKB_MINIO_SECRET_KEY:-minioadmin}
+      RKB_MINIO_BUCKET: ${RKB_MINIO_BUCKET:-rag-studio-kb}
+      RKB_MINIO_SECURE: ${RKB_MINIO_SECURE:-false}
+      RKB_MINIO_REGION: ${RKB_MINIO_REGION:-}
+      RKB_MINIO_PREFIX: ${RKB_MINIO_PREFIX:-}
+      # ⚠️ 变量名里的 PLUGIN_ 沿用既有命名，与当前用途无关。这两个路径只服务
+      #    语料与 zedx 的落盘，改名会改动卷内目录布局，故保留。
+      PLUGIN_PVC_PATH: /data/rkb/plugins
+      PLUGIN_SOURCE_PATH: /data/rkb/plugins/sourcefile
+      ZEDX_PVC_PATH: /data/rkb/plugins/zedx
+      # 业务库：全栈唯一 database = RKB_DB_NAME(=rag_studio)
+      # 应用连接用非 superuser 角色（RKB_DB_USER）；未配置时回落到 POSTGRES_USER。
+      # 宿主工具读同一组 RKB_DB_*，缺失时回落 POSTGRES_*。
+      RKB_DB_HOST: ${RKB_DB_HOST:-${POSTGRES_HOST:-postgresql}}
+      RKB_DB_PORT: ${RKB_DB_PORT:-${POSTGRES_PORT:-5432}}
+      RKB_DB_NAME: ${RKB_DB_NAME:-${POSTGRES_DB:-rag_studio}}
+      RKB_DB_USER: ${RKB_DB_USER:-${POSTGRES_USER:-rag}}
+      RKB_DB_PASSWORD: ${RKB_DB_PASSWORD:-${POSTGRES_PASSWORD:-changeme}}
+      RKB_DB_POOL_MIN: ${RKB_DB_POOL_MIN:-1}
+      RKB_DB_POOL_MAX: ${RKB_DB_POOL_MAX:-10}
+      # model_registry.api_key 静态加密（AES-256-GCM）。留空 = 自动生成到
+      # RKB_SECRET_KEY_FILE（默认在 rkb-storage 卷里，容器重建后仍在）。
+      RKB_SECRET_KEY: ${RKB_SECRET_KEY:-}
+      RKB_SECRET_KEY_FILE: ${RKB_SECRET_KEY_FILE:-/data/rkb/secret.key}
+      # OpenSearch（关键词索引）。连接变量名沿用 RKB_ES_*，避免破坏既有
+      # 部署配置与 tools/ 下的运维脚本。
+      RKB_ES_HOST: ${RKB_ES_HOST:-opensearch}
+      RKB_ES_PORT: ${RKB_ES_PORT:-9200}
+      RKB_ES_USERNAME: ${RKB_ES_USERNAME:-}
+      RKB_ES_PASSWORD: ${RKB_ES_PASSWORD:-}
+      # 索引副本数（单节点默认 0，避免集群 yellow；多节点部署设 1）。
+      ES_NUMBER_OF_REPLICAS: ${ES_NUMBER_OF_REPLICAS:-0}
+      # embedding 端点（model/gateway.py 用）。
+      # ⚠️ 这三个**必须一起注入**：URL 指了远端而 PATH/MODEL/DIMENSION 走代码默认值的话，
+      # 会拿 `/embeddings` + `BAAI/bge-base-zh-v1.5` + 768 去打远端端点 —— 静默用错模型。
+      # （这正是「定义了没接线」那类陷阱：代码有 `_env()` 兜底，所以漏注入不报错。）
+      MODEL_GATEWAY_URL: ${MODEL_GATEWAY_URL:-}
+      MODEL_GATEWAY_EMBEDDINGS_PATH: ${MODEL_GATEWAY_EMBEDDINGS_PATH:-/embeddings}
+      MODEL_GATEWAY_API_KEY: ${MODEL_GATEWAY_API_KEY:-}
+      # 推理模型「思考」开关：抽图逐 chunk 调大模型，开启思考时单次 >10 分钟。
+      MODEL_GATEWAY_REASONING_EFFORT: ${MODEL_GATEWAY_REASONING_EFFORT:-}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-Qwen3-Embedding-0.6B}
+      # 这个变量必须真的送到容器里：代码里的 `_env()` 有兜底，漏转发时
+      # 只有把它改成非默认值的人才会踩。模型注册表的播种要读它
+      # （登记名与端点模型名是两个命名空间，见 contracts/model-gateway.md）。
+      EMBEDDING_MODEL_NAME: ${EMBEDDING_MODEL_NAME:-Qwen3-Embedding-0.6B}
+      EMBEDDING_DIMENSION: ${EMBEDDING_DIMENSION:-1024}
+      # 文档解析/切片由 ingestion/ 包**进程内**完成，没有 HTTP 对端
+      # （见 ingestion/runtime.py）。
+      #
+      # server_env：环境标识，用于选择 ingestion/config/config_{env}.yaml
+      # （日志文件后缀也读它）。切片返回结构不再依赖该变量 —— result_convert 固定
+      # 输出 node 列表。这里显式注入 dev，与默认配置文件保持一致。
+      server_env: dev
+      # ---- 画布校验所需的「本部署能跑什么」（workflow/runtime_config.py）----
+      # 这几个变量必须在 .env / compose 里有注入点，否则 RKB 会吃 runtime_config.py
+      # 里硬编码的 DEFAULT_MODELS —— 改 .env 或 application.yml 都对画布下拉静默无效。
+      RKB_FLOW_LLM_MODELS: ${GENERATION_MODELS:-}
+      RKB_FLOW_REASONING_MODELS: ${REASONING_MODELS:-}
+      # rerank 端点：**判据与运行期同源** —— preCheck 的 `check_runnable` 与本段
+      # （现已是同一进程内的编排）用的是同一个值，否则会「preCheck 说能跑、运行时跑不了」。
+      RKB_RERANK_URL: ${RERANK_URL:-}
+      # rerank 请求体里的 model 名：留空回落到内置常量 `bge-reranker-large`。
+      # 端点若校验模型名（Cohere/Jina 系常见），这是唯一的部署侧出口。
+      RERANK_MODEL: ${RERANK_MODEL:-}
+      # 生成端点（探测可用模型用；编排的合成与改写也走它）。与判据同一组值。
+      GENERATION_GATEWAY_URL: ${GENERATION_GATEWAY_URL:-}
+      GENERATION_API_KEY: ${GENERATION_API_KEY:-}
+      GENERATION_MODELS_PATH: ${GENERATION_MODELS_PATH:-/models}
+      # ---- 生成/重排 ----
+      # 漏注入是**静默**的：画布算子的 kwargs.llm 留空是常态，没有它就回落到代码常量；
+      # 推理模型给小了会是 content 空 + finish_reason=length（看起来成功其实没答案）。
+      GENERATION_MODEL: ${GENERATION_MODEL:-your-chat-model}
+      GENERATION_MAX_TOKENS: ${GENERATION_MAX_TOKENS:-2048}
+      GENERATION_TEMPERATURE: ${GENERATION_TEMPERATURE:-0.01}
+      GENERATION_TIMEOUT: ${GENERATION_TIMEOUT:-120}
+      # 推理模型的思考开关（OpenAI 兼容 reasoning_effort）。留空 = 不发送。
+      # deepseek-chat 这类模型在重排/改写这种短输出上会把 max_tokens 烧在
+      # reasoning_content 上，content 为空后被判成 `llm-empty-content-truncated`
+      # （实测重排 63s 后回落）。支持该字段的端点建议设 `none`。
+      # ⚠️ 与 GENERATION_* 同一类坑：`.env` 里写了但这里没转发 = 容器看不到。
+      GENERATION_REASONING_EFFORT: ${GENERATION_REASONING_EFFORT:-}
+      # 推理模型的模板开关（JSON 对象，如 {"thinking": false}）。留空 = 不发送。
+      # 实测 deepseek-chat 只认这个：顶层 reasoning_effort=none 仍会思考，
+      # 而 chat_template_kwargs.thinking=false 才能把 reasoning_tokens 打到 0。
+      # ⚠️ **推荐在模型管理页逐模型配置「思考配置」**（auto/preset/custom）；
+      # 模型级配置用于回答生成，改写/重排/路由固定走 aux（关闭/最低思考）预置，
+      # 且不读取模型行的 preset/custom（避免回答侧高推理漏到辅助调用）。
+      # 本变量只是回落，只对注册表不可用/模型未注册的端点生效
+      # （已注册模型以行内配置为准）。
+      # 不同推理模型对该字段的支持不一致：有的忽略、仍会思考，有的能真正关闭。
+      GENERATION_CHAT_TEMPLATE_KWARGS: ${GENERATION_CHAT_TEMPLATE_KWARGS:-}
+      # 重排专用模型（画布未显式写 llm 时生效）。留空 = 沿用 GENERATION_MODEL。
+      # 推理模型做重排会先思考很久（实测 20~60s），建议配一个非推理模型。
+      GENERATION_RERANK_MODEL: ${GENERATION_RERANK_MODEL:-}
+      # 敏感词黑名单目录（编排的合成算子用它做屏蔽）。compose 与 .env.example
+      # 都要写这个变量，镜像里也要有这个目录，否则「没配黑名单」会成为唯一可能的
+      # 部署状态，屏蔽静默不生效。
+      # ⚠️ 配上变量只是第一环，**要真生效还差三步**（缺任何一环都是静默的）：
+      #    ① 把目录挂进容器（取消下面 volumes 里那行注释，或另加 bind mount）——
+      #       **镜像里没有 /app/black_list**，不挂它，后面两步都没落脚点；
+      #    ② 在目录里放 `<词表名>.txt`，词之间用 `|#|` 分隔（见 black_list_loader.py）；
+      #    ③ 画布里用了黑名单的那个合成算子要填 `black_vocabulary: <词表名>`。
+      #    另：**没有热更新** —— 换词表要重启容器或显式调 reload_black_list()。
+      BLACK_LIST_DIR: ${BLACK_LIST_DIR:-/app/black_list}
+      # 大图谱抽图（数百 chunk）在慢网关上可能超过默认 1800s；单独放宽，
+      # 不影响切分/解析的 300s/600s。留空 = 默认 1800s。
+      OPERATOR_GRAPH_EXTRACT_TIMEOUT_SECONDS: ${OPERATOR_GRAPH_EXTRACT_TIMEOUT_SECONDS:-}
+      # 沙箱子进程内存配额（MB）。上限 = 子进程基线 + 本值；默认 500 在导入
+      # 解析器后就只剩几十 MB，稍大的文档会在结果回传处失败（对外「切分算子执行失败」）。
+      # ⚠️ 与 GENERATION_* 同一类坑：.env 里写了但这里没转发 = 容器看不到。
+      OPERATOR_MEMORY_LIMIT_MB: ${OPERATOR_MEMORY_LIMIT_MB:-}
+      # numpy/OpenBLAS 按线程数预分配缓冲区（8 核 VmSize +280MB），固定 1 线程。
+      # 这两个还要在 sandbox_runtime._KEEP_ENV 白名单里，否则会被 sanitize_environment 剥掉。
+      OPENBLAS_NUM_THREADS: ${OPENBLAS_NUM_THREADS:-}
+      OMP_NUM_THREADS: ${OMP_NUM_THREADS:-}
+      # 容器会继承宿主 http_proxy；跨服务走 compose 网络，需排除内部服务名与 172.18.0.0/16。
+      # GENERATION_HOST 同样要排除：探测要直连生成端点，被代理接走会拿到一页 HTML，
+      # 表现为「探测永远无法判定」。
+      NO_PROXY: "localhost,127.0.0.1,postgresql,opensearch,model-gateway,minio,rag-knowledge-base,172.18.0.0/16${GENERATION_HOST:+,${GENERATION_HOST}}${EMBEDDING_HOST:+,${EMBEDDING_HOST}}${RERANK_HOST:+,${RERANK_HOST}}"
+      no_proxy: "localhost,127.0.0.1,postgresql,opensearch,model-gateway,minio,rag-knowledge-base,172.18.0.0/16${GENERATION_HOST:+,${GENERATION_HOST}}${EMBEDDING_HOST:+,${EMBEDDING_HOST}}${RERANK_HOST:+,${RERANK_HOST}}"
+    depends_on:
+      postgresql:
+        condition: service_healthy
+    volumes:
+      - rkb-storage:/data/rkb
+      # 敏感词词表（可选）：取消注释并把 BLACK_LIST_DIR 指到容器内这个路径即可生效。
+      # - ${BLACK_LIST_HOST_DIR:-./black_list}:/app/black_list:ro
+      # 库里的 diskFileKey 是绝对路径；上传与解析必须挂同一卷、同一路径，
+      # 否则会出现「文件找不到」。
+      - kb-storage:${STORAGE_MAIN_PATH:-/data/kb}
+    healthcheck:
+      # python:3.11-slim 无 curl，用 python3 urllib 检查唯一健康端点（返回 200 "ok"）
+      test: ["CMD-SHELL", "python3 -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:8091/api/co-knowledge/v1/health\", timeout=3)' || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 60s
+    restart: unless-stopped
+    # 端口不对外暴露；开发调试见 docker-compose.dev.yml
+
+  # --------------------------------------------------------------------------
+  # 8. web（nginx）：静态资源 + 反向代理（唯一对外入口，80）
+  # --------------------------------------------------------------------------
+  web:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+      args:
+        # npm 源可插拔：默认留空走 .npmrc 里的官方 registry；内网/镜像站填 NPM_REGISTRY。
+        NPM_REGISTRY: ${NPM_REGISTRY:-}
+        # 站点部署路径：默认根路径；子路径部署填 /co-knowledge/（末尾斜杠必填），
+        # 需重建 web 镜像才生效（构建期注入 publicPath / 路由 base / nginx location）。
+        BASE_URL: ${WEB_BASE_URL:-/}
+    image: ragstudio/web:latest
+    pull_policy: build
+    # 本机内核 4.19 无 clone3：按「本地 docker 一律 seccomp=unconfined」的统一约定加上。
+    # ⚠️ nginx 本身不需要这条（反而扩大攻击面）；若回到标准内核（>=5.3）应将本节删除。
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      # 全栈统一 CST（nginx 自身不做时间运算，但保持与其它容器一致，便于排查）
+      TZ: ${TZ:-Asia/Shanghai}
+    depends_on:
+      rag-knowledge-base:
+        condition: service_healthy
+    ports:
+      - "80:80"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost/ || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    restart: unless-stopped
+
+# ----------------------------------------------------------------------------
+# 命名卷
+#   kb-storage：知识库文件（上传原文、解析产物、算子包）
+#   rkb-storage：后端运行期数据（密钥、日志、临时文件）
+#   pgdata / osdata / model-cache / miniodata
+# ----------------------------------------------------------------------------
+volumes:
+  kb-storage:
+  rkb-storage:
+  pgdata:
+  osdata:
+  model-cache:
+  # MinIO 对象数据（仅 profile=minio 时使用）
+  miniodata:

@@ -1,0 +1,37 @@
+# 入口暴露审计白名单
+# 格式：kind | key | 理由 | review-by（YYYY-MM-DD，过期即失败）
+# 生成于 2026-10-26；首次基线请逐条补齐理由。
+
+spec-of-unreachable | frontend/tests/unit/DocKbRowActions.spec.js -> frontend/src/features/knowledge-base/components/DocKbRowActions.vue | P1 待清理（先删测试再删代码） | 2027-01-24
+spec-of-unreachable | frontend/tests/unit/StatusText.spec.js -> frontend/src/shared/ui/StatusText.vue | P1 待清理（先删测试再删代码） | 2027-01-24
+spec-of-unreachable | frontend/tests/unit/graphNodeLabels.spec.js -> frontend/src/features/graph/lib/node-labels.ts | P1 待清理（先删测试再删代码） | 2027-01-24
+spec-of-unreachable | frontend/tests/unit/graphTemplate.common.spec.js -> frontend/src/features/graph/components/graphUtils.js | P1 待清理（先删测试再删代码） | 2027-01-24
+spec-of-unreachable | frontend/tests/unit/kbList.table-fill-height.spec.js -> frontend/src/shared/composables/useTableFillHeight.ts | P1 待清理（先删测试再删代码） | 2027-01-24
+spec-of-unreachable | frontend/tests/unit/kbList.table-height-wiring.spec.js -> frontend/src/shared/ui/table/tableGroup.vue | P1 待清理（先删测试再删代码） | 2027-01-24
+spec-of-unreachable | frontend/tests/unit/kbSubPageRouteParams.spec.js -> frontend/src/features/knowledge-base/composables/useKbSubPageRouteParams.js | P1 待清理（先删测试再删代码） | 2027-01-24
+spec-of-unreachable | frontend/tests/unit/modelManagement.spec.js -> frontend/src/features/model/ModelFormDialog.vue | P1 待清理（先删测试再删代码） | 2027-01-24
+spec-of-unreachable | frontend/tests/unit/serialColumn.consistency.spec.js -> frontend/src/shared/ui/table/selfTable.vue | P1 待清理（先删测试再删代码） | 2027-01-24
+unreachable-file | frontend/src/features/agent/components/CodeBlock.vue | P1 待清理（先删测试再删代码） | 2027-01-24
+unreachable-file | frontend/src/features/agent/types.ts | P1 待清理（先删测试再删代码） | 2027-01-24
+unreachable-file | frontend/src/features/graph/components/GraphEditor/NodePalette.vue | P1 待清理（先删测试再删代码） | 2027-01-24
+unreachable-file | frontend/src/features/graph/components/graphUtils.js | P1 待清理（先删测试再删代码） | 2027-01-24
+unreachable-file | frontend/src/features/graph/lib/node-labels.ts | P1 待清理（先删测试再删代码） | 2027-01-24
+unreachable-file | frontend/src/features/knowledge-base/components/DocKbRowActions.vue | P1 待清理（先删测试再删代码） | 2027-01-24
+unreachable-file | frontend/src/features/knowledge-base/composables/useKbSubPageRouteParams.js | P1 待清理（先删测试再删代码） | 2027-01-24
+unreachable-file | frontend/src/features/model/ModelFormDialog.vue | P1 待清理（先删测试再删代码） | 2027-01-24
+unreachable-file | frontend/src/features/operators/type.ts | P1 待清理（先删测试再删代码） | 2027-01-24
+unreachable-file | frontend/src/features/workflow/modules/sideNode.vue | P1 待清理（先删测试再删代码） | 2027-01-24
+unreachable-file | frontend/src/features/workflow/modules/useRowDrop.js | P1 待清理（先删测试再删代码） | 2027-01-24
+unreachable-file | frontend/src/features/workflow/upAndDownItem.vue | P1 待清理（先删测试再删代码） | 2027-01-24
+unreachable-file | frontend/src/features/workflow/useNode.ts | P1 待清理（先删测试再删代码） | 2027-01-24
+unreachable-file | frontend/src/shared/composables/useTableFillHeight.ts | P1 待清理（先删测试再删代码） | 2027-01-24
+unreachable-file | frontend/src/shared/events.js | P1 待清理（先删测试再删代码） | 2027-01-24
+unreachable-file | frontend/src/shared/types/app.ts | P1 待清理（先删测试再删代码） | 2027-01-24
+unreachable-file | frontend/src/shared/ui/AppCard.vue | P1 待清理（先删测试再删代码） | 2027-01-24
+unreachable-file | frontend/src/shared/ui/AppStatus.vue | P1 待清理（先删测试再删代码） | 2027-01-24
+unreachable-file | frontend/src/shared/ui/AppTable.vue | P1 待清理（先删测试再删代码） | 2027-01-24
+unreachable-file | frontend/src/shared/ui/AppToolbar.vue | P1 待清理（先删测试再删代码） | 2027-01-24
+unreachable-file | frontend/src/shared/ui/StatusText.vue | P1 待清理（先删测试再删代码） | 2027-01-24
+unreachable-file | frontend/src/shared/ui/TableIcon.vue | P1 待清理（先删测试再删代码） | 2027-01-24
+unreachable-file | frontend/src/shared/ui/table/selfTable.vue | P1 待清理（先删测试再删代码） | 2027-01-24
+unreachable-file | frontend/src/shared/ui/table/tableGroup.vue | P1 待清理（先删测试再删代码） | 2027-01-24

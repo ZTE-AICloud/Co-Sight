@@ -1,0 +1,17 @@
+/*
+ * 尊重系统「减少动态效果」偏好。
+ *
+ * 统一把动画与过渡压到一帧以内：
+ * 保留 `animation-iteration-count: 1`，避免依赖 `animationend` 的组件永远等不到事件。
+ * `scroll-behavior: auto` 关闭平滑滚动。
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

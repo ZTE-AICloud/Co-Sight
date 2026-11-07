@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ragstudio.local/schemas/page.json",
+  "title": "Page",
+  "type": "object",
+  "required": ["items", "total", "page", "pageSize"],
+  "properties": {
+    "items": {
+      "type": "array",
+      "description": "当前页数据"
+    },
+    "total": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "筛选后的总条数"
+    },
+    "page": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "当前页（从 1 开始）"
+    },
+    "pageSize": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "每页条数"
+    }
+  }
+}

@@ -1,0 +1,38 @@
+# ============================================================================
+# Knowledge Studio · 开发环境覆盖（override 主文件，不重写）
+#
+# 用法：
+#   cp deploy/.env.example deploy/.env
+#   docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.dev.yml up -d
+#
+# 设计要点：
+#   - 依赖服务（PG / OpenSearch）沿用主文件；主文件已把它们的调试端口绑定到
+#     127.0.0.1，**不要在这里重复声明** —— compose 对 ports 是「追加合并」，
+#     重复条目会变成同一宿主端口的两次绑定，启动报 port is already allocated
+#   - 业务服务改为源码热重载：web 用 dev server(8808)、后端挂源码并 --reload
+#   - 鉴权仅 AUTH_MODE=none；不提供 mock 模型（验收不要用 mock 模型）
+# ============================================================================
+
+services:
+  # ---- 后端：源码挂载 + --reload，8091 暴露到 localhost ----
+  rag-knowledge-base:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ../backend:/app
+    ports:
+      - "127.0.0.1:8091:8091"
+    command: ["sh", "-c", "uvicorn app:app --host 0.0.0.0 --port ${KNOWLEDGE_BASE_PORT:-8091} --reload"]
+
+  # ---- web：dev server（不构建 nginx 镜像）----
+  web:
+    image: node:22.23.3-alpine
+    working_dir: /app
+    command: ["sh", "-c", "npm install && npm run serve"]
+    volumes:
+      - ../frontend:/app
+    ports:
+      - "8808:8808"
+    environment:
+      VUE_APP_API_BASE_URL: ""

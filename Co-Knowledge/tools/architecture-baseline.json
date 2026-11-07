@@ -1,0 +1,4 @@
+{
+  "comment": "Architecture debt baseline. This list must only shrink; run --write-baseline to refresh.",
+  "violations": []
+}

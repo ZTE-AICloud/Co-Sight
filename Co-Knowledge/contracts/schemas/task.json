@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ragstudio.dev/schemas/task.json",
+  "title": "Task",
+  "description": "异步任务。状态机见 04 §5.2；错误码见 05 §5.1",
+  "type": "object",
+  "required": ["taskId", "status"],
+  "properties": {
+    "taskId":     { "type": "string", "description": "UUID，由服务端生成；重试沿用同一 taskId" },
+    "taskType":   { "type": "string", "enum": ["FILE_IMPORT", "FILE_PARSE", "FILE_SPLIT", "EMBEDDING", "INDEX"] },
+    "status":     { "type": "string", "enum": ["PENDING", "RUNNING", "SUCCEEDED", "FAILED", "CANCELLED"] },
+    "attempt":    { "type": "integer", "minimum": 1, "default": 1 },
+    "maxAttempts":{ "type": "integer", "minimum": 1 },
+    "kbId":       { "type": "string" },
+    "fileId":     { "type": "string" },
+    "progress":   { "type": "integer", "minimum": 0, "maximum": 100 },
+    "error":      { "$ref": "#/$defs/TaskError" },
+    "createTime": { "type": "string", "format": "date-time" },
+    "startTime":  { "type": "string", "format": "date-time" },
+    "endTime":    { "type": "string", "format": "date-time" }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "TaskError": {
+      "type": "object",
+      "required": ["code", "message"],
+      "properties": {
+        "code":    { "$ref": "#/$defs/ErrorCode" },
+        "message": { "type": "string" },
+        "detail":  { "type": "string", "description": "可选的补充信息；不得包含堆栈" }
+      },
+      "additionalProperties": false
+    },
+    "ErrorCode": {
+      "type": "string",
+      "description": "可重试性见 retryableFrom 表（05 §5.1）",
+      "enum": [
+        "FILE_PARSE_ERROR",
+        "FILE_SPLIT_ERROR",
+        "OPERATOR_ERROR",
+        "OPERATOR_TIMEOUT",
+        "OPERATOR_SENSITIVE",
+        "OPERATOR_CODE_CHECK_FAILED",
+        "EMBEDDING_TIMEOUT",
+        "EMBEDDING_ERROR",
+        "ES_WRITE_ERROR",
+        "PG_WRITE_ERROR",
+        "CANCELLED"
+      ]
+    }
+  }
+}

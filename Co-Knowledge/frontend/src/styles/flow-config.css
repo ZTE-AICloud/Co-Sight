@@ -1,0 +1,208 @@
+/* 0.1.6 节点配置抽屉（FlowNodeDrawer）的共享排版。
+   抽屉内容由各模块 Drawer.vue 的 slot 提供，这里只放跨模块共用的块。 */
+
+.fc-content {
+  padding-bottom: 16px;
+}
+.fc-content .el-form-item {
+  margin-bottom: 12px;
+}
+.fc-content .el-form-item__label {
+  font-size: var(--rs-font-size-secondary);
+  color: var(--rs-text-2);
+}
+.fc-content .el-select {
+  width: 100%;
+}
+/* EP 的 el-select 默认 min-height:32px，不读 --el-component-size；
+   同格的 el-input / el-input-number 是 40px，抽屉里会高低不齐，统一到 40px。 */
+.flow-config-drawer .el-select__wrapper {
+  min-height: var(--el-component-size);
+}
+.fc-content .el-input-number {
+  max-width: 100%;
+}
+.fc-content .el-textarea__inner {
+  padding: 8px 12px;
+  line-height: 1.7;
+  font-size: var(--rs-font-size-secondary);
+}
+
+.fc-operators-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 0 14px;
+}
+.fc-operators-toolbar h3 {
+  margin: 0;
+  color: var(--rs-text);
+  font-size: 15px;
+  font-weight: 600;
+}
+.fc-operators-toolbar h3 span {
+  color: var(--rs-text-3);
+  margin-left: 6px;
+  font-weight: 400;
+}
+.fc-operators-toolbar p {
+  color: var(--rs-text-3);
+  margin: 5px 0 0;
+}
+.fc-operators-toolbar > .el-dropdown {
+  flex-shrink: 0;
+}
+
+.fc-prompt-field {
+  margin-bottom: 12px;
+}
+.fc-field-label {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 6px;
+  font-size: var(--rs-font-size-secondary);
+  color: var(--rs-text-2);
+}
+.fc-text-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--rs-primary);
+  cursor: pointer;
+}
+.fc-text-action svg {
+  width: 13px;
+  height: 13px;
+}
+.fc-prompt-meta {
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  color: var(--rs-text-3);
+  margin-top: 4px;
+}
+
+.fc-history {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.fc-history label {
+  color: var(--rs-text-2);
+}
+.fc-history .el-input-number {
+  width: 130px;
+}
+.fc-history > span {
+  color: var(--rs-text-3);
+}
+
+.fc-no-params {
+  color: var(--rs-text-3);
+  margin: 0 0 14px;
+}
+
+/* 0.1.10 检索器：算子限定的知识来源类型 */
+.fc-source-context {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--rs-text-2);
+  line-height: 1.7;
+  margin-bottom: 12px;
+}
+.fc-source-context .tag-soft {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.fc-source-context .tag-soft svg {
+  width: 12px;
+  height: 12px;
+}
+.fc-source-notice {
+  margin: 0 0 12px;
+  color: var(--rs-text-2);
+  line-height: 1.7;
+}
+
+/* 检索器的多知识库配置块 */
+.fc-source-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.fc-source {
+  border: 1px solid var(--rs-border-soft);
+  border-radius: 6px;
+  padding: 10px 12px 0;
+  background: var(--rs-bg-soft);
+}
+.fc-source-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 26px;
+  margin-bottom: 8px;
+  color: var(--rs-text-2);
+  font-size: var(--rs-font-size-secondary);
+  font-weight: 600;
+}
+.fc-source .fc-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+}
+.fc-source .el-form-item {
+  margin-bottom: 10px;
+}
+
+/* 提示词展开编辑对话框 */
+.flow-prompt-dialog .el-textarea__inner {
+  height: min(56vh, 600px);
+  font-family: var(--rs-font-family-mono);
+  font-size: var(--rs-font-size-secondary);
+  line-height: 1.8;
+  padding: 16px;
+}
+.fc-expanded-intro {
+  color: var(--rs-text-3);
+  margin: 0 0 16px;
+}
+.fc-expanded-count {
+  color: var(--rs-text-3);
+  margin-right: 16px;
+}
+.flow-prompt-dialog .el-dialog__footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+@media (max-width: 540px) {
+  .fc-operators-toolbar {
+    align-items: flex-start;
+  }
+  .fc-operators-toolbar p {
+    max-width: 200px;
+  }
+  .fc-source .fc-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+  .fc-expanded-count {
+    display: none;
+  }
+}

@@ -1,0 +1,7 @@
+node_modules/
+.env.e2e
+.e2e-state.env
+playwright-report/
+test-results/
+blob-report/
+mcp/evidence/

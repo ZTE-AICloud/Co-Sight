@@ -1,0 +1,14 @@
+/dist/
+/jenkins/
+/static/
+/build/
+/config/
+/docker/
+/node_modules/
+/PIPELINE/
+/public/
+/src/assets/
+/src/static/
+/docs/**/*.md
+/*.*
+/tests/

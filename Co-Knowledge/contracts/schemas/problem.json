@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ragstudio.local/schemas/problem.json",
+  "title": "RFC 9457 Problem",
+  "type": "object",
+  "required": ["type", "title", "status", "detail", "code"],
+  "properties": {
+    "type": {
+      "type": "string",
+      "description": "问题类型 URI；本项目用 urn:ragstudio:problem:<code>"
+    },
+    "title": {
+      "type": "string",
+      "description": "稳定英文标题（不随语言变化）"
+    },
+    "status": {
+      "type": "integer",
+      "minimum": 400,
+      "maximum": 599,
+      "description": "HTTP 状态码（与响应状态一致）"
+    },
+    "detail": {
+      "type": "string",
+      "description": "按 Accept-Language 本地化的可读说明"
+    },
+    "instance": {
+      "type": "string",
+      "description": "请求路径"
+    },
+    "code": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "description": "稳定机器码，客户端按它分支"
+    },
+    "errors": {
+      "type": "array",
+      "description": "400/422 时可选的绑定/校验明细",
+      "items": {
+        "type": "object",
+        "properties": {
+          "loc": { "type": "array", "items": { "type": ["string", "integer"] } },
+          "type": { "type": "string" },
+          "message": { "type": "string" }
+        }
+      }
+    }
+  }
+}

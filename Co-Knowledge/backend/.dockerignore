@@ -1,0 +1,32 @@
+.git
+# 本地配置/凭据：FastMCP 的 pydantic-settings 默认读取 CWD 的 .env，
+# backend/.env 若存在会改变运行期行为；不进镜像。
+.env
+.env.*
+# 已退役的 KMS 材料（代码不再读取；本地文件不进镜像）
+src/ingestion/config/kms_local.yaml
+src/ingestion/config/kmsmaterial.json
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/.pytest_cache
+**/.ruff_cache
+**/.mypy_cache
+**/node_modules
+**/logs
+**/*.log
+.dockerignore
+.coverage
+htmlcov
+# 单元测试与测试夹具不进运行镜像（体积大且含测试用 mock 数据）
+tests
+test_output
+# 运行期数据/日志（容器里由卷挂载）
+data
+logs
+file_track
+.idea
+.vscode
+.cursor
+.cursorindexingignore
+.specstory

@@ -1,0 +1,12 @@
+node_modules
+dist
+.git
+.gitignore
+*.log
+coverage
+.DS_Store
+# 本地开发配置可能含内部端点；构建只使用入库的 .env.production。
+.env
+.env.local
+.env.*.local
+tests

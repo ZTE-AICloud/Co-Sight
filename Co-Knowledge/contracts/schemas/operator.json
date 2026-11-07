@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ragstudio.dev/schemas/operator.json",
+  "title": "Operator",
+  "description": "算子（文档处理算子）。**两类、两个事实源**：(a) 系统算子 = 静态注册表 backend/src/ingestion/split/operator_all.json（2 个内置条目，只读）；(b) 自定义算子 = rag_studio 库的 operator 表 + PVC（经 /api/co-knowledge/v1/operators 导入落库）",
+  "type": "object",
+  "required": ["name", "displayName", "module", "version"],
+  "properties": {
+    "id":              { "type": "integer", "description": "系统算子为负数（-1 默认切分 / -2 摘要切分，见 operator_all.json）；自定义算子为正数，由 RKB 的算子导入分配（rag_studio.operator 表）" },
+    "name":            { "type": "string", "description": "operator_name；同时是嵌套模块 zip 名" },
+    "displayName":     { "type": "object", "required": ["zh", "en"], "properties": { "zh": {"type":"string"}, "en": {"type":"string"} }, "additionalProperties": false },
+    "description":     { "type": "object", "properties": { "zh": {"type":"string"}, "en": {"type":"string"} }, "additionalProperties": false },
+    "module":          { "type": "string", "enum": ["file_parse", "text_split", "graph_extract"], "description": "graph_extract 为 v1 范围外" },
+    "functionName":    { "type": "string", "description": "入口函数名。注意：module=text_split 时函数名是 file_split（05 §4.3）" },
+    "version":         { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$", "description": "SemVer，算子业务版本，独立于契约版本" },
+    "supportedFormat": { "type": "array", "items": { "type": "string" }, "description": "如 md/pdf/docx/txt/pptx/html/xlsx/csv" },
+    "defaultArgs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["argName", "argType", "defaultValue"],
+        "properties": {
+          "argName":      { "type": "string" },
+          "argType":      { "type": "string", "enum": ["str", "int", "bool"] },
+          "defaultValue": {},
+          "description":  { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "isPublished":  { "type": "integer", "enum": [0, 1], "default": 0 },
+    "visibleRange": { "type": "string", "enum": ["public", "private"], "default": "private" },
+    "system":       { "type": "integer", "enum": [0, 1] }
+  },
+  "additionalProperties": false
+}

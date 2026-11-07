@@ -1,0 +1,2430 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="description" content="Knowledge Studio 对外接口文档（集成面）：知识库只读、检索、问答、Agent REST 与 MCP。契约版本 1.4.0。">
+<title>Knowledge Studio REST 接入指南（Agent API）</title>
+<style>
+:root {
+  --paper: #fbfaf6;
+  --surface: #ffffff;
+  --surface-2: #f4f0e6;
+  --ink: #1d232b;
+  --ink-2: #3c4652;
+  --muted: #6b7480;
+  --line: #e2dccd;
+  --line-strong: #cfc6b4;
+  --accent: #0f6b5c;
+  --accent-2: #b4552a;
+  --accent-soft: #e6f1ee;
+  --code-bg: #f4f1e9;
+  --code-border: #e0d9ca;
+  --topbar: #1b222b;
+  --topbar-ink: #f5f1e7;
+  --radius: 8px;
+  --shadow: 0 10px 30px rgba(29, 35, 43, .08);
+}
+
+* { box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 84px;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", "Source Han Sans SC",
+    "Noto Sans CJK SC", sans-serif;
+  font-size: 15.5px;
+  line-height: 1.74;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+a:hover { color: #0a4d42; }
+
+.progress {
+  position: fixed; top: 0; left: 0; height: 3px; width: 0;
+  background: linear-gradient(90deg, var(--accent), #2f9b86);
+  z-index: 100;
+}
+
+.topbar {
+  position: sticky; top: 0; z-index: 90;
+  height: 64px; display: flex; align-items: center; gap: 18px;
+  padding: 0 24px;
+  background: var(--topbar);
+  color: var(--topbar-ink);
+  border-bottom: 1px solid rgba(255, 255, 255, .08);
+}
+.brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.brand-mark {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px; border-radius: 7px;
+  background: var(--accent); color: #fff;
+  font-size: 11px; font-weight: 800; letter-spacing: .06em;
+}
+.brand-text { font-size: 14px; font-weight: 650; letter-spacing: .02em; white-space: nowrap; }
+.topbar-meta { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+.pill {
+  display: inline-flex; align-items: center; height: 26px; padding: 0 10px;
+  border: 1px solid rgba(245, 241, 231, .28); border-radius: 999px;
+  font-size: 12px; letter-spacing: .02em; color: rgba(245, 241, 231, .9);
+}
+.topbar-date { font-size: 12px; color: rgba(245, 241, 231, .55); }
+.print-btn {
+  appearance: none; border: 1px solid rgba(245, 241, 231, .28);
+  background: transparent; color: var(--topbar-ink);
+  height: 30px; padding: 0 12px; border-radius: 6px;
+  font: inherit; font-size: 12px; cursor: pointer;
+}
+.print-btn:hover { background: rgba(255, 255, 255, .08); }
+.menu-toggle {
+  display: none; appearance: none; border: 0; background: transparent;
+  color: var(--topbar-ink); font-size: 20px; line-height: 1; cursor: pointer;
+  padding: 4px 2px;
+}
+
+.shell {
+  display: grid;
+  grid-template-columns: 292px minmax(0, 1fr);
+  max-width: 1480px;
+  margin: 0 auto;
+}
+
+.sidebar {
+  position: sticky; top: 64px;
+  height: calc(100vh - 64px);
+  overflow-y: auto;
+  padding: 22px 16px 28px 24px;
+  border-right: 1px solid var(--line);
+  scrollbar-width: thin;
+}
+.search-wrap { position: relative; margin-bottom: 18px; }
+#tocSearch {
+  width: 100%; height: 36px; padding: 0 34px 0 11px;
+  border: 1px solid var(--line-strong); border-radius: 6px;
+  background: var(--surface); color: var(--ink);
+  font: inherit; font-size: 13px; outline: none;
+}
+#tocSearch:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.search-hint {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  color: var(--muted); font-size: 11px; border: 1px solid var(--line);
+  border-radius: 4px; padding: 0 5px; background: var(--surface-2);
+}
+.toc, .toc ul { list-style: none; margin: 0; padding: 0; }
+.toc-item { margin: 0; }
+.toc-h2 > a {
+  display: block; padding: 6px 10px 6px 11px;
+  border-left: 2px solid transparent;
+  color: var(--ink-2); text-decoration: none;
+  font-size: 13px; font-weight: 600; line-height: 1.45;
+}
+.toc-h2 > a:hover { background: var(--surface-2); color: var(--ink); }
+.toc-sub { margin: 1px 0 6px 10px !important; border-left: 1px solid var(--line); }
+.toc-h3 > a {
+  display: block; padding: 4px 8px 4px 12px;
+  color: var(--muted); text-decoration: none;
+  font-size: 12.5px; line-height: 1.45;
+}
+.toc-h3 > a:hover { color: var(--ink); background: var(--surface-2); }
+.toc-item.active > a {
+  color: var(--accent); border-left-color: var(--accent); background: var(--accent-soft);
+}
+.toc-h3.active > a { color: var(--accent); background: transparent; font-weight: 600; }
+.toc-empty { display: none; padding: 10px 11px; color: var(--muted); font-size: 12.5px; }
+.sidebar-foot {
+  margin-top: 26px; padding-top: 16px; border-top: 1px solid var(--line);
+  display: grid; gap: 3px; color: var(--muted); font-size: 11.5px;
+}
+
+.scrim { display: none; }
+.main { min-width: 0; padding: 46px 56px 80px; }
+.content { max-width: 900px; margin: 0 auto; }
+
+.doc-kicker {
+  margin-bottom: 10px; color: var(--accent);
+  font-size: 11.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+}
+h1 {
+  margin: 0 0 10px; font-size: clamp(2rem, 3.6vw, 2.65rem);
+  line-height: 1.14; letter-spacing: -.025em; font-weight: 750;
+  word-break: keep-all; overflow-wrap: anywhere;
+}
+h1 + p { margin-top: 14px; }
+h2 {
+  margin: 3.4rem 0 1rem; padding-top: 1.5rem;
+  border-top: 1px solid var(--line);
+  font-size: 1.52rem; line-height: 1.3; letter-spacing: -.015em; font-weight: 720;
+}
+h2:first-of-type { margin-top: 2.4rem; }
+h3 {
+  margin: 2.3rem 0 .75rem; padding-left: .72rem;
+  border-left: 3px solid var(--accent);
+  font-size: 1.13rem; line-height: 1.4; font-weight: 700;
+}
+h4 { margin: 1.8rem 0 .6rem; font-size: 1rem; font-weight: 700; }
+h2, h3, h4 { scroll-margin-top: 84px; }
+.heading-anchor {
+  margin-left: .45rem; color: var(--line-strong); text-decoration: none;
+  font-weight: 500; opacity: 0; transition: opacity .15s ease;
+}
+h2:hover .heading-anchor, h3:hover .heading-anchor, h4:hover .heading-anchor { opacity: 1; }
+
+p { margin: .9rem 0; }
+strong { font-weight: 700; color: #11161c; }
+ul, ol { margin: .8rem 0; padding-left: 1.45rem; }
+li { margin: .32rem 0; }
+li > p { margin: .35rem 0; }
+hr { border: 0; border-top: 1px solid var(--line); margin: 2.6rem 0; }
+
+blockquote {
+  margin: 1.15rem 0; padding: 12px 16px;
+  background: #f7f3e9; border-left: 4px solid var(--accent-2);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  color: var(--ink-2); font-size: 14.5px;
+}
+blockquote p:first-child { margin-top: 0; }
+blockquote p:last-child { margin-bottom: 0; }
+blockquote code { background: #fff; }
+
+code {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: .88em;
+  background: #f6f2e8; border: 1px solid var(--line);
+  border-radius: 4px; padding: .1em .34em;
+  word-break: break-word;
+}
+pre {
+  position: relative; margin: 1.1rem 0; padding: 16px 18px;
+  background: var(--code-bg); border: 1px solid var(--code-border);
+  border-radius: var(--radius); overflow: auto;
+}
+pre code {
+  display: block; padding: 0; border: 0; background: transparent;
+  font-size: 13px; line-height: 1.62; white-space: pre;
+}
+pre[data-lang]::before {
+  content: attr(data-lang);
+  position: absolute; top: 8px; right: 58px;
+  color: var(--muted); font-size: 10.5px; letter-spacing: .08em;
+  text-transform: uppercase; pointer-events: none;
+}
+.copy-btn {
+  position: absolute; top: 7px; right: 8px;
+  appearance: none; border: 1px solid var(--code-border);
+  background: rgba(255, 255, 255, .7); color: var(--muted);
+  height: 24px; padding: 0 8px; border-radius: 5px;
+  font: inherit; font-size: 11px; cursor: pointer;
+}
+.copy-btn:hover { color: var(--ink); border-color: var(--line-strong); }
+
+.table-wrap {
+  margin: 1.1rem 0; overflow-x: auto; overscroll-behavior-x: contain;
+  border: 1px solid var(--line); border-radius: var(--radius);
+}
+table { width: 100%; border-collapse: collapse; font-size: 13.5px; line-height: 1.55; }
+thead th {
+  background: #efe9dc; color: var(--ink-2);
+  text-align: left; font-weight: 700; white-space: nowrap;
+}
+th, td { padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+tbody tr:last-child td { border-bottom: 0; }
+tbody tr:nth-child(even) { background: #fcfbf7; }
+tbody tr:hover { background: #f7f3e9; }
+td code { white-space: normal; word-break: normal; overflow-wrap: normal; }
+
+.doc-foot {
+  max-width: 900px; margin: 56px auto 0; padding-top: 18px;
+  border-top: 1px solid var(--line);
+  display: flex; justify-content: space-between; gap: 18px;
+  color: var(--muted); font-size: 12px;
+}
+
+#toTop {
+  position: fixed; right: 22px; bottom: 22px; z-index: 80;
+  width: 38px; height: 38px; border-radius: 50%;
+  border: 1px solid var(--line-strong); background: var(--surface);
+  color: var(--ink-2); box-shadow: var(--shadow);
+  cursor: pointer; font-size: 15px; opacity: 0; pointer-events: none;
+  transition: opacity .2s ease, transform .2s ease;
+}
+#toTop.show { opacity: 1; pointer-events: auto; }
+#toTop:hover { transform: translateY(-2px); }
+
+@media (max-width: 980px) {
+  .shell { display: block; }
+  .sidebar {
+    position: fixed; top: 64px; left: 0; bottom: 0; z-index: 85;
+    width: min(320px, 86vw); height: auto;
+    background: var(--paper); border-right: 1px solid var(--line);
+    transform: translateX(-102%); transition: transform .22s ease;
+    box-shadow: 16px 0 40px rgba(29, 35, 43, .12);
+  }
+  .sidebar.open { transform: translateX(0); }
+  .scrim {
+    display: block; position: fixed; inset: 64px 0 0; z-index: 84;
+    background: rgba(20, 24, 30, .38); opacity: 0; pointer-events: none;
+    transition: opacity .22s ease;
+  }
+  .scrim.show { opacity: 1; pointer-events: auto; }
+  .menu-toggle { display: inline-block; }
+  .main { padding: 34px 24px 64px; }
+  .topbar-date { display: none; }
+}
+
+@media (max-width: 620px) {
+  body { font-size: 15px; }
+  .topbar { padding: 0 14px; gap: 12px; }
+  .brand-text { display: none; }
+  .print-btn { display: none; }
+  .main { padding: 26px 16px 56px; }
+  h1 { font-size: 1.85rem; }
+  h2 { font-size: 1.34rem; }
+  h3 { font-size: 1.06rem; }
+  table { font-size: 11.8px; }
+  th { white-space: normal; }
+  th, td { padding: 7px 8px; }
+  .doc-foot { display: block; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}
+
+@media print {
+  @page { margin: 15mm 13mm; }
+  body { background: #fff; color: #000; font-size: 10.5pt; line-height: 1.55; }
+  .topbar, .sidebar, .scrim, .progress, #toTop, .copy-btn, .heading-anchor { display: none !important; }
+  .shell { display: block; }
+  .main { padding: 0; }
+  .content { max-width: none; }
+  h1 { font-size: 22pt; }
+  h2 { font-size: 15pt; page-break-before: auto; page-break-after: avoid; margin-top: 18pt; padding-top: 10pt; }
+  h3 { font-size: 12pt; page-break-after: avoid; }
+  pre, blockquote, .table-wrap { page-break-inside: avoid; }
+  pre code { white-space: pre-wrap; font-size: 8.5pt; }
+  .table-wrap { overflow: visible; border: 1px solid #ccc; }
+  table { width: 100%; table-layout: fixed; font-size: 8.5pt; }
+  th, td { word-break: break-word; }
+  td code { white-space: normal; overflow-wrap: anywhere; }
+  a { color: inherit; text-decoration: none; }
+  .doc-foot { max-width: none; }
+}
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" type="button" aria-label="打开目录">☰</button>
+  <div class="brand">
+    <span class="brand-mark">RAG</span>
+    <span class="brand-text">Knowledge Studio · API Reference</span>
+  </div>
+  <div class="topbar-meta">
+    <span class="pill">契约 v1.4.0</span>
+    
+    <button class="print-btn" id="printBtn" type="button">打印 / PDF</button>
+  </div>
+</header>
+<div class="scrim" id="scrim"></div>
+<div class="shell">
+  <aside class="sidebar" id="sidebar">
+    <div class="search-wrap">
+      <input id="tocSearch" type="search" placeholder="搜索目录…" autocomplete="off" aria-label="搜索目录">
+      <span class="search-hint">/</span>
+    </div>
+    <nav class="toc" id="toc" aria-label="文档目录"><li class="toc-item toc-h2" data-text="文档信息"><a href="#sec-1">文档信息</a></li><li class="toc-item toc-h2" data-text="1. 概述"><a href="#sec-2">1. 概述</a><ul class="toc-sub"><li class="toc-item toc-h3" data-text="1.1 适用场景"><a href="#sec-2-1">1.1 适用场景</a></li><li class="toc-item toc-h3" data-text="1.2 接口覆盖范围"><a href="#sec-2-2">1.2 接口覆盖范围</a></li><li class="toc-item toc-h3" data-text="1.3 与 MCP 的关系"><a href="#sec-2-3">1.3 与 MCP 的关系</a></li></ul></li><li class="toc-item toc-h2" data-text="2. 接入准备"><a href="#sec-3">2. 接入准备</a><ul class="toc-sub"><li class="toc-item toc-h3" data-text="2.1 基础地址"><a href="#sec-3-1">2.1 基础地址</a></li><li class="toc-item toc-h3" data-text="2.2 获取 API Key"><a href="#sec-3-2">2.2 获取 API Key</a></li><li class="toc-item toc-h3" data-text="2.3 网络与证书"><a href="#sec-3-3">2.3 网络与证书</a></li></ul></li><li class="toc-item toc-h2" data-text="3. 认证与权限"><a href="#sec-4">3. 认证与权限</a><ul class="toc-sub"><li class="toc-item toc-h3" data-text="3.1 请求头"><a href="#sec-4-1">3.1 请求头</a></li><li class="toc-item toc-h3" data-text="3.2 权限范围（Scope）"><a href="#sec-4-2">3.2 权限范围（Scope）</a></li><li class="toc-item toc-h3" data-text="3.3 知识库白名单"><a href="#sec-4-3">3.3 知识库白名单</a></li><li class="toc-item toc-h3" data-text="3.4 与部署鉴权模式（AUTH_MODE）的关系"><a href="#sec-4-4">3.4 与部署鉴权模式（AUTH_MODE）的关系</a></li><li class="toc-item toc-h3" data-text="3.5 Key 的生命周期"><a href="#sec-4-5">3.5 Key 的生命周期</a></li></ul></li><li class="toc-item toc-h2" data-text="4. 快速开始"><a href="#sec-5">4. 快速开始</a><ul class="toc-sub"><li class="toc-item toc-h3" data-text="4.1 环境变量"><a href="#sec-5-1">4.1 环境变量</a></li><li class="toc-item toc-h3" data-text="4.2 第一步：列出可访问的知识库"><a href="#sec-5-2">4.2 第一步：列出可访问的知识库</a></li><li class="toc-item toc-h3" data-text="4.3 第二步：检索片段"><a href="#sec-5-3">4.3 第二步：检索片段</a></li><li class="toc-item toc-h3" data-text="4.4 第三步：生成带引用的回答"><a href="#sec-5-4">4.4 第三步：生成带引用的回答</a></li></ul></li><li class="toc-item toc-h2" data-text="5. 接口参考"><a href="#sec-6">5. 接口参考</a><ul class="toc-sub"><li class="toc-item toc-h3" data-text="5.1 列知识库"><a href="#sec-6-1">5.1 列知识库</a></li><li class="toc-item toc-h3" data-text="5.2 知识库详情"><a href="#sec-6-2">5.2 知识库详情</a></li><li class="toc-item toc-h3" data-text="5.3 检索片段"><a href="#sec-6-3">5.3 检索片段</a></li><li class="toc-item toc-h3" data-text="5.4 引用式问答"><a href="#sec-6-4">5.4 引用式问答</a></li><li class="toc-item toc-h3" data-text="5.5 工作流查询（只读）"><a href="#sec-6-5">5.5 工作流查询（只读）</a></li><li class="toc-item toc-h3" data-text="5.6 执行已发布工作流"><a href="#sec-6-6">5.6 执行已发布工作流</a></li><li class="toc-item toc-h3" data-text="5.7 OpenAPI 导入"><a href="#sec-6-7">5.7 OpenAPI 导入</a></li></ul></li><li class="toc-item toc-h2" data-text="6. 通用约定"><a href="#sec-7">6. 通用约定</a><ul class="toc-sub"><li class="toc-item toc-h3" data-text="6.1 成功响应"><a href="#sec-7-1">6.1 成功响应</a></li><li class="toc-item toc-h3" data-text="6.2 错误响应"><a href="#sec-7-2">6.2 错误响应</a></li><li class="toc-item toc-h3" data-text="6.3 请求编码"><a href="#sec-7-3">6.3 请求编码</a></li><li class="toc-item toc-h3" data-text="6.4 超时、重试与幂等"><a href="#sec-7-4">6.4 超时、重试与幂等</a></li><li class="toc-item toc-h3" data-text="6.5 追踪与审计"><a href="#sec-7-5">6.5 追踪与审计</a></li></ul></li><li class="toc-item toc-h2" data-text="7. 配额与调用约束"><a href="#sec-8">7. 配额与调用约束</a></li><li class="toc-item toc-h2" data-text="8. 部署侧配置与状态"><a href="#sec-9">8. 部署侧配置与状态</a></li><li class="toc-item toc-h2" data-text="9. 接入检查清单"><a href="#sec-10">9. 接入检查清单</a></li><li class="toc-item toc-h2" data-text="10. 常见问题"><a href="#sec-11">10. 常见问题</a></li><li class="toc-item toc-h2" data-text="附录 A：curl 速查"><a href="#sec-12">附录 A：curl 速查</a></li><li class="toc-item toc-h2" data-text="附录 B：最小接入代码（Python）"><a href="#sec-13">附录 B：最小接入代码（Python）</a></li></nav>
+    <div class="sidebar-foot">
+      <span>Knowledge Studio REST 接入指南（Agent API）</span>
+      <span></span>
+    </div>
+  </aside>
+  <main class="main">
+    <article class="content">
+      <div class="doc-kicker">External API Reference · Integration Surface</div>
+      <h1>Knowledge Studio REST 接入指南（Agent API）</h1>
+<h2 id="sec-1">文档信息<a class="heading-anchor" href="#sec-1" aria-label="本节链接">#</a></h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>项</th>
+<th>值</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>文档名称</td>
+<td>Knowledge Studio REST 接入指南（Agent API）</td>
+</tr>
+<tr>
+<td>接口契约版本</td>
+<td>1.4.0</td>
+</tr>
+<tr>
+<td>文档版本</td>
+<td>1.4</td>
+</tr>
+<tr>
+<td>更新日期</td>
+<td>当前版本</td>
+</tr>
+<tr>
+<td>适用产品</td>
+<td>Knowledge Studio</td>
+</tr>
+<tr>
+<td>读者</td>
+<td>外部集成方、Agent 平台、后端服务开发者</td>
+</tr>
+<tr>
+<td>接口前缀</td>
+<td><code>/api/co-<wbr>knowledge/v1/agent</code></td>
+</tr>
+<tr>
+<td>认证方式</td>
+<td>Agent API Key（<code>Authorization: Bearer</code>）</td>
+</tr>
+<tr>
+<td>机器可读契约</td>
+<td>OpenAPI 3.0.2（<code>GET /openapi.json</code>）</td>
+</tr>
+</tbody></table></div>
+<blockquote>
+<p>本文只覆盖 <strong>REST 接入方式</strong>：使用 Agent API Key 调用文档知识库的列库、详情、检索、引用式问答，以及工作流的查询与执行。
+建库、上传、删除、切片、算子、工作流创建/编排/发布、模型注册与密钥管理等操作请在 Knowledge Studio 控制台完成；这些不在本文范围内。
+需要 MCP 接入（Claude Code、IDE、桌面 Agent）时，请使用同一套 Key 与 Scope，接入点为 <code>/api/co-knowledge/v1/mcp</code>，详见主接口文档。</p>
+</blockquote>
+<h2 id="sec-2">1. 概述<a class="heading-anchor" href="#sec-2" aria-label="本节链接">#</a></h2>
+<h3 id="sec-2-1">1.1 适用场景<a class="heading-anchor" href="#sec-2-1" aria-label="本节链接">#</a></h3>
+<p>REST 接入使用标准 HTTP + JSON，适合：</p>
+<ul>
+<li>后端服务、工作流引擎、定时任务等机器对机器集成；</li>
+<li>Dify、Coze 等支持导入 OpenAPI 的 Agent 平台；</li>
+<li>需要自行拼装检索结果、或需要引用式问答结果的业务系统；</li>
+<li>不依赖 MCP 客户端的脚本与自动化流程。</li>
+</ul>
+<h3 id="sec-2-2">1.2 接口覆盖范围<a class="heading-anchor" href="#sec-2-2" aria-label="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>能力</th>
+<th>覆盖方式</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>列出可访问的文档知识库</td>
+<td>Agent API</td>
+<td>只返回当前 Key 有权访问的文档库</td>
+</tr>
+<tr>
+<td>单个知识库详情</td>
+<td>Agent API</td>
+<td>不存在或为图谱库时返回 404</td>
+</tr>
+<tr>
+<td>片段检索（向量 / 关键词 / 混合）</td>
+<td>Agent API</td>
+<td>返回带 <code>S1…</code> 编号的原文片段</td>
+</tr>
+<tr>
+<td>引用式问答</td>
+<td>Agent API</td>
+<td>基于片段生成回答，答案带 <code>[S1]</code> 引用</td>
+</tr>
+<tr>
+<td>工作流查询</td>
+<td>Agent API</td>
+<td>用于发现工作流 ID 与发布状态</td>
+</tr>
+<tr>
+<td>执行已发布工作流</td>
+<td>Agent API</td>
+<td><code>POST /query</code>，需要 <code>workflow:run</code>；支持 JSON 与 SSE</td>
+</tr>
+<tr>
+<td>图谱知识库检索</td>
+<td>原生图谱检索接口</td>
+<td>Agent 接口聚焦文档库检索与问答</td>
+</tr>
+<tr>
+<td>建库、上传、修改、删除</td>
+<td>控制台</td>
+<td>管理面操作在控制台完成</td>
+</tr>
+<tr>
+<td>工作流创建、画布编排、发布</td>
+<td>控制台</td>
+<td>管理面操作在控制台完成</td>
+</tr>
+<tr>
+<td>流式回答（SSE）</td>
+<td>Agent API</td>
+<td>通过 <code>POST /query</code> 的 <code>stream=true</code>；<code>/agent/answer</code> 仍为非流式</td>
+</tr>
+</tbody></table></div>
+<h3 id="sec-2-3">1.3 与 MCP 的关系<a class="heading-anchor" href="#sec-2-3" aria-label="本节链接">#</a></h3>
+<p>REST 与 MCP 共用同一套 Agent API Key、Scope 与知识库白名单：</p>
+<ul>
+<li>同一个 Key 既可以调用 REST，也可以连接 MCP；</li>
+<li>权限、限流、过期时间在两种接入方式上一致；</li>
+<li>REST 成功响应体就是资源本身，MCP 的工具结果里带 <code>trace_id</code>。</li>
+</ul>
+<p>本文只描述 REST；MCP 的客户端配置与工具语义见主接口文档。工作流执行在 REST 面是 <code>POST /query</code>，在 MCP 面是 <code>run_workflow</code>（<code>stream=true</code> 时 token 通过 MCP progress 通知旁路送达，工具结果仍返回完整答案），两者共用同一套发布快照与白名单校验。</p>
+<h2 id="sec-3">2. 接入准备<a class="heading-anchor" href="#sec-3" aria-label="本节链接">#</a></h2>
+<h3 id="sec-3-1">2.1 基础地址<a class="heading-anchor" href="#sec-3-1" aria-label="本节链接">#</a></h3>
+<pre data-lang="text"><code class="language-text">https://&lt;host&gt;/api/co-knowledge/v1/agent
+</code></pre>
+<ul>
+<li>控制台「远程接入 → 接入方法 → REST API」会显示当前部署的实际基础地址，可直接复制。</li>
+<li>部署方可以通过 <code>RKB_AGENT_PUBLIC_BASE</code> 把它覆盖成绝对地址；覆盖后 OpenAPI 的 <code>servers[0].url</code> 同步为该值。</li>
+<li>下文示例统一使用 <code>https://rag.example.com</code> 作为部署域名，请替换为实际地址。</li>
+</ul>
+<h3 id="sec-3-2">2.2 获取 API Key<a class="heading-anchor" href="#sec-3-2" aria-label="本节链接">#</a></h3>
+<p>Agent API Key 由平台管理员在控制台「远程接入 → 密钥管理」创建，创建时可以设置：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>配置项</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>名称</td>
+<td>便于识别的 Key 名称，例如 <code>dify-<wbr>prod</code></td>
+</tr>
+<tr>
+<td>权限范围（Scope）</td>
+<td>决定可调用哪些接口，见 3.2</td>
+</tr>
+<tr>
+<td>知识库白名单</td>
+<td>留空 = 全部可访问文档库；非空 = 只允许列表内的库</td>
+</tr>
+<tr>
+<td>每分钟上限</td>
+<td>每个 Key 的限流，默认 60 次/分钟；<code>0</code> 表示不限制</td>
+</tr>
+<tr>
+<td>过期时间</td>
+<td>留空 = 永不过期；到期后请求返回 401</td>
+</tr>
+</tbody></table></div>
+<p>Key 的格式为：</p>
+<pre data-lang="text"><code class="language-text">ragk_&lt;8 位前缀&gt;_&lt;secret&gt;
+</code></pre>
+<p>完整 Key <strong>只在创建成功时显示一次</strong>，关闭后只能看到前缀。请立即复制并保存到密钥管理系统；服务端只保存前缀与哈希，无法找回明文。</p>
+<h3 id="sec-3-3">2.3 网络与证书<a class="heading-anchor" href="#sec-3-3" aria-label="本节链接">#</a></h3>
+<ul>
+<li>生产环境必须使用 HTTPS。Agent Key 是 Bearer 凭据，走 HTTP 时是明文传输。</li>
+<li>如果服务前面有网关或反向代理，请确认：<ul>
+<li>网关不会剥离 <code>Authorization</code> 请求头；</li>
+<li>网关的读超时 ≥ 问答接口的服务端超时（默认 120 秒，部署可能配置得更大）；</li>
+<li>网关不会把 <code>application/problem+json</code> 改写为其他错误格式。</li>
+</ul>
+</li>
+</ul>
+<h2 id="sec-4">3. 认证与权限<a class="heading-anchor" href="#sec-4" aria-label="本节链接">#</a></h2>
+<h3 id="sec-4-1">3.1 请求头<a class="heading-anchor" href="#sec-4-1" aria-label="本节链接">#</a></h3>
+<p>每个请求都必须携带 Agent API Key，以下两种写法二选一：</p>
+<pre data-lang="http"><code class="language-http">Authorization: Bearer &lt;YOUR_API_KEY&gt;
+</code></pre>
+<pre data-lang="http"><code class="language-http">X-API-Key: &lt;YOUR_API_KEY&gt;
+</code></pre>
+<ul>
+<li>同时携带时，优先使用 <code>Authorization: Bearer</code>；只有它无法解析时才回落到 <code>X-API-Key</code>。</li>
+<li>Agent REST 不使用浏览器会话 Cookie，也不受控制台登录状态影响；无状态请求，适合服务端集成。</li>
+<li>如果部署启用了 <code>AUTH_MODE=gateway</code>，请统一使用 <code>Authorization</code> 请求头，前置网关会校验它。</li>
+</ul>
+<h3 id="sec-4-2">3.2 权限范围（Scope）<a class="heading-anchor" href="#sec-4-2" aria-label="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Scope</th>
+<th>允许调用的接口</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>kb:list</code></td>
+<td><code>GET /knowledge-<wbr>bases</code>、<code>GET /knowledge-<wbr>bases/{kb_<wbr>id}</code></td>
+</tr>
+<tr>
+<td><code>kb:search</code></td>
+<td><code>POST /search</code></td>
+</tr>
+<tr>
+<td><code>kb:answer</code></td>
+<td><code>POST /answer</code></td>
+</tr>
+<tr>
+<td><code>workflow:read</code></td>
+<td><code>GET /workflows</code></td>
+</tr>
+<tr>
+<td><code>workflow:run</code></td>
+<td><code>POST /query</code>（执行已发布工作流）</td>
+</tr>
+</tbody></table></div>
+<ul>
+<li>缺少所需 Scope 时返回 <code>403 forbidden_scope</code>，错误体里的 <code>required_scope</code> 会指出缺少哪一项。</li>
+<li>需要问答时，Key 必须显式勾选 <code>kb:answer</code>；只有 <code>kb:search</code> 不能调用问答接口。</li>
+<li>按最小权限原则创建 Key；不同集成方建议使用不同 Key，便于单独停用与统计调用量。</li>
+</ul>
+<h3 id="sec-4-3">3.3 知识库白名单<a class="heading-anchor" href="#sec-4-3" aria-label="本节链接">#</a></h3>
+<ul>
+<li>Key 的 <code>kbIds</code> 为空：可以访问<strong>全部文档知识库</strong>。</li>
+<li>Key 的 <code>kbIds</code> 非空：只允许访问列表内的知识库。</li>
+<li>显式传入不存在或图谱知识库的 ID：<code>404 knowledge_base_not_found</code>。</li>
+<li>显式传入存在但不在白名单的 ID：<code>403 knowledge_base_forbidden</code>。</li>
+<li>不传 <code>knowledge_base_ids</code> 时，接口会检索该 Key 可访问的全部文档库；如果数量超过部署上限（默认 50），返回 <code>400 invalid_request</code>，此时请显式传 <code>knowledge_base_ids</code>。</li>
+<li>执行工作流时，服务端会读取该工作流<strong>发布快照</strong>绑定的文档/结构化知识库；只要有一个不在 Key 的白名单内，就返回 <code>403 knowledge_base_forbidden</code>。图谱知识库不在 Agent Key 白名单的下拉范围内，运行含图谱检索的工作流由 <code>workflow:run</code> scope 授权。</li>
+<li>Agent API 的直接检索只覆盖<strong>文档知识库</strong>，不包含图谱知识库；工作流内部仍可包含图谱检索。</li>
+</ul>
+<h3 id="sec-4-4">3.4 与部署鉴权模式（AUTH_MODE）的关系<a class="heading-anchor" href="#sec-4-4" aria-label="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th><code>AUTH_MODE</code></th>
+<th>原生 REST（<code>/knowledge-bases</code>、<code>/query</code> 等）</th>
+<th>Agent REST（<code>/agent/*</code>）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>none</code></td>
+<td>不做应用层鉴权，仅靠网络隔离</td>
+<td><strong>仍要求 Agent API Key</strong></td>
+</tr>
+<tr>
+<td><code>local</code></td>
+<td>要求登录会话 Cookie</td>
+<td>使用 Agent API Key，不需要会话</td>
+</tr>
+<tr>
+<td><code>gateway</code></td>
+<td>要求网关注入的身份头</td>
+<td>使用 Agent API Key；请使用 <code>Authorization</code> 头</td>
+</tr>
+</tbody></table></div>
+<blockquote>
+<p>无论部署采用哪种 <code>AUTH_MODE</code>，Agent REST 都只认 Agent API Key。<code>AUTH_MODE=none</code> 时请务必通过内网或前置网关保护服务地址。</p>
+</blockquote>
+<h3 id="sec-4-5">3.5 Key 的生命周期<a class="heading-anchor" href="#sec-4-5" aria-label="本节链接">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>状态</th>
+<th>请求结果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>正常</td>
+<td>通过鉴权，按 Scope 与白名单放行</td>
+</tr>
+<tr>
+<td>已停用</td>
+<td><code>401 unauthorized</code></td>
+</tr>
+<tr>
+<td>已过期</td>
+<td><code>401 unauthorized</code></td>
+</tr>
+<tr>
+<td>已删除</td>
+<td><code>401 unauthorized</code></td>
+</tr>
+<tr>
+<td>服务端未配置签名 pepper</td>
+<td><code>503 configuration_<wbr>error</code>（属于部署配置问题）</td>
+</tr>
+<tr>
+<td>Key 存储不可用</td>
+<td><code>503 agent_<wbr>key_<wbr>store_<wbr>unavailable</code>（数据库未初始化）</td>
+</tr>
+</tbody></table></div>
+<ul>
+<li>修改 Scope、白名单、限流或过期时间后<strong>立即生效</strong>，已在进行中的请求不受影响。</li>
+<li>轮换服务端签名 pepper 会使所有已发放的 Key 立即失效，必须与 Key 重发一起进行。</li>
+<li>删除 Key 不可恢复；删除后使用该 Key 的集成会立即收到 401。</li>
+</ul>
+<h2 id="sec-5">4. 快速开始<a class="heading-anchor" href="#sec-5" aria-label="本节链接">#</a></h2>
+<h3 id="sec-5-1">4.1 环境变量<a class="heading-anchor" href="#sec-5-1" aria-label="本节链接">#</a></h3>
+<pre data-lang="bash"><code class="language-bash">export BASE=&quot;https://rag.example.com/api/co-knowledge/v1/agent&quot;
+export KNOWLEDGE_STUDIO_KEY=&quot;ragk_1a2b3c4d_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx&quot;
+</code></pre>
+<h3 id="sec-5-2">4.2 第一步：列出可访问的知识库<a class="heading-anchor" href="#sec-5-2" aria-label="本节链接">#</a></h3>
+<pre data-lang="bash"><code class="language-bash">curl -sS &quot;$BASE/knowledge-bases&quot; \
+  -H &quot;Authorization: Bearer $KNOWLEDGE_STUDIO_KEY&quot;
+</code></pre>
+<pre data-lang="json"><code class="language-json">[
+  {
+    &quot;id&quot;: &quot;0123456789abcdef0123456789abcdef&quot;,
+    &quot;name&quot;: &quot;product-manual&quot;,
+    &quot;description&quot;: &quot;产品手册&quot;,
+    &quot;type&quot;: &quot;document&quot;,
+    &quot;embedding_model&quot;: &quot;Qwen3-Embedding-0.6B&quot;,
+    &quot;status&quot;: &quot;0&quot;,
+    &quot;created_date&quot;: &quot;2024-01-01T00:00:00&quot;
+  }
+]
+</code></pre>
+<p>从响应里取 <code>id</code>，作为下一步检索的 <code>knowledge_base_ids</code>；也可以省略该字段，让服务检索全部可访问文档库。</p>
+<h3 id="sec-5-3">4.3 第二步：检索片段<a class="heading-anchor" href="#sec-5-3" aria-label="本节链接">#</a></h3>
+<pre data-lang="bash"><code class="language-bash">curl -sS &quot;$BASE/search&quot; \
+  -H &quot;Authorization: Bearer $KNOWLEDGE_STUDIO_KEY&quot; \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#39;{
+    &quot;query&quot;: &quot;如何配置检索编排？&quot;,
+    &quot;knowledge_base_ids&quot;: [&quot;0123456789abcdef0123456789abcdef&quot;],
+    &quot;mode&quot;: &quot;auto&quot;,
+    &quot;top_k&quot;: 5
+  }&#39;
+</code></pre>
+<p>响应体直接是检索结果对象，<code>results[].text</code> 是原文片段，<code>citation_id</code> 是 <code>S1</code>、<code>S2</code> 这样的引用编号。</p>
+<h3 id="sec-5-4">4.4 第三步：生成带引用的回答<a class="heading-anchor" href="#sec-5-4" aria-label="本节链接">#</a></h3>
+<pre data-lang="bash"><code class="language-bash">curl -sS &quot;$BASE/answer&quot; \
+  -H &quot;Authorization: Bearer $KNOWLEDGE_STUDIO_KEY&quot; \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#39;{
+    &quot;question&quot;: &quot;如何配置检索编排？&quot;,
+    &quot;knowledge_base_ids&quot;: [&quot;0123456789abcdef0123456789abcdef&quot;],
+    &quot;top_k&quot;: 8
+  }&#39;
+</code></pre>
+<p>有检索结果时返回 <code>answer</code> 与 <code>citations</code>；检索结果为空时返回 HTTP 200、<code>answer: null</code>、<code>no_results: true</code>，不会调用生成模型。</p>
+<h2 id="sec-6">5. 接口参考<a class="heading-anchor" href="#sec-6" aria-label="本节链接">#</a></h2>
+<p>所有路径均相对基础地址 <code>/api/co-knowledge/v1/agent</code>。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>方法</th>
+<th>路径</th>
+<th>Scope</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>GET</code></td>
+<td><code>/knowledge-<wbr>bases</code></td>
+<td><code>kb:list</code></td>
+<td>列出当前 Key 可访问的文档知识库</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/knowledge-<wbr>bases/{kb_<wbr>id}</code></td>
+<td><code>kb:list</code></td>
+<td>单个知识库详情</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>/search</code></td>
+<td><code>kb:search</code></td>
+<td>检索片段（vector / keyword / hybrid）</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>/answer</code></td>
+<td><code>kb:answer</code></td>
+<td>基于片段回答并带 <code>[S1]</code> 引用</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/workflows</code></td>
+<td><code>workflow:read</code></td>
+<td>工作流列表，支持 <code>publishType</code> 筛选</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>/query</code></td>
+<td><code>workflow:run</code></td>
+<td>执行已发布工作流，支持 JSON / SSE</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/openapi.json</code></td>
+<td>无</td>
+<td>OpenAPI 3.0.2，供平台导入</td>
+</tr>
+</tbody></table></div>
+<h3 id="sec-6-1">5.1 列知识库<a class="heading-anchor" href="#sec-6-1" aria-label="本节链接">#</a></h3>
+<pre data-lang="http"><code class="language-http">GET /knowledge-bases
+Authorization: Bearer &lt;YOUR_API_KEY&gt;
+</code></pre>
+<ul>
+<li>Scope：<code>kb:list</code></li>
+<li>查询参数：无</li>
+<li>响应：裸数组，返回全部<strong>当前 Key 可访问</strong>的文档知识库；<strong>顺序不保证</strong>。</li>
+</ul>
+<p><strong>响应示例：</strong></p>
+<pre data-lang="json"><code class="language-json">[
+  {
+    &quot;id&quot;: &quot;0123456789abcdef0123456789abcdef&quot;,
+    &quot;name&quot;: &quot;product-manual&quot;,
+    &quot;description&quot;: &quot;产品手册&quot;,
+    &quot;type&quot;: &quot;document&quot;,
+    &quot;embedding_model&quot;: &quot;Qwen3-Embedding-0.6B&quot;,
+    &quot;status&quot;: &quot;0&quot;,
+    &quot;created_date&quot;: &quot;2024-01-01T00:00:00&quot;
+  }
+]
+</code></pre>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>字段</th>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>id</code></td>
+<td>string</td>
+<td>知识库 ID</td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td>string</td>
+<td>知识库名称</td>
+</tr>
+<tr>
+<td><code>description</code></td>
+<td>string | null</td>
+<td>描述</td>
+</tr>
+<tr>
+<td><code>type</code></td>
+<td>string | null</td>
+<td>历史类型标识，不代表文档库/图谱库分类</td>
+</tr>
+<tr>
+<td><code>embedding_<wbr>model</code></td>
+<td>string | null</td>
+<td>embedding 注册名</td>
+</tr>
+<tr>
+<td><code>status</code></td>
+<td>string | null</td>
+<td>知识库状态码，见下方说明</td>
+</tr>
+<tr>
+<td><code>created_<wbr>date</code></td>
+<td>string | null</td>
+<td>创建时间，ISO 8601，秒级，无时区后缀（服务端本地时间）</td>
+</tr>
+</tbody></table></div>
+<p><strong>关于 <code>status</code>：</strong></p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>值</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>0</code></td>
+<td>已创建，文档库通常可直接检索</td>
+</tr>
+<tr>
+<td><code>1</code> ~ <code>4</code></td>
+<td>解析 / 切分 / 生成 / 入库处理中</td>
+</tr>
+<tr>
+<td><code>5</code> ~ <code>8</code></td>
+<td>待发布 / 发布中 / 已发布 / 已发布后有改动</td>
+</tr>
+<tr>
+<td><code>101</code> ~ <code>106</code></td>
+<td>处理或发布失败</td>
+</tr>
+</tbody></table></div>
+<p>列表<strong>不会</strong>按“已就绪”过滤；请根据 <code>status</code> 判断是否适合检索。文档库通常使用 <code>0</code>。</p>
+<h3 id="sec-6-2">5.2 知识库详情<a class="heading-anchor" href="#sec-6-2" aria-label="本节链接">#</a></h3>
+<pre data-lang="http"><code class="language-http">GET /knowledge-bases/{kb_id}
+Authorization: Bearer &lt;YOUR_API_KEY&gt;
+</code></pre>
+<ul>
+<li>Scope：<code>kb:list</code></li>
+<li>路径参数：<code>kb_id</code>，知识库 ID。</li>
+<li>响应：单个对象，字段同 5.1。</li>
+</ul>
+<p><strong>错误：</strong></p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>HTTP</th>
+<th><code>code</code></th>
+<th>场景</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>403</td>
+<td><code>knowledge_<wbr>base_<wbr>forbidden</code></td>
+<td>知识库存在，但不在 Key 的白名单</td>
+</tr>
+<tr>
+<td>404</td>
+<td><code>knowledge_<wbr>base_<wbr>not_<wbr>found</code></td>
+<td>知识库不存在，或为图谱知识库</td>
+</tr>
+</tbody></table></div>
+<h3 id="sec-6-3">5.3 检索片段<a class="heading-anchor" href="#sec-6-3" aria-label="本节链接">#</a></h3>
+<pre data-lang="http"><code class="language-http">POST /search
+Authorization: Bearer &lt;YOUR_API_KEY&gt;
+Content-Type: application/json
+</code></pre>
+<ul>
+<li>Scope：<code>kb:search</code></li>
+<li>请求体不接受未声明字段；多传字段会返回 <code>422 validation_failed</code>。</li>
+</ul>
+<p><strong>请求示例：</strong></p>
+<pre data-lang="json"><code class="language-json">{
+  &quot;query&quot;: &quot;如何配置检索编排？&quot;,
+  &quot;knowledge_base_ids&quot;: [&quot;0123456789abcdef0123456789abcdef&quot;],
+  &quot;mode&quot;: &quot;auto&quot;,
+  &quot;top_k&quot;: 8,
+  &quot;score_threshold&quot;: 0.0
+}
+</code></pre>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>字段</th>
+<th>类型</th>
+<th>必填</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>query</code></td>
+<td>string</td>
+<td>是</td>
+<td>查询文本，1–2000 字符</td>
+</tr>
+<tr>
+<td><code>knowledge_<wbr>base_<wbr>ids</code></td>
+<td>string[]</td>
+<td>否</td>
+<td>省略或空数组 = 全部可访问文档库；元素会去重、去空白</td>
+</tr>
+<tr>
+<td><code>mode</code></td>
+<td>string</td>
+<td>否</td>
+<td><code>auto</code>（默认）、<code>hybrid</code>、<code>vector</code>、<code>keyword</code></td>
+</tr>
+<tr>
+<td><code>top_<wbr>k</code></td>
+<td>integer</td>
+<td>否</td>
+<td>返回条数，默认 8，上限由部署配置决定（默认 20）</td>
+</tr>
+<tr>
+<td><code>score_<wbr>threshold</code></td>
+<td>number</td>
+<td>否</td>
+<td>0–1，仅向量路生效；默认 0</td>
+</tr>
+</tbody></table></div>
+<p><strong><code>mode</code> 语义：</strong></p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>模式</th>
+<th>行为</th>
+<th>失败处理</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>auto</code></td>
+<td>两路都可用时 RRF 融合</td>
+<td>单路失败自动降级到另一路；两路都失败才返回 502</td>
+</tr>
+<tr>
+<td><code>hybrid</code></td>
+<td>两路都查并做 RRF 融合</td>
+<td>显式指定知识库时，任一库或任一路失败即返回 502；不指定时降级并置 <code>degraded=true</code>；两路都失败返回 502</td>
+</tr>
+<tr>
+<td><code>vector</code></td>
+<td>只查向量路</td>
+<td>显式指定知识库时失败即 502；不指定时部分库失败降级，全部失败返回 502</td>
+</tr>
+<tr>
+<td><code>keyword</code></td>
+<td>只查关键词路</td>
+<td>同 <code>vector</code></td>
+</tr>
+</tbody></table></div>
+<p><strong>响应示例：</strong></p>
+<pre data-lang="json"><code class="language-json">{
+  &quot;query&quot;: &quot;如何配置检索编排？&quot;,
+  &quot;mode&quot;: &quot;hybrid&quot;,
+  &quot;results&quot;: [
+    {
+      &quot;citation_id&quot;: &quot;S1&quot;,
+      &quot;knowledge_base_id&quot;: &quot;0123456789abcdef0123456789abcdef&quot;,
+      &quot;knowledge_base_name&quot;: &quot;product-manual&quot;,
+      &quot;chunk_id&quot;: null,
+      &quot;document_id&quot;: &quot;33333333333333333333333333333333&quot;,
+      &quot;source&quot;: &quot;overview.md&quot;,
+      &quot;score&quot;: 0.03225806451612903,
+      &quot;scores&quot;: {&quot;vector&quot;: 0.6032068008815435, &quot;keyword&quot;: 12.344121932983398},
+      &quot;text&quot;: &quot;切片正文……&quot;,
+      &quot;metadata&quot;: {&quot;chunk_index&quot;: &quot;3&quot;, &quot;source&quot;: &quot;overview.md&quot;, &quot;type&quot;: 0}
+    }
+  ],
+  &quot;degraded&quot;: false,
+  &quot;warnings&quot;: []
+}
+</code></pre>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>字段</th>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>query</code></td>
+<td>string</td>
+<td>原样返回查询文本</td>
+</tr>
+<tr>
+<td><code>mode</code></td>
+<td>string</td>
+<td><strong>实际生效</strong>的模式；<code>auto</code> 可能返回 <code>hybrid</code> / <code>vector</code> / <code>keyword</code> / <code>auto</code></td>
+</tr>
+<tr>
+<td><code>results</code></td>
+<td>array</td>
+<td>检索结果，按融合分数或单路分数排序</td>
+</tr>
+<tr>
+<td><code>degraded</code></td>
+<td>boolean</td>
+<td><code>true</code> 表示部分路径或知识库失败，但仍有结果</td>
+</tr>
+<tr>
+<td><code>warnings</code></td>
+<td>array</td>
+<td>结构化告警，见下表</td>
+</tr>
+</tbody></table></div>
+<p><strong><code>results[]</code> 字段：</strong></p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>字段</th>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>citation_<wbr>id</code></td>
+<td>string</td>
+<td><code>S1</code>、<code>S2</code>……用于引用</td>
+</tr>
+<tr>
+<td><code>knowledge_<wbr>base_<wbr>id</code></td>
+<td>string</td>
+<td>知识库 ID</td>
+</tr>
+<tr>
+<td><code>knowledge_<wbr>base_<wbr>name</code></td>
+<td>string | null</td>
+<td>知识库名称</td>
+</tr>
+<tr>
+<td><code>chunk_<wbr>id</code></td>
+<td>string | null</td>
+<td>切片 ID；向量路可能为 null</td>
+</tr>
+<tr>
+<td><code>document_<wbr>id</code></td>
+<td>string | null</td>
+<td>文档 ID；部分文档的向量表可能没有文件 ID/切片 ID</td>
+</tr>
+<tr>
+<td><code>source</code></td>
+<td>string | null</td>
+<td>文件名</td>
+</tr>
+<tr>
+<td><code>score</code></td>
+<td>number</td>
+<td>单路分数；<code>hybrid</code> 时为 RRF 融合分数，不能与余弦相似度直接比较</td>
+</tr>
+<tr>
+<td><code>scores</code></td>
+<td>object | null</td>
+<td><code>hybrid</code> 时给出各路原始分数：<code>vector</code>、<code>keyword</code>；其他模式为 null</td>
+</tr>
+<tr>
+<td><code>text</code></td>
+<td>string</td>
+<td>片段正文，最多 2000 字符</td>
+</tr>
+<tr>
+<td><code>metadata</code></td>
+<td>object | null</td>
+<td>元数据：<code>chunk_<wbr>index</code>、<code>source</code>、<code>type</code> 等</td>
+</tr>
+</tbody></table></div>
+<p><strong><code>warnings[]</code>：</strong></p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th><code>code</code></th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>vector_<wbr>table_<wbr>missing</code></td>
+<td>该知识库没有向量表（未导入或未建索引）</td>
+</tr>
+<tr>
+<td><code>keyword_<wbr>index_<wbr>missing</code></td>
+<td>该知识库没有关键词索引</td>
+</tr>
+<tr>
+<td><code>vector_<wbr>path_<wbr>failed</code></td>
+<td>向量路查询失败（embedding 或向量库异常）</td>
+</tr>
+<tr>
+<td><code>keyword_<wbr>path_<wbr>failed</code></td>
+<td>关键词路查询失败（搜索引擎异常）</td>
+</tr>
+</tbody></table></div>
+<pre data-lang="json"><code class="language-json">{
+  &quot;code&quot;: &quot;vector_path_failed&quot;,
+  &quot;message&quot;: &quot;vector search failed&quot;,
+  &quot;knowledge_base_id&quot;: &quot;0123456789abcdef0123456789abcdef&quot;
+}
+</code></pre>
+<p><strong>错误：</strong></p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>HTTP</th>
+<th><code>code</code></th>
+<th>场景</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>400</td>
+<td><code>invalid_<wbr>request</code></td>
+<td>可访问知识库超过部署上限且未显式指定 ID</td>
+</tr>
+<tr>
+<td>400</td>
+<td><code>no_<wbr>accessible_<wbr>knowledge_<wbr>bases</code></td>
+<td>Key 没有任何可访问的文档库</td>
+</tr>
+<tr>
+<td>401</td>
+<td><code>unauthorized</code></td>
+<td>Key 缺失、无效、停用或过期</td>
+</tr>
+<tr>
+<td>403</td>
+<td><code>forbidden_<wbr>scope</code></td>
+<td>Key 没有 <code>kb:search</code></td>
+</tr>
+<tr>
+<td>403</td>
+<td><code>knowledge_<wbr>base_<wbr>forbidden</code></td>
+<td>显式 ID 不在 Key 的白名单</td>
+</tr>
+<tr>
+<td>404</td>
+<td><code>knowledge_<wbr>base_<wbr>not_<wbr>found</code></td>
+<td>显式 ID 不存在或为图谱库</td>
+</tr>
+<tr>
+<td>422</td>
+<td><code>validation_<wbr>failed</code></td>
+<td>参数校验失败（含未声明字段、<code>top_<wbr>k</code> 超上限、ID 数量超上限）</td>
+</tr>
+<tr>
+<td>429</td>
+<td><code>rate_<wbr>limited</code></td>
+<td>超过 Key 的每分钟上限</td>
+</tr>
+<tr>
+<td>502</td>
+<td><code>retrieval_<wbr>failed</code></td>
+<td>检索整体失败</td>
+</tr>
+</tbody></table></div>
+<h3 id="sec-6-4">5.4 引用式问答<a class="heading-anchor" href="#sec-6-4" aria-label="本节链接">#</a></h3>
+<pre data-lang="http"><code class="language-http">POST /answer
+Authorization: Bearer &lt;YOUR_API_KEY&gt;
+Content-Type: application/json
+</code></pre>
+<ul>
+<li>Scope：<code>kb:answer</code></li>
+<li>请求体不接受未声明字段。</li>
+</ul>
+<p><strong>请求示例：</strong></p>
+<pre data-lang="json"><code class="language-json">{
+  &quot;question&quot;: &quot;如何配置检索编排？&quot;,
+  &quot;knowledge_base_ids&quot;: [&quot;0123456789abcdef0123456789abcdef&quot;],
+  &quot;mode&quot;: &quot;auto&quot;,
+  &quot;top_k&quot;: 8,
+  &quot;model&quot;: &quot;your-llm-model&quot;
+}
+</code></pre>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>字段</th>
+<th>类型</th>
+<th>必填</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>question</code></td>
+<td>string</td>
+<td>是</td>
+<td>问题文本，1–2000 字符</td>
+</tr>
+<tr>
+<td><code>knowledge_<wbr>base_<wbr>ids</code></td>
+<td>string[]</td>
+<td>否</td>
+<td>省略或空数组 = 全部可访问文档库</td>
+</tr>
+<tr>
+<td><code>mode</code></td>
+<td>string</td>
+<td>否</td>
+<td>检索模式，语义同 5.3</td>
+</tr>
+<tr>
+<td><code>top_<wbr>k</code></td>
+<td>integer</td>
+<td>否</td>
+<td>检索来源数，默认 8，上限由部署配置决定（默认 20）</td>
+</tr>
+<tr>
+<td><code>model</code></td>
+<td>string</td>
+<td>否</td>
+<td>可选，已注册的 LLM 名称；部署若设置了强制模型则忽略此字段</td>
+</tr>
+</tbody></table></div>
+<p><strong>响应示例：</strong></p>
+<pre data-lang="json"><code class="language-json">{
+  &quot;answer&quot;: &quot;根据提供的资料，配置步骤如下……[S1]&quot;,
+  &quot;citations&quot;: [
+    {
+      &quot;citation_id&quot;: &quot;S1&quot;,
+      &quot;knowledge_base_id&quot;: &quot;0123456789abcdef0123456789abcdef&quot;,
+      &quot;document_id&quot;: &quot;33333333333333333333333333333333&quot;,
+      &quot;source&quot;: &quot;overview.md&quot;,
+      &quot;chunk_id&quot;: null,
+      &quot;text&quot;: &quot;切片正文……&quot;
+    }
+  ],
+  &quot;model&quot;: &quot;your-llm-model&quot;,
+  &quot;usage&quot;: {
+    &quot;prompt_tokens&quot;: 717,
+    &quot;completion_tokens&quot;: 108,
+    &quot;total_tokens&quot;: 825
+  },
+  &quot;no_results&quot;: false,
+  &quot;reason&quot;: null,
+  &quot;warnings&quot;: []
+}
+</code></pre>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>字段</th>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>answer</code></td>
+<td>string | null</td>
+<td>回答正文；<code>no_<wbr>results=true</code> 时为 null</td>
+</tr>
+<tr>
+<td><code>citations</code></td>
+<td>array</td>
+<td>实际送入生成模型的来源；每条对应答案里的 <code>[S1]</code></td>
+</tr>
+<tr>
+<td><code>citations[].text</code></td>
+<td>string</td>
+<td>来源片段，受总上下文预算（12000 字符）限制，可能被截断</td>
+</tr>
+<tr>
+<td><code>model</code></td>
+<td>string | null</td>
+<td>实际使用的模型注册名</td>
+</tr>
+<tr>
+<td><code>usage</code></td>
+<td>object | null</td>
+<td>上游生成端点返回的 token 用量，结构可能随模型变化</td>
+</tr>
+<tr>
+<td><code>no_<wbr>results</code></td>
+<td>boolean</td>
+<td>检索结果为空时为 true；此时不会调用生成模型，HTTP 仍为 200</td>
+</tr>
+<tr>
+<td><code>reason</code></td>
+<td>string | null</td>
+<td><code>no_<wbr>results=true</code> 时为 <code>no_<wbr>context</code></td>
+</tr>
+<tr>
+<td><code>warnings</code></td>
+<td>array</td>
+<td>检索告警与引用告警</td>
+</tr>
+</tbody></table></div>
+<p><strong><code>citations[]</code> 字段：</strong></p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>字段</th>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>citation_<wbr>id</code></td>
+<td>string</td>
+<td><code>S1</code>、<code>S2</code>……与答案里的引用编号对应</td>
+</tr>
+<tr>
+<td><code>knowledge_<wbr>base_<wbr>id</code></td>
+<td>string</td>
+<td>知识库 ID</td>
+</tr>
+<tr>
+<td><code>document_<wbr>id</code></td>
+<td>string | null</td>
+<td>文档 ID</td>
+</tr>
+<tr>
+<td><code>source</code></td>
+<td>string | null</td>
+<td>文件名</td>
+</tr>
+<tr>
+<td><code>chunk_<wbr>id</code></td>
+<td>string | null</td>
+<td>切片 ID；可能为 null</td>
+</tr>
+<tr>
+<td><code>text</code></td>
+<td>string</td>
+<td>送入生成模型的片段正文（可能被上下文预算截断）</td>
+</tr>
+</tbody></table></div>
+<p><strong>引用告警：</strong></p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th><code>code</code></th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>unknown_<wbr>citation</code></td>
+<td>答案引用了未提供的来源编号</td>
+</tr>
+<tr>
+<td><code>no_<wbr>citations_<wbr>in_<wbr>answer</code></td>
+<td>答案没有引用任何来源</td>
+</tr>
+</tbody></table></div>
+<p><strong>重要语义：</strong></p>
+<ul>
+<li><code>no_results=true</code> 只表示<strong>检索结果为空</strong>。如果检索到不相关片段，模型仍可能回答“资料中没有答案”，此时 <code>no_results=false</code>，需要业务侧判断答案内容。</li>
+<li><code>citations</code> 只包含<strong>实际送入生成模型</strong>的来源，<code>text</code> 可能因上下文预算被截断。</li>
+<li>答案质量与引用完整性由模型决定；请把 <code>citations</code> 作为溯源依据，不要把 <code>answer</code> 当作唯一事实来源。</li>
+<li>回答接口会调用生成模型，通常比检索慢；请给客户端设置足够的超时，不要用检索接口的超时值套用问答接口。</li>
+</ul>
+<p><strong>错误：</strong></p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>HTTP</th>
+<th><code>code</code></th>
+<th>场景</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>400</td>
+<td><code>invalid_<wbr>request</code></td>
+<td>可访问知识库超过部署上限且未显式指定 ID</td>
+</tr>
+<tr>
+<td>400</td>
+<td><code>no_<wbr>accessible_<wbr>knowledge_<wbr>bases</code></td>
+<td>Key 没有任何可访问的文档库</td>
+</tr>
+<tr>
+<td>401</td>
+<td><code>unauthorized</code></td>
+<td>Key 缺失、无效、停用或过期</td>
+</tr>
+<tr>
+<td>403</td>
+<td><code>forbidden_<wbr>scope</code></td>
+<td>Key 没有 <code>kb:answer</code></td>
+</tr>
+<tr>
+<td>403</td>
+<td><code>knowledge_<wbr>base_<wbr>forbidden</code></td>
+<td>显式 ID 不在白名单</td>
+</tr>
+<tr>
+<td>404</td>
+<td><code>knowledge_<wbr>base_<wbr>not_<wbr>found</code></td>
+<td>显式 ID 不存在或为图谱库</td>
+</tr>
+<tr>
+<td>422</td>
+<td><code>validation_<wbr>failed</code></td>
+<td>参数校验失败（含未声明字段）</td>
+</tr>
+<tr>
+<td>429</td>
+<td><code>rate_<wbr>limited</code></td>
+<td>超过 Key 的每分钟上限</td>
+</tr>
+<tr>
+<td>502</td>
+<td><code>retrieval_<wbr>failed</code></td>
+<td>检索整体失败</td>
+</tr>
+<tr>
+<td>502</td>
+<td><code>answer_<wbr>failed</code></td>
+<td>生成端点不可用、返回非 2xx、空内容或输出被截断</td>
+</tr>
+<tr>
+<td>503</td>
+<td><code>answer_<wbr>unavailable</code></td>
+<td>没有可用生成模型，或问答接口被部署方关闭</td>
+</tr>
+<tr>
+<td>503</td>
+<td><code>configuration_<wbr>error</code></td>
+<td>Agent Key pepper 未配置（服务端配置问题）</td>
+</tr>
+<tr>
+<td>503</td>
+<td><code>agent_<wbr>key_<wbr>store_<wbr>unavailable</code></td>
+<td>Key 存储不可用（数据库未初始化）</td>
+</tr>
+</tbody></table></div>
+<h3 id="sec-6-5">5.5 工作流查询（只读）<a class="heading-anchor" href="#sec-6-5" aria-label="本节链接">#</a></h3>
+<p>Agent REST 只提供工作流<strong>查询</strong>，不提供创建、画布编排、发布或取消发布。工作流的创建与发布在 Knowledge Studio 控制台完成；查询接口用于发现工作流 ID 与发布状态。</p>
+<pre data-lang="http"><code class="language-http">GET /workflows?page=1&amp;size=100&amp;publishType=1
+Authorization: Bearer &lt;YOUR_API_KEY&gt;
+</code></pre>
+<ul>
+<li>Scope：<code>workflow:read</code></li>
+</ul>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>查询参数</th>
+<th>默认</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>page</code></td>
+<td>1</td>
+<td>页码，从 1 开始，最大 10000</td>
+</tr>
+<tr>
+<td><code>size</code></td>
+<td>10</td>
+<td>每页条数，1–1000</td>
+</tr>
+<tr>
+<td><code>keyword</code></td>
+<td>—</td>
+<td>按名称模糊匹配，不区分大小写，最长 255 字符</td>
+</tr>
+<tr>
+<td><code>publishType</code></td>
+<td>—</td>
+<td><code>0</code> 未发布、<code>1</code> 已发布、<code>2</code> 已发布但草稿有改动；不传表示不筛选</td>
+</tr>
+</tbody></table></div>
+<p><strong>响应示例（省略部分字段）：</strong></p>
+<pre data-lang="json"><code class="language-json">{
+  &quot;items&quot;: [
+    {
+      &quot;workFlowId&quot;: &quot;RAG_Workflow_1a2b&quot;,
+      &quot;name&quot;: &quot;产品手册问答&quot;,
+      &quot;description&quot;: &quot;客服机器人&quot;,
+      &quot;template&quot;: &quot;Sequential&quot;,
+      &quot;knowledgeType&quot;: &quot;knowledgeBase&quot;,
+      &quot;publishType&quot;: 1,
+      &quot;status&quot;: 1,
+      &quot;createdBy&quot;: &quot;admin&quot;,
+      &quot;createdDate&quot;: &quot;2024-01-01 00:00:00&quot;,
+      &quot;lastUpdatedDate&quot;: &quot;2024-01-02 00:00:00&quot;,
+      &quot;kbPkIds&quot;: [
+        {
+          &quot;name&quot;: &quot;product-manual&quot;,
+          &quot;tableName&quot;: &quot;doc_0123456789abcdef0123456789abcdef&quot;,
+          &quot;embeddingModel&quot;: &quot;Qwen3-Embedding-0.6B&quot;
+        }
+      ],
+      &quot;graphKbPkIds&quot;: []
+    }
+  ],
+  &quot;total&quot;: 1,
+  &quot;page&quot;: 1,
+  &quot;pageSize&quot;: 100
+}
+</code></pre>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>字段</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>workFlowId</code></td>
+<td>工作流 ID（注意大写 <code>F</code>）；编排问答接口的 <code>workflow_<wbr>id</code> 就是它</td>
+</tr>
+<tr>
+<td><code>name</code> / <code>description</code></td>
+<td>名称 / 描述</td>
+</tr>
+<tr>
+<td><code>template</code></td>
+<td>播种模板（<code>Sequential</code> / <code>Blended</code> / <code>Conditional</code>）</td>
+</tr>
+<tr>
+<td><code>publishType</code></td>
+<td>0 未发布 / 1 已发布 / 2 已发布但草稿有改动</td>
+</tr>
+<tr>
+<td><code>createdBy</code> / <code>createdDate</code> / <code>lastUpdatedDate</code></td>
+<td>归属与时间</td>
+</tr>
+<tr>
+<td><code>kbPkIds</code> / <code>graphKbPkIds</code></td>
+<td>绑定的文档库 / 图谱库（含 <code>tableName</code>、<code>embeddingModel</code> 等）</td>
+</tr>
+</tbody></table></div>
+<p><strong>怎么用：</strong></p>
+<ul>
+<li>先查 <code>publishType=1</code>（或 <code>2</code>）拿已发布工作流的 <code>workFlowId</code>；</li>
+<li><code>publishType=2</code> 表示发布后草稿又改过，仍可运行发布快照；只需排除 <code>0</code>；</li>
+<li>拿到 <code>workFlowId</code> 后，用带 <code>workflow:run</code> 的同一个 Key 调用 <code>POST /query</code> 执行（见 5.6）。</li>
+</ul>
+<p><strong>错误：</strong></p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>HTTP</th>
+<th><code>code</code></th>
+<th>场景</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>401</td>
+<td><code>unauthorized</code></td>
+<td>Key 缺失、无效、停用或过期</td>
+</tr>
+<tr>
+<td>403</td>
+<td><code>forbidden_<wbr>scope</code></td>
+<td>缺少 <code>workflow:read</code></td>
+</tr>
+<tr>
+<td>500</td>
+<td><code>internal_<wbr>error</code></td>
+<td>工作流存储不可用等服务端错误</td>
+</tr>
+</tbody></table></div>
+<h3 id="sec-6-6">5.6 执行已发布工作流<a class="heading-anchor" href="#sec-6-6" aria-label="本节链接">#</a></h3>
+<pre data-lang="http"><code class="language-http">POST /query
+Authorization: Bearer &lt;YOUR_API_KEY&gt;
+Content-Type: application/json
+</code></pre>
+<blockquote>
+<p>完整路径是 <code>/api/co-knowledge/v1/agent/query</code>。它与浏览器「对话测试」页使用的
+原生 <code>/query</code> 共用同一套编排与 SSE 逻辑，但鉴权与 OpenAPI 都归在 Agent 面。</p>
+</blockquote>
+<ul>
+<li>Scope：<code>workflow:run</code></li>
+<li>只执行<strong>已发布</strong>工作流；请求体不接受 <code>scope</code> 等内部字段（多传返回 <code>422 validation_failed</code>）。</li>
+<li>Key 的 <code>kbIds</code> 非空时，工作流发布快照绑定的文档/结构化知识库必须都在白名单内；
+图谱知识库不受该白名单约束（由 <code>workflow:run</code> 授权）。</li>
+</ul>
+<p><strong>请求示例（非流式）：</strong></p>
+<pre data-lang="json"><code class="language-json">{
+  &quot;question&quot;: &quot;如何配置检索编排？&quot;,
+  &quot;conversation_id&quot;: &quot;d-001&quot;,
+  &quot;workflow_id&quot;: &quot;RAG_Workflow_1a2b&quot;,
+  &quot;stream&quot;: false,
+  &quot;include_retrieval&quot;: false
+}
+</code></pre>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>字段</th>
+<th>类型</th>
+<th>必填</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>question</code></td>
+<td>string</td>
+<td>是</td>
+<td>用户问题，1–2000 字符</td>
+</tr>
+<tr>
+<td><code>conversation_<wbr>id</code></td>
+<td>string</td>
+<td>是</td>
+<td>对话 ID；同一 ID 的多轮请求共享上下文</td>
+</tr>
+<tr>
+<td><code>workflow_<wbr>id</code></td>
+<td>string</td>
+<td>是</td>
+<td>已发布工作流 ID；API Key 调用必须显式传入</td>
+</tr>
+<tr>
+<td><code>stream</code></td>
+<td>boolean</td>
+<td>否</td>
+<td><code>true</code> 返回 SSE；默认 <code>false</code></td>
+</tr>
+<tr>
+<td><code>include_<wbr>retrieval</code></td>
+<td>boolean</td>
+<td>否</td>
+<td><code>true</code> 时随响应返回本轮检索依据</td>
+</tr>
+<tr>
+<td><code>chat_<wbr>history</code></td>
+<td>array</td>
+<td>否</td>
+<td>多轮历史，元素为 <code>{&quot;question&quot;: &quot;...&quot;, &quot;answer&quot;: &quot;...&quot;}</code></td>
+</tr>
+</tbody></table></div>
+<blockquote>
+<p>请求体不接受 <code>scope</code>、<code>kwargs</code> 等内部字段；多传返回 <code>422 validation_failed</code>。</p>
+</blockquote>
+<p><strong>非流式响应示例：</strong></p>
+<pre data-lang="json"><code class="language-json">{
+  &quot;conversation_id&quot;: &quot;d-001&quot;,
+  &quot;answer&quot;: &quot;根据检索结果，检索编排的配置步骤如下……&quot;,
+  &quot;retrieval&quot;: {
+    &quot;query&quot;: &quot;如何配置检索编排？&quot;,
+    &quot;items&quot;: [],
+    &quot;stats&quot;: {&quot;count&quot;: 0, &quot;total&quot;: 0, &quot;sources&quot;: 0, &quot;knowledgeBases&quot;: 0}
+  }
+}
+</code></pre>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>字段</th>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>conversation_<wbr>id</code></td>
+<td>string</td>
+<td>原样返回</td>
+</tr>
+<tr>
+<td><code>answer</code></td>
+<td>string</td>
+<td>回答正文，通常为 Markdown/纯文本</td>
+</tr>
+<tr>
+<td><code>retrieval</code></td>
+<td>object</td>
+<td>仅 <code>include_<wbr>retrieval=true</code> 时出现</td>
+</tr>
+</tbody></table></div>
+<blockquote>
+<p>Agent 面返回的是精简形状；原生 <code>/query</code> 的 <code>placeholder</code> / <code>citation</code> / <code>related_context</code>
+历史字段不会出现在 <code>/agent/query</code> 的响应里。</p>
+</blockquote>
+<p><strong>SSE 模式：</strong></p>
+<p><code>stream=true</code> 或请求头 <code>Accept: text/event-stream</code> 时返回 <code>text/event-stream</code>：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>事件</th>
+<th>出现时机</th>
+<th><code>data</code> 结构</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>retrieval</code></td>
+<td>仅 <code>include_<wbr>retrieval=true</code>；首个 <code>token</code> 之前，最多一次</td>
+<td><code>{&quot;conversation_<wbr>id&quot;: &quot;...&quot;, &quot;evidence&quot;: {...}}</code></td>
+</tr>
+<tr>
+<td><code>token</code></td>
+<td>多次</td>
+<td><code>{&quot;conversation_<wbr>id&quot;: &quot;...&quot;, &quot;content&quot;: &quot;增量文本&quot;}</code></td>
+</tr>
+<tr>
+<td><code>done</code></td>
+<td>终态，一次</td>
+<td><code>{&quot;conversation_<wbr>id&quot;: &quot;...&quot;, &quot;finish_<wbr>reason&quot;: &quot;stop&quot;}</code></td>
+</tr>
+<tr>
+<td><code>error</code></td>
+<td>终态，最多一次</td>
+<td>problem 字段 + <code>conversation_<wbr>id</code></td>
+</tr>
+</tbody></table></div>
+<ul>
+<li>出第一字节之前的失败仍是真实 HTTP 状态码 + <code>application/problem+json</code>；
+进入流后的失败 HTTP 仍为 200，通过 <code>event: error</code> 表达。</li>
+<li>服务端约每 15 秒发送一行 <code>:</code> 开头的注释作为心跳，客户端应忽略。</li>
+<li>客户端超时建议 ≥ 300 秒；<code>EventSource</code> 不支持 <code>POST</code>，请用 <code>fetch</code> + <code>ReadableStream</code> 或成熟 SSE 库。</li>
+</ul>
+<p><strong>错误：</strong></p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>HTTP</th>
+<th><code>code</code></th>
+<th>场景</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>401</td>
+<td><code>unauthorized</code></td>
+<td>Key 缺失、无效、停用或过期</td>
+</tr>
+<tr>
+<td>403</td>
+<td><code>forbidden_<wbr>scope</code></td>
+<td>Key 缺少 <code>workflow:run</code></td>
+</tr>
+<tr>
+<td>403</td>
+<td><code>knowledge_<wbr>base_<wbr>forbidden</code></td>
+<td>工作流绑定的知识库不在 Key 白名单</td>
+</tr>
+<tr>
+<td>404</td>
+<td><code>published_<wbr>workflow_<wbr>not_<wbr>found</code></td>
+<td>工作流不存在或尚未发布</td>
+</tr>
+<tr>
+<td>422</td>
+<td><code>validation_<wbr>failed</code></td>
+<td>缺少 <code>question</code>、<code>conversation_<wbr>id</code>、<code>workflow_<wbr>id</code>，或参数非法</td>
+</tr>
+<tr>
+<td>429</td>
+<td><code>rate_<wbr>limited</code></td>
+<td>超过 Key 的每分钟上限</td>
+</tr>
+<tr>
+<td>500</td>
+<td><code>workflow_<wbr>config_<wbr>invalid</code></td>
+<td>工作流配置损坏</td>
+</tr>
+<tr>
+<td>502</td>
+<td><code>knowledge_<wbr>base_<wbr>unavailable</code> / <code>llm_<wbr>unavailable</code> / <code>upstream_<wbr>unavailable</code></td>
+<td>上游依赖失败</td>
+</tr>
+<tr>
+<td>503</td>
+<td><code>knowledge_<wbr>base_<wbr>not_<wbr>imported</code> / <code>no_<wbr>llm_<wbr>available</code></td>
+<td>知识库未就绪或没有可用生成模型</td>
+</tr>
+</tbody></table></div>
+<h3 id="sec-6-7">5.7 OpenAPI 导入<a class="heading-anchor" href="#sec-6-7" aria-label="本节链接">#</a></h3>
+<pre data-lang="http"><code class="language-http">GET /openapi.json
+</code></pre>
+<ul>
+<li>该端点<strong>不需要 Agent API Key</strong>（若部署前置网关有统一鉴权，则以网关要求为准）。</li>
+<li>Agent 接口总开关或 REST 子接口关闭时，该端点同样不可用（404）。</li>
+<li>返回 OpenAPI <strong>3.0.2</strong>，可直接导入 Dify、Coze 等平台。</li>
+<li><code>servers[0].url</code> 由部署配置决定；未配置时为相对路径 <code>/api/co-knowledge/v1/agent</code>。需要绝对地址的平台，请让部署方把 <code>RKB_AGENT_PUBLIC_BASE</code> 设为完整地址。</li>
+<li>不提供 Swagger UI。</li>
+<li>OpenAPI 覆盖 <code>/agent/*</code> 的 <strong>6 条</strong>业务路径（含 <code>POST /agent/query</code>）。</li>
+<li>本目录另附一份离线快照 <code>openapi/agent-api.yaml</code>，字段与运行时契约一致。</li>
+</ul>
+<h2 id="sec-7">6. 通用约定<a class="heading-anchor" href="#sec-7" aria-label="本节链接">#</a></h2>
+<h3 id="sec-7-1">6.1 成功响应<a class="heading-anchor" href="#sec-7-1" aria-label="本节链接">#</a></h3>
+<ul>
+<li>成功响应的 <code>Content-Type</code> 为 <code>application/json</code>。</li>
+<li>响应体就是资源本身：列表是 JSON 数组，详情/检索/问答是 JSON 对象；没有 <code>{code, data, bo}</code> 之类的信封。</li>
+<li>所有响应（含错误）都带 <code>X-Request-Id</code> 响应头，可用于与服务端日志对账；客户端传入合法的 <code>X-Request-Id</code> 会原样回显，缺失或不合法时由服务端生成。</li>
+</ul>
+<h3 id="sec-7-2">6.2 错误响应<a class="heading-anchor" href="#sec-7-2" aria-label="本节链接">#</a></h3>
+<p>错误使用真实 HTTP 状态码，响应体为 RFC 9457 <code>application/problem+json</code>：</p>
+<pre data-lang="http"><code class="language-http">HTTP/1.1 403 Forbidden
+Content-Type: application/problem+json
+X-Request-Id: 8f1d2c3b4a5e6f70
+
+{
+  &quot;type&quot;: &quot;urn:ragstudio:problem:forbidden_scope&quot;,
+  &quot;title&quot;: &quot;Forbidden scope&quot;,
+  &quot;status&quot;: 403,
+  &quot;detail&quot;: &quot;API key does not have the required scope: kb:search&quot;,
+  &quot;code&quot;: &quot;forbidden_scope&quot;,
+  &quot;instance&quot;: &quot;/api/co-knowledge/v1/agent/search&quot;,
+  &quot;required_scope&quot;: &quot;kb:search&quot;
+}
+</code></pre>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>字段</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>type</code></td>
+<td>稳定的问题类型 URI，形如 <code>urn:ragstudio:problem:&lt;code&gt;</code></td>
+</tr>
+<tr>
+<td><code>title</code></td>
+<td>人类可读的英文标题，可能随版本调整</td>
+</tr>
+<tr>
+<td><code>status</code></td>
+<td>HTTP 状态码，与响应状态行一致</td>
+</tr>
+<tr>
+<td><code>detail</code></td>
+<td>具体错误说明；请勿依赖其精确文案做逻辑判断</td>
+</tr>
+<tr>
+<td><code>code</code></td>
+<td><strong>稳定的机器码</strong>，业务逻辑请以它为准</td>
+</tr>
+<tr>
+<td><code>instance</code></td>
+<td>触发错误的请求路径</td>
+</tr>
+<tr>
+<td>扩展字段</td>
+<td>视错误而定，例如 <code>required_<wbr>scope</code>、<code>knowledge_<wbr>base_<wbr>id</code>、<code>errors[]</code>、<code>retry_<wbr>after_<wbr>seconds</code></td>
+</tr>
+</tbody></table></div>
+<p><strong>错误码总表：</strong></p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>HTTP</th>
+<th><code>code</code></th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>400</td>
+<td><code>invalid_<wbr>request</code></td>
+<td>请求语义不合法，例如可访问知识库超过上限且未显式指定 ID</td>
+</tr>
+<tr>
+<td>400</td>
+<td><code>no_<wbr>accessible_<wbr>knowledge_<wbr>bases</code></td>
+<td>Key 没有任何可访问的文档知识库</td>
+</tr>
+<tr>
+<td>401</td>
+<td><code>unauthorized</code></td>
+<td>Key 缺失、无效、停用或过期</td>
+</tr>
+<tr>
+<td>403</td>
+<td><code>forbidden_<wbr>scope</code></td>
+<td>Key 缺少所需 Scope</td>
+</tr>
+<tr>
+<td>403</td>
+<td><code>knowledge_<wbr>base_<wbr>forbidden</code></td>
+<td>知识库不在 Key 的白名单</td>
+</tr>
+<tr>
+<td>404</td>
+<td><code>knowledge_<wbr>base_<wbr>not_<wbr>found</code></td>
+<td>知识库不存在或为图谱库</td>
+</tr>
+<tr>
+<td>404</td>
+<td><code>not_<wbr>found</code></td>
+<td>路径不存在</td>
+</tr>
+<tr>
+<td>405</td>
+<td><code>method_<wbr>not_<wbr>allowed</code></td>
+<td>HTTP 方法不被支持</td>
+</tr>
+<tr>
+<td>422</td>
+<td><code>validation_<wbr>failed</code></td>
+<td>请求参数未通过校验；<code>errors[]</code> 给出字段级原因</td>
+</tr>
+<tr>
+<td>429</td>
+<td><code>rate_<wbr>limited</code></td>
+<td>超过 Key 的每分钟上限；带 <code>Retry-<wbr>After</code></td>
+</tr>
+<tr>
+<td>500</td>
+<td><code>internal_<wbr>error</code></td>
+<td>服务端未预期错误</td>
+</tr>
+<tr>
+<td>502</td>
+<td><code>retrieval_<wbr>failed</code></td>
+<td>检索整体失败</td>
+</tr>
+<tr>
+<td>502</td>
+<td><code>answer_<wbr>failed</code></td>
+<td>生成端点失败或输出不可用</td>
+</tr>
+<tr>
+<td>503</td>
+<td><code>answer_<wbr>unavailable</code></td>
+<td>没有可用生成模型，或问答接口被关闭</td>
+</tr>
+<tr>
+<td>503</td>
+<td><code>configuration_<wbr>error</code></td>
+<td>服务端配置缺失（例如签名 pepper 未配置）</td>
+</tr>
+<tr>
+<td>503</td>
+<td><code>agent_<wbr>key_<wbr>store_<wbr>unavailable</code></td>
+<td>Key 存储不可用（数据库未初始化）</td>
+</tr>
+</tbody></table></div>
+<p><strong>错误响应头：</strong></p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>响应头</th>
+<th>出现条件</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>X-<wbr>Request-<wbr>Id</code></td>
+<td>所有响应</td>
+<td>本次请求的链路 ID（与请求头同名）；报障时请提供</td>
+</tr>
+<tr>
+<td><code>WWW-<wbr>Authenticate: Bearer</code></td>
+<td>401</td>
+<td>表示应使用 Bearer 认证</td>
+</tr>
+<tr>
+<td><code>Retry-<wbr>After</code></td>
+<td>429</td>
+<td>建议等待的秒数</td>
+</tr>
+</tbody></table></div>
+<h3 id="sec-7-3">6.3 请求编码<a class="heading-anchor" href="#sec-7-3" aria-label="本节链接">#</a></h3>
+<ul>
+<li>请求体使用 UTF-8 JSON。</li>
+<li><code>POST</code> 请求必须带 <code>Content-Type: application/json</code>；缺少时可能返回 <code>422 validation_failed</code>。</li>
+<li><code>POST</code> 请求体只接受文档中声明的字段；多传字段会返回 422，不会被静默忽略。</li>
+</ul>
+<h3 id="sec-7-4">6.4 超时、重试与幂等<a class="heading-anchor" href="#sec-7-4" aria-label="本节链接">#</a></h3>
+<ul>
+<li>所有接口都是<strong>只读</strong>或“只读 + 生成”，不会修改知识库或工作流数据；<code>POST /query</code> 只执行已发布快照。</li>
+<li><code>GET</code> 请求天然可重试；<code>POST /search</code> 可安全重试；<code>POST /answer</code> / <code>POST /query</code> 重试会产生额外的模型调用与 token 消耗。</li>
+<li>建议策略：<ul>
+<li><code>429</code>：按 <code>Retry-After</code> 等待，再加指数退避；</li>
+<li><code>502</code> / <code>503</code>：指数退避后重试，最多 2–3 次；持续失败请报障；</li>
+<li>其他 4xx：不要重试，按 <code>code</code> 修正请求或权限；</li>
+<li>网络超时：先确认服务端是否已处理完成，再决定是否重试问答。</li>
+</ul>
+</li>
+<li>问答接口的服务端生成超时默认 120 秒（部署可调），客户端超时应大于该值；前置网关的读超时也必须大于它。</li>
+</ul>
+<h3 id="sec-7-5">6.5 追踪与审计<a class="heading-anchor" href="#sec-7-5" aria-label="本节链接">#</a></h3>
+<ul>
+<li>所有响应都带 <code>X-Request-Id</code>（与请求头同名，合法的客户端值会原样回显）；服务端日志可按该 ID 检索。</li>
+<li>默认审计日志只记录查询长度，不记录原始查询文本（部署可开启原文记录）。</li>
+<li>控制台「密钥管理」会展示每个 Key 的最近使用时间与调用量，便于配额与异常排查。</li>
+</ul>
+<h2 id="sec-8">7. 配额与调用约束<a class="heading-anchor" href="#sec-8" aria-label="本节链接">#</a></h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>项</th>
+<th>默认值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>query</code> / <code>question</code> 长度</td>
+<td>1–2000 字符</td>
+<td>超长返回 422</td>
+</tr>
+<tr>
+<td><code>top_<wbr>k</code></td>
+<td>默认 8，最大 20</td>
+<td>上限由部署配置 <code>RKB_<wbr>AGENT_<wbr>MAX_<wbr>TOP_<wbr>K</code> 决定</td>
+</tr>
+<tr>
+<td>单次可访问知识库数量</td>
+<td>50</td>
+<td>由 <code>RKB_<wbr>AGENT_<wbr>MAX_<wbr>KBS</code> 决定；超限时显式传 <code>knowledge_<wbr>base_<wbr>ids</code></td>
+</tr>
+<tr>
+<td><code>knowledge_<wbr>base_<wbr>ids</code> 元素数</td>
+<td>50</td>
+<td>超过部署上限返回 422</td>
+</tr>
+<tr>
+<td>每个 Key 的限流</td>
+<td>60 次/分钟</td>
+<td>由 Key 的「每分钟上限」决定；<code>0</code> = 不限制</td>
+</tr>
+<tr>
+<td>问答生成超时</td>
+<td>120 秒</td>
+<td>由 <code>RKB_<wbr>AGENT_<wbr>ANSWER_<wbr>TIMEOUT</code> 决定</td>
+</tr>
+<tr>
+<td>工作流执行超时</td>
+<td>120 秒</td>
+<td><code>/query</code> 的生成超时；网关读超时需 ≥ 300 秒</td>
+</tr>
+<tr>
+<td>工作流问题长度</td>
+<td>1–2000 字符</td>
+<td>可用 <code>kwargs.question_<wbr>length_<wbr>limit</code> 再收紧</td>
+</tr>
+<tr>
+<td>检索片段长度</td>
+<td>2000 字符</td>
+<td>超长片段会被截断</td>
+</tr>
+<tr>
+<td>问答上下文预算</td>
+<td>12000 字符</td>
+<td>超出时按来源顺序截断，<code>citations[].text</code> 同步截断</td>
+</tr>
+<tr>
+<td>限流窗口</td>
+<td>60 秒滑动窗口</td>
+<td>进程内实现；多副本部署需要共享限流存储</td>
+</tr>
+</tbody></table></div>
+<blockquote>
+<p>以上默认值可能随部署调整；接入前请向平台管理员确认实际配额。</p>
+</blockquote>
+<h2 id="sec-9">8. 部署侧配置与状态<a class="heading-anchor" href="#sec-9" aria-label="本节链接">#</a></h2>
+<p>控制台「远程接入 → 接入方法 → 服务与鉴权配置」展示当前部署的实时状态。外部集成方在排障时可以先确认这些状态：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>配置项</th>
+<th>含义</th>
+<th>不可用时的表现</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>RKB_<wbr>AGENT_<wbr>API_<wbr>ENABLED</code></td>
+<td>Agent 接口总开关</td>
+<td>关闭时 <code>/agent/*</code> 与 <code>/mcp</code> 返回 <code>404 not_<wbr>found</code></td>
+</tr>
+<tr>
+<td><code>RKB_<wbr>AGENT_<wbr>REST_<wbr>ENABLED</code></td>
+<td>REST 子接口开关</td>
+<td>关闭时 <code>/agent/*</code>（含 <code>/agent/query</code>）返回 <code>404</code></td>
+</tr>
+<tr>
+<td><code>RKB_<wbr>AGENT_<wbr>KEY_<wbr>PEPPER</code></td>
+<td>Key 哈希使用的服务端签名 pepper</td>
+<td>未配置时返回 <code>503 configuration_<wbr>error</code></td>
+</tr>
+<tr>
+<td>Key 存储表</td>
+<td>存放 Key 与调用计量的数据库表</td>
+<td>不可用时返回 <code>503 agent_<wbr>key_<wbr>store_<wbr>unavailable</code></td>
+</tr>
+<tr>
+<td><code>AUTH_<wbr>MODE</code></td>
+<td>控制台与原生 REST 的鉴权模式（<code>none</code> / <code>local</code> / <code>gateway</code>）</td>
+<td>不影响 Agent API Key 校验</td>
+</tr>
+</tbody></table></div>
+<p>以上配置由部署方维护；外部集成方只需确认「Agent 接口」「REST」「签名 pepper」「密钥」均为可用状态。</p>
+<h2 id="sec-10">9. 接入检查清单<a class="heading-anchor" href="#sec-10" aria-label="本节链接">#</a></h2>
+<ul>
+<li><input disabled="" type="checkbox"> 已从平台管理员获取基础地址，并确认使用 HTTPS。</li>
+<li><input disabled="" type="checkbox"> 已创建 Agent API Key，并确认 Key 的 Scope 覆盖要调用的接口。</li>
+<li><input disabled="" type="checkbox"> 已确认 Key 的知识库白名单符合预期（留空 = 全部文档库）。</li>
+<li><input disabled="" type="checkbox"> 已确认 Key 的每分钟上限与过期时间满足业务需要。</li>
+<li><input disabled="" type="checkbox"> 客户端每个请求都携带 <code>Authorization: Bearer</code> 或 <code>X-API-Key</code>。</li>
+<li><input disabled="" type="checkbox"> 已按 <code>code</code> 而不是 <code>detail</code>/<code>title</code> 处理错误。</li>
+<li><input disabled="" type="checkbox"> 已为问答接口设置大于服务端 120 秒的客户端超时。</li>
+<li><input disabled="" type="checkbox"> 已在网关/反向代理上放行 <code>Authorization</code> 头，并配置足够的读超时。</li>
+<li><input disabled="" type="checkbox"> 已确认日志中不会打印完整 Key。</li>
+<li><input disabled="" type="checkbox"> 已准备 Key 轮换与停用预案。</li>
+</ul>
+<h2 id="sec-11">10. 常见问题<a class="heading-anchor" href="#sec-11" aria-label="本节链接">#</a></h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>症状</th>
+<th>排查方向</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>一直 401，但 Key 明明存在</td>
+<td>Key 已停用/过期；或复制时截断了；或服务端 pepper 与创建 Key 时不一致</td>
+</tr>
+<tr>
+<td>401 <code>API key is disabled</code></td>
+<td>Key 已被停用，请在控制台启用或换用其他 Key</td>
+</tr>
+<tr>
+<td>401 <code>API key has expired</code></td>
+<td>Key 已过期，请创建新 Key 或调整过期时间</td>
+</tr>
+<tr>
+<td>403 <code>forbidden_<wbr>scope</code></td>
+<td>Key 没有对应 Scope；按错误体 <code>required_<wbr>scope</code> 补齐</td>
+</tr>
+<tr>
+<td>403 <code>knowledge_<wbr>base_<wbr>forbidden</code></td>
+<td>显式传了不在白名单的 ID；调整 <code>knowledge_<wbr>base_<wbr>ids</code> 或修改 Key 白名单</td>
+</tr>
+<tr>
+<td>404 <code>knowledge_<wbr>base_<wbr>not_<wbr>found</code></td>
+<td>ID 写错，或该 ID 是图谱知识库（Agent API 不覆盖图谱库）</td>
+</tr>
+<tr>
+<td>400 <code>invalid_<wbr>request</code>（too many accessible knowledge bases）</td>
+<td>可访问文档库超过部署上限；显式传 <code>knowledge_<wbr>base_<wbr>ids</code></td>
+</tr>
+<tr>
+<td>400 <code>no_<wbr>accessible_<wbr>knowledge_<wbr>bases</code></td>
+<td>该 Key 没有任何可访问的文档库；检查白名单与知识库状态</td>
+</tr>
+<tr>
+<td>422 <code>validation_<wbr>failed</code></td>
+<td>参数类型/长度/上限不合法，或请求体多传了未声明字段；查看 <code>errors[]</code></td>
+</tr>
+<tr>
+<td>429 <code>rate_<wbr>limited</code></td>
+<td>触发每分钟上限；按 <code>Retry-<wbr>After</code> 退避，或让管理员调高该 Key 的限流</td>
+</tr>
+<tr>
+<td>502 <code>retrieval_<wbr>failed</code></td>
+<td>检索整体失败；确认知识库索引与搜索引擎状态，稍后重试</td>
+</tr>
+<tr>
+<td>502 <code>answer_<wbr>failed</code></td>
+<td>生成端点不可用、鉴权失败或输出被截断；请管理员检查模型注册与上游服务</td>
+</tr>
+<tr>
+<td>503 <code>answer_<wbr>unavailable</code></td>
+<td>没有可用生成模型，或问答接口被关闭；改用 <code>/search</code> 或联系管理员</td>
+</tr>
+<tr>
+<td>503 <code>configuration_<wbr>error</code></td>
+<td>服务端未配置签名 pepper；属于部署问题，请联系管理员</td>
+</tr>
+<tr>
+<td>503 <code>agent_<wbr>key_<wbr>store_<wbr>unavailable</code></td>
+<td>Key 存储不可用，通常是数据库未初始化；请联系管理员</td>
+</tr>
+<tr>
+<td>调用 <code>/query</code> 返回 403 <code>forbidden_<wbr>scope</code></td>
+<td>Key 缺少 <code>workflow:run</code>；<code>workflow:read</code> 只能列工作流，不能执行</td>
+</tr>
+<tr>
+<td>调用 <code>/query</code> 返回 404 <code>published_<wbr>workflow_<wbr>not_<wbr>found</code></td>
+<td><code>workflow_<wbr>id</code> 不存在或尚未发布；先发布工作流，或改用 <code>publishType=1/2</code> 的 ID</td>
+</tr>
+<tr>
+<td>调用 <code>/query</code> 返回 422 <code>validation_<wbr>failed</code></td>
+<td>没有显式传 <code>workflow_<wbr>id</code>，或缺少 <code>question</code> / <code>conversation_<wbr>id</code></td>
+</tr>
+<tr>
+<td>调用 <code>/query</code> 返回 403 <code>knowledge_<wbr>base_<wbr>forbidden</code></td>
+<td>工作流发布快照绑定了 Key 白名单之外的知识库；调整白名单或换 Key</td>
+</tr>
+<tr>
+<td>检索结果为空但 HTTP 200</td>
+<td>查询没有命中；确认知识库 <code>status</code>、索引是否就绪，或放宽 <code>score_<wbr>threshold</code></td>
+</tr>
+<tr>
+<td><code>degraded=true</code> 且有 <code>keyword_<wbr>path_<wbr>failed</code></td>
+<td>关键词路不可用，但向量结果仍可用；可继续使用或联系管理员修复索引</td>
+</tr>
+<tr>
+<td>回答很慢</td>
+<td>默认 LLM 可能是推理模型；请管理员设置更快的回答模型或关闭推理，或改用 <code>/search</code> 自行生成</td>
+</tr>
+</tbody></table></div>
+<h2 id="sec-12">附录 A：curl 速查<a class="heading-anchor" href="#sec-12" aria-label="本节链接">#</a></h2>
+<pre data-lang="bash"><code class="language-bash">export BASE=&quot;https://rag.example.com/api/co-knowledge/v1/agent&quot;
+export KNOWLEDGE_STUDIO_KEY=&quot;ragk_1a2b3c4d_...&quot;
+
+# 列知识库
+curl -sS &quot;$BASE/knowledge-bases&quot; \
+  -H &quot;Authorization: Bearer $KNOWLEDGE_STUDIO_KEY&quot;
+
+# 知识库详情
+curl -sS &quot;$BASE/knowledge-bases/0123456789abcdef0123456789abcdef&quot; \
+  -H &quot;Authorization: Bearer $KNOWLEDGE_STUDIO_KEY&quot;
+
+# 检索
+curl -sS &quot;$BASE/search&quot; \
+  -H &quot;Authorization: Bearer $KNOWLEDGE_STUDIO_KEY&quot; \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#39;{&quot;query&quot;:&quot;your question&quot;,&quot;top_k&quot;:5}&#39;
+
+# 问答
+curl -sS &quot;$BASE/answer&quot; \
+  -H &quot;Authorization: Bearer $KNOWLEDGE_STUDIO_KEY&quot; \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#39;{&quot;question&quot;:&quot;your question&quot;,&quot;top_k&quot;:8}&#39;
+
+# 工作流列表（只读）
+curl -sS &quot;$BASE/workflows?page=1&amp;size=100&amp;publishType=1&quot; \
+  -H &quot;Authorization: Bearer $KNOWLEDGE_STUDIO_KEY&quot;
+
+# 执行已发布工作流（需要 workflow:run）
+curl -sS &quot;$BASE/query&quot; \
+  -H &quot;Authorization: Bearer $KNOWLEDGE_STUDIO_KEY&quot; \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#39;{&quot;question&quot;:&quot;your question&quot;,&quot;conversation_id&quot;:&quot;d-001&quot;,&quot;workflow_id&quot;:&quot;RAG_Workflow_1a2b&quot;}&#39;
+
+# OpenAPI 契约（无需 Key）
+curl -sS &quot;$BASE/openapi.json&quot;
+</code></pre>
+<h2 id="sec-13">附录 B：最小接入代码（Python）<a class="heading-anchor" href="#sec-13" aria-label="本节链接">#</a></h2>
+<pre data-lang="python"><code class="language-python">import os
+
+import requests
+
+BASE = os.environ[&quot;KNOWLEDGE_STUDIO_BASE&quot;].rstrip(&quot;/&quot;)
+KEY = os.environ[&quot;KNOWLEDGE_STUDIO_KEY&quot;]
+HEADERS = {&quot;Authorization&quot;: f&quot;Bearer {KEY}&quot;}
+
+
+def list_knowledge_bases() -&gt; list[dict]:
+    response = requests.get(f&quot;{BASE}/knowledge-bases&quot;, headers=HEADERS, timeout=30)
+    response.raise_for_status()
+    return response.json()
+
+
+def search(query: str, top_k: int = 5) -&gt; dict:
+    response = requests.post(
+        f&quot;{BASE}/search&quot;,
+        headers={**HEADERS, &quot;Content-Type&quot;: &quot;application/json&quot;},
+        json={&quot;query&quot;: query, &quot;top_k&quot;: top_k},
+        timeout=60,
+    )
+    response.raise_for_status()
+    return response.json()
+
+
+def answer(question: str, top_k: int = 8) -&gt; dict:
+    response = requests.post(
+        f&quot;{BASE}/answer&quot;,
+        headers={**HEADERS, &quot;Content-Type&quot;: &quot;application/json&quot;},
+        json={&quot;question&quot;: question, &quot;top_k&quot;: top_k},
+        timeout=180,
+    )
+    response.raise_for_status()
+    return response.json()
+</code></pre>
+<blockquote>
+<p>生产代码请根据 <code>code</code> 处理错误、记录 <code>X-Request-Id</code>，并为 429/502/503 实现退避重试。</p>
+</blockquote>
+
+    </article>
+    <footer class="doc-foot">
+      <span>Knowledge Studio REST 接入指南（Agent API）</span>
+      <span>契约版本 1.4.0</span>
+    </footer>
+  </main>
+</div>
+<button id="toTop" type="button" aria-label="回到顶部">↑</button>
+<script>(() => {
+  const sidebar = document.getElementById('sidebar');
+  const menuToggle = document.getElementById('menuToggle');
+  const printBtn = document.getElementById('printBtn');
+  const search = document.getElementById('tocSearch');
+  const toc = document.getElementById('toc');
+  const progress = document.getElementById('progress');
+  const toTop = document.getElementById('toTop');
+  const scrim = document.getElementById('scrim');
+
+  function setSidebar(open) {
+    sidebar?.classList.toggle('open', open);
+    scrim?.classList.toggle('show', open);
+  }
+
+  if (menuToggle) {
+    menuToggle.addEventListener('click', () => setSidebar(!sidebar.classList.contains('open')));
+    document.addEventListener('click', (event) => {
+      if (window.innerWidth <= 980 && sidebar.classList.contains('open')
+          && !sidebar.contains(event.target) && !menuToggle.contains(event.target)) {
+        setSidebar(false);
+      }
+    });
+  }
+  scrim?.addEventListener('click', () => setSidebar(false));
+
+  if (printBtn) printBtn.addEventListener('click', () => window.print());
+  if (toTop) toTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+
+  // 目录搜索
+  if (search && toc) {
+    const empty = document.createElement('div');
+    empty.className = 'toc-empty';
+    empty.textContent = '没有匹配的章节';
+    toc.parentNode.appendChild(empty);
+    search.addEventListener('input', () => {
+      const query = search.value.trim().toLowerCase();
+      let matches = 0;
+      toc.querySelectorAll('li.toc-h2').forEach((group) => {
+        const groupText = (group.dataset.text || '').toLowerCase();
+        const children = group.querySelectorAll('li.toc-h3');
+        const childMatch = [...children].some((child) =>
+          (child.dataset.text || '').toLowerCase().includes(query));
+        const showGroup = !query || groupText.includes(query) || childMatch;
+        group.style.display = showGroup ? '' : 'none';
+        if (showGroup) matches += 1;
+        children.forEach((child) => {
+          const childText = (child.dataset.text || '').toLowerCase();
+          child.style.display = !query || groupText.includes(query)
+            || childText.includes(query) ? '' : 'none';
+        });
+      });
+      empty.style.display = matches ? 'none' : 'block';
+    });
+  }
+
+  // 目录点击（移动端关闭抽屉）
+  if (toc) {
+    toc.addEventListener('click', (event) => {
+      if (event.target.closest('a') && window.innerWidth <= 980) {
+        setSidebar(false);
+      }
+    });
+  }
+
+  // 滚动高亮 + 阅读进度
+  const headings = [...document.querySelectorAll('.content h2, .content h3')];
+  const linkById = new Map();
+  if (toc) {
+    toc.querySelectorAll('a[href^="#"]').forEach((link) => {
+      linkById.set(link.getAttribute('href').slice(1), link);
+    });
+  }
+  let ticking = false;
+  function onScroll() {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => {
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      if (progress) {
+        progress.style.width = `${max > 0 ? Math.min(100, (window.scrollY / max) * 100) : 0}%`;
+      }
+      if (toTop) toTop.classList.toggle('show', window.scrollY > 900);
+      let active = null;
+      for (const heading of headings) {
+        if (heading.getBoundingClientRect().top <= 110) active = heading;
+        else break;
+      }
+      toc?.querySelectorAll('.toc-item.active').forEach((item) => item.classList.remove('active'));
+      if (active) {
+        const link = linkById.get(active.id);
+        link?.closest('li')?.classList.add('active');
+        link?.closest('li.toc-h3')?.closest('li.toc-h2')?.classList.add('active');
+      }
+      ticking = false;
+    });
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+
+  // 代码复制
+  document.querySelectorAll('pre').forEach((pre) => {
+    const button = document.createElement('button');
+    button.className = 'copy-btn';
+    button.type = 'button';
+    button.textContent = '复制';
+    button.addEventListener('click', async () => {
+      const code = pre.querySelector('code');
+      const text = code ? code.innerText : pre.innerText;
+      try {
+        await navigator.clipboard.writeText(text);
+        button.textContent = '已复制';
+      } catch {
+        const area = document.createElement('textarea');
+        area.value = text;
+        area.style.position = 'fixed';
+        area.style.opacity = '0';
+        document.body.appendChild(area);
+        area.select();
+        document.execCommand('copy');
+        area.remove();
+        button.textContent = '已复制';
+      }
+      setTimeout(() => { button.textContent = '复制'; }, 1500);
+    });
+    pre.appendChild(button);
+  });
+
+  // 外链新窗口
+  document.querySelectorAll('.content a[href^="http"]').forEach((link) => {
+    if (link.origin !== location.origin) {
+      link.target = '_blank';
+      link.rel = 'noreferrer noopener';
+    }
+  });
+
+  // 快捷键 / 聚焦目录搜索
+  document.addEventListener('keydown', (event) => {
+    if (event.key === '/' && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName || '')) {
+      event.preventDefault();
+      search?.focus();
+      if (window.innerWidth <= 980) setSidebar(true);
+    }
+  });
+})();
+</script>
+</body>
+</html>

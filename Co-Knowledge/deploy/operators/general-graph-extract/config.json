@@ -1,0 +1,44 @@
+{
+  "id": -6,
+  "display_name": {
+    "zh": "通用知识图谱算子",
+    "en": "General Knowledge Graph Generation Operator"
+  },
+  "desc": {
+    "zh": "不依赖schema信息，直接从文档提取信息，构造通用知识图谱",
+    "en": "Extract information from documents directly to construct a general knowledge graph without relying on schema information"
+  },
+  "is_published": 1,
+  "visibleRange": "public",
+  "module": "graph_extract",
+  "version": "1.2.0",
+  "supportedFormat": [
+    "MD"
+  ],
+  "defaultArgs": [
+    {
+      "argName": "llm",
+      "argType": "str",
+      "defaultValue": "",
+      "description": "大模型"
+    },
+    {
+      "argName": "chunkSize",
+      "argType": "int",
+      "defaultValue": 512,
+      "description": "最大字符数"
+    },
+    {
+      "argName": "overlap",
+      "argType": "int",
+      "defaultValue": 128,
+      "description": "切片前后重叠的字符数量"
+    },
+    {
+      "argName": "extractionProfile",
+      "argType": "str",
+      "defaultValue": "general",
+      "description": "抽取模式（general=通用；general_attributes=通用+属性）"
+    }
+  ]
+}

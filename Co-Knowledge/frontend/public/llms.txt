@@ -1,0 +1,8 @@
+# Knowledge Studio
+
+> 开源知识工程平台：文档知识库、图谱知识库、检索编排与 Agent 接入。
+
+Knowledge Studio 是一个可私有化部署的知识工程平台，将文档解析、切片、向量与全文索引、
+图谱抽取、检索编排和问答整合在同一个界面中。
+
+- [Knowledge Studio 首页](/)

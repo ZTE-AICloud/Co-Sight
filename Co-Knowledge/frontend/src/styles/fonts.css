@@ -1,0 +1,6 @@
+/* Keep the font files on the same origin as the app; webpack emits hashed assets.
+   Unicode ranges load only the subsets needed by the current page, including
+   Chinese characters entered later by the user. All UI weights are variable. */
+@import '@fontsource-variable/inter/wght.css';
+@import '@fontsource-variable/noto-sans-sc/wght.css';
+@import '@fontsource-variable/jetbrains-mono/wght.css';

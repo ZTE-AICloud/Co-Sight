@@ -1,0 +1,1405 @@
+{
+  "flowType": "workflow",
+  "version": 2,
+  "nodeConfigDTOList": [
+    {
+      "position": {
+        "x": 30,
+        "y": 30
+      },
+      "size": {
+        "width": 1,
+        "height": 1
+      },
+      "view": "vue-shape-view",
+      "shape": "QUERY",
+      "id": "fbf5a406-374a-4ae4-ae22-a8cb5eceda25",
+      "nodeId": "fbf5a406-374a-4ae4-ae22-a8cb5eceda25",
+      "flowId": "beda0b6f262c881b3b79e364629a20a0",
+      "label": "QUERY",
+      "componentType": "QUERY",
+      "variables": null,
+      "inputVariables": [],
+      "outputVariables": [
+        {
+          "key": "text",
+          "targetNode": "2c76c02e-c8fd-422b-8078-58c8933f8afc"
+        }
+      ],
+      "parentNodes": "",
+      "xPosition": 30,
+      "yPosition": 30,
+      "ports": {
+        "groups": {
+          "out": {
+            "position": {
+              "args": {
+                "x": 0,
+                "y": 0
+              },
+              "name": "absolute"
+            },
+            "attrs": {
+              "circle": {
+                "strokeWidth": 1,
+                "r": 6,
+                "fill": "#E6F1FF",
+                "magnet": true,
+                "stroke": "#0077FF"
+              }
+            }
+          }
+        },
+        "items": [
+          {
+            "args": {
+              "x": 212,
+              "y": 70
+            },
+            "id": "text",
+            "group": "out"
+          }
+        ]
+      },
+      "zIndex": 11,
+      "data": {
+        "type": "displayData",
+        "variables": null
+      }
+    },
+    {
+      "position": {
+        "x": 840,
+        "y": 420
+      },
+      "size": {
+        "width": 1,
+        "height": 1
+      },
+      "view": "vue-shape-view",
+      "shape": "POST_RETRIEVER",
+      "id": "94dc50a0-3632-4164-85ec-002ec1091506",
+      "nodeId": "94dc50a0-3632-4164-85ec-002ec1091506",
+      "flowId": "beda0b6f262c881b3b79e364629a20a0",
+      "label": "POST-4ff",
+      "componentType": "POST_RETRIEVER",
+      "variables": {
+        "postretriever": [
+          {
+            "package": "core.rag.post_retriever.llm_reranker",
+            "kwargs": {
+              "top_n": 4,
+              "score": 0
+            },
+            "id": "94dc50a0-3632-4164-85ec-002ec1091506_b92",
+            "operator": "LLMReranker"
+          }
+        ]
+      },
+      "inputVariables": [
+        {
+          "key": "retriever_output",
+          "sourceNode": "ed648eba-ea45-4259-a996-392ab23398c9",
+          "label": "RE-bf6"
+        }
+      ],
+      "outputVariables": [
+        {
+          "key": "postretriever_output",
+          "targetNode": "91fd0b7d-1966-4e24-a027-9027333f1cad"
+        }
+      ],
+      "parentNodes": "ed648eba-ea45-4259-a996-392ab23398c9",
+      "xPosition": 840,
+      "yPosition": 420,
+      "ports": {
+        "groups": {
+          "in": {
+            "markup": [
+              {
+                "selector": "circle",
+                "tagName": "circle"
+              },
+              {
+                "selector": "dot",
+                "tagName": "circle"
+              }
+            ],
+            "position": {
+              "args": {
+                "x": 0,
+                "y": 0
+              },
+              "name": "absolute"
+            },
+            "attrs": {
+              "dot": {
+                "r": 0,
+                "fill": "#0077FF",
+                "magnet": true
+              },
+              "circle": {
+                "strokeWidth": 1,
+                "r": 6,
+                "fill": "#E6F1FF",
+                "magnet": true,
+                "stroke": "#0077FF"
+              }
+            }
+          },
+          "out": {
+            "markup": [
+              {
+                "selector": "circle",
+                "tagName": "circle"
+              },
+              {
+                "selector": "dot",
+                "tagName": "circle"
+              }
+            ],
+            "position": {
+              "args": {
+                "x": 0,
+                "y": 0
+              },
+              "name": "absolute"
+            },
+            "attrs": {
+              "dot": {
+                "r": 0,
+                "fill": "#0077FF",
+                "magnet": true
+              },
+              "circle": {
+                "strokeWidth": 1,
+                "r": 6,
+                "fill": "#E6F1FF",
+                "magnet": true,
+                "stroke": "#0077FF"
+              }
+            }
+          }
+        },
+        "items": [
+          {
+            "args": {
+              "x": 28,
+              "y": 217
+            },
+            "id": "postretriever_input",
+            "attrs": {
+              "dot": {
+                "r": 4,
+                "fill": "#0077FF",
+                "magnet": true
+              }
+            },
+            "group": "in"
+          },
+          {
+            "args": {
+              "x": 214,
+              "y": 308
+            },
+            "id": "postretriever_output",
+            "group": "out"
+          }
+        ]
+      },
+      "zIndex": 11,
+      "data": {
+        "type": "displayData",
+        "variables": {
+          "postretriever": [
+            {
+              "package": "core.rag.post_retriever.llm_reranker",
+              "kwargs": {
+                "top_n": 4,
+                "score": 0
+              },
+              "id": "94dc50a0-3632-4164-85ec-002ec1091506_b92",
+              "operator": "LLMReranker"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "position": {
+        "x": 1150,
+        "y": 10
+      },
+      "size": {
+        "width": 1,
+        "height": 1
+      },
+      "view": "vue-shape-view",
+      "shape": "RESPONSE_SYNTHESIZER",
+      "id": "4bb72f83-7af8-4200-9657-5cc44b027cf4",
+      "nodeId": "4bb72f83-7af8-4200-9657-5cc44b027cf4",
+      "flowId": "beda0b6f262c881b3b79e364629a20a0",
+      "label": "SYN-7ce",
+      "componentType": "RESPONSE_SYNTHESIZER",
+      "variables": {
+        "responsesynthesizer": [
+          {
+            "package": "core.rag.response_synthesizer.simple_summarizer",
+            "kwargs": {
+              "generator-config": [
+                {
+                  "knowledge_base_name": [],
+                  "top_k": 8,
+                  "llm": "",
+                  "prompt": "你是一个智能问答助手，擅长结合检索到的上下文与自身知识，为用户提供准确、简洁、可靠的回答。请严格遵循以下原则处理每个问题：\n\n1. **上下文完整且相关**\n   若检索到的信息直接、充分地回答了用户问题，请基于内容给出清晰、精炼的答案，无需标注信息来源，避免冗余表述（如“根据上下文”）。\n\n2. **上下文部分相关或信息不足**\n   若上下文提供部分线索但不足以完整作答，而你具备补充性知识，请自然融合两者，形成完整、连贯的回答；若上下文过时、片面或误导，且你确信自身知识更准确，请果断以权威信息为准，无需提及上下文。\n\n3. **上下文完全无关**\n   若检索内容与问题在主题、实体、时间或领域上无实质关联，请完全忽略上下文，按以下标准响应：\n   - **能明确回答**：直接提供简洁、有依据的答案；\n   - **问题模糊或歧义**：主动提出1–2个具体问题，帮助用户澄清需求；\n   - **超出能力范围**：礼貌致歉，说明无法回答；如可提供相关背景或合理推测，请明确标注“可能”“推测”等不确定性，并鼓励用户补充信息。\n\n始终以用户需求为出发点，语言自然、专业、友好，避免使用技术术语（如RAG、检索增强等），确保每一条回答都像由一位经验丰富、值得信赖的专家亲口说出。\n\n**用户提问**：{query_str}\n**相关上下文**：{context_str}",
+                  "temperature": 0.01,
+                  "no_context_prompt": "你是一个智能问答助手，任务是根据自身知识准确、简洁、高效地回应用户提问。请严格遵循以下原则进行回答：\n\n1. **可准确回答时**：若问题属于通识领域（如科学、历史、文化、常识等），且你确信掌握可靠、完整的知识，请直接提供清晰、简洁、有依据的答案，避免冗余信息。\n\n2. **问题模糊或有歧义时**：若用户提问表述不清、信息不全或存在多种理解可能，请主动提出1–2个具体、有针对性的澄清问题，引导用户补充关键细节，以便更精准地满足其需求。\n\n3. **超出知识范围时**：若问题涉及你无法确认或不具备可靠信息的专业、前沿、私密或冷门领域，请先礼貌致歉，说明无法提供确切答案；若能提供部分相关信息或合理推测，可简要说明并邀请用户确认或补充背景。\n\n用户提问：{query_str}"
+                }
+              ]
+            },
+            "id": "4bb72f83-7af8-4200-9657-5cc44b027cf4_482",
+            "operator": "RagSimpleSummarizer"
+          }
+        ]
+      },
+      "inputVariables": [
+        {
+          "key": "postretriever_output",
+          "sourceNode": "337b1e4a-0e8c-4ca0-b24d-a1834953f8f1",
+          "label": "POST-fe4"
+        }
+      ],
+      "outputVariables": [
+        {
+          "key": "responsesynthesizer_output",
+          "targetNode": "42d14237-ee3c-492b-8621-1798b28d4526"
+        }
+      ],
+      "parentNodes": "337b1e4a-0e8c-4ca0-b24d-a1834953f8f1",
+      "xPosition": 1150,
+      "yPosition": 10,
+      "ports": {
+        "groups": {
+          "in": {
+            "markup": [
+              {
+                "selector": "circle",
+                "tagName": "circle"
+              },
+              {
+                "selector": "dot",
+                "tagName": "circle"
+              }
+            ],
+            "position": {
+              "args": {
+                "x": 0,
+                "y": 0
+              },
+              "name": "absolute"
+            },
+            "attrs": {
+              "dot": {
+                "r": 0,
+                "fill": "#0077FF",
+                "magnet": true
+              },
+              "circle": {
+                "strokeWidth": 1,
+                "r": 6,
+                "fill": "#E6F1FF",
+                "magnet": true,
+                "stroke": "#0077FF"
+              }
+            }
+          },
+          "out": {
+            "markup": [
+              {
+                "selector": "circle",
+                "tagName": "circle"
+              },
+              {
+                "selector": "dot",
+                "tagName": "circle"
+              }
+            ],
+            "position": {
+              "args": {
+                "x": 0,
+                "y": 0
+              },
+              "name": "absolute"
+            },
+            "attrs": {
+              "dot": {
+                "r": 0,
+                "fill": "#0077FF",
+                "magnet": true
+              },
+              "circle": {
+                "strokeWidth": 1,
+                "r": 6,
+                "fill": "#E6F1FF",
+                "magnet": true,
+                "stroke": "#0077FF"
+              }
+            }
+          }
+        },
+        "items": [
+          {
+            "args": {
+              "x": 28,
+              "y": 217
+            },
+            "id": "responsesynthesizer_input",
+            "attrs": {
+              "dot": {
+                "r": 4,
+                "fill": "#0077FF",
+                "magnet": true
+              }
+            },
+            "group": "in"
+          },
+          {
+            "args": {
+              "x": 214,
+              "y": 308
+            },
+            "id": "responsesynthesizer_output",
+            "group": "out"
+          }
+        ]
+      },
+      "zIndex": 11,
+      "data": {
+        "type": "displayData",
+        "variables": {
+          "responsesynthesizer": [
+            {
+              "package": "core.rag.response_synthesizer.simple_summarizer",
+              "kwargs": {
+                "generator-config": [
+                  {
+                    "knowledge_base_name": [],
+                    "top_k": 8,
+                    "llm": "",
+                    "prompt": "你是一个智能问答助手，擅长结合检索到的上下文与自身知识，为用户提供准确、简洁、可靠的回答。请严格遵循以下原则处理每个问题：\n\n1. **上下文完整且相关**\n   若检索到的信息直接、充分地回答了用户问题，请基于内容给出清晰、精炼的答案，无需标注信息来源，避免冗余表述（如“根据上下文”）。\n\n2. **上下文部分相关或信息不足**\n   若上下文提供部分线索但不足以完整作答，而你具备补充性知识，请自然融合两者，形成完整、连贯的回答；若上下文过时、片面或误导，且你确信自身知识更准确，请果断以权威信息为准，无需提及上下文。\n\n3. **上下文完全无关**\n   若检索内容与问题在主题、实体、时间或领域上无实质关联，请完全忽略上下文，按以下标准响应：\n   - **能明确回答**：直接提供简洁、有依据的答案；\n   - **问题模糊或歧义**：主动提出1–2个具体问题，帮助用户澄清需求；\n   - **超出能力范围**：礼貌致歉，说明无法回答；如可提供相关背景或合理推测，请明确标注“可能”“推测”等不确定性，并鼓励用户补充信息。\n\n始终以用户需求为出发点，语言自然、专业、友好，避免使用技术术语（如RAG、检索增强等），确保每一条回答都像由一位经验丰富、值得信赖的专家亲口说出。\n\n**用户提问**：{query_str}\n**相关上下文**：{context_str}",
+                    "temperature": 0.01,
+                    "no_context_prompt": "你是一个智能问答助手，任务是根据自身知识准确、简洁、高效地回应用户提问。请严格遵循以下原则进行回答：\n\n1. **可准确回答时**：若问题属于通识领域（如科学、历史、文化、常识等），且你确信掌握可靠、完整的知识，请直接提供清晰、简洁、有依据的答案，避免冗余信息。\n\n2. **问题模糊或有歧义时**：若用户提问表述不清、信息不全或存在多种理解可能，请主动提出1–2个具体、有针对性的澄清问题，引导用户补充关键细节，以便更精准地满足其需求。\n\n3. **超出知识范围时**：若问题涉及你无法确认或不具备可靠信息的专业、前沿、私密或冷门领域，请先礼貌致歉，说明无法提供确切答案；若能提供部分相关信息或合理推测，可简要说明并邀请用户确认或补充背景。\n\n用户提问：{query_str}"
+                  }
+                ]
+              },
+              "id": "4bb72f83-7af8-4200-9657-5cc44b027cf4_482",
+              "operator": "RagSimpleSummarizer"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "position": {
+        "x": 1550,
+        "y": 280
+      },
+      "size": {
+        "width": 1,
+        "height": 1
+      },
+      "view": "vue-shape-view",
+      "shape": "RESPONSE",
+      "id": "42d14237-ee3c-492b-8621-1798b28d4526",
+      "nodeId": "42d14237-ee3c-492b-8621-1798b28d4526",
+      "flowId": "beda0b6f262c881b3b79e364629a20a0",
+      "label": null,
+      "componentType": "RESPONSE",
+      "variables": null,
+      "inputVariables": [
+        {
+          "key": "responsesynthesizer_output",
+          "sourceNode": "4bb72f83-7af8-4200-9657-5cc44b027cf4",
+          "label": "SYN-7ce"
+        },
+        {
+          "key": "responsesynthesizer_output",
+          "sourceNode": "91fd0b7d-1966-4e24-a027-9027333f1cad",
+          "label": "SYN-0c7"
+        }
+      ],
+      "outputVariables": [],
+      "parentNodes": "91fd0b7d-1966-4e24-a027-9027333f1cad,4bb72f83-7af8-4200-9657-5cc44b027cf4",
+      "xPosition": 1550,
+      "yPosition": 280,
+      "ports": {
+        "groups": {
+          "in": {
+            "markup": [
+              {
+                "selector": "circle",
+                "tagName": "circle"
+              },
+              {
+                "selector": "dot",
+                "tagName": "circle"
+              }
+            ],
+            "position": {
+              "args": {
+                "x": 0,
+                "y": 0
+              },
+              "name": "absolute"
+            },
+            "attrs": {
+              "dot": {
+                "r": 0,
+                "fill": "#0077FF",
+                "magnet": true
+              },
+              "circle": {
+                "strokeWidth": 1,
+                "r": 6,
+                "fill": "#E6F1FF",
+                "magnet": true,
+                "stroke": "#0077FF"
+              }
+            }
+          }
+        },
+        "items": [
+          {
+            "args": {
+              "x": 22,
+              "y": 88
+            },
+            "id": "target-port",
+            "attrs": {
+              "dot": {
+                "r": 4,
+                "fill": "#0077FF",
+                "magnet": true
+              }
+            },
+            "group": "in"
+          }
+        ]
+      },
+      "zIndex": 11,
+      "data": {
+        "type": "displayData",
+        "variables": null
+      }
+    },
+    {
+      "position": {
+        "x": 500,
+        "y": 420
+      },
+      "size": {
+        "width": 1,
+        "height": 1
+      },
+      "view": "vue-shape-view",
+      "shape": "RETRIEVER",
+      "id": "ed648eba-ea45-4259-a996-392ab23398c9",
+      "nodeId": "ed648eba-ea45-4259-a996-392ab23398c9",
+      "flowId": "beda0b6f262c881b3b79e364629a20a0",
+      "label": "RE-bf6",
+      "componentType": "RETRIEVER",
+      "variables": {
+        "retriever": [
+          {
+            "package": "core.rag.retriever.keyword_retriever",
+            "kwargs": {
+              "knowledge_base_name": [],
+              "desc_info": "",
+              "top_k": 8
+            },
+            "id": "ed648eba-ea45-4259-a996-392ab23398c9_6de",
+            "operator": "KeywordRetriever"
+          }
+        ]
+      },
+      "inputVariables": [
+        {
+          "key": "preretriever_output",
+          "sourceNode": "2c76c02e-c8fd-422b-8078-58c8933f8afc",
+          "label": "PRE-8a4"
+        }
+      ],
+      "outputVariables": [
+        {
+          "key": "retriever_output",
+          "targetNode": "94dc50a0-3632-4164-85ec-002ec1091506"
+        }
+      ],
+      "parentNodes": "2c76c02e-c8fd-422b-8078-58c8933f8afc",
+      "xPosition": 500,
+      "yPosition": 420,
+      "ports": {
+        "groups": {
+          "in": {
+            "markup": [
+              {
+                "selector": "circle",
+                "tagName": "circle"
+              },
+              {
+                "selector": "dot",
+                "tagName": "circle"
+              }
+            ],
+            "position": {
+              "args": {
+                "x": 0,
+                "y": 0
+              },
+              "name": "absolute"
+            },
+            "attrs": {
+              "dot": {
+                "r": 0,
+                "fill": "#0077FF",
+                "magnet": true
+              },
+              "circle": {
+                "strokeWidth": 1,
+                "r": 6,
+                "fill": "#E6F1FF",
+                "magnet": true,
+                "stroke": "#0077FF"
+              }
+            }
+          },
+          "out": {
+            "markup": [
+              {
+                "selector": "circle",
+                "tagName": "circle"
+              },
+              {
+                "selector": "dot",
+                "tagName": "circle"
+              }
+            ],
+            "position": {
+              "args": {
+                "x": 0,
+                "y": 0
+              },
+              "name": "absolute"
+            },
+            "attrs": {
+              "dot": {
+                "r": 0,
+                "fill": "#0077FF",
+                "magnet": true
+              },
+              "circle": {
+                "strokeWidth": 1,
+                "r": 6,
+                "fill": "#E6F1FF",
+                "magnet": true,
+                "stroke": "#0077FF"
+              }
+            }
+          }
+        },
+        "items": [
+          {
+            "args": {
+              "x": 28,
+              "y": 217
+            },
+            "id": "retriever_input",
+            "attrs": {
+              "dot": {
+                "r": 4,
+                "fill": "#0077FF",
+                "magnet": true
+              }
+            },
+            "group": "in"
+          },
+          {
+            "args": {
+              "x": 214,
+              "y": 308
+            },
+            "id": "retriever_output",
+            "group": "out"
+          }
+        ]
+      },
+      "zIndex": 11,
+      "data": {
+        "type": "displayData",
+        "variables": {
+          "retriever": [
+            {
+              "package": "core.rag.retriever.keyword_retriever",
+              "kwargs": {
+                "knowledge_base_name": [],
+                "desc_info": "",
+                "top_k": 8
+              },
+              "id": "ed648eba-ea45-4259-a996-392ab23398c9_6de",
+              "operator": "KeywordRetriever"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "position": {
+        "x": 830,
+        "y": 20
+      },
+      "size": {
+        "width": 1,
+        "height": 1
+      },
+      "view": "vue-shape-view",
+      "shape": "POST_RETRIEVER",
+      "id": "337b1e4a-0e8c-4ca0-b24d-a1834953f8f1",
+      "nodeId": "337b1e4a-0e8c-4ca0-b24d-a1834953f8f1",
+      "flowId": "beda0b6f262c881b3b79e364629a20a0",
+      "label": "POST-fe4",
+      "componentType": "POST_RETRIEVER",
+      "variables": {
+        "postretriever": [
+          {
+            "package": "core.rag.post_retriever.llm_reranker",
+            "kwargs": {
+              "top_n": 4,
+              "score": 0
+            },
+            "id": "337b1e4a-0e8c-4ca0-b24d-a1834953f8f1_fb9",
+            "operator": "LLMReranker"
+          }
+        ]
+      },
+      "inputVariables": [
+        {
+          "key": "retriever_output",
+          "sourceNode": "3c406c43-82dc-4e52-bc54-4c60f1ca4bc6",
+          "label": "RE-e19"
+        }
+      ],
+      "outputVariables": [
+        {
+          "key": "postretriever_output",
+          "targetNode": "4bb72f83-7af8-4200-9657-5cc44b027cf4"
+        }
+      ],
+      "parentNodes": "3c406c43-82dc-4e52-bc54-4c60f1ca4bc6",
+      "xPosition": 830,
+      "yPosition": 20,
+      "ports": {
+        "groups": {
+          "in": {
+            "markup": [
+              {
+                "selector": "circle",
+                "tagName": "circle"
+              },
+              {
+                "selector": "dot",
+                "tagName": "circle"
+              }
+            ],
+            "position": {
+              "args": {
+                "x": 0,
+                "y": 0
+              },
+              "name": "absolute"
+            },
+            "attrs": {
+              "dot": {
+                "r": 0,
+                "fill": "#0077FF",
+                "magnet": true
+              },
+              "circle": {
+                "strokeWidth": 1,
+                "r": 6,
+                "fill": "#E6F1FF",
+                "magnet": true,
+                "stroke": "#0077FF"
+              }
+            }
+          },
+          "out": {
+            "markup": [
+              {
+                "selector": "circle",
+                "tagName": "circle"
+              },
+              {
+                "selector": "dot",
+                "tagName": "circle"
+              }
+            ],
+            "position": {
+              "args": {
+                "x": 0,
+                "y": 0
+              },
+              "name": "absolute"
+            },
+            "attrs": {
+              "dot": {
+                "r": 0,
+                "fill": "#0077FF",
+                "magnet": true
+              },
+              "circle": {
+                "strokeWidth": 1,
+                "r": 6,
+                "fill": "#E6F1FF",
+                "magnet": true,
+                "stroke": "#0077FF"
+              }
+            }
+          }
+        },
+        "items": [
+          {
+            "args": {
+              "x": 28,
+              "y": 217
+            },
+            "id": "postretriever_input",
+            "attrs": {
+              "dot": {
+                "r": 4,
+                "fill": "#0077FF",
+                "magnet": true
+              }
+            },
+            "group": "in"
+          },
+          {
+            "args": {
+              "x": 214,
+              "y": 308
+            },
+            "id": "postretriever_output",
+            "group": "out"
+          }
+        ]
+      },
+      "zIndex": 11,
+      "data": {
+        "type": "displayData",
+        "variables": {
+          "postretriever": [
+            {
+              "package": "core.rag.post_retriever.llm_reranker",
+              "kwargs": {
+                "top_n": 4,
+                "score": 0
+              },
+              "id": "337b1e4a-0e8c-4ca0-b24d-a1834953f8f1_fb9",
+              "operator": "LLMReranker"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "position": {
+        "x": 1160,
+        "y": 420
+      },
+      "size": {
+        "width": 1,
+        "height": 1
+      },
+      "view": "vue-shape-view",
+      "shape": "RESPONSE_SYNTHESIZER",
+      "id": "91fd0b7d-1966-4e24-a027-9027333f1cad",
+      "nodeId": "91fd0b7d-1966-4e24-a027-9027333f1cad",
+      "flowId": "beda0b6f262c881b3b79e364629a20a0",
+      "label": "SYN-0c7",
+      "componentType": "RESPONSE_SYNTHESIZER",
+      "variables": {
+        "responsesynthesizer": [
+          {
+            "package": "core.rag.response_synthesizer.simple_summarizer",
+            "kwargs": {
+              "generator-config": [
+                {
+                  "knowledge_base_name": [],
+                  "top_k": 4,
+                  "llm": "",
+                  "prompt": "你是一个智能问答助手，擅长结合检索到的上下文与自身知识，为用户提供准确、简洁、可靠的回答。请严格遵循以下原则处理每个问题：\n\n1. **上下文完整且相关**\n   若检索到的信息直接、充分地回答了用户问题，请基于内容给出清晰、精炼的答案，无需标注信息来源，避免冗余表述（如“根据上下文”）。\n\n2. **上下文部分相关或信息不足**\n   若上下文提供部分线索但不足以完整作答，而你具备补充性知识，请自然融合两者，形成完整、连贯的回答；若上下文过时、片面或误导，且你确信自身知识更准确，请果断以权威信息为准，无需提及上下文。\n\n3. **上下文完全无关**\n   若检索内容与问题在主题、实体、时间或领域上无实质关联，请完全忽略上下文，按以下标准响应：\n   - **能明确回答**：直接提供简洁、有依据的答案；\n   - **问题模糊或歧义**：主动提出1–2个具体问题，帮助用户澄清需求；\n   - **超出能力范围**：礼貌致歉，说明无法回答；如可提供相关背景或合理推测，请明确标注“可能”“推测”等不确定性，并鼓励用户补充信息。\n\n始终以用户需求为出发点，语言自然、专业、友好，避免使用技术术语（如RAG、检索增强等），确保每一条回答都像由一位经验丰富、值得信赖的专家亲口说出。\n\n**用户提问**：{query_str}\n**相关上下文**：{context_str}",
+                  "temperature": 0.01,
+                  "no_context_prompt": "你是一个智能问答助手，任务是根据自身知识准确、简洁、高效地回应用户提问。请严格遵循以下原则进行回答：\n\n1. **可准确回答时**：若问题属于通识领域（如科学、历史、文化、常识等），且你确信掌握可靠、完整的知识，请直接提供清晰、简洁、有依据的答案，避免冗余信息。\n\n2. **问题模糊或有歧义时**：若用户提问表述不清、信息不全或存在多种理解可能，请主动提出1–2个具体、有针对性的澄清问题，引导用户补充关键细节，以便更精准地满足其需求。\n\n3. **超出知识范围时**：若问题涉及你无法确认或不具备可靠信息的专业、前沿、私密或冷门领域，请先礼貌致歉，说明无法提供确切答案；若能提供部分相关信息或合理推测，可简要说明并邀请用户确认或补充背景。\n\n用户提问：{query_str}"
+                }
+              ]
+            },
+            "id": "91fd0b7d-1966-4e24-a027-9027333f1cad_db9",
+            "operator": "RagSimpleSummarizer"
+          }
+        ]
+      },
+      "inputVariables": [
+        {
+          "key": "postretriever_output",
+          "sourceNode": "94dc50a0-3632-4164-85ec-002ec1091506",
+          "label": "POST-4ff"
+        }
+      ],
+      "outputVariables": [
+        {
+          "key": "responsesynthesizer_output",
+          "targetNode": "42d14237-ee3c-492b-8621-1798b28d4526"
+        }
+      ],
+      "parentNodes": "94dc50a0-3632-4164-85ec-002ec1091506",
+      "xPosition": 1160,
+      "yPosition": 420,
+      "ports": {
+        "groups": {
+          "in": {
+            "markup": [
+              {
+                "selector": "circle",
+                "tagName": "circle"
+              },
+              {
+                "selector": "dot",
+                "tagName": "circle"
+              }
+            ],
+            "position": {
+              "args": {
+                "x": 0,
+                "y": 0
+              },
+              "name": "absolute"
+            },
+            "attrs": {
+              "dot": {
+                "r": 0,
+                "fill": "#0077FF",
+                "magnet": true
+              },
+              "circle": {
+                "strokeWidth": 1,
+                "r": 6,
+                "fill": "#E6F1FF",
+                "magnet": true,
+                "stroke": "#0077FF"
+              }
+            }
+          },
+          "out": {
+            "markup": [
+              {
+                "selector": "circle",
+                "tagName": "circle"
+              },
+              {
+                "selector": "dot",
+                "tagName": "circle"
+              }
+            ],
+            "position": {
+              "args": {
+                "x": 0,
+                "y": 0
+              },
+              "name": "absolute"
+            },
+            "attrs": {
+              "dot": {
+                "r": 0,
+                "fill": "#0077FF",
+                "magnet": true
+              },
+              "circle": {
+                "strokeWidth": 1,
+                "r": 6,
+                "fill": "#E6F1FF",
+                "magnet": true,
+                "stroke": "#0077FF"
+              }
+            }
+          }
+        },
+        "items": [
+          {
+            "args": {
+              "x": 28,
+              "y": 217
+            },
+            "id": "responsesynthesizer_input",
+            "attrs": {
+              "dot": {
+                "r": 4,
+                "fill": "#0077FF",
+                "magnet": true
+              }
+            },
+            "group": "in"
+          },
+          {
+            "args": {
+              "x": 214,
+              "y": 308
+            },
+            "id": "responsesynthesizer_output",
+            "group": "out"
+          }
+        ]
+      },
+      "zIndex": 11,
+      "data": {
+        "type": "displayData",
+        "variables": {
+          "responsesynthesizer": [
+            {
+              "package": "core.rag.response_synthesizer.simple_summarizer",
+              "kwargs": {
+                "generator-config": [
+                  {
+                    "knowledge_base_name": [],
+                    "top_k": 4,
+                    "llm": "",
+                    "prompt": "你是一个智能问答助手，擅长结合检索到的上下文与自身知识，为用户提供准确、简洁、可靠的回答。请严格遵循以下原则处理每个问题：\n\n1. **上下文完整且相关**\n   若检索到的信息直接、充分地回答了用户问题，请基于内容给出清晰、精炼的答案，无需标注信息来源，避免冗余表述（如“根据上下文”）。\n\n2. **上下文部分相关或信息不足**\n   若上下文提供部分线索但不足以完整作答，而你具备补充性知识，请自然融合两者，形成完整、连贯的回答；若上下文过时、片面或误导，且你确信自身知识更准确，请果断以权威信息为准，无需提及上下文。\n\n3. **上下文完全无关**\n   若检索内容与问题在主题、实体、时间或领域上无实质关联，请完全忽略上下文，按以下标准响应：\n   - **能明确回答**：直接提供简洁、有依据的答案；\n   - **问题模糊或歧义**：主动提出1–2个具体问题，帮助用户澄清需求；\n   - **超出能力范围**：礼貌致歉，说明无法回答；如可提供相关背景或合理推测，请明确标注“可能”“推测”等不确定性，并鼓励用户补充信息。\n\n始终以用户需求为出发点，语言自然、专业、友好，避免使用技术术语（如RAG、检索增强等），确保每一条回答都像由一位经验丰富、值得信赖的专家亲口说出。\n\n**用户提问**：{query_str}\n**相关上下文**：{context_str}",
+                    "temperature": 0.01,
+                    "no_context_prompt": "你是一个智能问答助手，任务是根据自身知识准确、简洁、高效地回应用户提问。请严格遵循以下原则进行回答：\n\n1. **可准确回答时**：若问题属于通识领域（如科学、历史、文化、常识等），且你确信掌握可靠、完整的知识，请直接提供清晰、简洁、有依据的答案，避免冗余信息。\n\n2. **问题模糊或有歧义时**：若用户提问表述不清、信息不全或存在多种理解可能，请主动提出1–2个具体、有针对性的澄清问题，引导用户补充关键细节，以便更精准地满足其需求。\n\n3. **超出知识范围时**：若问题涉及你无法确认或不具备可靠信息的专业、前沿、私密或冷门领域，请先礼貌致歉，说明无法提供确切答案；若能提供部分相关信息或合理推测，可简要说明并邀请用户确认或补充背景。\n\n用户提问：{query_str}"
+                  }
+                ]
+              },
+              "id": "91fd0b7d-1966-4e24-a027-9027333f1cad_db9",
+              "operator": "RagSimpleSummarizer"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "position": {
+        "x": 120,
+        "y": 280
+      },
+      "size": {
+        "width": 1,
+        "height": 1
+      },
+      "view": "vue-shape-view",
+      "shape": "PRE_RETRIEVER",
+      "id": "2c76c02e-c8fd-422b-8078-58c8933f8afc",
+      "nodeId": "2c76c02e-c8fd-422b-8078-58c8933f8afc",
+      "flowId": "beda0b6f262c881b3b79e364629a20a0",
+      "label": "PRE-8a4",
+      "componentType": "PRE_RETRIEVER",
+      "variables": {
+        "preretriever": [
+          {
+            "package": "core.rag.pre_retriever.query_transform.query_rewrite",
+            "kwargs": {
+              "llm": "",
+              "prompt": "你是一个问题补全和重构的专家，我会告诉你前几轮的问题和本轮的问题，请根据设定的步骤完成以下问题补全和重构的任务。\n    ###\n    问题补全和重构的步骤如下，请严格按照顺序执行：\n    1.当本轮问题是一个语法结构完整的问题时，则直接执行步骤3。\n    2.当本轮问题不是一个语法结构完整的问题时，需要判断本轮问题和前几轮问题有没有直接关系，若有则根据前几轮问题的语义对本轮问题补全，若没有关系，则跳过当前步骤。\n    3.对本轮问题进行重构，重构时不需要结合前几轮问题的语义，用简短易懂的语法结构返回\n    ###\n    前几轮问题:\n    ###\n    {last_question}\n    ###\n    本轮问题:\n    ###￥\n    {current_question}\n    ###\n    返回本轮问题作为答案，其格式为JSON对象，例如：{{\"question\": \"xxxx\"}}",
+              "multi_chat_limit": 8
+            },
+            "id": "2c76c02e-c8fd-422b-8078-58c8933f8afc_d0a",
+            "operator": "LLMQueryRewriter"
+          },
+          {
+            "package": "core.rag.pre_retriever.query_selector.query_routing",
+            "kwargs": {
+              "llm": "",
+              "prompt": "以下是一些选择。它们以编号列表的形式提供（从1到{num_choices}），其中列表中的每一项对应一个摘要。\n---------------------\n{context_list}\n---------------------\n只使用上述选择而不使用先前的知识，返回与问题“{query_str}”最相关的选择。"
+            },
+            "id": "2c76c02e-c8fd-422b-8078-58c8933f8afc_887",
+            "operator": "LLMSemanticRouting"
+          }
+        ]
+      },
+      "inputVariables": [
+        {
+          "key": "text",
+          "sourceNode": "fbf5a406-374a-4ae4-ae22-a8cb5eceda25",
+          "label": "QUERY"
+        }
+      ],
+      "outputVariables": [
+        {
+          "key": "preretriever_output",
+          "targetNode": "3c406c43-82dc-4e52-bc54-4c60f1ca4bc6"
+        },
+        {
+          "key": "preretriever_output",
+          "targetNode": "ed648eba-ea45-4259-a996-392ab23398c9"
+        }
+      ],
+      "parentNodes": "fbf5a406-374a-4ae4-ae22-a8cb5eceda25",
+      "xPosition": 120,
+      "yPosition": 280,
+      "ports": {
+        "groups": {
+          "in": {
+            "markup": [
+              {
+                "selector": "circle",
+                "tagName": "circle"
+              },
+              {
+                "selector": "dot",
+                "tagName": "circle"
+              }
+            ],
+            "position": {
+              "args": {
+                "x": 0,
+                "y": 0
+              },
+              "name": "absolute"
+            },
+            "attrs": {
+              "dot": {
+                "r": 0,
+                "fill": "#0077FF",
+                "magnet": true
+              },
+              "circle": {
+                "strokeWidth": 1,
+                "r": 6,
+                "fill": "#E6F1FF",
+                "magnet": true,
+                "stroke": "#0077FF"
+              }
+            }
+          },
+          "out": {
+            "markup": [
+              {
+                "selector": "circle",
+                "tagName": "circle"
+              },
+              {
+                "selector": "dot",
+                "tagName": "circle"
+              }
+            ],
+            "position": {
+              "args": {
+                "x": 0,
+                "y": 0
+              },
+              "name": "absolute"
+            },
+            "attrs": {
+              "dot": {
+                "r": 0,
+                "fill": "#0077FF",
+                "magnet": true
+              },
+              "circle": {
+                "strokeWidth": 1,
+                "r": 6,
+                "fill": "#E6F1FF",
+                "magnet": true,
+                "stroke": "#0077FF"
+              }
+            }
+          }
+        },
+        "items": [
+          {
+            "args": {
+              "x": 28,
+              "y": 217
+            },
+            "id": "preretriever_input",
+            "attrs": {
+              "dot": {
+                "r": 4,
+                "fill": "#0077FF",
+                "magnet": true
+              }
+            },
+            "group": "in"
+          },
+          {
+            "args": {
+              "x": 214,
+              "y": 308
+            },
+            "id": "preretriever_output",
+            "group": "out"
+          }
+        ]
+      },
+      "zIndex": 11,
+      "data": {
+        "type": "displayData",
+        "variables": {
+          "preretriever": [
+            {
+              "package": "core.rag.pre_retriever.query_transform.query_rewrite",
+              "kwargs": {
+                "llm": "",
+                "prompt": "你是一个问题补全和重构的专家，我会告诉你前几轮的问题和本轮的问题，请根据设定的步骤完成以下问题补全和重构的任务。\n    ###\n    问题补全和重构的步骤如下，请严格按照顺序执行：\n    1.当本轮问题是一个语法结构完整的问题时，则直接执行步骤3。\n    2.当本轮问题不是一个语法结构完整的问题时，需要判断本轮问题和前几轮问题有没有直接关系，若有则根据前几轮问题的语义对本轮问题补全，若没有关系，则跳过当前步骤。\n    3.对本轮问题进行重构，重构时不需要结合前几轮问题的语义，用简短易懂的语法结构返回\n    ###\n    前几轮问题:\n    ###\n    {last_question}\n    ###\n    本轮问题:\n    ###￥\n    {current_question}\n    ###\n    返回本轮问题作为答案，其格式为JSON对象，例如：{{\"question\": \"xxxx\"}}",
+                "multi_chat_limit": 8
+              },
+              "id": "2c76c02e-c8fd-422b-8078-58c8933f8afc_d0a",
+              "operator": "LLMQueryRewriter"
+            },
+            {
+              "package": "core.rag.pre_retriever.query_selector.query_routing",
+              "kwargs": {
+                "llm": "",
+                "prompt": "以下是一些选择。它们以编号列表的形式提供（从1到{num_choices}），其中列表中的每一项对应一个摘要。\n---------------------\n{context_list}\n---------------------\n只使用上述选择而不使用先前的知识，返回与问题“{query_str}”最相关的选择。"
+              },
+              "id": "2c76c02e-c8fd-422b-8078-58c8933f8afc_887",
+              "operator": "LLMSemanticRouting"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "position": {
+        "x": 500,
+        "y": 20
+      },
+      "size": {
+        "width": 1,
+        "height": 1
+      },
+      "view": "vue-shape-view",
+      "shape": "RETRIEVER",
+      "id": "3c406c43-82dc-4e52-bc54-4c60f1ca4bc6",
+      "nodeId": "3c406c43-82dc-4e52-bc54-4c60f1ca4bc6",
+      "flowId": "beda0b6f262c881b3b79e364629a20a0",
+      "label": "RE-e19",
+      "componentType": "RETRIEVER",
+      "variables": {
+        "retriever": [
+          {
+            "package": "core.rag.retriever.vector_retriever",
+            "kwargs": {
+              "desc_info": "",
+              "knowledge_info_list": [
+                {
+                  "score": 0.3,
+                  "knowledge_base_name": [],
+                  "top_k": 8,
+                  "priority": 10
+                }
+              ],
+              "embedding": "",
+              "strategy": 0
+            },
+            "id": "3c406c43-82dc-4e52-bc54-4c60f1ca4bc6_c3f",
+            "operator": "VectorRetriever"
+          }
+        ]
+      },
+      "inputVariables": [
+        {
+          "key": "preretriever_output",
+          "sourceNode": "2c76c02e-c8fd-422b-8078-58c8933f8afc",
+          "label": "PRE-8a4"
+        }
+      ],
+      "outputVariables": [
+        {
+          "key": "retriever_output",
+          "targetNode": "337b1e4a-0e8c-4ca0-b24d-a1834953f8f1"
+        }
+      ],
+      "parentNodes": "2c76c02e-c8fd-422b-8078-58c8933f8afc",
+      "xPosition": 500,
+      "yPosition": 20,
+      "ports": {
+        "groups": {
+          "in": {
+            "markup": [
+              {
+                "selector": "circle",
+                "tagName": "circle"
+              },
+              {
+                "selector": "dot",
+                "tagName": "circle"
+              }
+            ],
+            "position": {
+              "args": {
+                "x": 0,
+                "y": 0
+              },
+              "name": "absolute"
+            },
+            "attrs": {
+              "dot": {
+                "r": 0,
+                "fill": "#0077FF",
+                "magnet": true
+              },
+              "circle": {
+                "strokeWidth": 1,
+                "r": 6,
+                "fill": "#E6F1FF",
+                "magnet": true,
+                "stroke": "#0077FF"
+              }
+            }
+          },
+          "out": {
+            "markup": [
+              {
+                "selector": "circle",
+                "tagName": "circle"
+              },
+              {
+                "selector": "dot",
+                "tagName": "circle"
+              }
+            ],
+            "position": {
+              "args": {
+                "x": 0,
+                "y": 0
+              },
+              "name": "absolute"
+            },
+            "attrs": {
+              "dot": {
+                "r": 0,
+                "fill": "#0077FF",
+                "magnet": true
+              },
+              "circle": {
+                "strokeWidth": 1,
+                "r": 6,
+                "fill": "#E6F1FF",
+                "magnet": true,
+                "stroke": "#0077FF"
+              }
+            }
+          }
+        },
+        "items": [
+          {
+            "args": {
+              "x": 28,
+              "y": 217
+            },
+            "id": "retriever_input",
+            "attrs": {
+              "dot": {
+                "r": 4,
+                "fill": "#0077FF",
+                "magnet": true
+              }
+            },
+            "group": "in"
+          },
+          {
+            "args": {
+              "x": 214,
+              "y": 308
+            },
+            "id": "retriever_output",
+            "group": "out"
+          }
+        ]
+      },
+      "zIndex": 11,
+      "data": {
+        "type": "displayData",
+        "variables": {
+          "retriever": [
+            {
+              "package": "core.rag.retriever.vector_retriever",
+              "kwargs": {
+                "desc_info": "",
+                "knowledge_info_list": [
+                  {
+                    "score": 0.3,
+                    "knowledge_base_name": [],
+                    "top_k": 8,
+                    "priority": 10
+                  }
+                ],
+                "embedding": "",
+                "strategy": 0
+              },
+              "id": "3c406c43-82dc-4e52-bc54-4c60f1ca4bc6_c3f",
+              "operator": "VectorRetriever"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "otherNodeConfigList": [
+    {
+      "componentType": "QUERY_ENGINE",
+      "inputVariables": [],
+      "variables": {
+        "queryengine": {
+          "id": 0,
+          "package": "core.rag.query_engine.conditional_query_engine",
+          "operator": "ConditionalQueryEngine",
+          "desc": "",
+          "kwargs": {}
+        }
+      }
+    },
+    {
+      "componentType": "EDGES",
+      "inputVariables": [],
+      "variables": {
+        "edges": [
+          {
+            "source": "fbf5a406-374a-4ae4-ae22-a8cb5eceda25",
+            "target": "2c76c02e-c8fd-422b-8078-58c8933f8afc"
+          },
+          {
+            "source": "94dc50a0-3632-4164-85ec-002ec1091506",
+            "target": "91fd0b7d-1966-4e24-a027-9027333f1cad"
+          },
+          {
+            "source": "4bb72f83-7af8-4200-9657-5cc44b027cf4",
+            "target": "42d14237-ee3c-492b-8621-1798b28d4526"
+          },
+          {
+            "source": "ed648eba-ea45-4259-a996-392ab23398c9",
+            "target": "94dc50a0-3632-4164-85ec-002ec1091506"
+          },
+          {
+            "source": "337b1e4a-0e8c-4ca0-b24d-a1834953f8f1",
+            "target": "4bb72f83-7af8-4200-9657-5cc44b027cf4"
+          },
+          {
+            "source": "91fd0b7d-1966-4e24-a027-9027333f1cad",
+            "target": "42d14237-ee3c-492b-8621-1798b28d4526"
+          },
+          {
+            "source": "2c76c02e-c8fd-422b-8078-58c8933f8afc",
+            "target": "3c406c43-82dc-4e52-bc54-4c60f1ca4bc6"
+          },
+          {
+            "source": "2c76c02e-c8fd-422b-8078-58c8933f8afc",
+            "target": "ed648eba-ea45-4259-a996-392ab23398c9"
+          },
+          {
+            "source": "3c406c43-82dc-4e52-bc54-4c60f1ca4bc6",
+            "target": "337b1e4a-0e8c-4ca0-b24d-a1834953f8f1"
+          }
+        ]
+      }
+    }
+  ]
+}
