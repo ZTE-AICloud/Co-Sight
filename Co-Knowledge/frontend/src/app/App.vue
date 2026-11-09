@@ -1,5 +1,7 @@
 <template>
   <div class="saas">
+    <!-- 懒加载路由下载期间顶部进度条：否则点击后整页静默，像卡住 -->
+    <RouteProgressBar />
     <router-view />
   </div>
   <DeleteConfirmDialog v-model="deletion.open" v-bind="deletion.options" @confirm="settleDeletion(true)" />
@@ -8,6 +10,7 @@
 <script setup lang="ts">
 import { getCurrentInstance, watch } from 'vue';
 import DeleteConfirmDialog from '@/shared/ui/DeleteConfirmDialog.vue'
+import RouteProgressBar from '@/shared/ui/RouteProgressBar.vue'
 import { deletion, settleDeletion } from '@/shared/composables/deletion'
 const { proxy } = getCurrentInstance() as any;
 

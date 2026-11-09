@@ -42,6 +42,7 @@ import { initializeTheme } from '@/shared/lib/theme'
 import { createRouter, createWebHashHistory, createWebHistory } from 'vue-router'
 import { initSession } from '@/features/auth/session'
 import { installAuthGuard } from '@/features/auth/guard'
+import { installRouteProgress } from '@/shared/lib/route-progress'
 
 
 // const originalPush = VueRouter.prototype.push
@@ -73,6 +74,10 @@ router.beforeEach((to, from, next) => {
   document.documentElement.setAttribute('lang', isGlobalZh ? 'zh-CN' : 'en-US');
   next();
 });
+
+// 顶部加载进度条。注册在 auth 守卫**之前**：守卫里的 `/auth/status` 与随后的
+// 懒加载 chunk 都算这次导航，用户从点击到新页面出现全程有反馈。
+installRouteProgress(router)
 
 // 本地账号会话：注册全局 401 处理器 + 路由守卫。
 // 顺序在 title/lang 之后：守卫可能重定向，重定向后的新导航会再跑一遍 title 逻辑。
@@ -128,5 +133,26 @@ app.config.globalProperties.$globalZh = locale.substring(0, 2) === 'zh'
 
 // 父应用传递的容器,必须在props上获取
 const container = document.querySelector('#app') || '#app'
-app.mount(container)
+
+// 等首个路由就绪再挂载：`public/index.html` 里的启动占位一直显示到登录页 chunk
+// 和 `/auth/status` 都回来为止，避免「先闪一下空白再出登录页」。
+//
+// 两条兜底，缺一不可：
+//   - 导航失败（chunk 404、守卫抛错）时 `isReady()` 是 reject，必须吞掉再挂载；
+//   - `isReady()` 也可能**永远不返回**（后端不可达且请求不超时），所以再加一道
+//     硬超时，到点照常挂载——宁可回到「空白 + 守卫错误页」的老行为，也不能让
+//     启动占位一直转下去。
+const MOUNT_TIMEOUT = 15000
+let mounted = false
+function mountApp () {
+  if (mounted) {
+    return
+  }
+  mounted = true
+  app.mount(container)
+}
+Promise.race([
+  router.isReady().catch(() => {}),
+  new Promise(resolve => setTimeout(resolve, MOUNT_TIMEOUT))
+]).then(mountApp)
 

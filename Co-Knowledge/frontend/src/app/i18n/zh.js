@@ -58,6 +58,8 @@ export default {
     formValidateFailed: '表单验证失败',
     placeHolder: '请输入内容',
     noData: '暂无数据',
+    // 顶部路由进度条的无障碍名称（视觉上只有一条 2px 的条）
+    routeLoading: '页面加载中',
     justNow: '刚刚',
     minutesAgo: '{count} 分钟前',
     hoursAgo: '{count} 小时前',

@@ -57,6 +57,8 @@ export default {
     formValidateFailed: 'Form validation failed',
     placeHolder: 'Please enter ',
     noData: 'No data',
+    // Accessible name for the top route progress bar (visually a 2px line)
+    routeLoading: 'Loading page',
     justNow: 'just now',
     minutesAgo: '{count} min ago',
     hoursAgo: '{count} h ago',

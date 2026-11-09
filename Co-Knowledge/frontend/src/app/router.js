@@ -15,11 +15,15 @@ const KnowledgeDetail = () => import(/* webpackChunkName: "module.kb" */'@/pages
 
 // 知识图谱（独立页面，从「图谱知识库」入口进入）
 // 只保留后端确有对应接口的页面：/graph（列表）、/graph/detail/:id、/graph/edit/:id。
-const KnowledgeGraphPage = () => import(/* webpackChunkName: "module.kb" */'@/pages/graph/GraphListPage.vue');
-const CreateKnowledgeGraph = () => import(/* webpackChunkName: "module.kb" */'@/features/graph/CreateKnowledgeGraph.vue');
-const KnowledgeGraphDetail = () => import(/* webpackChunkName: "module.kb" */'@/pages/graph/GraphDetailPage.vue');
-const EditKnowledgeGraph = () => import(/* webpackChunkName: "module.kb" */'@/features/graph/EditKnowledgeGraph.vue');
-const GraphTemplateDesigner = () => import(/* webpackChunkName: "module.kb" */'@/features/graph/GraphTemplateDesigner.vue');
+//
+// 单独的 chunk 名（而不是并入 module.kb）：图谱画布连带 vis-network（min 约
+// 400KB）和 X6，而 /knowledge 列表页一个都用不到。合在一起时登录后进文档知识库
+// 要先下完整个图谱画布代码，窄带链路上就是「点了登录没反应」的主要来源。
+const KnowledgeGraphPage = () => import(/* webpackChunkName: "module.graph" */'@/pages/graph/GraphListPage.vue');
+const CreateKnowledgeGraph = () => import(/* webpackChunkName: "module.graph" */'@/features/graph/CreateKnowledgeGraph.vue');
+const KnowledgeGraphDetail = () => import(/* webpackChunkName: "module.graph" */'@/pages/graph/GraphDetailPage.vue');
+const EditKnowledgeGraph = () => import(/* webpackChunkName: "module.graph" */'@/features/graph/EditKnowledgeGraph.vue');
+const GraphTemplateDesigner = () => import(/* webpackChunkName: "module.graph" */'@/features/graph/GraphTemplateDesigner.vue');
 
 // 算子管理（/operators）
 const ExtendedManagementIndex = () => import(/* webpackChunkName: "module.extendedManagement" */'@/pages/operators/OperatorListPage.vue');
