@@ -31,6 +31,6 @@ zip -j ../../../backend/src/operators/templates/professional-graph-extract.zip \
   config.json graph_extract.py
 ```
 
-> 算子依赖 Python 标准库与 `operator_api.*`。ABI v2 的公开导入面是
+> 算子依赖 Python 标准库与 `operator_api.*`。算子插件接口的公开导入面是
 > `operator_api`；使用 `client.*` 等旧顶层包的算子会在导入阶段收到
 > `operator_plugin_incompatible`，按当前模板重新导出即可。

@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="620" viewBox="0 0 860 620" font-family="'Segoe UI','PingFang SC','Microsoft YaHei','Noto Sans CJK SC',system-ui,sans-serif">
+  <title>Q&amp;A runtime: rewrite → retrieve → rerank → generate</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#f3f5fb"/>
+    </linearGradient>
+  </defs>
+  <rect width="860" height="620" fill="url(#bg)"/>
+
+  <text x="430" y="40" text-anchor="middle" font-size="22" font-weight="700" fill="#0f172a">Q&amp;A runtime: rewrite → retrieve → rerank → generate</text>
+  <text x="430" y="63" text-anchor="middle" font-size="12.5" fill="#64748b">SSE streaming · per-answer evidence · observable stage timings</text>
+  <rect x="400" y="73" width="60" height="3" rx="1.5" fill="#4f46e5"/>
+
+  <!-- 1 ask & rewrite -->
+  <rect x="40" y="92" width="560" height="58" rx="14" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.4"/>
+  <circle cx="66" cy="121" r="13" fill="#eef2ff"/>
+  <text x="66" y="125.5" text-anchor="middle" font-size="11" font-weight="700" fill="#4f46e5">1</text>
+  <text x="88" y="117" font-size="13" font-weight="700" fill="#0f172a">Ask &amp; rewrite</text>
+  <text x="88" y="134" font-size="10.5" fill="#64748b">multi-turn session · query rewriting (in-process context)</text>
+
+  <line x1="320" y1="150" x2="320" y2="168" stroke="#4f46e5" stroke-width="1.6"/>
+  <path d="M315 167 L320 176 L325 167 Z" fill="#4f46e5"/>
+
+  <!-- 2 dual retrieval -->
+  <rect x="40" y="176" width="560" height="104" rx="14" fill="#ffffff" stroke="#c7d2fe" stroke-width="1.5"/>
+  <circle cx="66" cy="205" r="13" fill="#4f46e5"/>
+  <text x="66" y="209.5" text-anchor="middle" font-size="11" font-weight="700" fill="#ffffff">2</text>
+  <text x="88" y="201" font-size="13" font-weight="700" fill="#4338ca">Dual retrieval</text>
+  <text x="88" y="218" font-size="10.5" fill="#64748b">multi-KB grouping and priority · first high-priority hit wins</text>
+  <rect x="64" y="232" width="240" height="32" rx="9" fill="#eef2ff" stroke="#c7d2fe"/>
+  <text x="78" y="252" font-size="10.5" fill="#475569"><tspan font-weight="700" fill="#4f46e5">Vector search</tspan>　type=0 · pgvector</text>
+  <rect x="316" y="232" width="240" height="32" rx="9" fill="#f0fdfa" stroke="#99f6e4"/>
+  <text x="330" y="252" font-size="10.5" fill="#475569"><tspan font-weight="700" fill="#0d9488">Keyword search</tspan>　type=1 · OpenSearch + IK</text>
+
+  <line x1="320" y1="280" x2="320" y2="298" stroke="#4f46e5" stroke-width="1.6"/>
+  <path d="M315 297 L320 306 L325 297 Z" fill="#4f46e5"/>
+
+  <!-- 3 rerank -->
+  <rect x="40" y="306" width="560" height="58" rx="14" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.4"/>
+  <circle cx="66" cy="335" r="13" fill="#eef2ff"/>
+  <text x="66" y="339.5" text-anchor="middle" font-size="11" font-weight="700" fill="#4f46e5">3</text>
+  <text x="88" y="331" font-size="13" font-weight="700" fill="#0f172a">Rerank (optional)</text>
+  <text x="88" y="348" font-size="10.5" fill="#64748b">cross-encoder · skipped when not configured</text>
+
+  <line x1="320" y1="364" x2="320" y2="386" stroke="#4f46e5" stroke-width="1.6"/>
+  <path d="M315 385 L320 394 L325 385 Z" fill="#4f46e5"/>
+
+  <!-- 4 generate -->
+  <rect x="40" y="394" width="560" height="58" rx="14" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.4"/>
+  <circle cx="66" cy="423" r="13" fill="#eef2ff"/>
+  <text x="66" y="427.5" text-anchor="middle" font-size="11" font-weight="700" fill="#4f46e5">4</text>
+  <text x="88" y="419" font-size="13" font-weight="700" fill="#0f172a">Generate</text>
+  <text x="88" y="436" font-size="10.5" fill="#64748b">OpenAI-compatible chat · 17 thinking presets · runs the published DAG</text>
+
+  <line x1="320" y1="452" x2="320" y2="474" stroke="#4f46e5" stroke-width="1.6"/>
+  <path d="M315 473 L320 482 L325 473 Z" fill="#4f46e5"/>
+
+  <!-- 5 answer -->
+  <rect x="40" y="482" width="560" height="84" rx="14" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.4"/>
+  <circle cx="66" cy="511" r="13" fill="#059669"/>
+  <text x="66" y="515.5" text-anchor="middle" font-size="11" font-weight="700" fill="#ffffff">5</text>
+  <text x="88" y="507" font-size="13" font-weight="700" fill="#065f46">Answer · grounded</text>
+  <text x="88" y="529" font-size="10.5" fill="#475569">SSE streaming · <tspan font-weight="700" fill="#047857">[S1]</tspan> citations · evidence: chunks / files / scores / rewritten query</text>
+  <text x="88" y="549" font-size="10.5" fill="#475569">Stage timings in the response · metrics persisted to chat_query_trace (P50 / P95 / P99)</text>
+
+  <!-- runtime properties rail -->
+  <rect x="628" y="92" width="192" height="474" rx="14" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1.3"/>
+  <text x="650" y="120" font-size="12.5" font-weight="700" fill="#0f172a">Runtime properties</text>
+
+  <g>
+    <circle cx="650" cy="148" r="3" fill="#4f46e5"/>
+    <text x="662" y="152" font-size="11.5" font-weight="700" fill="#334155">SSE streaming</text>
+    <text x="662" y="168" font-size="9.5" fill="#64748b">named events, streamed</text>
+
+    <circle cx="650" cy="196" r="3" fill="#0d9488"/>
+    <text x="662" y="200" font-size="11.5" font-weight="700" fill="#334155">Answer evidence</text>
+    <text x="662" y="216" font-size="9.5" fill="#64748b">chunks · files · scores</text>
+
+    <circle cx="650" cy="244" r="3" fill="#d97706"/>
+    <text x="662" y="248" font-size="11.5" font-weight="700" fill="#334155">Stage timings</text>
+    <text x="662" y="264" font-size="9.5" fill="#64748b">rewrite / retrieve / rerank</text>
+
+    <circle cx="650" cy="292" r="3" fill="#4f46e5"/>
+    <text x="662" y="296" font-size="11.5" font-weight="700" fill="#334155">Query metrics</text>
+    <text x="662" y="312" font-size="9.5" fill="#64748b">P50 / P95 / P99</text>
+
+    <circle cx="650" cy="340" r="3" fill="#0d9488"/>
+    <text x="662" y="344" font-size="11.5" font-weight="700" fill="#334155">Draft / publish</text>
+    <text x="662" y="360" font-size="9.5" fill="#64748b">published snapshots only</text>
+
+    <circle cx="650" cy="388" r="3" fill="#d97706"/>
+    <text x="662" y="392" font-size="11.5" font-weight="700" fill="#334155">Multi-turn sessions</text>
+    <text x="662" y="408" font-size="9.5" fill="#64748b">context and workflow memory</text>
+
+    <circle cx="650" cy="436" r="3" fill="#4f46e5"/>
+    <text x="662" y="440" font-size="11.5" font-weight="700" fill="#334155">Orchestration</text>
+    <text x="662" y="456" font-size="9.5" fill="#64748b">sequential / blended / graph</text>
+
+    <circle cx="650" cy="484" r="3" fill="#0d9488"/>
+    <text x="662" y="488" font-size="11.5" font-weight="700" fill="#334155">Agent access</text>
+    <text x="662" y="504" font-size="9.5" fill="#64748b">REST · MCP · API keys</text>
+
+    <circle cx="650" cy="532" r="3" fill="#d97706"/>
+    <text x="662" y="536" font-size="11.5" font-weight="700" fill="#334155">Auth modes</text>
+    <text x="662" y="552" font-size="9.5" fill="#64748b">local / gateway / none</text>
+  </g>
+
+  <rect x="100" y="584" width="660" height="28" rx="14" fill="#0f172a"/>
+  <text x="430" y="603" text-anchor="middle" font-size="11.5" font-weight="700" fill="#ffffff">Canvas DAG · sequential / blended / conditional templates · draft / publish separation</text>
+</svg>

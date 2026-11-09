@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="580" viewBox="0 0 860 580" font-family="'PingFang SC','Microsoft YaHei','Noto Sans CJK SC','Segoe UI',system-ui,sans-serif">
+  <title>文档入库：解析 → 切片 → 双索引</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#f3f5fb"/>
+    </linearGradient>
+  </defs>
+  <rect width="860" height="580" fill="url(#bg)"/>
+
+  <text x="430" y="40" text-anchor="middle" font-size="22" font-weight="700" fill="#0f172a">文档入库：解析 → 切片 → 双索引</text>
+  <text x="430" y="63" text-anchor="middle" font-size="12.5" fill="#64748b">每个切片同时写入向量与全文索引 · 关系型知识由 LLM 抽取进图谱</text>
+  <rect x="400" y="73" width="60" height="3" rx="1.5" fill="#4f46e5"/>
+
+  <!-- stage cards -->
+  <g>
+    <rect x="40" y="92" width="240" height="96" rx="14" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.4"/>
+    <circle cx="66" cy="118" r="13" fill="#eef2ff"/>
+    <text x="66" y="122.5" text-anchor="middle" font-size="11" font-weight="700" fill="#4f46e5">1</text>
+    <text x="88" y="122" font-size="13" font-weight="700" fill="#0f172a">文档输入</text>
+    <text x="88" y="146" font-size="10" fill="#475569">md · docx · xlsx · pdf</text>
+    <text x="88" y="163" font-size="10" fill="#475569">pptx · html · txt · csv</text>
+    <text x="88" y="180" font-size="9.5" fill="#94a3b8">多格式统一解析</text>
+
+    <rect x="310" y="92" width="240" height="96" rx="14" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.4"/>
+    <circle cx="336" cy="118" r="13" fill="#eef2ff"/>
+    <text x="336" y="122.5" text-anchor="middle" font-size="11" font-weight="700" fill="#4f46e5">2</text>
+    <text x="358" y="122" font-size="13" font-weight="700" fill="#0f172a">格式解析</text>
+    <text x="358" y="146" font-size="10" fill="#475569">纯格式解析库</text>
+    <text x="358" y="163" font-size="10" fill="#475569">任务队列 · 失败重试</text>
+    <text x="358" y="180" font-size="9.5" fill="#94a3b8">自定义算子可接管</text>
+
+    <rect x="580" y="92" width="240" height="96" rx="14" fill="#ffffff" stroke="#c7d2fe" stroke-width="1.5"/>
+    <circle cx="606" cy="118" r="13" fill="#4f46e5"/>
+    <text x="606" y="122.5" text-anchor="middle" font-size="11" font-weight="700" fill="#ffffff">3</text>
+    <text x="628" y="122" font-size="13" font-weight="700" fill="#4338ca">切片</text>
+    <text x="628" y="146" font-size="10" fill="#475569">默认 512 字符 · 128 重叠</text>
+    <text x="628" y="163" font-size="10" fill="#475569">支持自定义切分算子</text>
+    <text x="628" y="180" font-size="9.5" fill="#94a3b8">切片同时进入双索引</text>
+  </g>
+
+  <line x1="280" y1="140" x2="302" y2="140" stroke="#4f46e5" stroke-width="1.6"/>
+  <path d="M301 135 L310 140 L301 145 Z" fill="#4f46e5"/>
+  <line x1="550" y1="140" x2="572" y2="140" stroke="#4f46e5" stroke-width="1.6"/>
+  <path d="M571 135 L580 140 L571 145 Z" fill="#4f46e5"/>
+
+  <!-- split into dual indexes -->
+  <path d="M700 188 V208 H285 V246" fill="none" stroke="#4f46e5" stroke-width="1.6"/>
+  <path d="M280 244 L285 253 L290 244 Z" fill="#4f46e5"/>
+  <path d="M700 188 V226 H575 V246" fill="none" stroke="#0d9488" stroke-width="1.6"/>
+  <path d="M570 244 L575 253 L580 244 Z" fill="#0d9488"/>
+
+  <!-- index cards -->
+  <rect x="150" y="252" width="270" height="92" rx="14" fill="#eef2ff" stroke="#c7d2fe" stroke-width="1.3"/>
+  <text x="172" y="280" font-size="13" font-weight="700" fill="#4338ca">向量索引</text>
+  <text x="172" y="298" font-size="10" fill="#4f46e5">pgvector 0.8.7</text>
+  <text x="172" y="318" font-size="10" fill="#475569">每库独立向量表 · type=0</text>
+
+  <rect x="440" y="252" width="270" height="92" rx="14" fill="#f0fdfa" stroke="#99f6e4" stroke-width="1.3"/>
+  <text x="462" y="280" font-size="13" font-weight="700" fill="#0f766e">全文索引</text>
+  <text x="462" y="298" font-size="10" fill="#0d9488">OpenSearch 2.19.6 + analysis-ik</text>
+  <text x="462" y="318" font-size="10" fill="#475569">中文分词 · type=1</text>
+
+  <!-- consistency -->
+  <rect x="250" y="364" width="360" height="30" rx="15" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.2"/>
+  <path d="M268 379l4 4 7-8" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="288" y="383" font-size="10.5" font-weight="700" fill="#047857">一致性核对：向量数 == 切片数 == 全文文档数</text>
+
+  <!-- graph branch -->
+  <line x1="60" y1="188" x2="60" y2="424" stroke="#d97706" stroke-width="1.6" stroke-dasharray="5 4"/>
+  <path d="M55 421 L60 430 L65 421 Z" fill="#d97706"/>
+  <text x="72" y="232" font-size="10.5" fill="#b45309">关系型知识 · 图谱支线</text>
+
+  <g>
+    <rect x="40" y="430" width="250" height="84" rx="14" fill="#fffbeb" stroke="#fde68a" stroke-width="1.3"/>
+    <text x="62" y="458" font-size="12.5" font-weight="700" fill="#92400e">LLM 抽取</text>
+    <text x="62" y="480" font-size="10" fill="#78350f">按 Schema 抽取（专业算子 -5）</text>
+    <text x="62" y="498" font-size="10" fill="#78350f">通用模式（通用算子 -6）</text>
+
+    <rect x="320" y="430" width="180" height="84" rx="14" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.3"/>
+    <text x="410" y="458" text-anchor="middle" font-size="12" font-weight="700" fill="#0f172a">实体 / 关系</text>
+    <text x="410" y="480" text-anchor="middle" font-size="9.5" fill="#64748b">Schema 定义本体</text>
+    <text x="410" y="498" text-anchor="middle" font-size="9.5" fill="#64748b">实体与关系实例</text>
+
+    <rect x="530" y="430" width="290" height="84" rx="14" fill="#fffbeb" stroke="#fde68a" stroke-width="1.3"/>
+    <text x="552" y="458" font-size="12.5" font-weight="700" fill="#92400e">图谱存储（PostgreSQL JSONB）</text>
+    <text x="552" y="480" font-size="10" fill="#78350f">graph_&lt;kbId&gt;_vertex / _edge 动态表</text>
+    <text x="552" y="498" font-size="10" fill="#78350f">图谱查询 / 检索 / 可视化</text>
+  </g>
+
+  <line x1="290" y1="472" x2="312" y2="472" stroke="#d97706" stroke-width="1.6"/>
+  <path d="M311 467 L320 472 L311 477 Z" fill="#d97706"/>
+  <line x1="500" y1="472" x2="522" y2="472" stroke="#d97706" stroke-width="1.6"/>
+  <path d="M521 467 L530 472 L521 477 Z" fill="#d97706"/>
+
+  <rect x="140" y="540" width="580" height="28" rx="14" fill="#0f172a"/>
+  <text x="430" y="559" text-anchor="middle" font-size="11.5" font-weight="700" fill="#ffffff">入库即双索引：切片同时落向量与全文；关系型知识进图谱</text>
+</svg>

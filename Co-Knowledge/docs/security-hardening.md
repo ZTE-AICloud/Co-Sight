@@ -62,7 +62,7 @@ docker compose -f deploy/docker-compose.yml up -d --force-recreate rag-knowledge
 2. **最小权限连接**：应用使用 `rag_app`（或自定义的 `RKB_DB_USER`）连接数据库，
    运维账号只用于迁移、备份与排障。
 3. **网络边界**：PostgreSQL 与 OpenSearch 只绑定回环或内网地址；对外只暴露
-   `web` 的 80 端口，并由反向代理终止 TLS。
+   `web` 的对外端口（默认 8080，容器内 80），并由反向代理终止 TLS。
 4. **认证入口**：生产环境使用 `AUTH_MODE=local` 或 `gateway`，不要用 `none`；
    首次登录后立即更换管理员口令。见 [`auth-login.md`](auth-login.md) §5。
 5. **密钥与口令管理**：`deploy/.env`、密钥文件、备份文件都不进入版本库；

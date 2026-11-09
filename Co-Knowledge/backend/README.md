@@ -69,7 +69,7 @@ src/
 ├── knowledge_base/   # 知识库、目录、文档、切片、任务队列
 ├── graph/            # 图谱 schema、抽取、导入、查询、导出、图谱检索
 ├── operators/        # 算子注册、导入、模板、沙箱、系统算子
-├── operator_api/     # 算子 ABI v2 的公开导入面
+├── operator_api/     # 算子插件接口（operator_api）
 ├── workflow/         # 工作流画布、校验、发布、模板
 ├── engine/           # RAG 运行时（改写 → 检索 → 重排 → 合成）
 ├── chat/             # /query、SSE、多轮会话、证据、查询轨迹
@@ -82,4 +82,4 @@ src/
 ```
 
 自定义算子的公开导入面是 `operator_api`（`types/logging/storage/llm/graph`）；
-沙箱实现位于 `operators/sandbox`，详见 [`docs/operator-abi.md`](../docs/operator-abi.md)。
+沙箱实现位于 `operators/sandbox`，详见 [`docs/operator-interface.md`](../docs/operator-interface.md)。

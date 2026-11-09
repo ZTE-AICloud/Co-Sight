@@ -230,7 +230,7 @@ Knowledge Studio 是一个可自部署的**知识工程平台**，围绕「把�
 
 ```
                         ┌─────────────────────────────┐
-   浏览器 ──── :80 ────▶ │  web (nginx)  唯一对外入口   │
+   浏览器 ──── :8080 ────▶ │  web (nginx)  唯一对外入口   │
                         │  静态资源 + 反向代理 + SPA   │
                         └──────────────┬──────────────┘
                                        │  /api/...
@@ -493,7 +493,7 @@ src/
 ### 3.4 `frontend`（compose 服务名 `web`）— 统一前端（Vue 3 → nginx）
 
 - **技术**：Vue 3.5 + Element Plus 2.14.7 + Vue Router（hash）+ Vuex + @antv/x6
-- **构建**：`node:22.23.3-alpine` 构建 → `nginx:1.27.5-alpine` 运行；**唯一对外端口 80**。
+- **构建**：`node:22.23.3-alpine` 构建 → `nginx:1.27.5-alpine` 运行；**宿主默认 8080 → 容器 80**。
   根路径部署：`frontend/.env` 与 `.env.production` 均为 `BASE_URL=/`，直接
   `npm run build` 即可，产物资源路径为 `/js/...`、`/css/...`。
 - **接口寻址**：`VUE_APP_KBASE_BASE` / `VUE_APP_WORKFLOW_BASE` / `VUE_APP_QUERY_BASE`
@@ -594,7 +594,7 @@ docker compose -f deploy/docker-compose.yml ps     # 默认启动的容器应全
 
 | 容器 | 作用 | 宿主端口 |
 |---|---|---|
-| `web` | nginx 静态资源 + 反向代理（**唯一对外入口**） | **80** |
+| `web` | nginx 静态资源 + 反向代理（**唯一对外入口**） | **8080**（`WEB_PORT` 可改） |
 | `rag-knowledge-base` | 知识库域 + 图谱资产管理 + 画布编排 + 文档解析 / 切分 / 算子沙箱 + 检索编排运行时 | 不暴露 |
 | `postgresql` | 业务表 + 向量表 | 127.0.0.1:5432 |
 | `opensearch` | 关键词全文索引 | 127.0.0.1:9200 |
@@ -617,9 +617,9 @@ docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.dev.yml up 
 ### 4.3 健康检查
 
 ```bash
-# 经 web 反代（localhost:80）
-curl -fs http://localhost/                              # → 200（前端首页）
-curl -s  http://localhost/api/co-knowledge/v1/health             # → ok（全栈唯一健康端点，纯文本）
+# 经 web 反代（localhost:8080）
+curl -fs http://localhost:8080/                              # → 200（前端首页）
+curl -s  http://localhost:8080/api/co-knowledge/v1/health             # → ok（全栈唯一健康端点，纯文本）
 # ⚠️ 只有 /api/co-knowledge/v1 这一条前缀经 nginx 反代；其他 /api/... 路径会落到 SPA 回退，
 # 拿到 200 的 index.html 而不是 404（见 §2.2）。
 ```
@@ -713,7 +713,7 @@ GENERATION_HOST=<端点主机>                     # 让容器 NO_PROXY 排除�
 ### 4.5 最小链路验证（建库 → 导入 → 检索）
 
 ```bash
-BASE=http://localhost
+BASE=http://localhost:8080
 
 # 5.0 登录（AUTH_MODE=local；首次管理员密码见容器内 /data/rkb/initial-admin-password）
 curl -s -c cookies.txt -X POST "$BASE/api/co-knowledge/v1/auth/login" \
@@ -1022,14 +1022,14 @@ Blended 的图谱变体（只绑图谱库 → `Blended_graph`；普通库 + 图�
 #### 5.4.2 执行
 
 ```bash
-curl -s -X POST http://localhost/api/co-knowledge/v1/query \
+curl -s -X POST http://localhost:8080/api/co-knowledge/v1/query \
   -H 'Content-Type: application/json' \
   -d '{"question":"这个知识库里的文档讲了什么？","conversation_id":"demo-1",
        "workflow_id":"RAG_Workflow_xxxx","stream":false}'
 ```
 
 > ⚠️ 默认 compose **不向宿主发布 8091**（RKB 只在 compose 网络内），
-> 但经 `web` 的 80 走 `/api/co-knowledge/v1/` 即可。要在容器内直打，把
+> 但经 `web` 的 8080（宿主映射）走 `/api/co-knowledge/v1/` 即可。要在容器内直打，把
 > `localhost:8091/api/co-knowledge/v1/query` 换进上面的 URL。
 
 #### 5.4.3 前置条件与语义

@@ -1,25 +1,50 @@
 <div align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="frontend/public/brand/zte-logo-white.svg">
-    <img src="frontend/public/brand/zte-logo.svg" width="160" height="95" alt="ZTE">
-  </picture>
-  <h1>Knowledge Studio</h1>
-  <p><b>Open-source Knowledge Engineering Platform</b><br>Turn private knowledge into AI assets that are searchable, orchestrated and traceable.</p>
+
+# Knowledge Studio
+
+**Open-source Knowledge Engineering Platform**
+
+Turn private knowledge into AI assets that are searchable, orchestrated and traceable.
+
+[简体中文](README.md) · [Quick start](#quick-start) · [Architecture](#architecture) · [Core capabilities](#core-capabilities) · [Documentation](#documentation)
+
+<br/>
+
+![License](https://img.shields.io/badge/license-Apache--2.0-46d4e8?style=flat-square)
+![Stack](https://img.shields.io/badge/stack-1_frontend_%2B_1_backend_%2B_2_stores-4ade80?style=flat-square)
+![API](https://img.shields.io/badge/API-%2Fapi%2Fco--knowledge%2Fv1-f0a63a?style=flat-square)
+![Models](https://img.shields.io/badge/model_endpoints-OpenAI--compatible-46d4e8?style=flat-square)
+![UI](https://img.shields.io/badge/UI-Chinese_%2F_English-4ade80?style=flat-square)
+
 </div>
 
 <p align="center">
   <a href="README.md">简体中文</a> · <b>English</b>
 </p>
 
-<p align="center">
-  <code>Apache-2.0</code> · <code>4 containers by default</code> · <code>single API prefix</code> · <code>pluggable model endpoints</code> · <code>Chinese / English UI</code>
-</p>
-
-> Knowledge Studio is the product / interface name; the component name is Co-Knowledge. The repository is named Co-Knowledge, while Docker images and package names retain the `ragstudio` prefix.
-
 Knowledge Studio is a self-hostable **knowledge engineering platform**. Documents go in, get parsed and chunked, and are indexed both as vectors and as full text—ready to retrieve. An LLM extracts relational knowledge into entities and relations—either against a schema or in a general schema-free mode—and stores it in a knowledge graph, which can be combined with document retrieval into **GraphRAG** pipelines. Retrieval flows are composed visually on a canvas and executed as a DAG once published. Answers stream over SSE and cite the exact knowledge-base fragments they were built from.
 
 One Compose command brings up the whole stack: **one frontend + one backend + two stores**, with **a single API prefix** exposed to the outside. Embedding, generation and reranking all point at your own OpenAI-compatible endpoints, so data, models and compute stay inside your environment.
+
+---
+
+## Table of contents
+
+- [What it solves](#what-it-solves)
+- [Core capabilities](#core-capabilities)
+- [Architecture](#architecture)
+- [Component stack](#component-stack)
+- [Backend modules](#backend-modules)
+- [Quick start](#quick-start)
+- [Using it](#using-it)
+- [Quality and baselines](#quality-and-baselines)
+- [Configuration](#configuration)
+- [Deployment notes](#deployment-notes)
+- [Repository layout](#repository-layout)
+- [Documentation](#documentation)
+- [Roadmap](#roadmap)
+- [Development and contributing](#development-and-contributing)
+- [License](#license)
 
 ---
 
@@ -39,7 +64,7 @@ One Compose command brings up the whole stack: **one frontend + one backend + tw
 |---|---|
 | **Knowledge base management** | Document and graph knowledge bases; directory tree, bulk import, document status and statistics, chunk inspection and manual chunk creation; a dedicated vector table and full-text index per knowledge base |
 | **Document parsing and chunking** | md / docx / xlsx / pdf / pptx / html / txt / csv; 512-character chunks with 128-character overlap by default; every chunk is written to both the vector and the full-text index |
-| **Custom operators** | Upload a zip → register → select it during import. Supports `file_parse` / `text_split` / `graph_extract` entry points (ABI v2), with template download, publish/visibility and export. Executed in an isolated subprocess (500MB memory, 10MB result, best-effort network isolation) after an AST safety check; operator import is administrator-only and operators are treated as trusted code |
+| **Custom operators** | Upload a zip → register → select it during import. Supports `file_parse` / `text_split` / `graph_extract` entry points, with template download, publish/visibility and export. Executed in an isolated subprocess (500MB memory, 10MB result, best-effort network isolation) after an AST safety check; operator import is administrator-only and operators are treated as trusted code |
 | **Dual retrieval** | Vector search (`type=0`) and keyword search (`type=1`, OpenSearch + analysis-ik); multi-knowledge-base grouping with priority—the first high-priority hit wins |
 | **Knowledge graph** | Schema (ontology) definition and template designer, LLM extraction, PostgreSQL JSONB storage (`graph_<kbId>_vertex/_edge`), entity/edge editing, graph query / export / visualization and graph vector retrieval; ships two built-in operators — **general** (`-6` v1.2.0, schema-free, supports `extractionProfile` with `general` / `general_attributes`) and **specialized** (`-5` v1.0.0, schema-driven) |
 | **Retrieval orchestration** | @antv/x6 canvas; built-in sequential, blended and conditional templates (including graph variants); drafts are separate from published snapshots, and the runtime only reads published ones; graph retrieval nodes expose `depth` / `top_k` / `include_edge_facts` |
@@ -55,32 +80,17 @@ One Compose command brings up the whole stack: **one frontend + one backend + tw
 - **Retrieval is observable**: hits, source files, relevance scores, rewritten queries and stage timings are all returned in the same request.
 - **Extension points stay outside the core**: a custom format or chunking strategy becomes an operator package; a model swap happens on the model management page; a retrieval change happens on the canvas.
 
+The two core pipelines, end to end:
+
+![Document ingestion: parse → chunk → dual index](docs/images/ingestion-pipeline.en.svg)
+
+![Q&A runtime: rewrite → retrieve → rerank → generate](docs/images/retrieval-flow.en.svg)
+
 ---
 
 ## Architecture
 
-```text
-        Browser / business systems / Agents (REST · MCP)
-                             │  HTTP · SSE
-                     ┌───────▼────────┐
-                     │  web (nginx)   │  sole public entry :80
-                     └───────┬────────┘
-                             │  /api/co-knowledge/v1
-        ┌────────────────────▼───────────────────┐
-        │  rag-knowledge-base                    │  sole backend (FastAPI :8091)
-        │  knowledge base · graph · operators    │
-        │  retrieval · engine · chat · models    │
-        │  agent · auth                          │
-        └──────────┬─────────────────────┬───────┘
-                   │                     │
-     ┌─────────────▼────────┐  ┌─────────▼──────────────┐
-     │  PostgreSQL 16       │  │  OpenSearch 2.19.6     │
-     │  + pgvector 0.8.7    │  │  + analysis-ik         │
-     │  vectors / metadata  │  │  full-text / keyword   │
-     │  graph JSONB         │  └────────────────────────┘
-     └──────────────────────┘
-     Outside the stack: OpenAI-compatible endpoints (embedding / chat / rerank)
-```
+![Knowledge Studio architecture overview](docs/images/arch-overview.en.svg)
 
 The left store holds vectors, business metadata and the graph; the right store holds the full-text and keyword index.
 
@@ -88,7 +98,7 @@ The left store holds vectors, business metadata and the graph; the right store h
 
 | Container | Role | Host port |
 |---|---|---|
-| `web` | nginx static assets + reverse proxy (sole public entry) | **80** |
+| `web` | nginx static assets + reverse proxy (sole public entry) | **8080** (`WEB_PORT` configurable) |
 | `rag-knowledge-base` | Sole backend: knowledge base / graph / operators / retrieval / orchestration / chat / models / agent | container network only |
 | `postgresql` | Business tables, vector tables (pgvector 0.8.7) and graph tables (JSONB) | `127.0.0.1:5432` |
 | `opensearch` | Full-text and keyword index (OpenSearch 2.19.6 + analysis-ik) | `127.0.0.1:9200` |
@@ -110,7 +120,7 @@ Two optional profiles are available on demand:
 | Storage | PostgreSQL 16 + pgvector 0.8.7 · OpenSearch 2.19.6 + analysis-ik |
 | Entry and deployment | nginx 1.27.5 · Docker Compose v2 |
 
-> Versions follow [`backend/requirements.txt`](backend/requirements.txt), [`frontend/package.json`](frontend/package.json) and [`deploy/docker-compose.yml`](deploy/docker-compose.yml); this table lists only components that directly affect deployment and integration.
+> Versions follow [`backend/requirements.txt`](backend/requirements.txt), [`frontend/package.json`](frontend/package.json) and [`deploy/docker-compose.yml`](deploy/docker-compose.yml).
 
 ### Backend modules
 
@@ -120,7 +130,7 @@ backend/src/
 ├── ingestion/       parse / chunk / graph-extraction pipelines
 ├── parsing/         pure format-parsing library
 ├── operators/       operator registry, templates, sandbox, system operators
-├── operator_api/    public import surface of operator ABI v2
+├── operator_api/    public operator plugin interface
 ├── graph/           schema, extraction, import, query, export, graph retrieval
 ├── retrieval/       vector and keyword reads, node mapping
 ├── workflow/        canvas, validation, publishing, templates
@@ -145,7 +155,7 @@ The frontend is layered as `app / pages / features / shared`, with feature direc
 - Docker ≥ 24 + `docker compose` v2 (local image builds require buildx ≥ 0.17; on older versions, build with `docker build` and start with `up -d --no-build`)
 - ≥ 20GB disk, ≥ 6GiB RAM recommended
 - A reachable **OpenAI-compatible embedding endpoint**; generation endpoint also required for Q&A (reranking optional)
-- Port 80 free; OpenSearch requires a host kernel parameter:
+- Port 8080 free (or set `WEB_PORT` to another port); OpenSearch requires a host kernel parameter:
 
 ```bash
 sudo sysctl -w vm.max_map_count=262144
@@ -188,12 +198,12 @@ docker compose -f deploy/docker-compose.yml ps    # all 4 containers should be h
 **3. Check health**
 
 ```bash
-curl -fs http://localhost/api/co-knowledge/v1/health   # → ok
+curl -fs http://localhost:8080/api/co-knowledge/v1/health   # → ok
 ```
 
 **4. Sign in and register models**
 
-Open `http://localhost`. The default is `AUTH_MODE=local`; on first start an `admin` account is created and a random password is written inside the container:
+Open `http://localhost:8080`. The default is `AUTH_MODE=local`; on first start an `admin` account is created and a random password is written inside the container:
 
 ```bash
 docker compose -f deploy/docker-compose.yml exec rag-knowledge-base \
@@ -235,7 +245,7 @@ From there: **create a knowledge base → import documents → retrieve / orches
 - Q&A via `POST /query` uses standard named SSE events with buffering disabled for that nginx location.
 
 ```bash
-BASE=http://localhost/api/co-knowledge/v1
+BASE=http://localhost:8080/api/co-knowledge/v1
 curl -fs $BASE/health
 ```
 
@@ -251,7 +261,7 @@ A knowledge access, retrieval Q&A and published-workflow execution surface for a
 | MCP | `list_knowledge_bases`, `search_knowledge`, `ask_knowledge_base`, `list_workflows`, `run_workflow` (run a published workflow) |
 
 ```bash
-curl -s http://localhost/api/co-knowledge/v1/agent/search \
+curl -s http://localhost:8080/api/co-knowledge/v1/agent/search \
   -H "Authorization: Bearer <API_KEY>" \
   -H 'Content-Type: application/json' \
   -d '{"query":"inspection interval","mode":"hybrid","top_k":5}'
@@ -263,11 +273,11 @@ API keys are created under **API Keys**; each key can be restricted by scope (`k
 
 ## Quality and baselines
 
-| Item | Current value (measured 2026-11-04) |
+| Item | Current baseline |
 |---|---|
 | Backend tests | **2,417 passed** / 7 deselected (~58s) |
 | Frontend tests | **936 passed** / 91 files (~35s) |
-| API contract | OpenAPI **2.3.0**: 65 paths / 93 operations (including `/health`), locked by a snapshot test |
+| API contract | OpenAPI **2.3.0**: 65 paths / 93 operations (including `/health`) |
 | E2E | Playwright: 11 fast-gate tests in ~25s; full suite 148 tests / 20 specs (~10 min) |
 | Architecture check | `python3 tools/check-architecture.py --strict`: **0 violations** |
 | Retrieval baseline (2,000 queries, 2026-10-29) | Vector NDCG@10 **81.57%**, Recall@80 **95.02%**; keyword NDCG@10 59.96% |
@@ -275,7 +285,7 @@ API keys are created under **API Keys**; each key can be restricted by scope (`k
 | Public benchmarks (2026-11-01) | SciFact vector NDCG@10 **68.45%** (model public value 69.72%); CRUD-RAG keyword **83.83%** / vector 72.51%; RGB noise 3 levels 88.67 / 86.67 / 85.67% |
 | Graph end-to-end (2WikiMultiHopQA, 100 questions, 2026-11-02) | Attribute extraction + edge facts + normalization prompt: EM **82.0%**, normalized EM **90.0%** (same-day v1: 75.0% / 81.0%) |
 
-> Retrieval and benchmark numbers are single full or sampled runs on public datasets and will move with corpus, model and hardware. Methodology and reproduction for the public benchmarks: [`docs/rag-benchmark-20261101.md`](docs/rag-benchmark-20261101.md).
+> Evaluation methodology and reproduction scripts: [`docs/rag-benchmark-20261101.md`](docs/rag-benchmark-20261101.md).
 
 ---
 
@@ -346,7 +356,7 @@ An unknown value fails startup, so misconfiguration is caught early. Account man
 | [`docs/external-api/`](docs/external-api/) | Integrator-facing API package (single-file HTML + Markdown + Agent OpenAPI) |
 | [`docs/database-schema.md`](docs/database-schema.md) | Database schema: one database, two schemas, per-table definitions, dynamic vector/graph table templates |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Code structure, dependency rules and change conventions |
-| [`docs/operator-abi.md`](docs/operator-abi.md) | Custom operator ABI v2: package format, entry points, public modules |
+| [`docs/operator-interface.md`](docs/operator-interface.md) | Custom operator interface: package format, entry points, public modules |
 | [`deploy/operators/general-graph-extract/README.md`](deploy/operators/general-graph-extract/README.md) | General graph extraction operator v1.2.0: `extractionProfile`, installation and upgrades |
 | [`docs/rag-benchmark-20261101.md`](docs/rag-benchmark-20261101.md) | Evaluation report across 11 public benchmarks |
 | [`docs/opensearch.md`](docs/opensearch.md) | Why OpenSearch (licensing and Chinese analysis) |

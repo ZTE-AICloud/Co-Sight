@@ -1,8 +1,8 @@
-# Operator plugin ABI v2
+# Operator plugin interface
 
 Custom operators are Python scripts uploaded as a zip. The public import surface
 is `operator_api`; anything else in the backend is an implementation detail and
-may move without notice.
+may move without notice. Interface version: 2.0.
 
 ## Package format
 

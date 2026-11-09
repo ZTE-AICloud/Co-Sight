@@ -1,25 +1,50 @@
 <div align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="frontend/public/brand/zte-logo-white.svg">
-    <img src="frontend/public/brand/zte-logo.svg" width="160" height="95" alt="ZTE">
-  </picture>
-  <h1>Knowledge Studio</h1>
-  <p><b>开源知识工程平台</b><br>把私有知识变成可检索、可编排、可追溯的 AI 资产</p>
+
+# Knowledge Studio
+
+**开源知识工程平台**
+
+把私有知识变成可检索、可编排、可追溯的 AI 资产
+
+[English](README.en.md) · [快速开始](#快速开始) · [架构](#架构) · [核心能力](#核心能力) · [文档](#文档)
+
+<br/>
+
+![License](https://img.shields.io/badge/license-Apache--2.0-46d4e8?style=flat-square)
+![Stack](https://img.shields.io/badge/stack-1_%E5%89%8D%E7%AB%AF_%2B_1_%E5%90%8E%E7%AB%AF_%2B_2_%E5%AD%98%E5%82%A8-4ade80?style=flat-square)
+![API](https://img.shields.io/badge/API-%2Fapi%2Fco--knowledge%2Fv1-f0a63a?style=flat-square)
+![Models](https://img.shields.io/badge/%E6%A8%A1%E5%9E%8B%E7%AB%AF%E7%82%B9-OpenAI--compatible-46d4e8?style=flat-square)
+![UI](https://img.shields.io/badge/UI-%E4%B8%AD%2F%E8%8B%B1%E5%8F%8C%E8%AF%AD-4ade80?style=flat-square)
+
 </div>
 
 <p align="center">
   <b>简体中文</b> · <a href="README.en.md">English</a>
 </p>
 
-<p align="center">
-  <code>Apache-2.0</code> · <code>默认 4 容器</code> · <code>单一 API 前缀</code> · <code>模型端点可插拔</code> · <code>中 / 英双语</code>
-</p>
-
-> Knowledge Studio 是产品 / 界面名；组件名 Co-Knowledge；仓库名为 Co-Knowledge，镜像与包名沿用 `ragstudio` 前缀。
-
 Knowledge Studio 是一个可私有化部署的 **知识工程平台**：文档进来，经过解析、切片、向量与全文双索引，变成可检索的知识；关系型知识由大模型按 Schema 或通用模式抽取成实体与关系，存进知识图谱，并可与文档检索混合成 **GraphRAG** 链路；检索流程可以在画布上自由编排，发布后按 DAG 执行；问答以 SSE 流式返回，并逐条给出知识库依据。
 
 一条 Compose 起全栈：**1 个前端 + 1 个后端 + 2 个存储**，对外只有 **一个 API 前缀**。embedding / 生成 / 重排全部接你自己的 OpenAI 兼容端点，数据、模型与算力都留在自己的环境里。
+
+---
+
+## 目录
+
+- [它解决什么问题](#它解决什么问题)
+- [核心能力](#核心能力)
+- [架构](#架构)
+- [技术栈与组件依赖](#技术栈与组件依赖)
+- [后端模块](#后端模块)
+- [快速开始](#快速开始)
+- [使用方式](#使用方式)
+- [质量与基线](#质量与基线)
+- [配置](#配置)
+- [部署注意](#部署注意)
+- [项目结构](#项目结构)
+- [文档](#文档)
+- [路线图](#路线图)
+- [开发与贡献](#开发与贡献)
+- [许可](#许可)
 
 ---
 
@@ -39,7 +64,7 @@ Knowledge Studio 是一个可私有化部署的 **知识工程平台**：文档�
 |---|---|
 | **知识库管理** | 文档知识库 / 图谱知识库两类；目录树、批量导入、文档状态与统计、切片查看与手工新增；每库独立的向量表与全文索引 |
 | **文档解析与切片** | md / docx / xlsx / pdf / pptx / html / txt / csv；默认按 512 字符切片、128 字符重叠；切片同时写入向量与全文 |
-| **自定义算子** | 上传 zip → 注册 → 导入时指定；支持 `file_parse` / `text_split` / `graph_extract` 三类入口（ABI v2），提供模板下载、发布/可见性与导出；子进程隔离执行（500MB 内存 / 10MB 结果 / 网络隔离尽力而为），上传前做 AST 静态安全检查；算子导入仅管理员，算子按可信代码对待 |
+| **自定义算子** | 上传 zip → 注册 → 导入时指定；支持 `file_parse` / `text_split` / `graph_extract` 三类入口，提供模板下载、发布/可见性与导出；子进程隔离执行（500MB 内存 / 10MB 结果 / 网络隔离尽力而为），上传前做 AST 静态安全检查；算子导入仅管理员，算子按可信代码对待 |
 | **双路检索** | 向量检索（`type=0`）与关键词检索（`type=1`，OpenSearch + analysis-ik）；多库分组与优先级，高优先级库命中即返回 |
 | **知识图谱** | Schema（本体）定义与模板设计器、LLM 抽取、PostgreSQL JSONB 存储（`graph_<kbId>_vertex/_edge`）、实体/关系编辑、图谱查询 / 导出 / 可视化 / 图谱向量检索；内置**通用**（`-6` v1.2.0，不依赖 Schema，`extractionProfile` 支持 `general` / `general_attributes`）与**专业**（`-5` v1.0.0，按 Schema 抽取）两个算子 |
 | **检索编排** | @antv/x6 画布；顺序 / 混合 / 条件三类内置模板（含图谱变体）；草稿与发布快照分离，运行时只读已发布版本；图谱检索节点可配置 `depth` / `top_k` / `include_edge_facts` |
@@ -55,32 +80,17 @@ Knowledge Studio 是一个可私有化部署的 **知识工程平台**：文档�
 - **检索可观测**：命中片段、来源文件、相关度分数、改写问句与各阶段耗时都在同一次请求里返回。
 - **扩展点独立于内核**：自定义格式或切分策略 → 传一个算子包；模型换代 → 在模型管理页换端点；检索策略要变 → 改画布。
 
+入库与问答的两条核心链路：
+
+![文档入库：解析 → 切片 → 双索引](docs/images/ingestion-pipeline.zh.svg)
+
+![问答运行时：改写 → 检索 → 重排 → 合成](docs/images/retrieval-flow.zh.svg)
+
 ---
 
 ## 架构
 
-```text
-        Browser / business systems / Agents (REST · MCP)
-                             │  HTTP · SSE
-                     ┌───────▼────────┐
-                     │  web (nginx)   │  sole public entry :80
-                     └───────┬────────┘
-                             │  /api/co-knowledge/v1
-        ┌────────────────────▼───────────────────┐
-        │  rag-knowledge-base                    │  sole backend (FastAPI :8091)
-        │  knowledge base · graph · operators    │
-        │  retrieval · engine · chat · models    │
-        │  agent · auth                          │
-        └──────────┬─────────────────────┬───────┘
-                   │                     │
-     ┌─────────────▼────────┐  ┌─────────▼──────────────┐
-     │  PostgreSQL 16       │  │  OpenSearch 2.19.6     │
-     │  + pgvector 0.8.7    │  │  + analysis-ik         │
-     │  vectors / metadata  │  │  full-text / keyword   │
-     │  graph JSONB         │  └────────────────────────┘
-     └──────────────────────┘
-     Outside the stack: OpenAI-compatible endpoints (embedding / chat / rerank)
-```
+![Knowledge Studio 总体架构](docs/images/arch-overview.zh.svg)
 
 图中左侧存储负责向量、业务元数据与图谱，右侧存储负责全文与关键词索引。
 
@@ -88,7 +98,7 @@ Knowledge Studio 是一个可私有化部署的 **知识工程平台**：文档�
 
 | 容器 | 作用 | 宿主端口 |
 |---|---|---|
-| `web` | nginx 静态资源 + 反向代理（唯一对外入口） | **80** |
+| `web` | nginx 静态资源 + 反向代理（唯一对外入口） | **8080**（`WEB_PORT` 可改） |
 | `rag-knowledge-base` | 唯一后端：知识库 / 图谱 / 算子 / 检索 / 编排 / 问答 / 模型 / Agent | 仅容器网络 |
 | `postgresql` | 业务表、向量表（pgvector 0.8.7）与图谱表（JSONB） | `127.0.0.1:5432` |
 | `opensearch` | 全文与关键词索引（OpenSearch 2.19.6 + analysis-ik） | `127.0.0.1:9200` |
@@ -110,7 +120,7 @@ Knowledge Studio 是一个可私有化部署的 **知识工程平台**：文档�
 | 存储 | PostgreSQL 16 + pgvector 0.8.7 · OpenSearch 2.19.6 + analysis-ik |
 | 入口与部署 | nginx 1.27.5 · Docker Compose v2 |
 
-> 版本以 [`backend/requirements.txt`](backend/requirements.txt)、[`frontend/package.json`](frontend/package.json) 与 [`deploy/docker-compose.yml`](deploy/docker-compose.yml) 为准；本表只列直接影响部署与集成的组件。
+> 版本以 [`backend/requirements.txt`](backend/requirements.txt)、[`frontend/package.json`](frontend/package.json) 与 [`deploy/docker-compose.yml`](deploy/docker-compose.yml) 为准。
 
 ### 后端模块
 
@@ -120,7 +130,7 @@ backend/src/
 ├── ingestion/       解析 / 切分 / 抽图管线
 ├── parsing/         纯格式解析库
 ├── operators/       算子注册、模板、沙箱、系统算子
-├── operator_api/    算子 ABI v2 的公开导入面
+├── operator_api/    算子插件接口（operator_api）
 ├── graph/           Schema、抽取、导入、查询、导出、图谱检索
 ├── retrieval/       向量与关键词读取、节点映射
 ├── workflow/        画布、校验、发布、模板
@@ -145,7 +155,7 @@ backend/src/
 - Docker ≥ 24 + `docker compose` v2（构建本地镜像需要 buildx ≥ 0.17；低于该版本请用 `docker build` 手动构建后 `up -d --no-build`）
 - 磁盘 ≥ 20GB，内存建议 ≥ 6GiB
 - 一个可达的 **OpenAI 兼容 embedding 端点**；问答另需生成端点（重排可选）
-- 80 端口可用；OpenSearch 需要宿主参数：
+- 8080 端口可用（或设置 `WEB_PORT` 为其他端口）；OpenSearch 需要宿主参数：
 
 ```bash
 sudo sysctl -w vm.max_map_count=262144
@@ -186,12 +196,12 @@ docker compose -f deploy/docker-compose.yml ps    # 默认 4 个容器均应为 
 **3. 验证健康**
 
 ```bash
-curl -fs http://localhost/api/co-knowledge/v1/health   # → ok
+curl -fs http://localhost:8080/api/co-knowledge/v1/health   # → ok
 ```
 
 **4. 登录并注册模型**
 
-打开 `http://localhost`。默认 `AUTH_MODE=local`，首次启动会创建管理员 `admin`，随机密码写入容器内文件：
+打开 `http://localhost:8080`。默认 `AUTH_MODE=local`，首次启动会创建管理员 `admin`，随机密码写入容器内文件：
 
 ```bash
 docker compose -f deploy/docker-compose.yml exec rag-knowledge-base \
@@ -233,7 +243,7 @@ docker compose -f deploy/docker-compose.yml exec rag-knowledge-base \
 - 问答 `POST /query` 使用标准 SSE 具名事件，经 nginx 单独关闭缓冲。
 
 ```bash
-BASE=http://localhost/api/co-knowledge/v1
+BASE=http://localhost:8080/api/co-knowledge/v1
 curl -fs $BASE/health
 ```
 
@@ -249,7 +259,7 @@ curl -fs $BASE/health
 | MCP | `list_knowledge_bases`、`search_knowledge`、`ask_knowledge_base`、`list_workflows`、`run_workflow`（执行已发布工作流） |
 
 ```bash
-curl -s http://localhost/api/co-knowledge/v1/agent/search \
+curl -s http://localhost:8080/api/co-knowledge/v1/agent/search \
   -H "Authorization: Bearer <API_KEY>" \
   -H 'Content-Type: application/json' \
   -d '{"query":"设备巡检周期","mode":"hybrid","top_k":5}'
@@ -261,11 +271,11 @@ API Key 在「密钥管理」创建，可限制作用域（`kb:list` / `kb:searc
 
 ## 质量与基线
 
-| 项目 | 当前值（2026-11-04 实测） |
+| 项目 | 当前基线 |
 |---|---|
 | 后端单测 | **2,417 passed** / 7 deselected（约 58s） |
 | 前端单测 | **936 passed** / 91 files（约 35s） |
-| 接口契约 | OpenAPI **2.3.0**：65 条路径 / 93 个操作（含 `/health`），快照测试锁定 |
+| 接口契约 | OpenAPI **2.3.0**：65 条路径 / 93 个操作（含 `/health`） |
 | E2E | Playwright：快速门禁 11 条用例约 25s；全量 148 条 / 20 个 spec（约 10 min） |
 | 架构检查 | `python3 tools/check-architecture.py --strict`：**0 违规** |
 | 检索基线（2,000 条查询，2026-10-29） | 向量 NDCG@10 **81.57%**、Recall@80 **95.02%**；关键词 NDCG@10 59.96% |
@@ -273,7 +283,7 @@ API Key 在「密钥管理」创建，可限制作用域（`kb:list` / `kb:searc
 | 公开基准（2026-11-01） | SciFact 向量 NDCG@10 **68.45%**（同模型公开值 69.72%）；CRUD-RAG 关键词 **83.83%** / 向量 72.51%；RGB 噪声三档 88.67 / 86.67 / 85.67% |
 | 图谱端到端（2WikiMultiHopQA，100 题，2026-11-02） | 属性抽图 + 边事实 + 规范化提示：EM **82.0%**、规范化 EM **90.0%**（同日 v1：75.0% / 81.0%） |
 
-> 检索与基准指标均为公开数据集上的单次全量或抽样测量，随语料、模型与硬件变化；公开基准的口径与复跑见 [`docs/rag-benchmark-20261101.md`](docs/rag-benchmark-20261101.md)。
+> 评测方法与复跑脚本见 [`docs/rag-benchmark-20261101.md`](docs/rag-benchmark-20261101.md)。
 
 ---
 
@@ -344,7 +354,7 @@ API Key 在「密钥管理」创建，可限制作用域（`kb:list` / `kb:searc
 | [`docs/external-api/`](docs/external-api/) | 交付给集成方的接口文档包（单文件 HTML + Markdown + Agent OpenAPI） |
 | [`docs/database-schema.md`](docs/database-schema.md) | 数据库 Schema：单库两 schema、逐表定义、动态向量/图谱表模板 |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | 代码结构、依赖规则与修改约定 |
-| [`docs/operator-abi.md`](docs/operator-abi.md) | 自定义算子 ABI v2：包格式、入口、公开模块 |
+| [`docs/operator-interface.md`](docs/operator-interface.md) | 自定义算子接口：包格式、入口、公开模块 |
 | [`deploy/operators/general-graph-extract/README.md`](deploy/operators/general-graph-extract/README.md) | 通用抽图算子 v1.2.0：`extractionProfile`、安装与升级 |
 | [`docs/rag-benchmark-20261101.md`](docs/rag-benchmark-20261101.md) | 11 个公开基准的评测报告 |
 | [`docs/opensearch.md`](docs/opensearch.md) | 为什么使用 OpenSearch（许可与中文分词） |

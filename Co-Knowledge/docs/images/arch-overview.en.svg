@@ -1,0 +1,132 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="620" viewBox="0 0 860 620" font-family="'Segoe UI','PingFang SC','Microsoft YaHei','Noto Sans CJK SC',system-ui,sans-serif">
+  <title>Knowledge Studio architecture overview</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#f3f5fb"/>
+    </linearGradient>
+  </defs>
+  <rect width="860" height="620" fill="url(#bg)"/>
+
+  <text x="430" y="40" text-anchor="middle" font-size="22" font-weight="700" fill="#0f172a">Knowledge Studio · Architecture</text>
+  <text x="430" y="63" text-anchor="middle" font-size="12.5" fill="#64748b">1 frontend + 1 backend + 2 stores · a single API prefix · OpenAI-compatible, pluggable model endpoints</text>
+  <rect x="400" y="73" width="60" height="3" rx="1.5" fill="#4f46e5"/>
+
+  <!-- clients -->
+  <rect x="40" y="92" width="780" height="54" rx="12" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.4"/>
+  <circle cx="68" cy="119" r="14" fill="#eef2ff"/>
+  <rect x="60" y="112" width="16" height="12" rx="2" fill="none" stroke="#4f46e5" stroke-width="1.4"/>
+  <path d="M64 127h8M68 124v3" fill="none" stroke="#4f46e5" stroke-width="1.4" stroke-linecap="round"/>
+  <text x="92" y="115" font-size="12.5" font-weight="700" fill="#0f172a">Clients</text>
+  <text x="92" y="132" font-size="10.5" fill="#64748b">Browser · business systems · Agents (REST · MCP)</text>
+  <rect x="712" y="107" width="88" height="24" rx="12" fill="#eef2ff"/>
+  <text x="756" y="123" text-anchor="middle" font-size="10.5" font-weight="700" fill="#4f46e5">HTTP · SSE</text>
+
+  <line x1="430" y1="146" x2="430" y2="170" stroke="#4f46e5" stroke-width="1.6"/>
+  <path d="M425 167 L430 176 L435 167 Z" fill="#4f46e5"/>
+
+  <!-- web -->
+  <rect x="40" y="180" width="780" height="54" rx="12" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.4"/>
+  <circle cx="68" cy="207" r="14" fill="#eef2ff"/>
+  <circle cx="68" cy="207" r="7" fill="none" stroke="#4f46e5" stroke-width="1.4"/>
+  <path d="M61 207h14M68 200c3 4 3 10 0 14M68 200c-3 4-3 10 0 14" fill="none" stroke="#4f46e5" stroke-width="1.2"/>
+  <text x="92" y="203" font-size="12.5" font-weight="700" fill="#0f172a">web (nginx)</text>
+  <text x="92" y="220" font-size="10.5" fill="#64748b">Sole public entry · static assets + reverse proxy · SSE unbuffered</text>
+  <rect x="760" y="195" width="40" height="24" rx="12" fill="#ecfdf5"/>
+  <text x="780" y="211" text-anchor="middle" font-size="10.5" font-weight="700" fill="#047857">80</text>
+
+  <line x1="430" y1="234" x2="430" y2="260" stroke="#4f46e5" stroke-width="1.6"/>
+  <path d="M425 257 L430 266 L435 257 Z" fill="#4f46e5"/>
+  <text x="442" y="253" font-size="10.5" fill="#475569">/api/co-knowledge/v1 (single prefix)</text>
+
+  <!-- backend -->
+  <rect x="40" y="272" width="580" height="152" rx="14" fill="#ffffff" stroke="#c7d2fe" stroke-width="1.5"/>
+  <rect x="40" y="272" width="580" height="6" rx="3" fill="#4f46e5"/>
+  <rect x="60" y="284" width="16" height="6" rx="2" fill="#4f46e5"/>
+  <rect x="60" y="293" width="16" height="6" rx="2" fill="#4f46e5" opacity="0.55"/>
+  <text x="88" y="300" font-size="13" font-weight="700" fill="#0f172a">rag-knowledge-base · the only backend</text>
+  <text x="598" y="300" text-anchor="end" font-size="10.5" fill="#6366f1">FastAPI :8091</text>
+
+  <g font-size="11.5" fill="#334155">
+    <rect x="60" y="312" width="174" height="28" rx="8" fill="#f8fafc" stroke="#e8edf5"/>
+    <circle cx="74" cy="326" r="3" fill="#4f46e5"/>
+    <text x="84" y="330.5">Knowledge bases</text>
+
+    <rect x="243" y="312" width="174" height="28" rx="8" fill="#f8fafc" stroke="#e8edf5"/>
+    <circle cx="257" cy="326" r="3" fill="#4f46e5"/>
+    <text x="267" y="330.5">Knowledge graph</text>
+
+    <rect x="426" y="312" width="174" height="28" rx="8" fill="#f8fafc" stroke="#e8edf5"/>
+    <circle cx="440" cy="326" r="3" fill="#4f46e5"/>
+    <text x="450" y="330.5">Operators</text>
+
+    <rect x="60" y="346" width="174" height="28" rx="8" fill="#f8fafc" stroke="#e8edf5"/>
+    <circle cx="74" cy="360" r="3" fill="#0d9488"/>
+    <text x="84" y="364.5">Dual retrieval</text>
+
+    <rect x="243" y="346" width="174" height="28" rx="8" fill="#f8fafc" stroke="#e8edf5"/>
+    <circle cx="257" cy="360" r="3" fill="#0d9488"/>
+    <text x="267" y="364.5">Orchestration</text>
+
+    <rect x="426" y="346" width="174" height="28" rx="8" fill="#f8fafc" stroke="#e8edf5"/>
+    <circle cx="440" cy="360" r="3" fill="#0d9488"/>
+    <text x="450" y="364.5">Chat playground</text>
+
+    <rect x="60" y="380" width="174" height="28" rx="8" fill="#f8fafc" stroke="#e8edf5"/>
+    <circle cx="74" cy="394" r="3" fill="#d97706"/>
+    <text x="84" y="398.5">Models</text>
+
+    <rect x="243" y="380" width="174" height="28" rx="8" fill="#f8fafc" stroke="#e8edf5"/>
+    <circle cx="257" cy="394" r="3" fill="#d97706"/>
+    <text x="267" y="398.5">Agent access</text>
+
+    <rect x="426" y="380" width="174" height="28" rx="8" fill="#f8fafc" stroke="#e8edf5"/>
+    <circle cx="440" cy="394" r="3" fill="#d97706"/>
+    <text x="450" y="398.5">Auth</text>
+  </g>
+
+  <!-- external model endpoints -->
+  <rect x="652" y="272" width="168" height="152" rx="14" fill="#fffbeb" stroke="#fcd34d" stroke-width="1.4"/>
+  <text x="672" y="300" font-size="12.5" font-weight="700" fill="#92400e">Model endpoints</text>
+  <text x="672" y="316" font-size="10" fill="#b45309">outside the stack</text>
+  <circle cx="674" cy="336" r="2.5" fill="#d97706"/>
+  <text x="684" y="340" font-size="10.5" fill="#78350f">Embedding</text>
+  <circle cx="674" cy="356" r="2.5" fill="#d97706"/>
+  <text x="684" y="360" font-size="10.5" fill="#78350f">Chat / generation</text>
+  <circle cx="674" cy="376" r="2.5" fill="#d97706"/>
+  <text x="684" y="380" font-size="10.5" fill="#78350f">Rerank</text>
+  <text x="672" y="408" font-size="9.5" fill="#b45309">data and models stay local</text>
+
+  <line x1="620" y1="348" x2="646" y2="348" stroke="#d97706" stroke-width="1.6" stroke-dasharray="5 4"/>
+  <path d="M645 343 L654 348 L645 353 Z" fill="#d97706"/>
+  <text x="633" y="341" text-anchor="middle" font-size="9.5" fill="#b45309">model calls</text>
+
+  <!-- stores -->
+  <line x1="180" y1="424" x2="180" y2="440" stroke="#0d9488" stroke-width="1.6"/>
+  <path d="M175 439 L180 448 L185 439 Z" fill="#0d9488"/>
+  <line x1="480" y1="424" x2="480" y2="440" stroke="#0d9488" stroke-width="1.6"/>
+  <path d="M475 439 L480 448 L485 439 Z" fill="#0d9488"/>
+
+  <rect x="40" y="448" width="280" height="88" rx="14" fill="#ffffff" stroke="#ccfbf1" stroke-width="1.4"/>
+  <rect x="40" y="448" width="4" height="88" rx="2" fill="#0d9488"/>
+  <ellipse cx="68" cy="468" rx="7" ry="2.5" fill="none" stroke="#0f766e" stroke-width="1.3"/>
+  <path d="M61 468v12c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5v-12" fill="none" stroke="#0f766e" stroke-width="1.3"/>
+  <text x="90" y="476" font-size="12.5" font-weight="700" fill="#0f172a">PostgreSQL 16</text>
+  <text x="90" y="492" font-size="10" fill="#0f766e">pgvector 0.8.7</text>
+  <text x="90" y="510" font-size="10" fill="#475569">Vector index · per-KB tables</text>
+  <text x="90" y="526" font-size="10" fill="#475569">Metadata · graph (JSONB)</text>
+
+  <rect x="340" y="448" width="280" height="88" rx="14" fill="#ffffff" stroke="#ccfbf1" stroke-width="1.4"/>
+  <rect x="340" y="448" width="4" height="88" rx="2" fill="#0d9488"/>
+  <circle cx="366" cy="472" r="6" fill="none" stroke="#0f766e" stroke-width="1.3"/>
+  <path d="M370.5 476.5l4 4" stroke="#0f766e" stroke-width="1.3" stroke-linecap="round"/>
+  <text x="390" y="476" font-size="12.5" font-weight="700" fill="#0f172a">OpenSearch 2.19.6</text>
+  <text x="390" y="492" font-size="10" fill="#0f766e">analysis-ik</text>
+  <text x="390" y="510" font-size="10" fill="#475569">Full-text index · Chinese analysis</text>
+  <text x="390" y="526" font-size="10" fill="#475569">Keyword search (type=1)</text>
+
+  <text x="430" y="558" text-anchor="middle" font-size="10.5" fill="#64748b">Optional profiles: local-embedding (Infinity · bge-base-zh-v1.5) · minio (object storage)</text>
+
+  <rect x="190" y="574" width="480" height="28" rx="14" fill="#0f172a"/>
+  <text x="430" y="593" text-anchor="middle" font-size="11.5" font-weight="700" fill="#ffffff">4 containers: web · rag-knowledge-base · postgresql · opensearch</text>
+</svg>

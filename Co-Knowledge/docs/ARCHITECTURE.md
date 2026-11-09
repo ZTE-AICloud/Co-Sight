@@ -142,7 +142,7 @@ core.rag.retriever.vector_retriever -> engine.retriever.vector_retriever
   `retrieval/api.py`、`operators/api.py`、`graph/api.py`。
 - `retrieval/` 负责查询面（`retrieve_service`、ES/向量读取、`node_mapper`）；
   写入面由 KB 调用 `retrieval.service.write/index`。
-- 算子插件 ABI v2：`operator_api/`（types/logging/storage/llm/graph）是唯一
+- 算子插件接口（版本 2.0）：`operator_api/`（types/logging/storage/llm/graph）是唯一
   公开导入面；沙箱只挂 `src/` 与插件目录；不兼容的导入在导入期返回
   `operator_plugin_incompatible`。
 - 前端按 `app/ pages/ features/ shared/` 分层；大文件拆分顺序见 §7.1。
