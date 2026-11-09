@@ -3,7 +3,7 @@
 # 由 profile 门控）
 #
 # 整栈只有一个前端 + 一个后端服务：
-#   web(nginx, 80) —— 唯一对外入口
+#   web(nginx, 8080→80) —— 唯一对外入口
 #   rag-knowledge-base(Python, 8091) —— 唯一后端：知识库 / 解析 / 切片 / 检索 /
 #     图谱 / 算子沙箱 / 画布编排 / 检索编排运行时
 #   + postgresql(pgvector) + opensearch(2.19)
@@ -456,7 +456,7 @@ services:
     # 端口不对外暴露；开发调试见 docker-compose.dev.yml
 
   # --------------------------------------------------------------------------
-  # 8. web（nginx）：静态资源 + 反向代理（唯一对外入口，80）
+  # 8. web（nginx）：静态资源 + 反向代理（唯一对外入口，宿主 8080 → 容器 80）
   # --------------------------------------------------------------------------
   web:
     build:
@@ -481,7 +481,7 @@ services:
       rag-knowledge-base:
         condition: service_healthy
     ports:
-      - "80:80"
+      - "${WEB_PORT:-8080}:80"
     healthcheck:
       test: ["CMD-SHELL", "curl -fs http://localhost/ || exit 1"]
       interval: 15s
