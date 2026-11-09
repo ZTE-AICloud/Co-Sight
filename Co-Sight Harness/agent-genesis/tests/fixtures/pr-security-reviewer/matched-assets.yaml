@@ -1,0 +1,60 @@
+# matched-assets.yaml — pr-security-reviewer
+# 3a 资产匹配结果（双轴: task_mode × selected_patterns）
+matched_at: "2026-10-05T03:50:00Z"
+task_mode: verification_validation
+selected_patterns: [W1, G1, K1, DT1, DF1, IH1, IT1, CD1, CD2]
+
+matches:
+  # ── 轴1: task_mode → 经典案例 + 资产 ──
+  - axis: task_mode
+    key: verification_validation
+    classic_case: 对账系统验收 Agent（G1+WF6+DF1+CD1，三道死闸+双Agent仲裁）
+    assets:
+      - {file: knowledge/assets/skills/check-verifier.md, matched_by: task_mode, use: reference_only}
+      - {file: knowledge/assets/rules/anti-patterns.md, matched_by: task_mode, use: generic_copy}
+    note: "案例的 WF6(熔断) 不在 27 模式 catalog，不选；G1/DF1/CD1 命中本决策"
+
+  # ── 轴2: selected_patterns → 资产 ──
+  - axis: selected_patterns
+    key: W1
+    assets: [{file: knowledge/assets/agent-definitions/orchestration.md, use: asset_adapt, bind_to: .claude/agents/ 调度语义参考}]
+  - axis: selected_patterns
+    key: G1
+    assets: [{file: knowledge/assets/agent-definitions/critic.md, use: asset_adapt, bind_to: .claude/agents/security-reviewer.md}]
+  - axis: selected_patterns
+    key: K1
+    assets: [{file: knowledge/assets/rules/durable-context.md, use: generic_copy}]
+  - axis: selected_patterns
+    key: DT1
+    assets: [{file: knowledge/assets/agent-definitions/orchestration.md, use: asset_adapt, bind_to: "workflow 步骤间文件传递契约"}]
+  - axis: selected_patterns
+    key: DF1
+    assets: [{file: knowledge/assets/gates/hooks-config.json, use: generic_copy, bind_to: .claude/hooks/hooks.json}]
+  - axis: selected_patterns
+    key: IH1
+    assets: [{file: knowledge/assets/agent-definitions/orchestration.md, use: asset_adapt, bind_to: phase/02-workflows/ 无审批节点声明}]
+  - axis: selected_patterns
+    key: IT1
+    assets: [{file: knowledge/assets/gates/hooks-config.json, use: generic_copy, bind_to: CLAUDE.md 工具策略节}]
+  - axis: selected_patterns
+    key: CD1
+    assets: [{file: knowledge/assets/skills/health-checker.md, use: reference_only, bind_to: phase/gates 输入检查语义}]
+  - axis: selected_patterns
+    key: CD2
+    assets:
+      - {file: knowledge/assets/rules/security.md, use: generic_copy}
+      - {file: knowledge/assets/agent-definitions/code-reviewer.md, use: asset_adapt, bind_to: .claude/agents/ 只读审查隔离语义}
+
+  # ── manifest 通用资产（agent-output-standard 固定 7 项）──
+  - axis: manifest
+    key: generic_rules
+    assets:
+      - {file: knowledge/assets/rules/anti-patterns.md, to: .claude/rules/anti-patterns.md, use: generic_copy}
+      - {file: knowledge/assets/rules/durable-context.md, to: .claude/rules/durable-context.md, use: generic_copy}
+      - {file: knowledge/assets/rules/skill-routing.md, to: .claude/rules/skill-routing.md, use: generic_copy}
+      - {file: knowledge/assets/rules/coding-style.md, to: .claude/rules/coding-style.md, use: generic_copy}
+      - {file: knowledge/assets/rules/security.md, to: .claude/rules/security.md, use: generic_copy}
+      - {file: knowledge/assets/rules/testing.md, to: .claude/rules/testing.md, use: generic_copy}
+      - {file: knowledge/assets/gates/hooks-config.json, to: .claude/hooks/hooks.json, use: generic_copy, note: "hooks 整包: hooks.json 无外部脚本引用，经 Step 3 逐条核对无缺包"}
+
+dedup_note: "orchestration.md 被 W1/DT1/IH1 三轴命中，合并为一次 asset_adapt 参考；hooks-config.json 被 DF1/IT1 双轴命中 + manifest 固定项，合并一次 copy"

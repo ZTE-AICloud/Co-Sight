@@ -1,0 +1,8 @@
+domain: "D-Agent创建"
+description: "测试 Agent 创建全流程 — 从需求分析到产物输出"
+test_cases:
+  - id: "TC-AC-01"
+    input: "创建一个代码审查Agent，输入PR diff，输出分维度的审查报告（安全/性能/规范），要求禁止修改源代码"
+    expected: "完整agent-creation流水线→生成CLAUDE.md+rules/+skills/+evaluation/"
+    expected_phase: "DONE"
+    timeout: 600

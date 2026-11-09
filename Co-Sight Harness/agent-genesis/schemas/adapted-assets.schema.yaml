@@ -1,0 +1,19 @@
+# adapted-assets.yaml — 步骤3b 逐资产适配产出（在 matched-assets 基础上追加 adaptations）
+build_mode: {type: string, enum: [greenfield, incremental]}
+task_mode: {type: string}
+selected_patterns: {type: array, items: {type: string}}
+files:
+  type: array
+  items:
+    target: {type: string}
+    source: {type: string, enum: [generic_copy, asset_adapt, template, direct_map, generate, conditional]}
+    from: {type: string}
+    adaptations:
+      type: object
+      description: "仅 source=asset_adapt 时有此字段"
+      properties:
+        keep: {type: array, items: {type: string}, description: "保留的部分"}
+        customize: {type: array, items: {field: string, add: array}, description: "需修改的部分"}
+        extend: {type: array, items: {field: string, add: string}, description: "需新增的部分"}
+        replace: {type: array, items: {field: string, from: string, to: string}, description: "需替换的部分"}
+        remove: {type: array, items: {type: string}, description: "需删除的部分"}

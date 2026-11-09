@@ -1,0 +1,1 @@
+ALTER TABLE `rag_knowledge_bases` ADD `api_key_ref` text;

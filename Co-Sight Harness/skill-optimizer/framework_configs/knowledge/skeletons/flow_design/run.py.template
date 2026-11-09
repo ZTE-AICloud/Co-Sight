@@ -1,0 +1,84 @@
+# -*- coding: utf-8 -*-
+"""流程类 Skill 主控脚本骨架(通用,不含具体业务)
+
+子 Agent 阶段 4(skill-scaffolder-agent)用此模板作为骨架,
+生成实际的 scripts/run.py。具体业务参数 / 字段名从 spec §1 推断。
+
+使用方式:
+  cp run.py.template scripts/run.py
+  # 然后 subagent 根据 spec 替换 {占位符}
+"""
+from __future__ import annotations
+import argparse
+import json
+import sys
+import subprocess
+from pathlib import Path
+
+# === 退出码(参考 norms/validation_norms.md) ===
+EXIT_OK = 0
+EXIT_NEED_LLM = 10       # LLM 断点退出(非错误,需 CC 推理后 --resume)
+
+
+def need_llm_checkpoint(state_dir: Path, task_id: str, task_type: str,
+                        prompt: str, schema: dict, context: dict) -> None:
+    """LLM 断点协议(通用)。
+    写入任务文件 + 退出码 0,等 CC 推理后写响应文件 + --resume 继续。
+    """
+    task_file = state_dir / f"llm_task_{task_id}.json"
+    task_file.parent.mkdir(parents=True, exist_ok=True)
+    task_file.write_text(json.dumps({
+        "task_id": task_id,
+        "task_type": task_type,
+        "prompt_template": prompt,
+        "response_schema": schema,
+        "context": context,
+    }, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"[LLM-{task_id}] {task_type}")
+    print(f"  任务文件: {task_file}")
+    print(f"  请推理后将响应写入: {state_dir / f'llm_response_{task_id}.json'}")
+    print(f"  然后用 --resume 继续")
+    sys.exit(EXIT_OK)  # 非错误退出
+
+
+def run_step(script_path: Path, args: list, **kwargs):
+    """通用步骤执行(subprocess 调独立脚本)"""
+    cmd = ["python3", str(script_path)] + args
+    print(f"  > {' '.join(cmd)}")
+    return subprocess.run(cmd, **kwargs)
+
+
+def main():
+    parser = argparse.ArgumentParser(description="流程类 Skill 主控")
+    # === 通用参数(从 spec §1.1 推断,以下是占位符) ===
+    parser.add_argument("--workspace", required=True, help="需求工作目录")
+    parser.add_argument("--use-case", required=True, help="用例名称")
+    parser.add_argument("--subsystem", required=True, help="目标子系统名称")
+    parser.add_argument("--knowledge-lib", required=True, help="知识库根路径")
+    parser.add_argument("--resume", action="store_true", help="从 LLM 断点恢复")
+    parser.add_argument("--llm-response", help="LLM 响应文件路径")
+    args = parser.parse_args()
+
+    workspace = Path(args.workspace)
+    middle = workspace / "middle_content" / "{SKILL_NAME}"
+    middle.mkdir(parents=True, exist_ok=True)
+
+    # === 通用执行顺序(流程类,参考 norms/spec_norms.md) ===
+    # Step 1: read       - 读取源输入
+    # Step 2: filter     - 过滤无关行
+    # Step 3: transform  - 格式转换(组件引用补齐)
+    # Step 4: insert     - 插入变更消息(含 LLM 断点)
+    # Step 5: render_table   - 生成表格(独立)
+    # Step 6: render_diagram - 生成可视化图(独立)
+    # Step 7: render_detail  - 生成详细描述(独立)
+    # Step 8: validate_topology - 拓扑校验
+    # Step 9: validate_content  - 内容校验
+    # Step 10: validate_output  - 产物校验
+    # Step 11: assemble + write - 组装 + 写入最终产物
+
+    # ⚠️ subagent 必须按 spec §4 的具体步骤替换此处,
+    # 保留 need_llm_checkpoint + run_step 协议,删除其他注释。
+
+
+if __name__ == "__main__":
+    main()

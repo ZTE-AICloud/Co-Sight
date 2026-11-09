@@ -1,0 +1,49 @@
+test_name: "pep8-compliance-check"
+description: "验证分析型 Agent 是否能正确检测 PEP 8 违规并给出可执行的修复建议"
+agent_type: SINGLE_AGENT
+
+input:
+  type: "file"
+  path: "fixtures/pep8_violations.py"
+  prompt_template: |
+    请检查以下 Python 文件是否符合 PEP 8 规范，对每处违规给出：
+    1. 违规位置（行号）
+    2. 违规规则编号（如 E501）
+    3. 问题描述
+    4. 具体修改建议
+
+    文件路径: {input_path}
+
+expected_output:
+  type: "checklist"
+  items:
+    - id: "E501-detected"
+      description: "检测到行过长（E501: line too long）"
+      required: true
+    - id: "E302-detected"
+      description: "检测到函数定义前缺少空行（E302: expected 2 blank lines）"
+      required: true
+    - id: "W291-detected"
+      description: "检测到行尾空白（W291: trailing whitespace）"
+      required: true
+    - id: "E302-detected-2"
+      description: "检测到第二个函数定义前缺少空行（第二个 E302）"
+      required: true
+    - id: "E305-detected"
+      description: "检测到函数定义后空行不足（E305: expected 2 blank lines after function）"
+      required: true
+    - id: "E703-detected"
+      description: "检测到语句以分号结尾（E703: statement ends with semicolon）"
+      required: true
+    - id: "output-structured"
+      description: "输出格式包含违规位置、规则编号、问题描述、修改建议四个字段"
+      required: true
+    - id: "no-false-positives"
+      description: "未报告不存在的违规（无误报）"
+      required: false
+
+scoring_weights:
+  correctness: 0.40
+  completeness: 0.30
+  format_compliance: 0.15
+  actionability: 0.15

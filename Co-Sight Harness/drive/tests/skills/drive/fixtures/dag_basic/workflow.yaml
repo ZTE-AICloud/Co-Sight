@@ -1,0 +1,32 @@
+# DAG 模式 workflow.yaml 测试 fixture —— 基本链状 + 并发
+mode: dag
+
+orchestration:
+  max_concurrent_agents: 4
+  wave_dispatch: barrier
+
+agents:
+  - id: analyzer
+    agent: drive:analyzer
+    depends_on: []
+  - id: planner
+    agent: drive:planner
+    depends_on: [analyzer]
+  - id: impl-auth
+    agent: "@Explore"
+    depends_on: [planner]
+  - id: impl-api
+    agent: "@Plan"
+    depends_on: [planner]
+  - id: reviewer
+    agent: drive:code-reviewer
+    depends_on: [impl-auth, impl-api]
+  - id: evaluator
+    agent: drive:evaluator
+    depends_on: [reviewer]
+    terminal: true
+    verdict_required: true
+
+complexity_rules:
+  trivial:
+    skip_agents: [reviewer]

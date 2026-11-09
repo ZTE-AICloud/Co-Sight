@@ -1,0 +1,29 @@
+# e2e-results.schema.yaml
+# Step 6b (e2e-test-runner) 产出的每个 result.json schema
+type: map
+required: true
+mapping:
+  case_id:
+    type: str
+    required: true
+  verdict:
+    type: str
+    required: true
+    enum: [PASS, FAIL, INCOMPLETE]
+  exit_code:
+    type: int
+    required: true
+  elapsed_seconds:
+    type: number
+    required: true
+    minimum: 0
+  timed_out:
+    type: bool
+    required: true
+  artifacts_count:
+    type: int
+    required: true
+    minimum: 1
+  error:
+    type: str
+    required: false

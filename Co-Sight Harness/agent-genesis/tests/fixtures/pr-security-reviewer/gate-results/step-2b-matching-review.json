@@ -1,0 +1,8 @@
+{
+  "step_id": "step-2b-matching-review",
+  "gate_id": "G017-pattern-constraints",
+  "verdict": "PASS",
+  "selected": ["W1", "G1", "K1", "DT1", "DF1", "IH1", "IT1-Optional", "CD1", "CD2"],
+  "concerns": [],
+  "checked_at": "2026-10-05T03:45:00Z"
+}

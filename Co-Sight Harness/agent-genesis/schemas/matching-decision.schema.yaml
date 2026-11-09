@@ -1,0 +1,90 @@
+# matching-decision — Phase 1 模式匹配产出
+decision_id:
+  type: string
+  pattern: "{name}-{timestamp}"
+timestamp:
+  type: string
+  format: "ISO8601"
+mn_type:
+  type: string
+  enum: [MN-Exploratory, MN-Deterministic, MN-Hybrid]
+  description: "Tier 0 任务性质判定结果（形态与 g017 L3 HC-04 消费的 MN-* 判定一致）"
+pattern_decisions:
+  type: array
+  items:
+    dimension:
+      type: string
+      enum: [workflow, knowledge, data_flow, interaction, constraint]
+    pattern_id:
+      type: string
+      description: "从20模式catalog中选择的模式ID，如 W1, K2, DT1, IH3, CD2"
+    confidence:
+      type: string
+      enum: [high, medium, low]
+    rationale:
+      type: string
+      description: "为什么选这个模式，引用用户原话或需求信号"
+q_answers:
+  q1_skill: "string | none"
+  q2_gate: "string | none"
+  q3_review: "string | none"
+  q4_agent_role: "string | none"
+  q5_task_category: "simple_atomic | single_file_edit | multi_file_analysis | complex_planning"
+  q6_parallelism: "sequential | parallel"
+build_type:
+  type: string
+  enum: [single, multi_agent]
+output_structure:
+  type: string
+  description: "产出目录结构描述"
+
+# ─── v2 增量字段（build-plan-harness-contract v2.0 / D1）───
+selected_patterns:
+  type: array
+  description: "Tier-2 选中的模式 ID 结构化列表（与正文决策表一致）"
+  items: {type: string, pattern: "^[A-Z]+[0-9]+$"}
+rejected:
+  type: array
+  description: "有理由拒绝的模式（结构化「未选中」节，供 anti_patterns 字段引用）"
+  items:
+    type: object
+    required: [pattern_id, reason]
+    properties:
+      pattern_id: {type: string, pattern: "^[A-Z]+[0-9]+$"}
+      reason: {type: string}
+build_type_decision:
+  type: object
+  description: "结构决策（harness-design-principles.yaml multi_agent_topology.output_contract）"
+  properties:
+    type: {type: string, enum: [single, multi_agent]}
+    topology: {type: string}
+    subagents:
+      type: array
+      items:
+        type: object
+        required: [role, split_trigger]
+        properties:
+          role: {type: string}
+          split_trigger: {type: string, enum: [S1, S2, S3, S4]}
+          knowledge_budget_lines: {type: integer}
+          isolation_point: {type: string}
+    skills:
+      type: array
+      items:
+        type: object
+        required: [name, scope_trigger]
+        properties:
+          name: {type: string}
+          scope_trigger: {type: string, enum: [K1_reusable, K2_triggerable, K3_llm_judgment, K4_context_budget]}
+          rationale: {type: string}
+materialization:
+  type: array
+  description: "决策物化表（role 级；路径绑定留给 Step 3）"
+  items:
+    type: object
+    required: [pattern_id, mechanism, target_roles]
+    properties:
+      pattern_id: {type: string, pattern: "^[A-Z]+[0-9]+$"}
+      mechanism: {type: string, minLength: 10}
+      target_roles: {type: array, minItems: 1, items: {type: string}}
+      verify_hint: {type: string}

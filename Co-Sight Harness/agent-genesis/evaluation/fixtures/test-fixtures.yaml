@@ -1,0 +1,96 @@
+# AgentGenesis 评估 Fixture 模板
+
+> Phase 0 评估用测试 Fixture。Phase 1+ 会扩展为完整的测试用例集。
+
+## Fixture 1: 代码审查Agent 需求输入
+
+```yaml
+fixture_id: "F-001"
+test_case: "TC-0.9"
+input_type: "user_requirement"
+content: |
+  构建一个代码审查Agent，输入是PR的git diff，
+  输出是分安全、性能、规范三个维度的审查报告，
+  不要修改源代码
+expected:
+  patterns:
+    - W1-Pipeline
+    - K1-LLM-Native
+    - IH1-Fire-and-Forget
+    - CD2-Safety-First
+  spec_chapters: 11
+  residual_placeholders: 0
+```
+
+## Fixture 2: Pipeline 系统需求输入
+
+```yaml
+fixture_id: "F-002"
+test_case: "TC-0.10"
+input_type: "user_requirement"
+content: |
+  构建一个分步骤的需求分析系统，
+  先澄清需求，再规划任务，然后串行调用子Agent执行，
+  每步分析完都要审查通过才能继续，
+  子Agent的输出要作为下一步的输入
+expected:
+  patterns:
+    - W1-Pipeline
+    - G1-Reviewer-Gate
+    - DT1-Linear-Pass-Through
+    - IH2-Interactive-Clarify
+  spec_chapters: 11
+  residual_placeholders: 0
+```
+
+## Fixture 3: 模糊输入（负向测试）
+
+```yaml
+fixture_id: "F-003"
+test_case: "TC-0.11"
+input_type: "user_requirement"
+content: "构建一个Agent帮我处理代码"
+expected:
+  all_low_confidence: true
+  clarification_questions_generated: true
+  no_overconfident_matching: true
+```
+
+## Fixture 4: 幻觉诊断（诊断模式）
+
+```yaml
+fixture_id: "F-004"
+test_case: "TC-0.12"
+input_type: "problem_description"
+content: "Agent在协议分析时编造了不存在的协议参数"
+expected:
+  failed_pattern: "CD3-Knowledge-Boundary"
+  target_section: "Knowledge Contract"
+  fix_direction: "添加知识边界声明"
+```
+
+## Fixture 5: 审查跳过诊断（诊断模式）
+
+```yaml
+fixture_id: "F-005"
+test_case: "TC-0.13-A"
+input_type: "problem_description"
+content: "Agent跳过了审查步骤直接输出了最终结果"
+expected:
+  failed_pattern: "G1-Reviewer-Gate"
+  target_section: "Execution Workflow"
+  fix_direction: "加强审查维度和通过标准"
+```
+
+## Fixture 6: 中间产物丢失诊断（诊断模式）
+
+```yaml
+fixture_id: "F-006"
+test_case: "TC-0.13-B"
+input_type: "problem_description"
+content: "中间产物丢失导致下游SubAgent报错找不到文件"
+expected:
+  failed_pattern: "DT1-Linear-Pass-Through"
+  target_section: "Data Flow"
+  fix_direction: "添加数据持久化校验"
+```

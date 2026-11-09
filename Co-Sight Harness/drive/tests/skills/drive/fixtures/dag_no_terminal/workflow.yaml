@@ -1,0 +1,11 @@
+# DAG 模式 fixture —— 缺 terminal agent
+mode: dag
+
+agents:
+  - id: a
+    agent: drive:analyzer
+    depends_on: []
+  - id: b
+    agent: drive:planner
+    depends_on: [a]
+    # 无 terminal agent

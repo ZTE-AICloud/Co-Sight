@@ -1,0 +1,29 @@
+{
+  "name": "goldeval",
+  "displayName": "Goldeval",
+  "version": "1.0.0",
+  "description": "Agent 评估插件：黄金数据集评测（goldeval 评估器 + 数据集）、端到端用例生成 / 执行 / 评分三件套，以及已完成执行的 trace 轨迹审计（L0/L1 五维报告）。",
+  "author": {
+    "name": "ZTE AI Lab"
+  },
+  "keywords": [
+    "claude-code",
+    "plugin",
+    "agent-eval",
+    "evaluation",
+    "golden-dataset",
+    "f1-score",
+    "e2e-test",
+    "trace-audit",
+    "harness"
+  ],
+  "license": "Apache-2.0",
+  "skills": [
+    "./skills/goldeval",
+    "./skills/agent-eval",
+    "./skills/traceaudit",
+    "./skills/e2e-test-generator",
+    "./skills/e2e-test-runner",
+    "./skills/e2e-test-evaluator"
+  ]
+}

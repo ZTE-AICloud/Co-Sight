@@ -1,0 +1,31 @@
+{
+  "schema_version": "drive.runtime.state.v1",
+  "revision": 8,
+  "active_stage": "execute",
+  "status": "executing",
+  "mode": "dag",
+  "current_wave": 2,
+  "waves_total": 3,
+  "next_action": null,
+  "confirmed_stages": [
+    "start",
+    "analyze",
+    "plan"
+  ],
+  "pending_confirmation": null,
+  "created_at": "2026-08-15T10:00:00Z",
+  "updated_at": "2026-08-15T10:30:00Z",
+  "active_agents": [
+    {
+      "id": "researcher",
+      "status": "completed",
+      "started_at": "2026-08-15T10:00:00Z",
+      "completed_at": "2026-08-15T10:10:00Z"
+    },
+    {
+      "id": "summarizer",
+      "status": "running",
+      "started_at": "2026-08-15T10:10:00Z"
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+# Test Fixture: Deep Research Agent 输入场景
+# 来源: 2025-2026 DeepResearch Agent 架构研究 (arxiv:2506.18096, arxiv:2601.20843)
+# 用途: TC-AC-02, TC-E2E-01
+
+fixture_id: "E2E-F-001"
+test_cases: [TC-AC-02, TC-E2E-01]
+domain: "deep-research-agent"
+
+user_input: |
+  构建一个深度研究Agent，能执行以下任务：
+  1. 接收一个研究主题，自动分解为3-6个子研究领域
+  2. 对每个子领域并行搜索多个来源（arXiv论文、GitHub代码库、
+     技术博客如Medium/Dev.to）
+  3. 搜索结果汇总后，生成结构化文献综述报告，包含：
+     - 执行摘要 (Executive Summary)
+     - 方法论 (Methodology)
+     - 各领域发现 (Domain Findings)
+     - 跨领域分析 (Cross-Cutting Analysis)
+     - 综合建议 (Synthesis & Recommendations)
+     - 局限性 (Limitations)
+     - 完整引用列表 (Full References)
+  4. 每个结论必须标注引用来源，可追溯到原始URL
+  5. 完成后对报告质量进行自评（完整性/准确性/格式/可操作性）
+
+expected_patterns:
+  workflow: W3  # MapReduce: 并行搜索各子领域, 汇总报告
+  knowledge: [K3, K1]  # KB-Backed (技术博客检索) + LLM-Native (架构知识)
+  data_flow: DT2  # Shared State: 多Agent共享研究上下文
+  interaction: IH1  # Fire-and-Forget: 给定主题, 输出完整报告
+  safety: CD3  # Knowledge-Boundary: 区分检索可信域与LLM推测
+  traceability: DP1  # Traceable Lineage: 结论→引用→URL
+  evolution: E1  # Self-Evaluation: 报告质量自评
+
+# 基于 Deep Researcher Reflect Evolve (arxiv:2601.20843) 架构模式
+# 基于 GPT Researcher 8-Agent Pipeline 模式
+# 基于 deep-research-cc 3-stage parallel pipeline 模式
+
+golden_pattern_match:
+  required: [W3, K3, DT2, DP1, E1]
+  optional: [K1, IH1, CD3]
+  forbidden: [W2, K2, K4, IH2]

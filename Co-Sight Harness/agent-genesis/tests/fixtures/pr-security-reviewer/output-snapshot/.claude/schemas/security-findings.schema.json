@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "security-findings",
+  "description": "pr-security-reviewer 的 critical 级安全发现结构契约。五字段全必填，任何扫描器/复核者产出必须合规。",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "properties": {
+      "dimension": {
+        "type": "string",
+        "enum": ["secrets", "injection", "dangerous_config"],
+        "description": "安全维度：密钥硬编码 / 注入漏洞 / 危险配置"
+      },
+      "severity": {
+        "type": "string",
+        "enum": ["critical"],
+        "description": "本 Agent 仅输出 critical；枚举单值冻结"
+      },
+      "location": {
+        "type": "string",
+        "minLength": 1,
+        "description": "文件路径 + 行号，如 src/db.py:42"
+      },
+      "evidence": {
+        "type": "string",
+        "minLength": 1,
+        "description": "diff 中的命中行原文（新增行，含 + 前缀）"
+      },
+      "fix": {
+        "type": "string",
+        "minLength": 1,
+        "description": "具体可执行的修复建议"
+      }
+    },
+    "required": ["dimension", "severity", "location", "evidence", "fix"],
+    "additionalProperties": false
+  }
+}

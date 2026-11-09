@@ -1,0 +1,1041 @@
+# 智能体资源。6 个端点。
+#
+# **路径规则：个体资源身份进路径。** 集合操作走集合路径，个体操作走 <集合>/{id}/<动作词>：
+#   集合：  GET  /agents                 POST /agents
+#   集合子资源：GET /agents/tags
+#   个体：  GET  /agents/{agentId}       POST /agents/{agentId}/update | /delete
+# 请求体只承载可变字段、不承载身份 - 因此 update 的 body 里没有 agentId，delete 没有 body。
+# 动作词白名单只约束个体路径的末段；集合路径的语义由 HTTP 方法表达（GET 取、POST 建）。
+# 与 4.02 §4 一致：集合路径不带 id，个体与父子路径 id 进路径。
+# 机制（目录与 id 的关系、盘库顺序、启动收养、status 派生）见 ../03-architecture/08-agent.md。
+#
+# 错误响应体统一引用 ./5.00-common-openapi.yaml#/components/schemas/Error
+# （error / message / messageKey / params）。examples 只展开 error 与 message，
+# 运行时同时返回 messageKey / params，降级规则见 4.02 §10.1。
+openapi: 3.0.3
+
+info:
+  title: Smart Factory 智能体
+  version: 0.1.0
+  description: |
+    智能体元数据的增删改查。
+    状态：**草案** - 本目录的试金石，当前覆盖 agents（本文件）与 files（[5.02](./5.02-file-openapi.yaml)）；会话 / 消息 / 运行 / 实时通道仍在 ../04-api/ 下，待逐个迁移。
+    agents 域未出现在本文件里的端点，就是本服务刻意不做的端点。
+
+servers:
+  - url: http://localhost:4100/api/smart-factory/v1
+    description: |
+      本地服务，前缀与 REST/WS 共用。端口取自 PORT（缺省 4100）。
+      开发态前端经 vite 代理写相对路径，不要写绝对地址。
+
+# 本服务没有鉴权：端侧本地单用户。
+# 显式写空数组，表示「无鉴权」是设计而不是漏写；不会出现 401 / 403，客户端不要写登录跳转或 token 注入。
+security: []
+
+tags:
+  - name: agents
+    description: 智能体元数据。产物目录不在本资源里管，见 ../03-architecture/08-agent.md。
+
+paths:
+  /agents:
+    get:
+      tags: [agents]
+      summary: 获取智能体列表
+      operationId: listAgents
+      parameters:
+        - name: keyword
+          in: query
+          required: false
+          description: 子串匹配 name / id / description 三者任一，ASCII 大小写不敏感。空串视为未传。
+          schema: { type: string }
+        - name: tag
+          in: query
+          required: false
+          description: |
+            按标签过滤，**精确匹配一个标签、不是子串**：`tag=天气` 不命中标签「天气2」。
+            只收一个；多个标签的 AND / OR 语义尚无需求，先不定 - **重复参数（`?tag=a&tag=b`）
+            被当成没给这个参数**（Express 把重复参数解析成数组，非字符串一律按未传处理，
+            `keyword` 同此规则），不会报错也不会取第一个。
+            空串视为未传；形态非法（超长或含禁用字符，同 Agent.tags）返回 400；
+            没有智能体带这个标签时是空页，不是 404。
+          schema: { type: string, maxLength: 10 }
+        - name: workspaceId
+          in: query
+          required: false
+          description: |
+            按所属工作区精确过滤；空串视为未传。取值必须是框架工作区 uuid，
+            形态非法返回 400。工作区来自 `GET /workspaces/list`。
+          schema: { type: string, format: uuid }
+        - name: source
+          in: query
+          required: false
+          description: |
+            按来源过滤：`user` = 用户建的，`builtin` = 随产品提供的内置智能体。
+            空串视为未传（两种都要）；取值不在枚举内返回 400。
+            与 `workspaceId` 同时给时是 AND 关系（内置行本来就不属于任何工作区）。
+          schema: { type: string, enum: [user, builtin] }
+        - name: status
+          in: query
+          required: false
+          description: |
+            按**现算的**产物状态过滤（与 `Agent.status` 同一份派生结果，库里没有这一列）。
+            空串视为未传；取值不在枚举内返回 400（`Agent.status` 的 `null` 是读盘失败的降级值，
+            不是一种状态，也不能拿来筛）。
+            与 `keyword` / `tag` / `workspaceId` / `source` 是 AND 关系；内置智能体状态恒为
+            `completed`，因此照常出现在 `status=completed` 的结果里。
+            筛选先取全量、再按 `page` / `pageSize` 切页：`total` 是过滤后的全量。
+          schema:
+            type: string
+            enum: [not_started, building, blocked, failed, completed]
+        - $ref: './5.00-common-openapi.yaml#/components/parameters/Page'
+        - $ref: './5.00-common-openapi.yaml#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: |
+            成功。排序固定为 updatedAt 降序（最近改动过的在最前） -
+            这一点与 runs/list 的 createdAt 降序、sessions/list 的 updatedAt 降序都不同。
+            信封为 { items, total, page, pageSize }，page / pageSize 回显校验后的请求值。
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgentPage' }
+              example:
+                items:
+                  - id: agt_9f8c1e2a-3b4d-4e5f-8a90-1b2c3d4e5f60
+                    workspaceId: 8b1f0c2d-4e5a-4b6c-9d7e-1f2a3b4c5d6e
+                    name: 天气智能体
+                    description: 查询任意城市的实时天气与未来 7 天预报，数据源用公开 API，输出简洁。
+                    initialInput: 我要做一个天气智能体，支持查询任意城市的实时天气和未来 7 天预报。
+                    knowledgeWorkflowId: ''
+                    tags: [天气, 工具]
+                    icon: https://cdn.example.com/covers/weather.png
+                    status: completed
+                    dir: /home/dev/workspaces/示例工作区/.smart-factory/agents/agt_9f8c1e2a-3b4d-4e5f-8a90-1b2c3d4e5f60
+                    runtimeDir: /home/dev/workspaces/示例工作区/.smart-factory/agents/agt_9f8c1e2a-3b4d-4e5f-8a90-1b2c3d4e5f60/development/output/agents/weather-agent/v2
+                    createdAt: '2026-10-09T06:12:00.000Z'
+                    updatedAt: '2026-10-14T09:20:00.000Z'
+                total: 1
+                page: 1
+                pageSize: 20
+        '400':
+          description: tag 形态非法（超长 / 含禁用字符）；或 workspaceId 不是合法 uuid；或 source / status 取值不在枚举内。
+          content:
+            application/json:
+              schema: { $ref: './5.00-common-openapi.yaml#/components/schemas/Error' }
+              examples:
+                tagIllegal:
+                  value: { error: BAD_REQUEST, message: 'tag 不能含 " \ % _ 这四个字符：天_气' }
+        '502':
+          description: 结果集中有智能体所属工作区不存在 / 未绑定目录，或框架模块面不可达 / 拒绝令牌 / 上游 5xx。
+          content:
+            application/json:
+              schema: { $ref: './5.00-common-openapi.yaml#/components/schemas/Error' }
+              examples:
+                workspaceUnavailable:
+                  value: { error: BAD_GATEWAY, message: '工作区 8b1f0c2d-… 未绑定目录' }
+                frameworkUnavailable:
+                  value: { error: BAD_GATEWAY, message: '框架工作区接口不可用：connect ECONNREFUSED' }
+
+    post:
+      tags: [agents]
+      summary: 新建智能体
+      operationId: createAgent
+      description: |
+        智能体属于集合，创建即向集合 POST - 路径里没有动作词。
+        id 由服务端生成（形态 agt_<uuid>），请求体只承载可变字段，不接受 agentId，传了按多余字段忽略。
+        `workspaceId` 必填且不可改：服务端经框架模块面确认工作区存在且已绑定目录；工作区不可用或框架不可达统一返回 502，都不建行。
+        返回体的 status 是派生值：刚建好、还没有产物时为 not_started。
+        重名返回 409，**不自动加后缀** - 调用方据 409 自己决定改名后重试；重名判定限定在同一工作区内。
+        tags 不传即空数组（「没有标签」与「标签列表为空」是同一件事）。
+
+        可选的 `init` 在创建时把 `development` 初始化会话一起建好，`init.modelId` 必填非空并存成会话模型。
+        `init.input` **原文落到 `Agent.initialInput`**、`init.attachments` **解析后落到
+        `Agent.initialAttachments`**（两者都不落消息、不起 run）- 前端路由 state 丢了还能恢复；
+        首轮仍由前端在设计页触发，用户才能看到初始化过程。
+        初始化同步失败（500）时智能体行与目录一并回滚，不留下「有智能体、没有会话」的半成品。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AgentCreateInput' }
+            example:
+              workspaceId: 8b1f0c2d-4e5a-4b6c-9d7e-1f2a3b4c5d6e
+              name: 天气智能体
+              description: 查询任意城市的实时天气与未来 7 天预报。
+              tags: [天气, 工具]
+              icon: https://cdn.example.com/covers/weather.png
+              init:
+                input: 我要做一个天气智能体，支持查询任意城市的实时天气和未来 7 天预报……
+                modelId: a7cf0154-020b-4f97-b2bc-5ab8eb3bf0b5
+                attachments:
+                  - path: /home/dev/docs/weather-requirements.md
+      responses:
+        '200':
+          description: |
+            成功，返回新建的完整记录。带 `init` 时额外返回 `initSessionId`（初始化会话 id）；
+            不带 `init` 时响应与 detail 完全一致。
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgentCreateResult' }
+              example:
+                id: agt_9f8c1e2a-3b4d-4e5f-8a90-1b2c3d4e5f60
+                workspaceId: 8b1f0c2d-4e5a-4b6c-9d7e-1f2a3b4c5d6e
+                name: 天气智能体
+                description: 查询任意城市的实时天气与未来 7 天预报。
+                initialInput: 我要做一个天气智能体，支持查询任意城市的实时天气和未来 7 天预报……
+                initialAttachments: [/home/dev/docs/weather-requirements.md]
+                knowledgeWorkflowId: RAG_Workflow_89f4
+                tags: [天气, 工具]
+                icon: https://cdn.example.com/covers/weather.png
+                status: not_started
+                dir: /home/dev/workspaces/示例工作区/.smart-factory/agents/agt_9f8c1e2a-3b4d-4e5f-8a90-1b2c3d4e5f60
+                runtimeDir: null
+                createdAt: '2026-10-15T07:41:22.308Z'
+                updatedAt: '2026-10-15T07:41:22.308Z'
+                initSessionId: sess_5c2f8a1d-9e4b-4c7a-8f30-2d6b1e9a4c88
+        '400':
+          description: |
+            workspaceId 缺失或不是 uuid；或 name 缺失 / trim 后为空；或 name / description / icon 超出长度上限；
+            或 tags 形态非法；或 init 不是对象 / 含未知字段 / modelId 缺失、空串或不是字符串 / input 不是字符串 /
+            attachments 不是数组 / 附件超过 20 项 / 附件路径不是绝对路径、不是文件或不在可浏览范围内 /
+            modelId 不在模型列表里、协议不是 anthropic 或没有配置 API 密钥。
+          content:
+            application/json:
+              schema: { $ref: './5.00-common-openapi.yaml#/components/schemas/Error' }
+              examples:
+                missingWorkspaceId:
+                  value: { error: BAD_REQUEST, message: workspaceId 必填 }
+                missingName:
+                  value: { error: BAD_REQUEST, message: name 必填 }
+                nameTooLong:
+                  value: { error: BAD_REQUEST, message: name 不能超过 40 字 }
+                initNotObject:
+                  value: { error: BAD_REQUEST, message: init 必须是对象 }
+                initUnknownField:
+                  value: { error: BAD_REQUEST, message: 'init 含未知字段：foo（只支持 input / modelId / attachments）' }
+                initFieldNotString:
+                  value: { error: BAD_REQUEST, message: init.input 必须是字符串 }
+                attachmentsNotArray:
+                  value: { error: BAD_REQUEST, message: init.attachments 必须是数组 }
+                attachmentOutsideRoots:
+                  value: { error: BAD_REQUEST, message: 'path 不在可浏览范围内："/etc/hosts"' }
+                modelAbsent:
+                  value: { error: BAD_REQUEST, message: '所选模型不存在或已删除，请重新选择模型' }
+        '404':
+          description: |
+            `init.attachments` 里某个路径不存在（形态合法但找不到）。与 `messages/send` 同一口径：
+            形态不对是 400，合法但不存在是 404。此时不建行、不建目录。
+          content:
+            application/json:
+              schema: { $ref: './5.00-common-openapi.yaml#/components/schemas/Error' }
+              examples:
+                attachmentMissing:
+                  value: { error: NOT_FOUND, message: 路径 /home/dev/docs/nope.md 不存在 }
+        '409':
+          description: 同一工作区内已有同名智能体。
+          content:
+            application/json:
+              schema: { $ref: './5.00-common-openapi.yaml#/components/schemas/Error' }
+              examples:
+                nameTaken:
+                  value: { error: CONFLICT, message: 该工作区已有同名智能体「天气智能体」 }
+        '500':
+          description: |
+            带 `init` 时初始化会话失败。智能体行与目录会一并回滚，
+            调用方可以原样重试；`message` 保留失败原因。
+          content:
+            application/json:
+              schema: { $ref: './5.00-common-openapi.yaml#/components/schemas/Error' }
+              examples:
+                initFailed:
+                  value: { error: INTERNAL_ERROR, message: 初始化会话失败 }
+        '502':
+          description: |
+            工作区不存在、工作区未绑定目录，或框架模块面不可达 / 拒绝令牌 / 上游 5xx；
+            带 `init` 时还会校验 `init.modelId` 可运行，模型管理不可用同样返回 502（模型本身不可用返回 400）。以上情况都不建行。
+          content:
+            application/json:
+              schema: { $ref: './5.00-common-openapi.yaml#/components/schemas/Error' }
+              examples:
+                workspaceUnavailable:
+                  value: { error: BAD_GATEWAY, message: '工作区 8b1f0c2d-… 未绑定目录' }
+                frameworkUnavailable:
+                  value: { error: BAD_GATEWAY, message: '框架工作区接口不可用：connect ECONNREFUSED' }
+
+  /agents/tags:
+    get:
+      tags: [agents]
+      summary: 获取标签清单
+      operationId: listTags
+      description: |
+        标签去重后按使用量返回，供前端筛选下拉使用。
+        计数口径是「带这个标签的智能体数量」（同一智能体内已去重）。
+        无分页；没有标签时返回空数组。
+        排序固定为 count 降序、tag 升序，响应顺序确定。
+        传 `workspaceId` 时只统计该工作区内的智能体 —— 前端专家页按当前工作区展示，
+        标签下拉必须同口径，否则会列出别的工作区的标签、选中后筛出空结果。
+      parameters:
+        - name: workspaceId
+          in: query
+          required: false
+          description: |
+            按所属工作区精确过滤；空串视为未传（全库）。取值必须是框架工作区 uuid，
+            形态非法返回 400。工作区来自 `GET /workspaces/list`。
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: 成功。
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgentTagCounts' }
+              example:
+                items:
+                  - { tag: 天气, count: 12 }
+                  - { tag: 工具, count: 5 }
+        '400':
+          description: workspaceId 不是合法 uuid。
+          content:
+            application/json:
+              schema: { $ref: './5.00-common-openapi.yaml#/components/schemas/Error' }
+
+  /agents/{agentId}:
+    get:
+      tags: [agents]
+      summary: 获取智能体详情
+      operationId: getAgent
+      description: |
+        元数据 + **此刻可执行**的技能与命令（`skills` / `commands`，按名称升序）。
+        可执行清单只跟 `runtimeDir` 走，与 runtime 起跑门禁同源：内置智能体 = 定义目录，
+        普通智能体 = latest vN 产物；`runtimeDir` 为 null（产物未就绪 / 未生成）时两项都是空数组 ——
+        「为什么空」由 `status` 回答，需要人读原因走 `GET /agents/{id}/production`。
+        列表 / create / update 不带这两项（列表一页 200 行，不逐行扫盘）。
+        扫描口径（缺 SKILL.md 的目录、命令子目录与同名去重）见 `04-api/4.14-可执行技能与命令.md`。
+      parameters:
+        - $ref: '#/components/parameters/AgentIdPath'
+      responses:
+        '200':
+          description: 成功。除 create 的字段外，多 `skills` / `commands` 两项可执行清单。
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgentDetail' }
+              example:
+                id: agt_9f8c1e2a-3b4d-4e5f-8a90-1b2c3d4e5f60
+                workspaceId: 8b1f0c2d-4e5a-4b6c-9d7e-1f2a3b4c5d6e
+                name: 天气智能体
+                description: 查询任意城市的实时天气与未来 7 天预报。
+                initialInput: 我要做一个天气智能体，支持查询任意城市的实时天气和未来 7 天预报。
+                knowledgeWorkflowId: ''
+                tags: [天气, 工具]
+                icon: https://cdn.example.com/covers/weather.png
+                status: completed
+                dir: /home/dev/workspaces/示例工作区/.smart-factory/agents/agt_9f8c1e2a-3b4d-4e5f-8a90-1b2c3d4e5f60
+                runtimeDir: /home/dev/workspaces/示例工作区/.smart-factory/agents/agt_9f8c1e2a-3b4d-4e5f-8a90-1b2c3d4e5f60/development/output/agents/weather-agent/v2
+                knowledgeInjected: false
+                skills:
+                  - name: weather-query
+                    displayName: weather-query
+                    description: 城市天气查询
+                    version: '1.0'
+                    path: /home/dev/…/development/output/agents/weather-agent/v2/.claude/skills/weather-query
+                    updatedAt: '2026-10-26T06:00:00.000Z'
+                commands:
+                  - name: weekly-report
+                    namespace: reports
+                    description: 生成本周周报
+                    path: /home/dev/…/development/output/agents/weather-agent/v2/.claude/commands/reports/weekly-report.md
+                    updatedAt: '2026-10-26T06:00:00.000Z'
+                createdAt: '2026-10-09T06:12:00.000Z'
+                updatedAt: '2026-10-14T09:20:00.000Z'
+        '400':
+          description: agentId 形态非法（路径段存在但不符合 pattern）。
+          content:
+            application/json:
+              schema: { $ref: './5.00-common-openapi.yaml#/components/schemas/Error' }
+              examples:
+                malformedId:
+                  value: { error: BAD_REQUEST, message: 'agentId 形态非法："../evil"' }
+        '404':
+          description: 智能体不存在。
+          content:
+            application/json:
+              schema: { $ref: './5.00-common-openapi.yaml#/components/schemas/Error' }
+              examples:
+                notFound:
+                  value: { error: NOT_FOUND, message: 智能体 agt_9f8c1e2a-… 不存在 }
+        '502':
+          description: 工作区不存在、工作区未绑定目录，或框架模块面不可达 / 拒绝令牌 / 上游 5xx。
+          content:
+            application/json:
+              schema: { $ref: './5.00-common-openapi.yaml#/components/schemas/Error' }
+              examples:
+                workspaceUnavailable:
+                  value: { error: BAD_GATEWAY, message: '工作区 8b1f0c2d-… 未绑定目录' }
+                frameworkUnavailable:
+                  value: { error: BAD_GATEWAY, message: '框架工作区接口不可用：connect ECONNREFUSED' }
+
+  /agents/{agentId}/skills:
+    get:
+      tags: [agents]
+      summary: 产物技能清单
+      operationId: listAgentSkills
+      description: |
+        读智能体当前产物 `.claude/skills` 的内容。只读：产物未就绪也返回 200，用 ready / reasons 表达；
+        内置智能体定义目录不参与装配，返回 409。清单不记来源：构建生成的与装配进来的完全同构。
+        完整语义见 `04-api/4.13-智能体技能.md`。
+      parameters:
+        - $ref: '#/components/parameters/AgentIdPath'
+      responses:
+        '200':
+          description: 成功。未就绪时 items 为空、product 为 null。
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgentSkillsResponse' }
+        '400':
+          description: agentId 形态非法。
+          content:
+            application/json:
+              schema: { $ref: './5.00-common-openapi.yaml#/components/schemas/Error' }
+        '404':
+          description: 智能体不存在。
+          content:
+            application/json:
+              schema: { $ref: './5.00-common-openapi.yaml#/components/schemas/Error' }
+        '409':
+          description: 内置智能体（定义目录只读）。
+          content:
+            application/json:
+              schema: { $ref: './5.00-common-openapi.yaml#/components/schemas/Error' }
+              example: { error: CONFLICT, messageKey: error.conflict.builtin_agent }
+        '502':
+          description: 工作区目录不可解析或框架不可达。
+          content:
+            application/json:
+              schema: { $ref: './5.00-common-openapi.yaml#/components/schemas/Error' }
+    post:
+      tags: [agents]
+      summary: 装配技能（复制进当前产物）
+      operationId: attachAgentSkill
+      description: |
+        把来源技能的最新版本整拷进 `<product>/.claude/skills/<目录名>/`，复制完即生效：
+        runtime 原地读产物；preview / evaluation 起 run 前从产物整拷。
+        **不落库、不写 manifest、不改 CLAUDE.md**；重建出的新 vN 不会自动带上旧技能。
+        门禁（按顺序）：来源是目录且含 SKILL.md → 智能体存在且 source=user → 四个阶段无活跃 run
+        → 产物 completed → 无同名（目录名或 frontmatter name）→ 复制。
+      parameters:
+        - $ref: '#/components/parameters/AgentIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AttachAgentSkillInput' }
+            example:
+              path: /home/u/.cosight-harness/smart-factory/skill-workshop/output/skills/report-gen
+              version: v3
+      responses:
+        '200':
+          description: 成功，返回落盘后的技能与目标产物。
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AttachAgentSkillResult' }
+        '400':
+          description: path 非绝对路径 / 不是目录；version 非法或不存在；来源缺 SKILL.md。
+          content:
+            application/json:
+              schema: { $ref: './5.00-common-openapi.yaml#/components/schemas/Error' }
+        '404':
+          description: 智能体或来源目录不存在。
+          content:
+            application/json:
+              schema: { $ref: './5.00-common-openapi.yaml#/components/schemas/Error' }
+        '409':
+          description: 内置智能体 / 有活跃 run / 产物未就绪 / 目标已有同名技能。
+          content:
+            application/json:
+              schema: { $ref: './5.00-common-openapi.yaml#/components/schemas/Error' }
+        '502':
+          description: 工作区目录不可解析或框架不可达。
+          content:
+            application/json:
+              schema: { $ref: './5.00-common-openapi.yaml#/components/schemas/Error' }
+
+  /agents/{agentId}/skills/remove:
+    post:
+      tags: [agents]
+      summary: 从产物删除技能
+      operationId: removeAgentSkill
+      description: |
+        移除 `<product>/.claude/skills/<name>/`。`name` 是目录名（不是 frontmatter name）。
+        不幂等：不存在返回 404。门禁与装配相同：内置 / 活跃 run / 产物未就绪一律 409。
+      parameters:
+        - $ref: '#/components/parameters/AgentIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                  description: 产物里的技能目录名（`AgentSkill.name`）。
+            example: { name: report-gen }
+      responses:
+        '200':
+          description: 成功。
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [removed]
+                properties:
+                  removed: { type: string }
+              example: { removed: report-gen }
+        '400':
+          description: name 非法（含路径分隔符 / 隐藏目录等）或 agentId 形态非法。
+          content:
+            application/json:
+              schema: { $ref: './5.00-common-openapi.yaml#/components/schemas/Error' }
+        '404':
+          description: 智能体或该技能目录不存在。
+          content:
+            application/json:
+              schema: { $ref: './5.00-common-openapi.yaml#/components/schemas/Error' }
+        '409':
+          description: 内置智能体 / 有活跃 run / 产物未就绪。
+          content:
+            application/json:
+              schema: { $ref: './5.00-common-openapi.yaml#/components/schemas/Error' }
+        '502':
+          description: 工作区目录不可解析或框架不可达。
+          content:
+            application/json:
+              schema: { $ref: './5.00-common-openapi.yaml#/components/schemas/Error' }
+
+  /agents/{agentId}/update:
+    post:
+      tags: [agents]
+      summary: 更新智能体
+      operationId: updateAgent
+      description: |
+        只改传了的字段，其余原样。
+        description 传空串、icon 传空串、tags 传空数组都是「清空」，不传才是「不改」 -
+        两种意图不要混：「清空」与「不改」靠「给没给这个字段」分开，不靠给的值空不空。
+        id 在路径上、不可改：要换 id 就是「新建 + 删除旧的」，没有 rename 端点。
+        成功即刷新 updatedAt。
+      parameters:
+        - $ref: '#/components/parameters/AgentIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AgentUpdateInput' }
+            example: { description: '', tags: [] }
+      responses:
+        '200':
+          description: 成功，返回更新后的完整记录。
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Agent' }
+              example:
+                id: agt_9f8c1e2a-3b4d-4e5f-8a90-1b2c3d4e5f60
+                workspaceId: 8b1f0c2d-4e5a-4b6c-9d7e-1f2a3b4c5d6e
+                name: 天气智能体
+                description: ''
+                tags: []
+                icon: https://cdn.example.com/covers/weather.png
+                status: completed
+                dir: /home/dev/workspaces/示例工作区/.smart-factory/agents/agt_9f8c1e2a-3b4d-4e5f-8a90-1b2c3d4e5f60
+                runtimeDir: /home/dev/workspaces/示例工作区/.smart-factory/agents/agt_9f8c1e2a-3b4d-4e5f-8a90-1b2c3d4e5f60/development/output/agents/weather-agent/v2
+                createdAt: '2026-10-09T06:12:00.000Z'
+                updatedAt: '2026-10-15T08:02:11.004Z'
+        '400':
+          description: agentId 形态非法；五个可改字段一个都没给；或字段长度 / 形态非法。
+          content:
+            application/json:
+              schema: { $ref: './5.00-common-openapi.yaml#/components/schemas/Error' }
+              examples:
+                nothingToUpdate:
+                  value: { error: BAD_REQUEST, message: 'update 至少要给一个字段：name / description / tags / icon' }
+        '404':
+          description: 智能体不存在。
+          content:
+            application/json:
+              schema: { $ref: './5.00-common-openapi.yaml#/components/schemas/Error' }
+              examples:
+                notFound:
+                  value: { error: NOT_FOUND, message: 智能体 agt_9f8c1e2a-… 不存在 }
+        '409':
+          description: 改成的新 name 与同一工作区内的其它智能体重名。
+          content:
+            application/json:
+              schema: { $ref: './5.00-common-openapi.yaml#/components/schemas/Error' }
+              examples:
+                nameTaken:
+                  value: { error: CONFLICT, message: 该工作区已有同名智能体「天气智能体」 }
+        '502':
+          description: 工作区不存在、工作区未绑定目录，或框架模块面不可达 / 拒绝令牌 / 上游 5xx。
+          content:
+            application/json:
+              schema: { $ref: './5.00-common-openapi.yaml#/components/schemas/Error' }
+              examples:
+                workspaceUnavailable:
+                  value: { error: BAD_GATEWAY, message: '工作区 8b1f0c2d-… 未绑定目录' }
+                frameworkUnavailable:
+                  value: { error: BAD_GATEWAY, message: '框架工作区接口不可用：connect ECONNREFUSED' }
+
+  /agents/{agentId}/delete:
+    post:
+      tags: [agents]
+      summary: 删除智能体
+      operationId: deleteAgent
+      description: |
+        请求无 body - 身份经路径参数传递。
+        不可恢复：同时删掉元数据行、整个智能体根目录 `<workspace.directory>/.smart-factory/agents/{id}/`
+        （含 development / preview / runtime / evaluation 与 `.state/`），以及该智能体名下全部实例的会话、运行与消息。
+        名下有活跃 run 时先停掉这些会话（等价于逐个 sessions/abort），等引擎退出后再删，不返回 409。
+        工作区目录解析失败时不删任何东西：未绑定目录、工作区不存在或框架不可达一律返回 502。
+        不幂等：目标不存在返回 404。
+        与 sessions/delete 的边界：后者删一个会话且不触碰磁盘，本端点删全部会话且连目录一起删。
+      parameters:
+        - $ref: '#/components/parameters/AgentIdPath'
+      responses:
+        '200':
+          description: 成功，恒为空对象。
+          content:
+            application/json:
+              schema: { type: object, description: 空对象 }
+              example: {}
+        '400':
+          description: agentId 形态非法（路径段存在但不符合 pattern）。
+          content:
+            application/json:
+              schema: { $ref: './5.00-common-openapi.yaml#/components/schemas/Error' }
+              examples:
+                malformedId:
+                  value: { error: BAD_REQUEST, message: 'agentId 形态非法："../evil"' }
+        '404':
+          description: 智能体不存在。
+          content:
+            application/json:
+              schema: { $ref: './5.00-common-openapi.yaml#/components/schemas/Error' }
+              examples:
+                notFound:
+                  value: { error: NOT_FOUND, message: 智能体 agt_9f8c1e2a-… 不存在 }
+        '409':
+          description: 内置智能体（`error.conflict.builtin_agent`），不可删除。
+          content:
+            application/json:
+              schema: { $ref: './5.00-common-openapi.yaml#/components/schemas/Error' }
+              examples:
+                builtinAgent:
+                  value: { error: CONFLICT, message: 智能体 example-builtin-agent 是内置智能体，不可删除 }
+        '502':
+          description: 工作区不存在、工作区未绑定目录，或框架模块面不可达 / 拒绝令牌 / 上游 5xx；此时不删任何东西。
+          content:
+            application/json:
+              schema: { $ref: './5.00-common-openapi.yaml#/components/schemas/Error' }
+              examples:
+                workspaceUnavailable:
+                  value: { error: BAD_GATEWAY, message: '工作区 8b1f0c2d-… 未绑定目录' }
+                frameworkUnavailable:
+                  value: { error: BAD_GATEWAY, message: '框架工作区接口不可用：connect ECONNREFUSED' }
+
+components:
+  parameters:
+    AgentIdPath:
+      name: agentId
+      in: path
+      required: true
+      description: 智能体身份。集合路径之外的个体操作一律经它传递，请求体里不再重复。
+      schema: { $ref: '#/components/schemas/AgentId' }
+
+  schemas:
+    AgentId:
+      type: string
+      pattern: '^[a-z0-9][a-z0-9._-]{0,63}$'
+      description: |
+        智能体 id，新对象为 agt_<uuid>，服务端生成、不可变，客户端不得解析其内容。
+        校验与后端 assertAgentId 一致：全小写、非 Windows 保留名（con/nul/com1 等，含带扩展名变体）、不以点结尾（细则见 4.03 会话）。
+        收养来的历史行是原目录名，同样满足本 pattern（因此路径拼接的安全边界不需要放宽）。
+      example: agt_9f8c1e2a-3b4d-4e5f-8a90-1b2c3d4e5f60
+
+    Agent:
+      type: object
+      required: [id, workspaceId, source, name, description, initialInput, initialAttachments, knowledgeWorkflowId, tags, icon, status, dir, runtimeDir, createdAt, updatedAt]
+      properties:
+        id: { $ref: '#/components/schemas/AgentId' }
+        workspaceId:
+          type: [string, 'null']
+          format: uuid
+          description: |
+            所属工作区 id，创建时必填，之后不可改。内置智能体（source=builtin）不属于任何工作区，恒为 null。
+            名称唯一性按工作区隔离：不同工作区可以有同名智能体。
+        source:
+          type: string
+          enum: [user, builtin]
+          description: |
+            来源：`user` = 用户创建（含首页创建与启动收养；建后不可改，也不接受请求体指定）；
+            `builtin` = 随产品提供（[ADR-0003](../99-adr/0003-builtin-agents.md)），boot seed 按
+            `{COSIGHT_HOME}/smart-factory/builtin-agents/{id}/agent.json` 清单登记。
+            内置行**只读**——update / delete 一律 409；只能发起 runtime 会话（development / preview / evaluation
+            与 production 端点一律 409）；`id` 是定义目录名（如 `example-builtin-agent`），不是 `agt_<uuid>`。
+            列表（含带 workspaceId 筛选的查询）恒混入内置行；`dir` = `runtimeDir` = 定义目录本身，不经工作区解析。
+            来源不是标签：`tags` 里不出现 `内置` / `自定义`，两者是保留字，写进 tags 一律 400。
+        name:
+          type: string
+          minLength: 1
+          maxLength: 40
+          description: |
+            展示名，**同一工作区内唯一**（字节精确比较：大小写敏感、不做 Unicode 归一），trim 后 1–40 字。
+            重名一律 409，不自动加后缀。
+        description:
+          type: string
+          maxLength: 120
+          description: 缺省空串。update 传空串表示清空。
+        initialInput:
+          type: string
+          default: ''
+          description: |
+            创建时的第一句需求原文（`init.input` 原样落库，不截断）；空串 = 创建时没带 `init`。
+            **建后不可改**（不在 AgentUpdateInput 里，传了按多余字段忽略），也**不是**对话内容：
+            不产生消息、不起 run。用途是前端路由 state 丢失后恢复首轮（前端接上后，设计页可在
+            「没有 seed 且会话为空」时用它补发）。与 `description` 语义不同：那是卡片摘要，这是需求原文。
+        initialAttachments:
+          type: array
+          items: { type: string }
+          maxItems: 20
+          default: []
+          description: |
+            创建时挂的附件（`init.attachments`），存的是**服务端校验过的真实绝对路径**；
+            空数组 = 创建时没带附件（不是 null）。**建后不可改**，同样**不是**对话内容：
+            不产生消息、不起 run。与 `initialInput` 同一用途 —— 前端路由 state 丢失后恢复首轮时
+            连同附件一起补上。真正的首轮发送时另走 `messages/send` 的 `attachments`，
+            届时若文件已不存在会在发送接口报 404。
+        knowledgeWorkflowId:
+          type: string
+          default: ''
+          pattern: '^(?:[A-Za-z0-9_-]{1,128})?$'
+          description: |
+            当前绑定的知识检索工作流 id（`RAG_Workflow_xxx`）；**空串 = 没有 / 已取消**（不是 null）。
+            创建时由服务端从 `init.input` 的 `--knowledge-workflow-id` 参数解析落库；之后可经
+            `AgentUpdateInput.knowledgeWorkflowId` 修改（传空串即取消）。
+
+            作用范围只有**下一次**以 `/agent-genesis:harness-create` 开头的消息 —— 前端把它拼进
+            `--knowledge-workflow-id`。取消不会删除产物里已经注入的 `rag-knowledge-search` 技能：
+            那属于产物文件，要在技能管理里删或重建产物。
+
+            存量行（本字段引入前创建）库里是 NULL，读取时按 `initialInput` 现推；一旦被 update 写过
+            就固定下来，不再推导。
+        tags:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 10
+          maxItems: 10
+          default: []
+          description: |
+            标签，缺省空数组（不是 null - 「没有标签」与「标签列表为空」是同一件事）。
+            一个智能体可以有多个；只做机械约束，**不做受控词表**（可选集合归前端，同 icon 的口径）：
+            逐项 trim 后入库、1–10 字、最多 10 个、按 trim 后的值字节精确去重（与 name 的唯一性同口径）、保序不重排。
+            大小写敏感、不做 Unicode 归一；首尾空白在 trim 后不构成区别，所以「天气」与「天气 」是同一个标签 -
+            前端给「已有标签」的输入建议，是这里唯一的收敛手段。
+
+            **不许出现的四个字符 `" \ % _`**，每个都对应一个具体的坏法：
+            `"` 破坏过滤据以定界的引号（见 GET /agents 的 tag 参数）、`\` 破坏 JSON 转义、
+            `%` 与 `_` 会被 SQLite 的 LIKE 当成通配符（后端不发 ESCAPE 子句，无法转义）。
+            违反返回 400。
+
+            与 description / icon 同一口径：update 传 `[]` 表示清空，不传才是不改。
+        icon:
+          type: string
+          maxLength: 512
+          default: ''
+          description: |
+            封面图的 HTTP(S) 地址。后端**不解析、不校验形态**，只管长度。
+            空串是「没有封面」这个有意义的取值：卡片上的头像落到**名称首字**的兜底样式，
+            所以这里不设默认图，也不允许把「空」当成「没给」。
+            与 description 同一口径：update 传空串表示清空。
+        status:
+          type: [string, 'null']
+          enum: [not_started, building, blocked, failed, completed, null]
+          description: |
+            **派生的产物状态，不落库、不可写**：普通智能体与 `GET /agents/{id}/production` 的
+            `status` 同源，由服务端读 development 目录里的过程状态、交付门禁与产物现算。
+
+            - `not_started`：还没有状态文件 / 产物 / 门禁，且 `.agent-genesis/work/` 下没有工作目录；
+            - `building`：生成进行中（有活跃 run，或流程未收尾）；
+            - `blocked`：生成流程已暂停，等待处理；
+            - `failed`：流程失败、门禁 FAIL、产物布局不完整，或**已开始但缺少过程状态**
+              （如生成中被服务重启中断，只剩 `work/` 下的早期文件）；
+            - `completed`：流程收尾且交付门禁 PASS / CONCERNS；**内置智能体恒为此值**（开箱即用，
+              没有生产流程，`/production` 对它们返回 409）；
+            - `null`：仅普通行读取磁盘状态失败时出现（单条降级，不拖垮列表）。
+
+            列表与详情都返回；`reasons` / `pipeline` / `delivery` 等明细仍走 `/production`。
+        dir:
+          type: string
+          description: |
+            智能体根目录的绝对路径，形如 `<workspace.directory>/.smart-factory/agents/{id}`。
+            由服务端现算、不入库；它表示约定的位置，不代表此刻一定存在这个目录。
+            工作区目录由框架模块面解析：`directory` 为 null、工作区不存在或框架不可达时，本资源的响应返回 502，不猜路径。
+        runtimeDir:
+          type: [string, 'null']
+          description: |
+            智能体运行时的工作目录（runtime 会话的 cwd）绝对路径，由服务端现算、不入库：
+            - 内置智能体 = 定义目录本身（与 `dir` 相同）；
+            - 普通智能体 = development 产物中最新版本目录
+              `<dir>/development/output/agents/{agentName}/{vN}`。
+            产物尚未生成、布局不完整或交付门禁未通过时为 null —— null 即「此刻还没有可运行的目录」，
+            判定口径与 runtime 会话的起跑门禁同源；就绪与否的完整视图见 `GET /agents/{id}/production`。
+        createdAt: { $ref: './5.00-common-openapi.yaml#/components/schemas/Timestamp' }
+        updatedAt:
+          allOf:
+            - $ref: './5.00-common-openapi.yaml#/components/schemas/Timestamp'
+            - description: 任何一次元数据更新都会刷新它；它同时是列表的排序键。
+
+    AgentCreateResult:
+      allOf:
+        - $ref: '#/components/schemas/Agent'
+        - type: object
+          properties:
+            initSessionId:
+              type: string
+              description: |
+                仅当请求带 `init` 时出现：后端为该智能体建出的 `development` 初始化会话 id。
+                前端可据此直接打开设计页；不带 `init` 时不出现该字段。
+
+    AgentDetail:
+      allOf:
+        - $ref: '#/components/schemas/Agent'
+        - type: object
+          required: [skills, commands, knowledgeInjected]
+          properties:
+            knowledgeInjected:
+              type: boolean
+              description: |
+                当前产物里是否已注入知识检索技能（`rag-knowledge-search`）。
+                与 `Agent.knowledgeWorkflowId` 是两件事：后者是「下次构建用什么」，这是「已经生成好的
+                产物里有没有」。取消配置不会删除产物里的技能 —— 前端据此提示「产物仍在使用知识检索」，
+                并提供「移除并重建」入口（用 harness-create 现有接口发一条重建请求）。
+                `runtimeDir` 为 null 时恒为 false。
+            skills:
+              type: array
+              description: |
+                当前可执行技能：`<runtimeDir>/.claude/skills/<目录名>/` 且根部有 `SKILL.md`，
+                加上运行目录自己打开的插件技能（`.claude/settings.json` 的 `enabledPlugins`，
+                名字为 `plugin:skill`，如 `drive:drive`；插件没装则不列），按 `name` 升序。
+                缺 `SKILL.md` 的目录不在此列（管理面 `GET /agents/{id}/skills` 才列）。
+                `runtimeDir` 为 null 时为空数组。
+              items: { $ref: '#/components/schemas/AgentSkill' }
+            commands:
+              type: array
+              description: |
+                当前可执行斜杠命令：`<runtimeDir>/.claude/commands/` 下的 `.md`（含子目录），
+                加上运行目录自己打开的插件命令（插件载荷 `commands/` 下的 `.md`，名字为
+                `plugin:command`，如 `cosightbot:pkm`；插件没装则不列），按 `name` 升序。
+                命令名只取文件名，子目录只作为 `namespace` 展示分组。
+                `runtimeDir` 为 null 时为空数组。
+              items: { $ref: '#/components/schemas/AgentCommand' }
+
+    AgentProductRef:
+      type: object
+      required: [agentName, version, dir]
+      properties:
+        agentName: { type: string, description: '产物的智能体目录名（`output/agents/{agentName}`）。' }
+        version: { type: string, description: 就绪的最新版本目录名，如 `v3`。 }
+        dir: { type: string, description: 版本目录绝对路径，即 runtime cwd。 }
+
+    AgentSkill:
+      type: object
+      required: [name, displayName, description, version, path, updatedAt]
+      properties:
+        name: { type: string, description: 产物里的目录名，也是 `/` 命令名；删除时用它。定义目录打开的插件技能是 `plugin:skill`（如 `drive:drive`），不属于产物、不可删。 }
+        displayName: { type: string, description: SKILL.md frontmatter 的 name；缺失时回落为目录名（插件技能去掉 `plugin:` 前缀）。 }
+        description: { type: string, description: frontmatter 的 description；缺失为空串。 }
+        version: { type: string, description: frontmatter 的 version（如 `1.0`）；没有为空串。 }
+        path: { type: string, description: 技能目录绝对路径（插件技能指向插件载荷目录）。 }
+        updatedAt: { $ref: './5.00-common-openapi.yaml#/components/schemas/Timestamp' }
+
+    AgentCommand:
+      type: object
+      required: [name, namespace, description, path, updatedAt]
+      properties:
+        name:
+          type: string
+          description: |
+            命令名（相对 `.claude/commands` 去掉 `.md`），也是 `/` 菜单里的 `/<name>`。
+            **子目录不参与命令名**：`commands/ci/build.md` 就是 `/build`。
+            定义目录打开的插件命令带插件前缀（`plugin:command`，如 `cosightbot:pkm`），不属于产物、不可删。
+        namespace:
+          type: string
+          description: 所在子目录（用 `/` 连接）；顶层命令为空串。只用于展示分组，不参与命令名。插件命令记插件名。
+        description:
+          type: string
+          description: frontmatter 的 description；无 frontmatter / 读不到为空串。
+        path: { type: string, description: 命令文件的绝对路径。 }
+        updatedAt: { $ref: './5.00-common-openapi.yaml#/components/schemas/Timestamp' }
+
+    AgentSkillsResponse:
+      type: object
+      required: [agentId, ready, reasons, product, items]
+      properties:
+        agentId: { type: string }
+        ready: { type: boolean, description: 产物是否就绪；未就绪时 items 为空、product 为 null。 }
+        reasons:
+          type: array
+          items: { type: string }
+          description: 未就绪原因，可直接展示。
+        product:
+          oneOf:
+            - $ref: '#/components/schemas/AgentProductRef'
+            - type: 'null'
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/AgentSkill' }
+
+    AttachAgentSkillInput:
+      type: object
+      required: [path]
+      properties:
+        path:
+          type: string
+          description: 来源技能目录的绝对路径（不是版本目录）；来源含 SKILL.md。
+        version:
+          type: string
+          pattern: '^v[0-9]+$'
+          description: 来源版本目录名；缺省取来源里数字最大的 vN，没有版本目录时整目录拷贝。
+
+    AttachAgentSkillResult:
+      type: object
+      required: [item, product]
+      properties:
+        item: { $ref: '#/components/schemas/AgentSkill' }
+        product: { $ref: '#/components/schemas/AgentProductRef' }
+
+    AgentPage:
+      type: object
+      required: [items, total, page, pageSize]
+      properties:
+        items: { type: array, items: { $ref: '#/components/schemas/Agent' } }
+        total:
+          type: integer
+          description: 过滤后的全量条数，不是本页条数。
+        page:
+          type: integer
+          minimum: 1
+          description: 校验后的页码；缺省、非法回落与截断之后回显实际取值。
+        pageSize:
+          type: integer
+          minimum: 1
+          maximum: 200
+          description: 校验后的每页条数；缺省 20、上限 200，回显截断后的实际取值。
+
+    AgentTagCounts:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            required: [tag, count]
+            properties:
+              tag:
+                type: string
+                minLength: 1
+                maxLength: 10
+                description: 标签文本，与 Agent.tags 同口径（trim 后 1–10 字）。
+              count:
+                type: integer
+                minimum: 1
+                description: 带这个标签的智能体数量。同一智能体内的重复标签已在写入时去掉。
+
+    AgentCreateInput:
+      type: object
+      required: [workspaceId, name]
+      description: 不接受的字段（如 agentId）按多余字段忽略，不报错。
+      properties:
+        workspaceId:
+          type: string
+          format: uuid
+          description: |
+            所属工作区 id，必填。服务端经框架模块面确认工作区存在且已绑定目录；
+            创建后不可改，update 传入会被忽略。
+            工作区不存在、目录未绑定或框架不可达时返回 502，不建行。
+        name: { type: string, minLength: 1, maxLength: 40, description: trim 后不能为空，同一工作区内唯一。 }
+        description: { type: string, maxLength: 120 }
+        tags:
+          type: array
+          items: { type: string, minLength: 1, maxLength: 10 }
+          maxItems: 10
+          description: 标签；不传即空数组。逐项 trim、去重、保序，禁用字符见 Agent.tags。
+        icon: { type: string, maxLength: 512, description: 封面图地址；不传或传空串都表示没有封面。 }
+        init:
+          type: object
+          additionalProperties: false
+          required: [modelId]
+          description: |
+            可选的初始化参数。不传（或传 null）即维持旧行为：只建智能体，不建会话。
+            传了就会为智能体建一个 `(agentId, 'development')` 实例与初始化会话。
+            初始化失败时智能体行与目录一并回滚（500）。
+
+            **固定字段白名单**：只认 `input` / `modelId` / `attachments`，出现未知字段直接 400 -
+            以后扩展初始化参数就加字段，不把整个对象当任意 JSON 存。
+            `modelId` 必填非空；`input` / `attachments` 可选。`input` 只要出现就必须是字符串，
+            `attachments` 只要出现就必须是数组（null 也不行），不会静默当成空串 / 空数组。
+          properties:
+            input:
+              type: string
+              description: |
+                用户的第一句需求原文。**原文落到 `Agent.initialInput`**，不落成消息、不写 description、
+                不起 run。首轮由前端在设计页触发，用户才能看到初始化过程。
+                落库的意义是前端路由 state 丢失后仍能恢复首轮，见 08-agent.md §3.1。
+                空串（含全空白）视为没给，落库为空串。
+            attachments:
+              type: array
+              maxItems: 20
+              description: |
+                创建时挂的本机文件，形态与 `messages/send` 的 `attachments` 完全一致：
+                每项是 **本机文件绝对路径**（`{ path }` 对象或裸字符串都收），最多 20 项。
+                服务端解析成真实路径（解 symlink）、去重、保序后**落到 `Agent.initialAttachments`**；
+                不落成消息、不起 run。
+                路径必须是主目录 / 工作区内的**已存在文件**：形态非法或越界 400，合法但不存在 404。
+                空数组视为没带附件。
+            modelId:
+              type: string
+              description: |
+                会话模型 id，来自 `GET /models/list` 的 `id`。必填非空，创建前校验可运行：
+                不在列表里、协议不是 `anthropic` 或没有配置 API 密钥 400；模型管理不可用 502。
+                没有工作区默认 / 框架生效 / 本机配置回退。只存 id，不碰 modelName / baseUrl / apiKey。
+
+    AgentUpdateInput:
+      type: object
+      description: |
+        身份在路径上，本对象只承载可变字段。
+        `workspaceId` **不可改**，不在本对象里；传了按多余字段忽略。
+        至少要给一个可改字段，五个都不给返回 400 - 空请求会刷新 updatedAt、
+        把该行顶到列表最前，属调用方看不见的副作用，宁可报错。
+        「给了」的判据是字段存在且不为 null；值本身空不空是另一回事（空 = 清空）。
+      properties:
+        name: { type: string, minLength: 1, maxLength: 40 }
+        description: { type: string, maxLength: 120 }
+        tags:
+          type: array
+          items: { type: string, minLength: 1, maxLength: 10 }
+          maxItems: 10
+          description: 标签，**整组替换**（不是增量合并）。传 `[]` 是清空，不传才是不改。
+        icon: { type: string, maxLength: 512, description: 封面图地址。传空串是清空，不传才是不改。 }
+        knowledgeWorkflowId:
+          type: string
+          pattern: '^(?:[A-Za-z0-9_-]{1,128})?$'
+          description: |
+            知识检索工作流 id。**传空串 = 取消**，不传才是不改（与 description / icon 同一口径）；
+            `null` 视为没给。形态只允许 `[A-Za-z0-9_-]{1,128}`，否则 400。
+            只影响之后发送的 harness-create 消息，不删除产物里已注入的技能。
+      anyOf:
+        - required: [name]
+        - required: [description]
+        - required: [tags]
+        - required: [icon]
+        - required: [knowledgeWorkflowId]

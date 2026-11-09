@@ -1,0 +1,315 @@
+# AgentGenesis gate/runner 注册表（两段式: gates 防护门 + runners 运行器）
+# 命名与形态唯一权威: docs/plan/deterministic-gate-refactor.md §1.3
+#   - gate.<boundary>.<subject>  防护门: 边界放行/拦截判定, FAIL → on_failure
+#   - runner.<purpose>           运行器: 多件机械批量执行, 合并 verdict 透传
+#   - probe.<object>.<aspect>    探针: 命名语法保留为设计储备, 首版无实物, 段不建（OD-1）
+#   - module.<scope>.<subject>   脚本内部模块组织, 不进注册表（物理载体见 internal_modules）
+# 消费者（无自动框架——不存在 PostToolUse gate-engine）:
+#   - triggers[].outputs    → scripts/gates/g024-output-exists.sh（每步产物落盘机检事实源）
+#   - triggers[].on_failure → scripts/main-agent-helpers.sh decide_action（retry/back_off/escalate）
+#   - gates/runners 注册 → scripts/check-gate-registry.sh（两段闭合机检 + 活跃面编号写法禁令）
+#   - g026 批跑 gates[] 名称解析: 语义键单读（legacy sunset 2026-10-15, 原 G0xx 反查与
+#     glob 回退已删——编号写法一律 unknown fail-closed; 测试注入门除外, 见 g026 头注释）
+# gate/runner 执行为显式调用——每个条目必须有 invoked_by 声明的 owner。
+# legacy sunset（2026-10-15 已触发, 裁定见方案 §1.3）: 旧 G0xx 写法一律 unknown
+#   fail-closed（g026 语义键单读, 无别名反查）; 既有 g*.sh 不物理重命名;
+#   golden fixtures 冻结不随 sunset 改写（历史留档）, 活体验证脚本必须用语义键。
+# 历史: G001（intent 验证）v0.18 移除——G024 落盘检查已覆盖 step 产物存在性，
+#       6 维必需字段由 skill-foundry SKILL.md §Mode 判定落实（原注册条目删除，本注留档）。
+version: "3.0"
+
+pipeline:
+  # state 与 gate-results 均在 {name} 层（两线同构; 00-conventions 产物分类表;
+  # 2.3 裁定: skill 线 work_dir 同层, 过程产物在 skill-foundry/ 子层）
+  state_file: ".agent-genesis/work/*/orchestrator-state.yaml"
+
+# ═══ 防护门（拦截语义内化于本段成员资格——不设 blocking 字段）═══
+gates:
+  gate.build.invariants:
+    script: scripts/gates/g023-invariants.sh
+    scope: "executor 生成循环批内(file 模式)与收尾跨文件一致性(cross 模式), 两管线共用"
+    invoked_by: "executor goal-loop 批内(g026, file 模式) + runner.exit 内部调用(cross 模式)"
+    description: "invariants 执行器: file 模式由 executor 逐文件自测(白名单Bash), cross 模式跨文件一致性第二趟"
+  gate.match.contract:
+    script: scripts/gates/g017-pattern-constraints.sh
+    scope: "S2 匹配决策与 S3 方案架构(build-plan/goal-condition)的确定性契约"
+    invoked_by: "step-2-pattern-matching (pattern-matcher 产出后自检, main agent 不直调)"
+    description: "匹配决策/方案确定性检查: L1结构/L2目录/L3硬约束(HC-01~06) + M4物化覆盖率/M5角色与触发器合法性/M6结构闭合/M7 executor_protocol 废除校验(残留值即 FAIL——goal-loop 唯一协议; frontmatter 契约字段(selected_patterns/build_type)存在时启用, M7 挂 build-plan 校验); CONCERNS 非阻断交 DC-001"
+  gate.step.outputs:
+    script: scripts/gates/g024-output-exists.sh
+    scope: "两管线全部 step 边界的产物落盘兜底"
+    invoked_by: "SKILL.md 主循环每步收尾 (stdin: step_id/name/root)"
+    description: "step 产物落盘检查 (triggers[].outputs 清单驱动, 承接原 validate-contract --node, FAIL-CLOSED)"
+  gate.plan.sanity:
+    script: scripts/gates/g027-plan-sanity.sh
+    scope: "skill 线 step-s2（阶段1产出的内部一致性）"
+    invoked_by: "step-s2-plan-sanity (main_agent_direct, stdin: mode/report_path/root)"
+    description: "Skill Foundry step-s2 健全性检查 (替代原独立 LLM reviewer, 同 agent 线 G017 deterministic-gate 先例)"
+  gate.knowledge.injection:
+    script: scripts/gates/g029-knowledge-injection-audit.sh
+    scope: "agent 线 Step 1b 注入的 .claude/skills/rag-knowledge-search/（仅注入生效时启用）"
+    invoked_by: "executor Step 6 末置校验（g026 gates[] 追加, 输入 manifest/output_dir/build_plan）"
+    description: "知识库注入审计: manifest 状态/workflow_id 字面量一致性/固定端点/SKILL.md frontmatter/路径逃逸/历史实现与 MCP 残留/py_compile/build-plan pre_staged 对账（fail-closed）"
+  gate.dsh.output:
+    script: scripts/gates/g030-dsh-output.sh
+    scope: "platform ∈ {dsh, both} 时的 DSH bundle 产物（output/agents/{name}/v1/dsh/）"
+    invoked_by: "executor Step 6 末置校验（g026 gates[] 追加, 输入 output_dir/build_plan）"
+    description: "DSH 产物结构门禁: package.json 的 dsh.bundle.patch 指向/ patch 可解析且含 agent-preset 行/preset id+plugins/行 id 与 toolName 唯一/tool-subagent 必需字段/技能 frontmatter 与 customSkillDirs 自包挂载/纯 dsh 禁止 .claude 类产物与 Claude 专有引用/install.sh 语法（fail-closed; 事实源 platforms/dsh.yaml）"
+    # 历史: gate.report.valid(G022, execution-report 实体验证) 条目已随 executor v2 裁撤——
+    #   此处曾被其残留重复键污染（PyYAML 静默取后值）, 2026-10-14 批 0 清障删除（原 G022 条目不复活）。
+
+# 内部模块（module.<scope>.<subject> 形态的物理载体——不进顶层命名空间, 孤儿机检豁免依据）
+# module.deliver.hygiene = 交付目录单趟只读扫描合并: g005(占位符) + g014(skill 质量,
+# .claude/skills 目录存在才检查) + g021(completeness)——三者同对象, 分趟即浪费
+internal_modules:
+  - scripts/gates/g005-no-placeholders.sh
+  - scripts/gates/g014-skill-rule-quality.sh
+  - scripts/gates/g021-output-completeness.sh
+
+# ═══ 运行器 ═══
+runners:
+  runner.gates.batch:
+    script: scripts/gates/g026-batch-gates.sh
+    scope: "批跑器——多 gate 单进程串行执行, gates[] 名称经本注册表解析"
+    invoked_by: "executor goal-loop / exit_gates 批跑; 主 agent 可直接调用"
+    description: "一次进程跑多个 gate, 合并 JSON verdict (输入契约: schemas/g026-input.schema.yaml)"
+    protocol: "--input '<json>'（executor 白名单模式）或 stdin JSON {gates, ...上下文键} → stdout merged JSON"
+    exits: "0=PASS / 1=CONCERNS / 3=FAIL(含 input_error)"
+  runner.exit:
+    script: scripts/gates/g028-exit-sanity.sh
+    scope: "收尾批量执行——三 profile: agent-exit / skill-build / skill-verify（条件必填键脚本内 fail-closed）"
+    invoked_by: "executor exit_gates(g026, profile=agent-exit) + step-s4-skill-build-create/optimize(profile=skill-build) + step-s5-skill-verify(profile=skill-verify)"
+    description: "收尾校验薄编排: 三 profile 合并原 G005/G014/G021 规则模块 + G023 batch 全量（清单契约首查） + G023 cross + required_files 清单存在性 + workflow 引用闭合 + module.agent.static（agent-exit）/ module.skill.static（skill 两档, SK-S1/S2; SK-S3 归并 g005）; profile 条件必填键脚本内 fail-closed。execution-report 不机检"
+  runner.assets:
+    script: scripts/gates/g025-asset-copy.sh
+    scope: "executor Step 2——type:copy 直拷 + hooks.json 引用完整性（拷贝/物化属执行非防护）"
+    invoked_by: "executor Step 2 直调 (argv: --build-plan/--output-dir)"
+    description: "type:copy 确定性直拷(build-plan generation:copy 条目) + hooks.json 引用完整性(P1-3)"
+
+# Pipeline triggers — 24 个 step trigger (agent-creation 9 + skill-foundry 11 + fast 4; step-2b 并入 step-2)
+# gates 列表只收录有实现且有 invoked_by 调用点的条目（gate 治理阶段 2:
+# 移除 yaml-syntax/frontmatter-valid/naming-drift/json-syntax/directory-nonempty 幽灵名——
+# 语法类检查由 gate.step.outputs 落盘检查 + 各 SubAgent 自身验证承担，不做无调用方的挂名防线）
+#
+# [P10.5 机检权威] triggers[].outputs = step 产物落盘的**机器可检事实源**:
+#   - 由 gate.step.outputs (scripts/gates/g024-output-exists.sh) 逐条检查（FAIL-CLOSED: 缺失/空清单即 FAIL）
+#   - 一致性契约: outputs ≡ agents/*.md 各 SubAgent 的「产出」段（执行事实权威）；
+#     漂移时修本文件，不改 SubAgent prompt（agents/*.md 为准）
+#   - 路径模板: {work_root}=.agent-genesis/work/{name}/agent-creation,
+#     {output_root}=output/agents/{name}/v1；skill 线用含 {name} 字面路径
+#   - 编排视图（人读）以 skills/harness-create/references/workflow.md 各 Step「产出」字段为准
+
+triggers:
+  # ═══ agent-creation ═══
+  step-1-requirement-clarification:
+    step_id: step-1-requirement-clarification
+    gates: [gate.step.outputs]
+    outputs: ["{work_root}/clarified-agent-requirements.yaml"]
+    context: {output_dir: "${OUTPUT_DIR}"}
+    on_failure: {retry: {max: 2, back_off_to: "step-1-requirement-clarification"}, escalate: {after_exhausted: true}}
+
+  # Step 1b: 知识库资产注入（非 Step 序列节点, 仅在入口带 --input-dir/--knowledge-workflow-id 时
+  # 由 main agent 在 Lane 判定前执行；本 trigger 仅声明产物落盘清单供 G024 兜底机检）
+  step-1b-input-injection:
+    step_id: step-1b-input-injection
+    gates: [gate.step.outputs]
+    # 技能落点随平台变化（.claude/skills/ | dsh/skills/ | both），不在本清单硬编码；
+    # 每个注入文件的存在性由 G029 按 manifest.knowledge.relative_dirs 逐条校验。
+    outputs: ["{work_root}/injected-assets.yaml"]
+    context: {output_dir: "${OUTPUT_DIR}"}
+    on_failure: {retry: {max: 1, back_off_to: "step-1b-input-injection"}, escalate: {after_exhausted: true}}
+
+  step-2-pattern-matching:
+    step_id: step-2-pattern-matching
+    gates: [gate.step.outputs, gate.match.contract]
+    # gate.match.contract 由 pattern-matcher 产出后自检调用（invoked_by 见 gates 定义），不经主循环
+    outputs: ["{work_root}/phase1-matching-decision.md", "{work_root}/phase2-review.md"]
+    context: {matching_decision: "${WORK_DIR}/phase1-matching-decision.md"}
+    on_failure: {retry: {max: 2, back_off_to: "step-1-requirement-clarification"}, escalate: {after_exhausted: true}}
+
+  step-3-build-planning:
+    step_id: step-3-build-planning
+    gates: [gate.step.outputs]
+    outputs: ["{work_root}/asset-adaptations.yaml", "{work_root}/build-plan.md", "{work_root}/human-review.md", "{work_root}/goal-condition.yaml"]
+    context: {output_dir: "${OUTPUT_DIR}"}
+    on_failure: {retry: {max: 1, back_off_to: "step-2-pattern-matching"}, escalate: {after_exhausted: true}}
+
+  step-3c-plan-approval:
+    step_id: step-3c-plan-approval
+    gates: [gate.step.outputs]
+    outputs: ["{work_root}/dc001-decisions.yaml"]
+    on_failure: {retry: {max: 0}, escalate: {always: true}}
+
+  step-4-implementation:
+    step_id: step-4-implementation
+    # step-4 末置: G014/G023-cross 已并入 runner.exit（executor exit_gates 一次执行）; g022 随 executor v2 整体裁撤（report 不再机检）。
+    # on_failure 决策采信 executor 的 step verdict 文件 .agent-genesis/work/{name}/gate-results/step-4-implementation.json
+    # （read_gate_verdict 现成消费路径）: FAIL → 下方 retry 窗口, CONCERNS →
+    # PROCEED_WITH_CONCERNS + 里程碑汇报披露（main-agent-helpers.sh 既有语义, 不中断不 ESCALATE）;
+    # gate.step.outputs 兜底校验该 verdict 文件存在且非空（防 executor 崩溃窗口, 结果落 .g024.json 不覆写）
+    gates: [gate.step.outputs]
+    outputs: ["{output_root}/", "{work_root}/phase4-execution-report.md"]
+    # skills_dir/rules_dir 按 build-plan frontmatter platforms 取值（executor Step 6 分派）:
+    #   claude-code → ${OUTPUT_DIR}/.claude/{skills,rules}；dsh → ${OUTPUT_DIR}/dsh/{skills,rules}；
+    #   both → 两个根各跑一次 gate.knowledge.injection，另跑 gate.dsh.output。
+    # 本处填 claude-code 缺省值仅为静态兜底；platform ∈ {dsh, both} 时 executor 必须按平台覆写。
+    context: {build_plan: "${WORK_DIR}/build-plan.md", output_dir: "${OUTPUT_DIR}", platforms: "claude-code", skills_dir: "${OUTPUT_DIR}/.claude/skills", rules_dir: "${OUTPUT_DIR}/.claude/rules"}
+    on_failure: {retry: {max: 3, back_off_to: "step-4-implementation"}, escalate: {after_exhausted: true}}
+
+  step-5-readiness-verification:
+    step_id: step-5-readiness-verification
+    gates: [gate.step.outputs]
+    # readiness 分数（≥58）由 main agent 按 readiness-verifier 报告人判（原 G003 无实现机检已删）
+    outputs: ["{work_root}/phase4-verification-report.md"]
+    context: {output_dir: "${OUTPUT_DIR}"}
+    on_failure: {retry: {max: 1, back_off_to: "step-4-implementation"}, escalate: {after_exhausted: true}}
+
+  step-5-5-runtime-eval-choice:
+    step_id: step-5-5-runtime-eval-choice
+    gates: []
+    # OPT-3 交互反转: 默认无交互直接写 step6-skipped.flag 进里程碑（摘要标注评测未运行）；
+    # Run 分支仅在用户主动插话时写 step6-decision.yaml。两分支互斥，不挂 gate.step.outputs
+    outputs: ["{work_root}/step6-decision.yaml"]
+    on_failure: {retry: {max: 0}}
+
+  step-6-product-validation:
+    step_id: step-6-product-validation
+    gates: [gate.step.outputs]
+    # e2e 结果真实性由 product-tester 产出契约（result.json 形态）+ runtime-evaluator 盲评承担
+    outputs: ["{work_root}/e2e/", "{work_root}/e2e-results/"]
+    context: {e2e_results_dir: "${WORK_DIR}/e2e-results/"}
+    on_failure: {retry: {max: 2}, escalate: {after_exhausted: true}}
+
+  step-6c-runtime-evaluation:
+    step_id: step-6c-runtime-evaluation
+    gates: [gate.step.outputs]
+    outputs: ["{work_root}/phase5-runtime-eval.md"]
+    on_failure: {retry: {max: 1, back_off_to: "step-6-product-validation"}, escalate: {after_exhausted: true}}
+
+    # gate.deliver.completeness 已并入 runner.exit agent-exit 档（module.deliver.hygiene）, 检查在 executor 收尾执行。
+
+  # ═══ fast lane (车道 2, experimental; 视图 skills/harness-create/references/workflow-fast.md) ═══
+  step-f1-fast-build:
+    step_id: step-f1-fast-build
+    gates: [gate.step.outputs, runner.exit]
+    # runner.exit 由 main agent 直调 G028（agent-exit 档, stdin JSON——§4.0 直调契约,
+    # 不经 g026 不经 executor）; 极简 build-plan 位于 fast-lane/（builder 产出）
+    outputs: [".agent-genesis/work/{name}/fast-lane/build-plan.md", ".agent-genesis/work/{name}/fast-lane/self-report.md"]
+    context: {output_dir: "${OUTPUT_DIR}", profile: "agent-exit", build_plan: ".agent-genesis/work/{name}/fast-lane/build-plan.md"}
+    on_failure: {retry: {max: 1}, escalate: {after_exhausted: true}}   # retry = 修复轮（revision-request）
+
+  # ═══ fast lane skill 线 (车道 4 create / 车道 6 optimize; 视图 skills/skill-foundry/references/workflow-fast.md) ═══
+  step-sf1-fast-build:
+    step_id: step-sf1-fast-build
+    gates: [gate.step.outputs, runner.exit]
+    # skill 线 fast 无 build-plan 不走 g025; runner.exit = main agent 直调 G028 skill-build 档
+    outputs: [".agent-genesis/work/{name}/fast-lane/self-report.md"]
+    context: {output_dir: "${OUTPUT_DIR}", profile: "skill-build"}
+    on_failure: {retry: {max: 1}, escalate: {after_exhausted: true}}   # retry = 修复轮
+
+  step-sf2-fast-optimize:
+    step_id: step-sf2-fast-optimize
+    gates: [gate.step.outputs, runner.exit]
+    # optimize 安全三件（方案 §4.0, R6 不可裁）: 快照回滚（编排层）+ check-delta-scope
+    # （main agent 直调, 越界即终止恢复不走修复轮）+ runner.exit skill-verify 档后测
+    outputs: [".agent-genesis/work/{name}/fast-lane/self-report.md"]
+    context: {output_dir: "${OUTPUT_DIR}", profile: "skill-verify"}
+    on_failure: {retry: {max: 1}, escalate: {after_exhausted: true}}
+
+  # ═══ fast lane agent-optimize (车道 7, FC; 视图 workflow-fast.md optimize 段) ═══
+  step-f2-fast-optimize:
+    step_id: step-f2-fast-optimize
+    gates: [gate.step.outputs, runner.exit]
+    # 安全三件同 §4.0 共用规格（快照/check-delta-scope/G028 agent-exit 档后测——
+    # 后测消费 build-plan: 目标无 build-plan 时 builder 生成反映现状的极简 build-plan）
+    # 条件 outputs: trace-diagnosis.md 仅形态②（trace 输入）落盘——G024 清单按实际
+    # 形态传子集, 本注册为全集（形态①③ 不产 trace-diagnosis, main agent 传 outputs 子集）
+    outputs: [".agent-genesis/work/{name}/fast-lane/self-report.md", ".agent-genesis/work/{name}/fast-lane/trace-diagnosis.md"]
+    context: {output_dir: "${OUTPUT_DIR}", profile: "agent-exit"}
+    on_failure: {retry: {max: 1}, escalate: {after_exhausted: true}}
+
+  # ═══ skill-foundry (3 mode 共享; work_root = .agent-genesis/work/{name}/skill-foundry/) ═══
+  step-s0-clarify:
+    step_id: step-s0-clarify
+    gates: [gate.step.outputs]
+    outputs: [".agent-genesis/work/{name}/skill-foundry/clarified-skill-requirements.yaml"]
+    on_failure: {retry: {max: 0}, escalate: {always: true}}
+
+  step-s1-skill-plan-create:
+    step_id: step-s1-skill-plan-create
+    gates: [gate.step.outputs]
+    outputs: [".agent-genesis/work/{name}/skill-foundry/phase1-skill-design.md"]
+    on_failure: {retry: {max: 2, back_off_to: "step-s1-skill-plan-create"}, escalate: {after_exhausted: true}}
+
+  step-s1-skill-plan-optimize:
+    step_id: step-s1-skill-plan-optimize
+    gates: [gate.step.outputs]
+    # optimize/diagnose 前置"目标 skill 存在"由 skill-planner 自身承担（原 G004 无实现已删）
+    outputs: [".agent-genesis/work/{name}/skill-foundry/phase1-diagnosis-report.md"]
+    on_failure: {retry: {max: 2, back_off_to: "step-s1-skill-plan-optimize"}, escalate: {after_exhausted: true}}
+
+  step-s2-plan-sanity:
+    step_id: step-s2-plan-sanity
+    gates: [gate.step.outputs, gate.plan.sanity]
+    # gate.plan.sanity 自身在 step 内执行（main_agent_direct）, 校验阶段1产出的内部一致性;
+    # gate.step.outputs 检查模式推断键 — main agent 写 .agent-genesis/work/{name}/skill-foundry/plan-sanity-result.yaml
+    # back_off_to 按 mode 裁决: create→step-s1-skill-plan-create, optimize/diagnose→step-s1-skill-plan-optimize
+    outputs: [".agent-genesis/work/{name}/skill-foundry/plan-sanity-result.yaml"]
+    on_failure: {retry: {max: 1, back_off_to: "step-s1-skill-plan-create"}, escalate: {after_exhausted: true}}
+
+  step-s3-dc002-approval:
+    step_id: step-s3-dc002-approval
+    gates: [gate.step.outputs]
+    outputs: [".agent-genesis/work/{name}/skill-foundry/plan-approval-decision.md"]
+    on_failure: {retry: {max: 0}, escalate: {always: true}}
+
+  step-s4-skill-build-create:
+    step_id: step-s4-skill-build-create
+    gates: [gate.step.outputs, runner.exit]
+    outputs: ["output/skills/{name}/v1/"]
+    context: {output_dir: "${OUTPUT_DIR}", profile: "skill-build"}
+    on_failure: {retry: {max: 2, back_off_to: "step-s4-skill-build-create"}, escalate: {after_exhausted: true}}
+
+  step-s4-skill-build-optimize:
+    step_id: step-s4-skill-build-optimize
+    gates: [gate.step.outputs, runner.exit]
+    outputs: ["output/skills/{name}/v1/", ".agent-genesis/work/{name}/skill-foundry/delta-diff.md"]
+    context: {output_dir: "${OUTPUT_DIR}", profile: "skill-build"}
+    on_failure: {retry: {max: 2, back_off_to: "step-s4-skill-build-optimize"}, escalate: {after_exhausted: true}}
+
+  step-s5-skill-verify:
+    step_id: step-s5-skill-verify
+    gates: [gate.step.outputs, runner.exit]
+    # 验证报告分数由 main agent 人判（原 G003 无实现已删）
+    outputs: [".agent-genesis/work/{name}/skill-foundry/phase4-verification-report.md"]
+    context: {output_dir: "${OUTPUT_DIR}", profile: "skill-verify"}
+    on_failure: {retry: {max: 1, back_off_to: "step-s4-skill-build-create"}, escalate: {after_exhausted: true}}
+
+  step-s5-5-eval-choice:
+    step_id: step-s5-5-eval-choice
+    gates: []
+    # OPT-3 对齐: optimize 默认无交互直接 Skip（摘要标注）; create 保留询问（默认 Run,
+    # E2E 是新 Skill 唯一质量信号）。两分支互斥, 不挂 gate.step.outputs
+    outputs: [".agent-genesis/work/{name}/skill-foundry/step6-decision.yaml"]
+    on_failure: {retry: {max: 0}}
+
+  step-s6-product-validation:
+    step_id: step-s6-product-validation
+    gates: [gate.step.outputs]
+    outputs: [".agent-genesis/work/{name}/skill-foundry/e2e/", ".agent-genesis/work/{name}/skill-foundry/e2e-results/"]
+    context: {e2e_results_dir: "${WORK_DIR}/e2e-results/"}
+    on_failure: {retry: {max: 2}, escalate: {after_exhausted: true}}
+
+  step-s6c-runtime-evaluation:
+    step_id: step-s6c-runtime-evaluation
+    gates: [gate.step.outputs]
+    outputs: [".agent-genesis/work/{name}/skill-foundry/phase5-runtime-eval.md"]
+    on_failure: {retry: {max: 1, back_off_to: "step-s6-product-validation"}, escalate: {after_exhausted: true}}
+
+# Circuit breaker (全 pipeline)
+defaults:
+  pipeline_retry_budget: 5
+  per_step_timeout_seconds: 1800
+  pipeline_timeout_seconds: 7200
+  per_gate_timeout_seconds: 120  # gate 单次执行实测 30-110s（30s 会误杀，阶段 3 调整）
+  verdict_wait_seconds: 30   # main-agent-helpers finish_step 防呆等待 verdict 落盘上限（非 gate 执行超时）

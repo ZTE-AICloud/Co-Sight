@@ -1,0 +1,15 @@
+{
+  "title": "仪表板有可用更新",
+  "lead": "远程分支有新提交。请复制下方命令并在终端中运行——仪表板不会自动更新自身。",
+  "commitsBehind": "落后 {{ref}} {{count}} 个提交",
+  "copy": "复制命令",
+  "commandLabel": "用于更新仪表板的终端命令",
+  "copied": "已复制",
+  "dismiss": "关闭",
+  "fetchError": "无法连接 git 远程。请联网后重试。",
+  "notGit": "此安装不是 git 克隆；请使用手动升级方式。",
+  "restartNote": "命令完成后，请按原来的启动方式重新启动仪表板。",
+  "checkNow": "立即检查",
+  "checking": "正在检查...",
+  "checkError": "无法检查更新"
+}

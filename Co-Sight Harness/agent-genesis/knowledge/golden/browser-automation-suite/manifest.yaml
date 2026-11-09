@@ -1,0 +1,30 @@
+# golden manifest — browser-automation-suite（v1.2 批2 外部集成实例包）
+# 契约见 schemas/golden-manifest.schema.yaml（字段语义单点在该文件）
+
+task_tag: browser-automation-suite
+line: skill
+mode_id: W3-MapReduce                    # 货架位（检索键）, 非身份声明（R9）
+patterns:                                 # 如实完整模式维度集（现行词汇）
+  - W3-MapReduce
+  - K4-Rule-Driven
+  - IH1-Shared-Context
+anchor_fit: real                          # 每目标子代理扇出 + 确定性脚本汇聚 = W3 纯正结构
+standard_ref: knowledge/skill/skill-design-guide.md
+shape_counts: {SKILL_md: 1, scripts: 1, references: 1, templates: 0}
+acceptance:
+  - 流水线 5 步固定顺序（计划→发现→扇出→合成→交付）, 禁跳步禁换序
+  - 扇出子代理只用 Bash 单调用 heredoc 写单目标证据档, 禁 Write 工具
+  - 反幻觉证据锚定： 目标描述必须引用抽取字段原文, 无据写 Unknown 并封顶打分
+  - 凭据由用户提供（环境变量注入）, skill 零内置凭据, 含 webhook/定时部署契约位
+anchors:
+  build_plan: anchors/build-plan.md
+  self_report: anchors/self-report.md
+  derived: true                           # 外部启发锚（源 golden-examples 库）
+known_concerns: []                        # G028 准入后如实回填
+provenance:
+  origin_repo: "golden-examples 库 sources/browserbase-skills（插件生态市场技能集, 16 技能）"
+  license: "MIT（源包 SKILL.md frontmatter 声明; 仓库无独立 LICENSE 文件）"
+  snapshot_date: "2026-10-17"
+  reshaped: true                          # 蒸馏重塑入库： 品牌消毒 + 词汇重映射 + 脚本重写
+source: "v1.2 批2 外部集成实例包（源 golden-examples 库, D-01 裁定对策=样例补足: 用户提供云浏览器凭据+webhook 的外部集成形态入样例）"
+status: active

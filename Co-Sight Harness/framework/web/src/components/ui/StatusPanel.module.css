@@ -1,0 +1,38 @@
+/* 整块状态面板：空列表、加载失败、模块未接入、设置项待实现。均为新增（稿中无这些态）。 */
+
+.panel {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  /* 面板要能在网格里被拉伸，所以给一个下限而不是固定高。 */
+  min-height: 240px;
+  padding: 32px 24px;
+  text-align: center;
+}
+
+.icon {
+  color: var(--text-placeholder);
+  margin-bottom: 4px;
+}
+
+.title {
+  color: var(--text-heading);
+  font-family: var(--font-medium);
+  font-weight: var(--fw-medium);
+  font-size: var(--fs-nav);
+  line-height: var(--lh-label);
+}
+
+.hint {
+  max-width: 420px;
+  color: var(--text-secondary);
+  font-size: var(--fs-label);
+  line-height: var(--lh-label);
+}
+
+.action {
+  margin-top: 8px;
+}

@@ -1,0 +1,47 @@
+# create-user-config.yaml — /skill_create 业务方唯一配置入口
+# ─────────────────────────────────────────────────────────────────────
+# 本文件**专门**服务于 /skill_create 命令(从 0 到 1 制作代码化 Skill)。
+# 与 evolve-user-config.yaml / optimize-user-config.yaml 完全独立,
+# 三个文件不共享字段,业务方按需分别维护。
+#
+# 优先级链:
+#   1. CLI 参数(最高)
+#   2. 本文件(create-user-config.yaml)
+#   3. framework 默认值
+# ─────────────────────────────────────────────────────────────────────
+
+# =============================================================================
+# 1. 路径配置(项目根 + 派生子路径,避免重复写绝对路径)
+# =============================================================================
+paths:
+  # 统一根目录
+  # --output-dir 未显式传入时由 _resolve_default_workspace_root() 读取此字段,
+  # 自动派生 ${paths.root}/${paths.evolution_subdir}/skill_create_<taskid>/
+  # 不读 SKILLX_ROOT / SKILLX_WORKSPACE 环境变量(config 是唯一来源)
+  root: ~/.claude/plugins/marketplaces/skillx/outputs
+
+  # 工作区子目录名(默认 evolution_workspace)
+  evolution_subdir: evolution_workspace
+
+  # knowledge base 根目录(给阶段 4 references/ 使用,可空)
+  # consume_lib_path:
+
+# =============================================================================
+# 2. 阶段默认行为(可选,业务方按需覆盖)
+# =============================================================================
+# 阶段 1→2→3→4 默认全跑,可在此处覆盖默认行为
+# defaults:
+#   start_stage: 1
+#   end_stage: 4
+#   skip_stage_3: false
+
+# =============================================================================
+# 3. 默认 expert-guidance(可选,优先级低于 CLI --expert-guidance)
+# =============================================================================
+# expert_guidance: ""
+
+# =============================================================================
+# 4. 子 Agent 共享的额外约束(可选)
+# =============================================================================
+# 注入到 specification-writer / code-implementer / skill-scaffolder 三个 Agent prompt 顶部
+# agent_constraints: ""

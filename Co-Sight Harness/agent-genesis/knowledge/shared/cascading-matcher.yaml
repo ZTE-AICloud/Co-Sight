@@ -1,0 +1,191 @@
+# AgentGenesis 级联模式匹配器 V1.0
+#
+# 用途: 替代"27 模式一次性匹配"，改为 MN 优先的三级级联匹配
+# - Tier 0: 任务性质判定（3 选 1），将匹配空间从 27 缩小到 8-12
+# - Tier 1: 子集过滤，基于 Tier 0 结果选择候选模式子集
+# - Tier 2: 子域内精细匹配，在缩小的子集内执行 pattern-matcher.yaml indicator 匹配
+#
+# 依赖: pattern-catalog.yaml（模式定义）、pattern-matcher.yaml（indicator 匹配）
+
+meta:
+  version: "1.0"
+  note: "MN 前置维度，对 16 子维度施加推荐性软约束，级联匹配将此设计为硬过滤"
+
+# ============================================================
+# Tier 0: 任务性质判定（前置维度，在子维度匹配前执行）
+# ============================================================
+
+tier_0_mission_nature:
+  name: "任务性质判定"
+  description: "判断任务的认识论特征——问题空间是开放的还是封闭的。作为前置维度，对各子维度的模式选择进行硬过滤。"
+  selection_rule: "3 选 1 互斥。一个 target 顶层只能选一种。混合型需分段标注各阶段倾向。"
+
+  judgment_questions:
+    - id: q1
+      question: "即使信息完整，是否也无法预知最终完整输出？"
+      detail: "核心标志是'无法预知完整输出'，而非'我不知道要做什么'。探索性任务的中间发现会改变后续步骤。"
+      yes_indicates: MN-Exploratory
+      no_indicates: proceed_to_q2
+
+    - id: q2
+      question: "相同输入+相同规则是否应产生相同且可验证的输出？"
+      detail: "确定性任务的核心标志是'输出可验证'。步骤可在开始前完整列举。知识来源明确权威。"
+      yes_indicates: MN-Deterministic
+      no_indicates: proceed_to_q3
+
+    - id: q3
+      question: "是否存在明确的'先发现后执行'或'部分开放部分封闭'的分段结构？"
+      detail: "混合型必须有明确的分段——不能整个任务都是模糊的混合。通常分 2 段（探索段+确定段），不超过 3 段。"
+      yes_indicates: MN-Hybrid
+      no_indicates: "追问 IH2 澄清，或 fallback 到 MN-Deterministic"
+
+    - id: q4
+      question: "用户是否明确要求固定步骤/固定流程？"
+      detail: "用户明确要求固定流程时优先，即使任务本身有探索成分。"
+      yes_indicates: MN-Deterministic (override)
+      no_indicates: no_change
+
+  cascade_action:
+    MN-Exploratory:
+      tier_1_subset: [W4, W5, K3, G1, SM1, IH3, IV1, IT1-Enforced, DP1, DT2, CD1, CD3]
+      confidence_bonus: "+0.1 对级联对齐的模式 confidence"
+      rationale: "探索性任务需要动态发现能力（W4）、知识库支撑（K3）、独立审查（G1）、状态管理（SM1）、用户审批（IH3）、进度可见（IV1）、强制工具策略（IT1-Enforced）、可溯源（DP1）、共享状态（DT2）、输入门禁（CD1）、知识边界（CD3）。"
+
+    MN-Deterministic:
+      tier_1_subset: [W1, W2, K2, K4, IH1, IT1-Optional, DT1, G1, DF1, CD1, CD2]
+      confidence_bonus: "无"
+      rationale: "确定性任务适合固定步骤（W1/W2）、文档锚定（K2）、规则驱动（K4）、提交即忘（IH1）、链式数据传递（DT1）、按需审查（G1）、格式强制（DF1）、输入门禁（CD1）、安全约束（CD2）。"
+
+    MN-Hybrid:
+      tier_1_subset: "全部模式"
+      phase_requirement: "必须声明 phases 分段，每段分别应用探索/确定倾向"
+      rationale: "混合型任务同时包含探索和确定阶段，需分段处理。探索段用 MN-Exploratory 的 cascade_tendencies，确定段用 MN-Deterministic 的 cascade_tendencies。"
+
+  boundary_guidance:
+    MN-Exploratory:
+      do_not_confuse_with:
+        - "复杂不等于探索性：分析 5000 行日志仍是确定性任务（W1+K2）"
+        - "模糊不等于探索性：'帮我处理一下这个'应触发 IH2 追问而非 MN-Exploratory"
+    MN-Deterministic:
+      do_not_confuse_with:
+        - "步骤多不等于不确定：10 步 Pipeline 仍是确定性（W1）"
+        - "需要知识不等于探索性：基于权威文档推理是确定性的（K2+CD3）"
+    MN-Hybrid:
+      do_not_confuse_with:
+        - "混合型必须有明确分段——不能整个任务都是模糊的"
+        - "每段的模式倾向必须明确声明，不能只说'视情况而定'"
+
+# ============================================================
+# Tier 1: 子集过滤
+# ============================================================
+
+tier_1_subset_filtering:
+  name: "候选模式子集过滤"
+  description: "根据 Tier 0 的 MN 判定结果，从 27 个模式缩小到 8-12 个候选模式子集。"
+
+  override_protocol:
+    description: "用户显式请求的级联外模式处理规则"
+    rules:
+      - "用户明确要求使用某个不在 tier_1_subset 中的模式时，允许使用"
+      - "但该模式的 confidence 必须封顶为 medium"
+      - "matching_decision 中必须标注 cascade_aligned: false + override 理由"
+      - "一个 target 的 cascade override 不超过 3 个模式"
+
+  consistency_checks:
+    - "MN-Deterministic 不得选中 W4/W5/SM1（动态分解/自适应拓扑/状态机）"
+    - "MN-Exploratory 不得仅选 W1+IH1（纯管道+提交即忘）而不选 G1"
+    - "MN-Hybrid 必须声明至少 2 个 phases，每个 phase 标注 mission_nature"
+
+# ============================================================
+# Tier 2: 子域内精细匹配
+# ============================================================
+
+tier_2_fine_matching:
+  name: "子域内精细匹配"
+  description: "仅在 Tier 1 子集内执行 pattern-matcher.yaml 的 indicator 匹配。"
+
+  procedure:
+    - step: 1
+      action: "读取 pattern-matcher.yaml"
+    - step: 2
+      action: "对每个子维度，仅考虑 tier_1_subset 中的模式"
+    - step: 3
+      action: "执行 indicator 匹配（与 pattern-matcher.yaml 中定义的 indicators 一致）"
+    - step: 4
+      action: "记录每个决策: pattern_id + confidence + rationale + cascade_aligned"
+    - step: 5
+      action: "执行硬约束校验（见 hard_constraints 节）"
+    - step: 6
+      action: "生成 matching-decision-log.yaml"
+
+  cascade_aligned_definition:
+    aligned: "选中的模式在 tier_1_subset 中"
+    opposed: "选中的模式不在 tier_1_subset 中（用户 override 或特殊理由）"
+    note: "cascade_opposed 不禁止，但 confidence 封顶 medium 且必须说明理由"
+
+# ============================================================
+# 硬约束（全三级适用）
+# ============================================================
+
+hard_constraints:
+  name: "跨模式硬约束"
+  description: "以下约束在 Tier 0/1/2 的任何阶段都必须满足。违反则匹配 FAIL。"
+
+  constraints:
+    - id: HC-01
+      rule: "CD3(Knowledge-Boundary) 声明后，必须有 K2 或 K3 或 K4 之一作为替代知识来源"
+      violation: "FAIL — 声明'不准用 LLM 内嵌知识'后必须指定替代来源"
+      resolution: "添加 K2/K3/K4 之一到匹配结果中"
+
+    - id: HC-02
+      rule: "E2(Controlled-Evolution) 依赖 E1(Self-Evaluation)；E3(Delta-Modification) 依赖 E2+E1"
+      violation: "FAIL — 自进化链不可跳跃选择"
+      resolution: "按 E1 → E2 → E3 顺序补齐依赖"
+
+    - id: HC-03
+      rule: "W5(Adaptive) 必须声明 base_topology（W1/W2/W3/W4 之一）"
+      violation: "FAIL — W5 是叠加层，必须包装一个默认拓扑"
+      resolution: "为 W5 指定 base_topology"
+
+    - id: HC-04
+      rule: "MN-Hybrid 必须声明 phases 分段，每段标注 mission_nature 和模式倾向"
+      violation: "FAIL — 混合型无明确分段"
+      resolution: "拆分为 exploration_phase + execution_phase"
+
+    - id: HC-05
+      rule: "E2(Controlled-Evolution) + IH1(Fire-and-Forget) 不兼容"
+      violation: "FAIL — 受控进化需要中间自审查和可能的 Escalation"
+      resolution: "将 IH1 替换为 IH2/IH3"
+
+    - id: HC-06
+      rule: "同一子维度互斥模式不能同时选中"
+      examples:
+        - "W1(Pipeline) 与 W2(Router) 不能同为顶层分解模式"
+        - "IT1-Forbidden 与 IT1-Enforced 不能共存"
+        - "IH1 与 IH2 不能用于同一执行阶段"
+      violation: "FAIL — 互斥模式同时选中"
+      resolution: "选其一为顶层，另一作为子结构嵌套或移除"
+
+# ============================================================
+# 决策日志集成
+# ============================================================
+
+decision_log_integration:
+  name: "决策日志规范"
+  description: "每次匹配完成后生成 matching-decision-log.yaml 的记录规范"
+
+  required_fields:
+    - "timestamp (ISO 8601)"
+    - "pipeline_mode (agent-creation | create-skill | optimize-skill)"
+    - "target_name"
+    - "user_input_hash (SHA256 前 8 字符)"
+    - "user_input_summary (一句话)"
+    - "tier_0 (mission_nature, confidence, indicators_matched)"
+    - "tier_1 (subset list, cascade_aligned)"
+    - "tier_2_decisions (每个子维度的 pattern_id + confidence + rationale + cascade_aligned)"
+    - "overrides (cascade override 列表，含 reason)"
+
+  backfill_fields:
+    - "phase_2_verdict (PASS | FAIL，Phase 2 完成后回填)"
+    - "phase_4_verdict (PASS | FAIL，Phase 4 完成后回填)"
+    - "phase_5_score (数值，Phase 5 完成后回填)"

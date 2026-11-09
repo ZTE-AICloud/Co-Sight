@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin.json",
+  "name": "cosightbot",
+  "displayName": "CoSightBot",
+  "icon": "./assets/icon.png",
+  "version": "0.1.0",
+  "description": "CoSightBot 企业知识助手：个人知识管理专家（绑定本地资料目录 → 预处理向量化 → 章节树检索问答）与标书应答专家（SOC 知识库 → 标书需求提取 → 批量应答 → 复核回填）合一插件。用 /cosightbot:pkm、/cosightbot:soc 或自然语言「使用个人知识管理智能体/标书智能体…」触发。",
+  "author": {
+    "name": "CoSightBot Team"
+  },
+  "keywords": ["knowledge-retrieval", "pkm", "knowledge-management", "tender", "soc", "rag"],
+  "license": "Apache-2.0"
+}

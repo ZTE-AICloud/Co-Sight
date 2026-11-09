@@ -1,0 +1,29 @@
+# golden manifest — lineage-context-skill（v1.2 批 2 外部集成实例包）
+# 契约见 schemas/golden-manifest.schema.yaml（字段语义单点在该文件）
+
+task_tag: lineage-context-skill
+line: skill
+mode_id: DP1-Traceable-Lineage          # 货架位（检索键）, 非身份声明（R9）
+patterns:                                # 如实完整模式维度集（现行词汇, 重映射后）
+  - DP1-Traceable-Lineage
+  - K3-KB-Backed
+anchor_fit: real                         # 每块产物强制 lineage 五元组 = 可溯源管线纯正实现
+standard_ref: knowledge/skill/skill-design-guide.md
+shape_counts: {SKILL_md: 1, templates: 1, scripts: 0, references: 0}
+acceptance:
+  - lineage 五元组切分段生成一次、后续段禁改写, 纪律明文化
+  - 启动校验 fail-closed 条款在场（缺凭据/探活失败即拒, 无降级跑通）
+  - 凭据禁入产物与日志的明令在场
+  - Merkle 增量同步与删除检测条款在场
+anchors:
+  build_plan: anchors/build-plan.md
+  self_report: anchors/self-report.md
+  derived: true                          # 外部启发锚（REFLUX.md §3 七步流程）
+known_concerns: []
+provenance:
+  origin_repo: "zilliztech/claude-context（golden-examples 参照库 sources/ 快照）"
+  license: "MIT"
+  snapshot_date: "2026-10-17"
+  reshaped: true                         # 外部件已按本仓库规则重塑, 禁原样搬运
+source: "v1.2 批 2 外部集成实例包（源 golden-examples 库, D-01 裁定对策 = 样例补足）"
+status: active

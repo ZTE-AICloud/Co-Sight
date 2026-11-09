@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-genesis.dev/.claude/schemas/review-report.schema.json",
+  "title": "PR Review Report",
+  "type": "object",
+  "required": ["schema_version", "summary", "findings", "approval"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "summary": {
+      "type": "object",
+      "required": ["total", "by_severity", "verdict"],
+      "properties": {
+        "total": { "type": "integer", "minimum": 0 },
+        "by_severity": {
+          "type": "object",
+          "required": ["critical", "high", "medium", "low", "info"],
+          "properties": {
+            "critical": { "type": "integer", "minimum": 0 },
+            "high": { "type": "integer", "minimum": 0 },
+            "medium": { "type": "integer", "minimum": 0 },
+            "low": { "type": "integer", "minimum": 0 },
+            "info": { "type": "integer", "minimum": 0 }
+          },
+          "additionalProperties": false
+        },
+        "verdict": { "enum": ["pass", "pass_with_warnings", "fail"] },
+        "unverified_count": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "severity", "dimension", "title", "file", "evidence", "fix_suggestion", "confidence"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^F-[0-9]{3}$" },
+          "severity": { "enum": ["critical", "high", "medium", "low", "info"] },
+          "dimension": { "enum": ["security", "performance", "maintainability"] },
+          "title": { "type": "string", "minLength": 5 },
+          "file": { "type": "string", "minLength": 1 },
+          "line": { "type": "integer", "minimum": 1 },
+          "cwe_id": { "type": "string", "pattern": "^CWE-[0-9]+$" },
+          "rule_ref": { "type": "string", "description": "规则库条款号，如 R-A03-1" },
+          "unverified": { "type": "boolean", "description": "规则库未覆盖的人工复核项" },
+          "evidence": { "type": "string", "minLength": 10, "description": "diff 原文证据行（密钥已脱敏）" },
+          "fix_suggestion": { "type": "string", "minLength": 5 },
+          "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+          "status": { "enum": ["open", "approved", "dismissed"], "default": "open" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "approval": {
+      "type": "object",
+      "required": ["required", "status"],
+      "properties": {
+        "required": { "type": "boolean" },
+        "status": { "enum": ["not_required", "pending", "approved", "dismissed"] },
+        "dismissed_ids": { "type": "array", "items": { "type": "string" } },
+        "dismissed_reason": { "type": "string" },
+        "decided_by": { "type": "string", "description": "人工审批标识，CI 场景为 'ci-auto'" },
+        "decided_at": { "type": "string", "format": "date-time" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

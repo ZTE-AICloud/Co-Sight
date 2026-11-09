@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "drive",
+  "displayName": "Drive",
+  "version": "2.3.4",
+  "license": "Apache-2.0",
+  "description": "Workflow orchestration harness with user-defined stages (start is internalized). workflow.yaml declares stages, agents, gates, and conditional back-jumps. State machine enforces invariants; hooks guard writes. No bundled runtime engine — Claude Code is the runtime.",
+  "author": {
+    "name": "drive contributors"
+  },
+  "homepage": "https://github.com/ZTE-AICloud/Co-Sight/tree/master/Co-Sight%20Harness/drive",
+  "repository": "https://github.com/ZTE-AICloud/Co-Sight/tree/master/Co-Sight%20Harness/drive",
+  "keywords": [
+    "claude-code",
+    "plugin",
+    "workflow",
+    "harness",
+    "hitl",
+    "spec-driven",
+    "multi-agent",
+    "state-machine",
+    "wave-fanout",
+    "declarative-orchestration",
+    "baseline-versioning",
+    "skill-first",
+    "dag"
+  ],
+  "agents": [
+    "./agents/analyzer.md",
+    "./agents/code-reviewer.md",
+    "./agents/evaluator.md",
+    "./agents/executor.md",
+    "./agents/gate-human.md",
+    "./agents/planner.md",
+    "./agents/security-reviewer.md"
+  ]
+}

@@ -1,0 +1,15 @@
+# skillx-cosight Python 依赖（基于 AST 扫描 scripts/**/*.py 精确提取）
+# 生成方法：遍历所有 .py 文件的 import，剔除 stdlib 与本地包（base/optimizers/orchestrators/scorer 等），剩余即为真第三方。
+# 安装：pip install -r requirement.txt
+
+# 模板引擎（scorer/score_analyzer.py）
+jinja2==3.1.6
+
+# 修复 LLM 输出的非标准 JSON（optimizers/static_llm.py）
+json_repair==0.44.1
+
+# YAML 配置解析（11 个文件：config_layered / evaluators/factory / metrics/config 等）
+PyYAML==6.0.2
+
+# 雷达图可视化（optimizers/static_optimizer.py）
+matplotlib>=3.8.0

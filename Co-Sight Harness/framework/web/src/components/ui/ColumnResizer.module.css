@@ -1,0 +1,59 @@
+/*
+ * 面板边缘的拖拽手柄（通用件）。
+ *
+ * 视觉上的分割线仍然是被调整面板自己的边框——这里**不画**一条常驻的竖线：
+ * 多一条 1px 灰线只会让相邻两块之间看起来像有两条缝。手柄是透明的 8px 命中区，
+ * 只在悬停/拖拽/键盘聚焦时把那条线点亮成品牌蓝，用"这条线亮了"来暗示"它可以拖"。
+ *
+ * 8px 小于 WCAG 2.2 SC 2.5.8 的 24px，走的是该条的**间距豁免**：以命中区中心画一个
+ * 24px 的圆，它不会碰到任何别的可点目标。两个使用方各自成立的方式不同——
+ * 侧栏那边是"相邻的主面板内容离这条边有 20px 以上的内边距"；「工作区文件」面板那边
+ * 是"隔壁整块就是模块 iframe 这一个目标"。**但两块都有一处例外**：加宽到 24px 会横跨
+ * 过去压住隔壁靠边的内容（侧栏那边是卡片，面板那边是同事模块自己画的界面），
+ * 那是拿一个真实的误点风险去换一个形式上的达标。
+ */
+
+.handle {
+  position: absolute;
+  top: 0;
+  right: -4px;
+  bottom: 0;
+  z-index: var(--z-sidebar);
+  /*
+   * 8px 宽、以分割线为中心左右各 4px。命中区小于这个数就很难抓（1px 的线基本抓不住），
+   * 大于这个数会开始挡住隔壁的内容。
+   */
+  width: 8px;
+  cursor: col-resize;
+  /* 触屏上别把这一下手势让给浏览器的滚动/缩放。 */
+  touch-action: none;
+}
+
+/* 贴面板左缘（会话区右栏）。默认是贴右缘，所以这里要把 right 让回去。 */
+.start {
+  right: auto;
+  left: -4px;
+}
+
+.handle::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  margin-left: -0.5px;
+  background: transparent;
+  transition: background-color var(--duration-fast) var(--ease-out);
+}
+
+.handle:hover::after,
+.handle:focus-visible::after,
+.dragging::after {
+  background: var(--color-primary);
+}
+
+/*
+ * 键盘焦点保留默认的焦点环（只在亮线之外多一圈）——1px 的亮线单独作为焦点指示
+ * 太弱了，WCAG 2.4.11 要求可见的焦点外观。
+ */

@@ -1,0 +1,138 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="Co-Sight Viewer — agent observability">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#070b16"/>
+      <stop offset="0.55" stop-color="#0b1224"/>
+      <stop offset="1" stop-color="#111a33"/>
+    </linearGradient>
+    <linearGradient id="brand" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6366f1"/>
+      <stop offset="1" stop-color="#22d3ee"/>
+    </linearGradient>
+    <linearGradient id="title" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.62" stop-color="#c7d2fe"/>
+      <stop offset="1" stop-color="#67e8f9"/>
+    </linearGradient>
+    <linearGradient id="area" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#22d3ee" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#22d3ee" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.075"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.03"/>
+    </linearGradient>
+    <radialGradient id="glowA" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#6366f1" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#6366f1" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowB" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#22d3ee" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#22d3ee" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="dots" width="28" height="28" patternUnits="userSpaceOnUse">
+      <circle cx="1" cy="1" r="1" fill="#ffffff" opacity="0.07"/>
+    </pattern>
+    <filter id="soft" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="36"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#dots)"/>
+  <ellipse cx="220" cy="160" rx="340" ry="260" fill="url(#glowA)" filter="url(#soft)"/>
+  <ellipse cx="980" cy="520" rx="300" ry="220" fill="url(#glowB)" filter="url(#soft)"/>
+  <circle cx="930" cy="300" r="310" fill="none" stroke="#6366f1" stroke-opacity="0.08"/>
+  <circle cx="930" cy="300" r="250" fill="none" stroke="#22d3ee" stroke-opacity="0.06"/>
+
+  <g transform="translate(80 78)">
+    <rect width="66" height="66" rx="18" fill="url(#brand)"/>
+    <path d="M15 33c7.5-11 28.5-11 36 0-7.5 11-28.5 11-36 0Z" fill="#ffffff" opacity="0.96"/>
+    <circle cx="33" cy="33" r="7.6" fill="#0b1224"/>
+    <circle cx="35.5" cy="30.5" r="2.3" fill="#ffffff" opacity="0.92"/>
+  </g>
+
+  <text x="80" y="220" font-family="'Segoe UI','PingFang SC','Microsoft YaHei',Arial,sans-serif" font-size="82" font-weight="800" letter-spacing="-2.5" fill="url(#title)">Co-Sight</text>
+  <text x="80" y="305" font-family="'Segoe UI','PingFang SC','Microsoft YaHei',Arial,sans-serif" font-size="82" font-weight="800" letter-spacing="-2.5" fill="url(#title)">Viewer</text>
+  <text x="82" y="362" font-family="'Segoe UI','PingFang SC','Microsoft YaHei',Arial,sans-serif" font-size="23" font-weight="400" fill="#9fb0d0">Agent observability, live.</text>
+  <text x="82" y="400" font-family="'Segoe UI','PingFang SC','Microsoft YaHei',Arial,sans-serif" font-size="19" font-weight="400" fill="#6f82a4">Sessions · Runs · Events · Tools · Costs</text>
+
+  <g font-family="'Segoe UI','PingFang SC','Microsoft YaHei',Arial,sans-serif" font-size="14" font-weight="600">
+    <rect x="82" y="438" width="112" height="32" rx="8" fill="#6366f1" fill-opacity="0.14" stroke="#6366f1" stroke-opacity="0.28"/>
+    <text x="138" y="459" text-anchor="middle" fill="#a5b4fc">Live sessions</text>
+    <rect x="204" y="438" width="116" height="32" rx="8" fill="#22d3ee" fill-opacity="0.12" stroke="#22d3ee" stroke-opacity="0.26"/>
+    <text x="262" y="459" text-anchor="middle" fill="#67e8f9">WebSocket</text>
+    <rect x="330" y="438" width="120" height="32" rx="8" fill="#10b981" fill-opacity="0.12" stroke="#10b981" stroke-opacity="0.26"/>
+    <text x="390" y="459" text-anchor="middle" fill="#6ee7b7">Cost tracking</text>
+    <rect x="460" y="438" width="100" height="32" rx="8" fill="#f59e0b" fill-opacity="0.12" stroke="#f59e0b" stroke-opacity="0.26"/>
+    <text x="510" y="459" text-anchor="middle" fill="#fcd34d">Open source</text>
+  </g>
+
+  <g transform="translate(640 78)">
+    <rect width="486" height="474" rx="26" fill="url(#panel)" stroke="#ffffff" stroke-opacity="0.12"/>
+
+    <circle cx="32" cy="36" r="6" fill="#34d399"/>
+    <text x="48" y="42" font-family="'Segoe UI','PingFang SC','Microsoft YaHei',Arial,sans-serif" font-size="12" font-weight="700" letter-spacing="2.2" fill="#9fb0d0">LIVE RUN</text>
+    <text x="452" y="42" text-anchor="end" font-family="'Consolas','SFMono-Regular',monospace" font-size="12" fill="#5f7191">run_8ab31d</text>
+    <line x1="24" y1="62" x2="462" y2="62" stroke="#ffffff" stroke-opacity="0.10"/>
+
+    <g font-family="'Segoe UI','PingFang SC','Microsoft YaHei',Arial,sans-serif" font-size="14">
+      <g transform="translate(26 88)">
+        <rect width="22" height="22" rx="7" fill="#60a5fa" fill-opacity="0.16" stroke="#60a5fa" stroke-opacity="0.3"/>
+        <path d="M6 5.5h6l4 4V17H6z" fill="none" stroke="#93c5fd" stroke-width="1.2" stroke-linejoin="round"/>
+        <path d="M12 5.5v4h4" fill="none" stroke="#93c5fd" stroke-width="1.2" stroke-linejoin="round"/>
+        <text x="38" y="16" fill="#dbe4f5" font-weight="700">Read</text>
+        <text x="126" y="16" fill="#6f82a4" font-family="'Consolas','SFMono-Regular',monospace" font-size="12">D:\docs\spec.md</text>
+        <text x="436" y="16" text-anchor="end" fill="#34d399" font-size="12">12ms</text>
+      </g>
+      <g transform="translate(26 134)">
+        <rect width="22" height="22" rx="7" fill="#6366f1" fill-opacity="0.16" stroke="#6366f1" stroke-opacity="0.3"/>
+        <path d="M6 7.5l4 3.5-4 3.5" fill="none" stroke="#a5b4fc" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M11.5 15h5" stroke="#a5b4fc" stroke-width="1.4" stroke-linecap="round"/>
+        <text x="38" y="16" fill="#dbe4f5" font-weight="700">Bash</text>
+        <text x="126" y="16" fill="#6f82a4" font-family="'Consolas','SFMono-Regular',monospace" font-size="12">npm test</text>
+        <text x="436" y="16" text-anchor="end" fill="#34d399" font-size="12">passed</text>
+      </g>
+      <g transform="translate(26 180)">
+        <rect width="22" height="22" rx="7" fill="#f59e0b" fill-opacity="0.16" stroke="#f59e0b" stroke-opacity="0.3"/>
+        <path d="M11 5.8l5.8 10.2H5.2z" fill="none" stroke="#fcd34d" stroke-width="1.2" stroke-linejoin="round"/>
+        <path d="M11 9.5v3" stroke="#fcd34d" stroke-width="1.3" stroke-linecap="round"/>
+        <circle cx="11" cy="14.2" r="0.7" fill="#fcd34d"/>
+        <text x="38" y="16" fill="#dbe4f5" font-weight="700">Approval</text>
+        <text x="126" y="16" fill="#6f82a4" font-size="12">Bash · npm publish</text>
+        <text x="436" y="16" text-anchor="end" fill="#fbbf24" font-size="12">pending</text>
+      </g>
+      <g transform="translate(26 226)">
+        <rect width="22" height="22" rx="7" fill="#22d3ee" fill-opacity="0.16" stroke="#22d3ee" stroke-opacity="0.3"/>
+        <path d="M5.5 6.5h11v7h-6.5l-3 3v-3H5.5z" fill="none" stroke="#67e8f9" stroke-width="1.2" stroke-linejoin="round"/>
+        <text x="38" y="16" fill="#dbe4f5" font-weight="700">Message</text>
+        <text x="126" y="16" fill="#6f82a4" font-size="12">Run summary ready</text>
+        <text x="436" y="16" text-anchor="end" fill="#34d399" font-size="12">now</text>
+      </g>
+    </g>
+
+    <g transform="translate(24 284)">
+      <rect width="438" height="118" rx="14" fill="#ffffff" fill-opacity="0.035" stroke="#ffffff" stroke-opacity="0.08"/>
+      <text x="16" y="24" font-family="'Segoe UI','PingFang SC','Microsoft YaHei',Arial,sans-serif" font-size="11" font-weight="700" letter-spacing="2" fill="#5f7191">EVENT THROUGHPUT</text>
+      <line x1="16" y1="92" x2="422" y2="92" stroke="#ffffff" stroke-opacity="0.07"/>
+      <line x1="16" y1="70" x2="422" y2="70" stroke="#ffffff" stroke-opacity="0.05"/>
+      <line x1="16" y1="48" x2="422" y2="48" stroke="#ffffff" stroke-opacity="0.05"/>
+      <path d="M16 88 L52 78 L88 82 L124 58 L160 66 L196 44 L232 54 L268 36 L304 46 L340 26 L376 38 L422 20 L422 100 L16 100 Z" fill="url(#area)"/>
+      <path d="M16 88 L52 78 L88 82 L124 58 L160 66 L196 44 L232 54 L268 36 L304 46 L340 26 L376 38 L422 20" fill="none" stroke="url(#brand)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="422" cy="20" r="4" fill="#22d3ee"/>
+    </g>
+
+    <g transform="translate(24 430)" font-family="'Segoe UI','PingFang SC','Microsoft YaHei',Arial,sans-serif">
+      <text x="0" y="0" font-size="11" letter-spacing="2" fill="#5f7191">RUNS</text>
+      <text x="0" y="26" font-size="26" font-weight="700" fill="#f5f7ff">24</text>
+      <text x="150" y="0" font-size="11" letter-spacing="2" fill="#5f7191">TOOLS</text>
+      <text x="150" y="26" font-size="26" font-weight="700" fill="#f5f7ff">128</text>
+      <text x="300" y="0" font-size="11" letter-spacing="2" fill="#5f7191">COST</text>
+      <text x="300" y="26" font-size="26" font-weight="700" fill="#f5f7ff">¥0.42</text>
+    </g>
+  </g>
+
+  <line x1="80" y1="572" x2="1120" y2="572" stroke="#ffffff" stroke-opacity="0.08"/>
+  <text x="80" y="596" font-family="'Consolas','SFMono-Regular',monospace" font-size="13" fill="#5f7191">cosight-viewer</text>
+  <text x="1120" y="596" text-anchor="end" font-family="'Segoe UI','PingFang SC','Microsoft YaHei',Arial,sans-serif" font-size="13" fill="#5f7191">Open source · Apache-2.0</text>
+</svg>

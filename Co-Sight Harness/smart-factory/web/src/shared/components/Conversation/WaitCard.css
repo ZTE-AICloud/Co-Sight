@@ -1,0 +1,368 @@
+/*
+ * 等待应答卡（审批 / 提问）与它的结算行。
+ *
+ * 样式全走 global.css 的 token；宽度约束跟对话正文列一样，窄栏（创建页最小 300px、
+ * 正文列 84%）下所有内容都得能折行，所以每个 flex 子项都写了 min-width: 0。
+ */
+
+.conversation__wait {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  max-width: 100%;
+  margin-top: 2px;
+  border: 1px solid color-mix(in srgb, var(--color-warn) 32%, var(--color-border));
+  border-radius: 9px;
+  background: #fffdf8;
+  overflow: hidden;
+}
+
+/* ---------- 头 ---------- */
+
+.conversation__wait-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  padding: 8px 11px;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-warn) 20%, var(--color-border));
+  font-size: 12.5px;
+}
+
+.conversation__wait-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  color: var(--color-warn);
+}
+
+.conversation__wait-title {
+  min-width: 0;
+  font-weight: 620;
+  color: var(--color-text);
+  overflow-wrap: anywhere;
+}
+
+.conversation__wait-kind {
+  flex-shrink: 0;
+  margin-left: auto;
+  padding: 1px 6px;
+  border: 1px solid color-mix(in srgb, var(--color-warn) 40%, var(--color-border));
+  border-radius: 999px;
+  color: var(--color-warn);
+  font-size: 10.5px;
+  line-height: 1.5;
+}
+
+/* ---------- 审批正文 ---------- */
+
+.conversation__wait-body {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+  padding: 10px 11px;
+}
+
+.conversation__wait-tool {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--color-text-weak);
+}
+
+.conversation__wait-tool b {
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.conversation__wait-desc {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--color-text-weak);
+  overflow-wrap: anywhere;
+}
+
+.conversation__wait-args {
+  margin: 0;
+  padding: 8px 9px;
+  max-height: 150px;
+  overflow: auto;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- 操作区 ---------- */
+
+.conversation__wait-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 0 11px 11px;
+}
+
+.conversation__wait-btn {
+  padding: 5px 11px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.conversation__wait-btn:hover:not(:disabled) {
+  background: #f6f7f9;
+}
+
+.conversation__wait-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.conversation__wait-btn--primary {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.conversation__wait-btn--primary:hover:not(:disabled) {
+  background: #255ecb;
+}
+
+.conversation__wait-btn--danger {
+  border-color: color-mix(in srgb, var(--color-danger) 45%, var(--color-border));
+  color: var(--color-danger);
+}
+
+.conversation__wait-btn--danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-danger) 8%, var(--color-surface));
+}
+
+.conversation__wait-hint {
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--color-text-weak);
+}
+
+.conversation__wait-note {
+  margin: 0;
+  padding: 10px 11px 0;
+  font-size: 12px;
+  color: var(--color-text-weak);
+}
+
+/* ---------- 提问 ---------- */
+
+.conversation__question {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  padding: 10px 11px 11px;
+}
+
+.conversation__question-item {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.conversation__question-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  font-size: 12.5px;
+}
+
+.conversation__question-text {
+  min-width: 0;
+  line-height: 1.55;
+  color: var(--color-text);
+  overflow-wrap: anywhere;
+}
+
+.conversation__wait-tag {
+  flex-shrink: 0;
+  padding: 0 6px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--color-primary) 10%, var(--color-surface));
+  color: var(--color-primary);
+  font-size: 10.5px;
+  line-height: 1.7;
+}
+
+.conversation__wait-opts {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.conversation__wait-opt {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 7px;
+  background: var(--color-surface);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.conversation__wait-opt:hover {
+  border-color: #cbd5e1;
+}
+
+.conversation__wait-opt:has(.conversation__wait-radio:checked) {
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 6%, var(--color-surface));
+}
+
+/* 原生控件视觉隐藏，但保留焦点与键盘行为 */
+.conversation__wait-radio {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.conversation__wait-radio:focus-visible + .conversation__wait-mark {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+
+.conversation__wait-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  margin-top: 1px;
+  border: 1.5px solid #c4cad3;
+  border-radius: 50%;
+  background: var(--color-surface);
+}
+
+/* 多选用方角，单选保持圆形 —— 形状本身就是一组语义 */
+.conversation__wait-opt[data-multi='true'] .conversation__wait-mark {
+  border-radius: 4px;
+}
+
+.conversation__wait-opt:has(.conversation__wait-radio:checked) .conversation__wait-mark {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+}
+
+.conversation__wait-opt:has(.conversation__wait-radio:checked) .conversation__wait-mark::after {
+  content: '';
+  width: 7px;
+  height: 4px;
+  border-left: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+  transform: rotate(-45deg) translate(0, -1px);
+}
+
+.conversation__wait-opt-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.conversation__wait-opt-label {
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--color-text);
+  overflow-wrap: anywhere;
+}
+
+.conversation__wait-opt-desc {
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--color-text-weak);
+  overflow-wrap: anywhere;
+}
+
+/* 「其他」：label 只包控件，输入框是它的兄弟节点（否则点输入框会切掉勾选） */
+.conversation__wait-opt--other {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  cursor: default;
+}
+
+.conversation__wait-opt-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.conversation__wait-other {
+  box-sizing: border-box;
+  width: 100%;
+  flex-shrink: 0;
+  min-width: 0;
+  margin-top: 6px;
+  padding: 6px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 12.5px;
+}
+
+.conversation__wait-other:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.conversation__question-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ---------- 结算行 ---------- */
+
+/* 结算后卡片原位换成这一行：比普通回答弱一档，避免看起来像模型说的话 */
+.conversation__wait-settled {
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--color-text-weak);
+  white-space: pre-wrap;
+  word-break: break-word;
+}

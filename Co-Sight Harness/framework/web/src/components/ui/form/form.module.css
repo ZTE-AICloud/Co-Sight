@@ -1,0 +1,269 @@
+/*
+ * 表单控件的公共样式（FieldShell / TextField / SelectField / SwitchField / FormActions）。
+ *
+ * 这几件东西共用一份样式表而不是各占一个文件：标签、提示、错误、行距在四处必须
+ * 完全一致，分成四份就是四份会各自漂移的副本。控件**外观**之间的差异（输入框 vs
+ * 开关）反而很小，也放在这里一并看清楚。
+ *
+ * 稿里没有任何表单（design-tokens.md §8.2），所以本文件全部是新增设计决策。
+ * 取值原则与 Button.module.css 相同：只用 tokens.css 里已有的变量，不引入新色。
+ */
+
+/* ===================== 字段（标签 / 提示 / 错误） ===================== */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  /* 网格布局下不与相邻字段挤压：标签换行时行高对齐。 */
+  min-width: 0;
+}
+
+.label {
+  color: var(--text-heading);
+  font-family: var(--font-medium);
+  font-weight: var(--fw-medium);
+  font-size: var(--fs-label);
+  line-height: var(--lh-label);
+}
+
+.hint {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--fs-sidebar-sub);
+  line-height: var(--lh-sidebar-sub);
+}
+
+/* 错误文案用 alert 报出（见 TextField），这里只负责"看起来是错误"。 */
+.error {
+  margin: 0;
+  color: var(--color-danger);
+  font-size: var(--fs-sidebar-sub);
+  line-height: var(--lh-sidebar-sub);
+}
+
+/* ===================== 输入框 ===================== */
+
+.input {
+  width: 100%;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--border-panel);
+  border-radius: var(--r-xs);
+  background: var(--color-surface);
+  color: var(--text-heading);
+  font-family: var(--font-regular);
+  font-size: var(--fs-label);
+  line-height: var(--lh-label);
+}
+
+.input::placeholder {
+  color: var(--text-placeholder);
+}
+
+/* 写成两段 `:not` 而不是 `:not(:disabled, :focus)`：后者要求 Selectors L4，
+   而这里没必要为了少几个字符去赌目标浏览器。 */
+.input:hover:not(:disabled):not(:focus) {
+  border-color: var(--border-hover);
+}
+
+.input:disabled {
+  background: var(--color-disabled-bg);
+  color: var(--color-disabled-text);
+  cursor: not-allowed;
+}
+
+/*
+ * 出错时描边变红。**同时**由调用方把 `aria-invalid` 传给输入框：只靠颜色表达
+ * 错误对色觉障碍用户等于没有提示（web/security 与 a11y 规则都要求）。
+ */
+.input[aria-invalid='true'] {
+  border-color: var(--color-danger);
+}
+
+/* 数字输入的浏览器步进箭头在 32px 高的框里会把数字挤到看不见，关掉。 */
+.input[type='number'] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.input[type='number']::-webkit-outer-spin-button,
+.input[type='number']::-webkit-inner-spin-button {
+  margin: 0;
+  appearance: none;
+}
+
+/*
+ * 输入框 + 右侧附加控件（`TextField` 的 `trailing`）。只有真的传了附加控件才会
+ * 套这一层，其余字段的输入框仍直接占满一列（见 TextField 里的条件渲染）。
+ *
+ * 声明位置放在 `.input` 之后：读的时候顺着"输入框 → 输入框在行里的样子"往下走，
+ * 不用往回翻。
+ */
+.inputRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 输入框吃掉剩余宽度；少了 `min-width: 0`，长路径会把按钮挤出弹窗。 */
+.inputRow > .input {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+}
+
+/* 附加控件保持自身宽度：窄弹窗下把按钮压成两行字比让它撑开一点更难看。 */
+.inputRow > :not(.input) {
+  flex: none;
+}
+
+/*
+ * 下拉框在 JSX 里与 .input 一起用（`cn(styles.input, styles.select)`），
+ * 而不是 `composes: input`：composes 是 CSS Modules 的扩展语法，构建链换了
+ * （lightningcss）就得重新验证它还在不在，而两个类名一起用是纯 CSS。
+ * 只覆盖真正不同的几点：右侧给 chevron 让位、指针是 pointer、去掉原生外观。
+ */
+.select {
+  padding-right: 26px;
+  cursor: pointer;
+  /*
+   * **必须**关掉原生外观。`SelectField` 自己画了一个 chevron（`Icon chevronDown`），
+   * 而原生 `<select>` 默认也会在右边缘画一个——不关掉就是两个箭头叠在一起，
+   * 表现为一团有重影的图标（错位来自两者右边缘的间距不一致）。
+   * 这是纯外观属性：选项列表、键盘操作、读屏行为都还是浏览器原生的那一套。
+   */
+  appearance: none;
+  /* Safari 15.4 之前只认前缀形式（与上面 `.input[type='number']` 同样的保险）。 */
+  -webkit-appearance: none;
+}
+
+.selectWrapper {
+  position: relative;
+  display: block;
+}
+
+/* 与 SearchInput 里的图标同理：不关掉命中测试，点击箭头处下拉框展不开。 */
+.selectChevron {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: var(--text-secondary);
+}
+
+/*
+ * 多行输入：与 .input 一起用（`cn(styles.input, styles.textarea)`），
+ * 只覆盖"单行"带来的那几点。声明位置必须晚于 .input——两者特异性相同，
+ * 靠源码顺序决定胜负，挪到前面去就会被 .input 的 height: 32px 压掉。
+ */
+.textarea {
+  height: auto;
+  min-height: 64px;
+  padding: 6px 10px;
+  /* 只允许纵向拉伸：横向拉会把两列的栅格撑破。 */
+  resize: vertical;
+}
+
+/* ===================== 开关 ===================== */
+
+.switch {
+  position: relative;
+  flex: none;
+  width: 36px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: var(--r-full);
+  background: var(--border-panel);
+  cursor: pointer;
+  transition: background-color var(--duration-fast) var(--ease-out);
+}
+
+.switch[aria-checked='true'] {
+  background: var(--color-primary);
+}
+
+.switch:disabled {
+  background: var(--color-disabled-bg);
+  cursor: not-allowed;
+}
+
+.switchThumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-item);
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.switch[aria-checked='true'] .switchThumb {
+  transform: translateX(16px);
+}
+
+/*
+ * 开关行：左侧标签与提示，右侧开关。与设置弹窗里既有的信息行（.field）同构，
+ * 所以行距对齐，混排时不会一高一矮。
+ */
+.switchRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 6px 0;
+}
+
+/* ===================== 栅格与操作栏 ===================== */
+
+/*
+ * 表单栅格。两列是"字段多、弹窗只有 720px 宽"的折中：短字段（数值、开关）
+ * 并排，长字段（名称、地址）跨两列。纯单列会把弹窗撑出滚动条，纯两列会让
+ * URL 与名称被切得太窄。
+ */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 16px;
+}
+
+.grid > .wide {
+  grid-column: 1 / -1;
+}
+
+/*
+ * 单列变体：与 `.grid` 一起用（`cn(styles.grid, styles.stacked)`）。
+ *
+ * 谁用：模型表单。它的字段少而长——名称、模型标识、网关地址、密钥，两列会把每一栏
+ * 切到只够放半行，读一个地址要左右扫两次；而"字段多、要并排压缩高度"这个 `.grid`
+ * 的初衷在这里并不成立（推理参数已经折起来了）。
+ *
+ * 声明位置必须在 `.grid` 之后：两者特异性相同，靠源码顺序决定胜负。
+ * 单列下 `.wide` 的 `grid-column: 1 / -1` 本来就等于唯一的那一列，所以用单列的地方
+ * 不必再标 `wide`（标了也不会错，只是不再表达任何东西）。
+ */
+.stacked {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-sidebar);
+}
+
+/*
+ * 操作栏里的"删除"永远靠左、离"保存"最远——破坏性操作的手感不该和主操作相邻。
+ * `margin-right: auto` 让它在 flex 里被推到最左。
+ */
+.actionsDestructive {
+  margin-right: auto;
+}

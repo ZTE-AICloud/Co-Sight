@@ -1,0 +1,8 @@
+{
+  "step_id": "milestone-g021",
+  "gate_id": "G021-milestone",
+  "verdict": "PASS-WITH-CONDITIONS",
+  "conditions": ["Step 5 readiness / Step 6 e2e 留为 DEFERRED（环境无 SubAgent）"],
+  "ready_for_archive": true,
+  "checked_at": "2026-10-05T03:58:40Z"
+}

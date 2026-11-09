@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "skillx",
+  "description": "SkillX 评测-优化循环编排器 marketplace（cosight-harness 托管）",
+  "owner": {
+    "name": "ZTE AI Lab",
+    "url": "https://github.com/ZTE-AICloud/Co-Sight"
+  },
+  "plugins": [
+    {
+      "name": "skill-optimizer",
+      "source": ".",
+      "version": "1.0.0",
+      "description": "Skill 优化插件：/skill_create、/skill_evolve、/skill_optimize — 评测-优化循环闭环。",
+      "keywords": ["skill", "optimize", "eval", "harness"]
+    }
+  ]
+}

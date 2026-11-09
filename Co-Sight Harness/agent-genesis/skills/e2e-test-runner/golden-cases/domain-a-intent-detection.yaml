@@ -1,0 +1,18 @@
+domain: "A-意图识别"
+description: "测试 AgentGenesis 的意图识别能力 — 从用户自然语言输入判定 target/action/confidence"
+test_cases:
+  - id: "TC-ID-01"
+    input: "创建一个代码审查的skill"
+    expected: "意图识别→skill-foundry(create mode)→Plan Mode审批"
+    expected_phase: "PLAN_MODE"
+    timeout: 300
+  - id: "TC-ID-03"
+    input: "帮我做一个code review的agent"
+    expected: "意图识别→agent-creation流水线"
+    expected_phase: "PHASE_1"
+    timeout: 300
+  - id: "TC-ID-05"
+    input: "帮我处理一下代码"
+    expected: "低置信度→追问澄清"
+    expected_phase: "IH2_CLARIFY"
+    timeout: 120

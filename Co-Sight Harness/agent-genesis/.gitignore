@@ -1,0 +1,28 @@
+# AgentGenesis 过程产物（不发布）
+# 这些目录是 pipeline 运行时的中间产物，不应进 git
+.agent-genesis/
+work/
+output/
+
+# Claude Code 本地配置
+.claude/settings.local.json
+.claude/DEV_MODE
+
+# 本地开发上下文（仅本机保留，不入库；开发导航已并入 README.md）
+CLAUDE.md
+# 例外: golden 池 output-snapshot 的 CLAUDE.md 是模板资产（G2 批）, 必须入库
+!knowledge/golden/*/output-snapshot/CLAUDE.md
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.pytest_cache/
+
+# Node
+node_modules/
+
+# 系统
+.DS_Store
+Thumbs.db

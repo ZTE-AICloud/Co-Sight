@@ -1,0 +1,271 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "_comment": "通用 LLM 断点契约模板库。subagent 根据匹配的业务模式,选择/组合相关模板。严禁包含:特定业务的字段名、文件名、子系统名。",
+  "version": "1.2.0",
+  "template_id_whitelist": [
+    "insertions",
+    "row_updates",
+    "linkage_changes",
+    "naming_decisions",
+    "fixes",
+    "fallback_markers"
+  ],
+  "_version_1_2_changes": "新增 minimal_core_combo(核心 3 字段)与 core_3_plus_optional(核心 3+可选 2)两种组合模式,根治'LLM 响应字段过繁/不一致'。LLM 断点契约应优先 minimal_core_combo,仅在确需 LLM 主动生成命名时才加 naming_decisions。",
+  "_minimal_core_combo_rationale": "v1.1.0 的 incremental_modification_v2 模板要求 4 字段(insertions+row_updates+linkage_changes+fallback_markers)必含,过繁;实战发现 fallback_markers 在 LLM 推理质量良好时是空数组,反而干扰阅读。1.2.0 改用 3 必含 + 2 可选模式,更简洁且 LLM 更易遵从。",
+  "_template_id_whitelist_note": "校验脚本强制比对:每个 LLM 契约 schema 的 properties keys 必须 ∈ template_id_whitelist。",
+  "_comment_fallback_markers": "新增 fallback_markers 模板,用于 LLM 兜底占位符标识(如'接口待定.业务流' / '业务流待定' 等)",
+  "templates": {
+    "insertions": {
+      "_comment": "通用插入行模板:LLM 输出待插入的新行",
+      "type": "object",
+      "required": ["insertions"],
+      "properties": {
+        "insertions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["position", "anchor", "src", "tgt"],
+            "properties": {
+              "position": {"enum": ["before", "after"]},
+              "anchor": {"type": "integer", "description": "锚定行索引(0-based)"},
+              "src": {"type": "string", "description": "发送方标识(子系统.组件)"},
+              "tgt": {"type": "string", "description": "接收方标识(子系统.组件)"},
+              "biz_if": {"type": "string", "description": "业务接口(业务流),格式 接口名.业务流"},
+              "flow_type": {"enum": ["新增", "修改", "继承"], "default": "继承"},
+              "change_desc": {"type": "string", "description": "三段式变更描述,以 <br> 分隔"}
+            }
+          }
+        }
+      }
+    },
+    "row_updates": {
+      "_comment": "通用存量行更新模板:LLM 输出对 V* 表中存量行的字段更新",
+      "type": "object",
+      "required": ["row_updates"],
+      "properties": {
+        "row_updates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["row_index"],
+            "properties": {
+              "row_index": {"type": "integer", "description": "待更新的行索引(0-based)"},
+              "biz_if": {"type": "string"},
+              "flow_type": {"enum": ["新增", "修改", "继承"]},
+              "change_desc": {"type": "string"}
+            }
+          }
+        }
+      }
+    },
+    "linkage_changes": {
+      "_comment": "通用联动变更模板:LLM 识别因依赖关系需要适配的非变更组件",
+      "type": "object",
+      "required": ["linkage_changes"],
+      "properties": {
+        "linkage_changes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["component", "change_point"],
+            "properties": {
+              "component": {"type": "string", "description": "受影响的非变更组件(子系统.组件)"},
+              "change_point": {"type": "string", "description": "该组件需要做的适配描述"}
+            }
+          }
+        }
+      }
+    },
+    "fixes": {
+      "_comment": "通用规则匹配模板:LLM 按规则文件匹配 src/tgt 组件",
+      "type": "object",
+      "required": ["fixes"],
+      "properties": {
+        "fixes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["row_index"],
+            "properties": {
+              "row_index": {"type": "integer"},
+              "src_comp": {"type": "string"},
+              "tgt_comp": {"type": "string"}
+            }
+          }
+        }
+      }
+    },
+    "naming_decisions": {
+      "_comment": "通用命名决策模板:LLM 输出新增接口/业务流的命名",
+      "type": "object",
+      "required": ["naming_decisions"],
+      "properties": {
+        "naming_decisions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["context", "name"],
+            "properties": {
+              "context": {"type": "string", "description": "命名上下文(行索引或组件对)"},
+              "name": {"type": "string", "description": "命名结果(接口名.业务流名)"},
+              "rationale": {"type": "string", "description": "命名理由"}
+            }
+          }
+        }
+      }
+    },
+    "fallback_markers": {
+      "_comment": "通用兜底占位符模板:LLM 在匹配不到存量数据时,显式标注占位符以便后续人工补全。flow_design 必含(防止漏字段假死)。",
+      "type": "object",
+      "required": ["fallback_markers"],
+      "properties": {
+        "fallback_markers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["context", "placeholder"],
+            "properties": {
+              "context": {"type": "string", "description": "兜底上下文(行索引 / 字段名)"},
+              "placeholder": {"type": "string", "description": "占位符(如 '接口待定.业务流' / '业务流待定' / '待补充')"},
+              "reason": {"type": "string", "description": "为何兜底(便于人工定位)"},
+              "auto_resolvable": {"type": "boolean", "description": "是否可由脚本后续自动补充"}
+            }
+          }
+        }
+      }
+    },
+    "incremental_modification_v2": {
+      "_comment": "v1.1.0 组合模板(已弃用,保留仅作历史):flow_design 综合 LLM 断点的标准 3 段式响应(insertions + row_updates + linkage_changes + fallback_markers)。2026-07-13 新增但 v1.2.0 被 minimal_core_combo 替代(过繁)。",
+      "type": "object",
+      "required": ["insertions", "row_updates", "linkage_changes", "fallback_markers"],
+      "properties": {
+        "insertions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["position", "anchor", "src", "tgt"],
+            "properties": {
+              "position": {"enum": ["before", "after"]},
+              "anchor": {"type": "integer"},
+              "src": {"type": "string"},
+              "tgt": {"type": "string"},
+              "biz_if": {"type": "string"},
+              "flow_type": {"enum": ["新增", "修改", "继承"]},
+              "change_desc": {"type": "string", "description": "三段式变更描述,以 <br> 分隔"}
+            }
+          }
+        },
+        "row_updates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["row_index"],
+            "properties": {
+              "row_index": {"type": "integer"},
+              "biz_if": {"type": "string"},
+              "flow_type": {"enum": ["新增", "修改", "继承"]},
+              "change_desc": {"type": "string"}
+            }
+          }
+        },
+        "linkage_changes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["component", "change_point"],
+            "properties": {
+              "component": {"type": "string"},
+              "change_point": {"type": "string"}
+            }
+          }
+        },
+        "fallback_markers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["context", "placeholder"],
+            "properties": {
+              "context": {"type": "string"},
+              "placeholder": {"type": "string"},
+              "reason": {"type": "string"},
+              "auto_resolvable": {"type": "boolean"}
+            }
+          }
+        }
+      }
+    },
+    "minimal_core_combo": {
+      "_comment": "v1.2.0 抽象规则:综合类 LLM 断点应使用最小核心 3 字段组合(insertions + row_updates + linkage_changes 必含)。3 个字段是流程类 LLM 断点的最小完整操作集 — 任何流程变更必然涉及'插新 + 回填存量 + 识别联动',缺一会导致 revision loop 无法收敛。",
+      "type": "object",
+      "required": ["insertions", "row_updates", "linkage_changes"],
+      "properties": {
+        "insertions": {
+          "$ref": "#/templates/insertions/properties/insertions"
+        },
+        "row_updates": {
+          "$ref": "#/templates/row_updates/properties/row_updates"
+        },
+        "linkage_changes": {
+          "$ref": "#/templates/linkage_changes/properties/linkage_changes"
+        }
+      },
+      "_abstract_rule": "综合类 LLM 断点的最小核心组合是 3 字段(insertions + row_updates + linkage_changes)。具体每个字段的 items 结构由对应子模板定义,不在此处重复。"
+    },
+    "core_3_plus_optional": {
+      "_comment": "v1.2.0 抽象规则:在最小核心 3 字段基础上,业务可按需声明 2 个可选字段(naming_decisions 主动生成命名;fallback_markers 显式标记兜底位置)。可选字段的启用条件由业务决定,框架不强制。",
+      "type": "object",
+      "required": ["insertions", "row_updates", "linkage_changes"],
+      "properties": {
+        "insertions": {
+          "$ref": "#/templates/insertions/properties/insertions"
+        },
+        "row_updates": {
+          "$ref": "#/templates/row_updates/properties/row_updates"
+        },
+        "linkage_changes": {
+          "$ref": "#/templates/linkage_changes/properties/linkage_changes"
+        },
+        "naming_decisions": {
+          "$ref": "#/templates/naming_decisions/properties/naming_decisions"
+        },
+        "fallback_markers": {
+          "$ref": "#/templates/fallback_markers/properties/fallback_markers"
+        }
+      },
+      "_abstract_rule": "在 minimal_core_combo 基础上,业务可声明 2 个可选字段:① naming_decisions(LLM 主动生成新标识符,无存量可复用);② fallback_markers(LLM 显式标记兜底位置便于人工 review)。具体启用哪一个由业务根据场景决定,框架不预设。"
+    }
+  },
+  "_usage": {
+    "_comment": "subagent 使用规则",
+    "by_pattern": {
+      "flow_design": [
+        "LLM-A(规则匹配): 单模板 fixes",
+        "LLM-B(综合): 默认 minimal_core_combo(3 字段);需主动命名时改用 core_3_plus_optional(3+2)"
+      ],
+      "document_generation": [
+        "LLM-A: content_generation → 自由文本(JSON Schema 自定义)"
+      ],
+      "data_extraction": [
+        "LLM-A: semantic_extraction → 自由文本(JSON Schema 自定义)"
+      ],
+      "tool_invocation": []
+    },
+    "min_required_fields_per_template": 3,
+    "_v1_2_0_priority": "flow_design 综合 LLM 断点默认 minimal_core_combo(3 必含),不再用 incremental_modification_v2(4 必含)。命名/兜底需求时再扩展。",
+    "_example_combined_response": {
+      "_comment": "flow_design 模式的 LLM-B 完整响应示例(组合 insertions + row_updates + linkage_changes + naming_decisions)",
+      "insertions": [
+        {"position": "after", "anchor": 0, "src": "SUBSYS.A", "tgt": "SUBSYS.B", "biz_if": "INTERFACE.flow_name", "flow_type": "新增", "change_desc": "变更描述..."}
+      ],
+      "row_updates": [
+        {"row_index": 0, "biz_if": "UPDATED.interface", "flow_type": "修改", "change_desc": "更新描述..."}
+      ],
+      "linkage_changes": [
+        {"component": "SUBSYS.C", "change_point": "因 A 变更需适配..."}
+      ],
+      "naming_decisions": [
+        {"context": "row_0", "name": "INTERFACE_X.new_flow", "rationale": "复用存量命名..."}
+      ]
+    }
+  }
+}

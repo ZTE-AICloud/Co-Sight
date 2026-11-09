@@ -1,0 +1,120 @@
+/*
+ * 观测设置面板样式。
+ */
+
+.errorBox {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border-radius: var(--r-sm);
+  background: var(--color-disabled-bg);
+}
+
+.errorTitle {
+  margin: 0;
+  color: var(--text-heading);
+  font-family: var(--font-medium);
+  font-weight: var(--fw-medium);
+  font-size: var(--fs-label);
+  line-height: var(--lh-label);
+}
+
+.errorMessage {
+  color: var(--color-danger);
+  font-size: var(--fs-sidebar-sub);
+  line-height: var(--lh-sidebar-sub);
+}
+
+.successMessage {
+  color: var(--color-success);
+  font-size: var(--fs-sidebar-sub);
+  line-height: var(--lh-sidebar-sub);
+}
+
+.input {
+  padding: 6px 10px;
+  border: 1px solid var(--border-panel);
+  border-radius: var(--r-sm);
+  background: var(--color-input-bg);
+  color: var(--text-body);
+  font-family: var(--font-regular);
+  font-size: var(--fs-label);
+  line-height: var(--lh-label);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px var(--color-accent-alpha);
+}
+
+.input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Toggle 开关 */
+.toggle {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggleSlider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #9ca3af;
+  transition: 0.3s;
+  border-radius: 24px;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.toggleSlider:before {
+  position: absolute;
+  content: '';
+  height: 20px;
+  width: 20px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  transition: 0.3s;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.toggle input:checked + .toggleSlider {
+  background-color: #3b82f6;
+}
+
+.toggle input:checked + .toggleSlider:before {
+  transform: translateX(20px);
+}
+
+.toggle input:disabled + .toggleSlider {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.toggle input:focus + .toggleSlider {
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-top: 8px;
+}

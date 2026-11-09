@@ -1,0 +1,1623 @@
+/**
+ * 专家页。类名统一 al- 前缀，与 ac- / fv- / pv- 同一约定：
+ * block-elem--mod，不用 CSS Modules（本项目三个 feature 都是自带一个全局 css）。
+ *
+ * 版式照 web/专家页面.png：一屏卡片网格，工具条在标题下面一行，管理动作平时藏起来。
+ */
+
+.al {
+  flex: 1;
+  padding: 24px 32px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* ---------- 标题行 / 工具条 ---------- */
+
+.al-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+/*
+ * 页头：专家 / 技能 tab（2026-10-22 起两个资源同页）。
+ * 标题与当前工作区不在本页显示 —— 导航和框架页面已经有了，不必重复。
+ *
+ * tab 是**页级切换**（换一批资源），不是筛选，所以用大字 + 下划线的页签：
+ * 页头只有这两个 tab，它们就是这个页面的标题；再套灰槽药丸会显得像个小筛选器。
+ * 底线铺满内容宽度，和下面的工具条拉开层级；选中态同时改颜色和字重，
+ * 不只靠下划线（色觉障碍 / 高对比度模式下也能分辨）。
+ */
+.al-top-lead {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  min-width: 0;
+}
+
+.al-tabs {
+  display: flex;
+  width: 100%;
+  gap: 32px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.al-tab {
+  /* -1px 让下划线压住容器的分隔线，选中时不会出现两条平行的边 */
+  margin-bottom: -1px;
+  padding: 6px 2px 12px;
+  border-bottom: 2px solid transparent;
+  color: var(--color-text-weak);
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.4;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.al-tab:hover {
+  color: var(--color-text);
+}
+
+.al-tab--on {
+  border-bottom-color: var(--color-primary);
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.al-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* 左组：排序 chip 与已选标签 chip。包一层是因为 `.al-toolbar` 是 space-between，
+   直接把标签 chip 塞成第三个孩子会把它甩到中间。 */
+.al-toolbar-left {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  min-width: 0;
+}
+
+/* 右组：搜索框 + 刷新。也要包一层 —— `.al-toolbar` 是 space-between，
+   直接摆成两个兄弟节点会把搜索甩到中间。 */
+.al-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 已选标签 chip：整颗就是清除按钮，× 只是视觉提示 */
+.al-chip--tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 240px;
+}
+
+.al-chip-tag-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── 工具条下拉：来源 / 状态 / 标签共用一套浮层 ─────────────────────────── */
+
+.al-menu-root {
+  position: relative;
+}
+
+.al-menu-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.al-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 50;
+  width: 280px;
+  max-width: calc(100vw - 32px);
+  padding: 8px;
+  border: 1px solid #eceef1;
+  border-radius: 10px;
+  background: var(--color-surface);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  animation: al-pop-in 0.12s ease-out;
+}
+
+/* 来源 / 状态只有几行短词，菜单跟内容等宽就够了：定宽 280 会挂一长条空白 */
+.al-menu--select {
+  width: auto;
+  min-width: 168px;
+}
+
+/* 标签菜单顶部是搜索框，列表才需要拉开一段；单选菜单没有搜索框，别留这道缝 */
+.al-menu--select .al-menu__list {
+  margin-top: 0;
+}
+
+.al-menu__search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 9px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  color: var(--color-text-weak);
+}
+
+.al-menu__search:focus-within {
+  border-color: var(--color-primary);
+}
+
+.al-menu__search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: 13px;
+}
+
+.al-menu__clear {
+  display: flex;
+  align-items: center;
+  padding: 2px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--color-text-weak);
+  cursor: pointer;
+}
+
+.al-menu__clear:hover {
+  color: var(--color-text);
+}
+
+.al-menu__list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 260px;
+  margin-top: 6px;
+  overflow-y: auto;
+}
+
+/* 选项是原生 button：Tab / Enter / Space 自带行为，不需要再补 keydown。 */
+.al-menu__option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 32px;
+  padding: 5px 8px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.al-menu__option:hover {
+  background: #f7f8fa;
+}
+
+.al-menu__option--on {
+  background: rgba(47, 111, 237, 0.08);
+}
+
+/* 标签可能很长（上限 10 字），让它在选项里截断，计数与勾选保持可见。 */
+.al-menu__option-tag {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+}
+
+.al-menu__option-tag .al-tag {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.al-menu__option-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.al-menu__option-count {
+  color: var(--color-text-weak);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.al-menu__state {
+  margin: 8px 4px 2px;
+  color: var(--color-text-weak);
+  font-size: 12px;
+}
+
+.al-menu__state--error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--color-danger);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .al-menu {
+    animation: none;
+  }
+}
+
+/* 未选中是**纯文字**，选中才是一颗白药丸（参考图的样子）—— 与常见的
+   「一排都有边框、选中的变色」相反，这样一整行更安静。 */
+.al-chip {
+  height: 30px;
+  padding: 0 13px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-text-weak);
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.al-chip:hover {
+  color: var(--color-text);
+}
+
+.al-chip--on {
+  border-color: var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-weight: 500;
+  box-shadow: 0 1px 2px rgba(31, 35, 41, 0.06);
+}
+
+.al-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 210px;
+  height: 34px;
+  padding: 0 11px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface);
+  color: var(--color-text-weak);
+}
+
+.al-search:focus-within {
+  border-color: var(--color-primary);
+}
+
+.al-search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: 13px;
+}
+
+.al-search-clear {
+  display: flex;
+  align-items: center;
+  padding: 2px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--color-text-weak);
+  cursor: pointer;
+}
+
+.al-search-clear:hover {
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+/* ---------- 错误条 / 空态 / 分页 ---------- */
+
+.al-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border: 1px solid #f5c2c0;
+  border-radius: 8px;
+  background: #fdf3f2;
+  color: #a52a20;
+  font-size: 12.5px;
+}
+
+.al-error span {
+  flex: 1;
+  min-width: 0;
+}
+
+/*
+ * 翻页条：总数在左、按钮在右。
+ *
+ * 只有总数超过一页（200）时才渲染 —— 200 以内一屏就是全部，摆个永远只有一页的控件
+ * 只是噪声。左右分组沿用工具条的观感：信息弱化、动作落在右边缘。
+ */
+.al-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-top: 2px;
+  color: var(--color-text-weak);
+  font-size: 12.5px;
+}
+
+.al-pager__actions {
+  display: flex;
+  gap: 6px;
+}
+
+.al-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 48px 0;
+  color: var(--color-text-weak);
+}
+
+.al-empty p {
+  margin: 0;
+  font-size: 13px;
+}
+
+/* 空态的第二行（下一步该做什么）：比主句更弱，不抢「为什么是空的」那句话 */
+.al-empty-hint {
+  color: var(--color-text-weak);
+  font-size: 12.5px;
+}
+
+/* ---------- 卡片网格 ---------- */
+
+/*
+ * 一屏摆 4 列，宽屏 5 列（2026-10-20 改）。
+ *
+ * 上一版是 `auto-fill, minmax(400px, 1fr)`，按的是**视口**宽度：1920 的窗口被 220px
+ * 侧边栏吃掉后只剩 1636，400 的下限只排得下 3 列，一屏看不到几个专家。现在直接按
+ * **列数**定：默认 4 列，≥1760 视口 5 列；窄屏逐级降到 3/2/1。
+ *
+ * 不用 `auto-fill`：它只认下限，超宽屏会自己长出第 6、7 列 —— 而这里要的上限就是 5 列。
+ * 代价是卡片宽度随窗口变（1360 × 4 列 ≈ 258px，1920 × 5 列 ≈ 314px），所以卡里
+ * 「标签摆得下几个」仍然必须是量出来的（见 AgentCard 的 layout effect），
+ * 名称也一直挂着省略号 —— 两处都不写死个数。
+ *
+ * 断点按「视口 − 220px 侧边栏 − 64px 页边距」之后的可用宽度挑：每一档里卡片最窄
+ * 也在 250px 上下（1360 × 4 列 ≈ 257px）。再窄就该降列，而不是继续把卡片挤扁 ——
+ * 640 宽还硬排两列时，卡头只剩一个字的宽度（截图时真见过）。
+ */
+.al-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+@media (min-width: 1760px) {
+  .al-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1359px) {
+  .al-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 899px) {
+  .al-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 799px) {
+  .al-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/*
+ * 整张卡可点开详情（键盘落点是名称按钮 `.al-card-name-btn`），所以有 pointer 与焦点态。
+ *
+ * 版式照 2026-10-20 参考稿：20px 内边距、10px 圆角、40px 卡头、两行简介、一行标签，
+ * 底部一条发丝线隔开「文字链动作 + 使用」。
+ *
+ * **高度不再钉死**（上一版是 176px）：每块都是定量的 ——
+ *   20 上下内边距 ×2 + 40 卡头 + 14 间距 + 42 简介 + 16 间距 + 22 标签 + 20 间距
+ *   + 12 分隔 + 30 动作 = 236px，
+ * 所以一屏照样齐；钉一个数只会在标签多一行 / 字号变化时把内容裁掉。栅格的
+ * `align-items: stretch`（默认值）再把同一行拉齐，简介短的那几张也不会矮一截。
+ *
+ * 卡片**不写 `overflow: hidden`**：标签浮层从标签行往上长，虽然按契约上限
+ * （10 个标签、每个 10 字）铺开也放得下，但将来标签变多 / 变长时，裁掉浮层只会
+ * 让用户看到半截 —— 不裁更稳。
+ */
+.al-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  /* 卡底动作按「卡片自己的宽度」决定是挤在一行还是上下摞（见文件后半的容器查询） */
+  container-type: inline-size;
+  padding: 20px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface);
+  cursor: pointer;
+  z-index: 1;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+/* 抬起来一点 + 影子加深：卡片能点这件事，光靠 cursor 是看不出来的。
+   z-index 让悬停卡的阴影压在相邻卡片之上（阴影比 16px 的栅格间隙更宽）。 */
+.al-card:hover {
+  border-color: #c9cdd4;
+  box-shadow: 0 8px 24px -8px rgba(17, 24, 39, 0.12);
+  transform: translateY(-2px);
+  z-index: 10;
+}
+
+/* 键盘 Tab 到卡片时也要看得见落点 —— 鼠标那套 hover 提示对键盘用户不存在 */
+.al-card-name-btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+/*
+ * 骨架卡：一个空 div。
+ *
+ * 真卡的内容全是定量的（见上），所以空 div 给它一个同样的最小高度即可 ——
+ * 数据到了不会塌一下再弹回来。
+ */
+.al-card--skeleton {
+  min-height: 239px;
+  border-style: dashed;
+  box-shadow: none;
+  animation: al-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes al-pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+/* 卡头：图标 / 名称 / 来源徽标一行。高度就是这个行的 40px（= 图标边长），
+   上面的高度算式是拿它往下加的，改这里要一起改那段注释 */
+.al-card-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 40px;
+  margin-bottom: 14px;
+  flex-shrink: 0;
+}
+
+/* 头像本身在 shared/components/AgentAvatar（封面图 / 名称首字 + 派生浅底同色），这里不管 */
+
+/*
+ * 名称 + 状态的竖排：占满中间那一格，右边给来源徽标让位。
+ * `min-width: 0` 不能省：flex 子项默认不肯缩到内容宽度以下，省了这行，
+ * 名称的省略号永远不会出现。
+ *
+ * 竖排而不是把状态再摆一颗徽标到右边：卡头这一行已经被头像和来源徽标占掉大半，
+ * 4 列栅格里最窄的卡只剩几十像素给名称，横向再加一颗会把名字截成两个字。
+ */
+.al-card-heading {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+/*
+ * 名称。高度与状态行加起来正好落在 40px 卡头里（16 × 1.4 + 2 + 12 × 1.2 ≈ 39），
+ * 所以这一版没有把卡片撑高。
+ */
+.al-card-name {
+  min-width: 0;
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 名称兼「查看详情」按钮：外形与标题文字一致，只在键盘聚焦时显形 */
+.al-card-name-btn {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/*
+ * 来源徽标（`自定义` / `内置`）：描边小签，比标签更「像系统盖的戳」。
+ *
+ * 配色按「元数据标签」的通行做法（Material 的 tonal container、Carbon / Ant 的
+ * 默认灰签）：**低彩度容器色 + 深灰文字**，饱和色留给状态（成功 / 警告 / 错误）
+ * 和主动作。两档只差色相（自定义微紫、内置微蓝），亮度几乎一样 —— 一屏混排时
+ * 扫一眼能分开，但不会抢过卡片里的「使用」主按钮。
+ *
+ * 对比度都 ≥4.5:1（11px、500 字重不算大字号，按正文标准卡）：
+ * 自定义 6.2:1，内置 5.8:1。
+ */
+.al-card-badge {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border: 1px solid #ddd5ea;
+  border-radius: 4px;
+  background: #f4f2f9;
+  color: #5f5576;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.al-card-badge--builtin {
+  border-color: #cfdaee;
+  background: #eef3fb;
+  color: #4b5f7d;
+}
+
+/*
+ * 产物状态（2026-10-28 加）：名称下面一行小字 —— 圆点 + 词。
+ *
+ * 颜色只给状态用（成功 / 进行中 / 警告 / 错误 / 未开始），来源徽标保持中性色，
+ * 两者不会抢。文字色都按 12px 正文的 4.5:1 对比度挑过：
+ * 已就绪 5.1、生成中 5.6、已暂停 5.4、生成失败 5.8、未开始 / 未知 4.9。
+ *
+ * 圆点与文字同色，靠 `currentColor` 取；窄卡上文字超长时省略，圆点不缩
+ * （`flex-shrink: 0`）—— 只剩一颗点时仍然看得出来「有状态」。
+ */
+.al-card-status {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  color: #6b7280;
+  font-size: 12px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.al-card-status-dot {
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* 省略放在文字这一层：`text-overflow` 对 flex 容器的匿名文本项不生效。
+   `min-width: 0` 同样不能省，否则 flex 子项不肯缩到内容宽度以下。 */
+.al-card-status-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.al-card-status--completed {
+  color: #1a7f37;
+}
+
+.al-card-status--building {
+  color: #2560d8;
+}
+
+.al-card-status--blocked {
+  color: #9a5b00;
+}
+
+.al-card-status--failed {
+  color: #c02a2a;
+}
+
+/* 未开始 / 状态未知（读盘失败的降级值）：中性灰，不用状态色去喊 */
+.al-card-status--not_started,
+.al-card-status--unknown {
+  color: #6b7280;
+}
+
+/* 名称下面那行 id 撤了（参考稿的卡头只有名称一行）。要看 ID 去详情弹窗的「ID」那一行，
+   那里本来就写着，而且整行都是它的，不用为长度发愁。 */
+
+/*
+ * 简介：两行、定高 42px（13 × 1.6 × 2），超了截断。
+ * 定高是卡片总高的一部分 —— 简介只写了一句的那几张，下面就是留白，不缩。
+ */
+.al-card-desc {
+  display: -webkit-box;
+  height: 42px;
+  flex-shrink: 0;
+  margin: 0 0 16px;
+  overflow: hidden;
+  color: #4e5969;
+  font-size: 13px;
+  line-height: 1.6;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.al-card-desc em {
+  color: var(--color-text-weak);
+}
+
+/*
+ * 标签行的定位壳：`position: relative` 是 `+N` 浮层的参照（浮层从这一行往上长）。
+ * 下边距 20px 是「标签」与「底部动作」之间的距离，与参考稿一致。
+ */
+.al-card-tags-wrap {
+  position: relative;
+  flex-shrink: 0;
+  margin-bottom: 20px;
+}
+
+/*
+ * 标签行：**单行不换行**（`nowrap` + `overflow: hidden`）。装不下的收成 `+N`，
+ * 收几个是组件量出来的（见 AgentCard 里那段 layout effect），不是 CSS 兜底 ——
+ * 裁一半的胶囊比「+N」难看得多。
+ *
+ * `min-height` 跟着标签高度走：没有标签的那张卡也留这么一行，同一个栅格里才不会错位。
+ */
+.al-card-tags {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 6px;
+  min-height: 22px;
+  overflow: hidden;
+}
+
+/*
+ * 标签：**一色灰的浅底实心款**（2026-10-20 参考稿）。
+ *
+ * 上一版按标签文本哈希到四档色（蓝 / 绿 / 紫 / 橙）；参考稿是一色灰，彩色的那版
+ * 一屏十几张卡太吵，2026-10-20 撤掉了 —— `.al-tag` 这一档就是全部。
+ *
+ * `max-width: 100%` + 省略号是给满格标签（10 字）兜底的：真长到一行放不下时，
+ * 宁可这一颗自己截断，也别把整行撑出可视区。
+ */
+.al-tag {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  max-width: 100%;
+  height: 22px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 4px;
+  background: #f2f3f5;
+  color: #4e5969;
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 可点击的标签（卡面行 / +N 浮层）。只加 button 特有的那几行，别改 `.al-tag`
+   本身 —— 详情弹窗里还有只读的 span 在用同一套尺寸。 */
+.al-tag--button {
+  cursor: pointer;
+}
+
+.al-tag--button:hover {
+  filter: brightness(0.96);
+}
+
+.al-tag--button:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+
+/* 当前筛选项：灰底上抬一圈主色内描边 —— 不必再换一种底色 */
+.al-tag--active {
+  background: rgba(47, 111, 237, 0.1);
+  color: var(--color-primary);
+  box-shadow: inset 0 0 0 1px var(--color-primary);
+}
+
+/* 「+N」：它不是标签，是个按钮（点开看全量）。灰底 + 弱色把它和真标签分开，
+   但尺寸与标签一致，所以它在一行里占的宽度跟一颗短标签差不多。 */
+.al-tag--more {
+  background: #f2f3f5;
+  color: #8a9099;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.al-tag--more:hover {
+  background: #e8ebef;
+  color: var(--color-text);
+}
+
+/*
+ * 「+N」点开的全量浮层：压在简介上，左右与卡片内边距齐。
+ *
+ * 定位挂在 `.al-card-tags-wrap` 上（它是定位参照），所以 `100%` 就是标签行 ——
+ * 标签行高度改了、卡片内边距改了，这里都跟着走，不会错位。
+ * 横竖都不会跑出卡片：标签最多 10 个、每个最多 10 字（契约上限），铺开最多三行，卡内放得下。
+ */
+.al-tag-popover {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 8px);
+  left: 0;
+  z-index: 40;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px;
+  border: 1px solid #eceef1;
+  border-radius: 10px;
+  background: var(--color-surface);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  animation: al-pop-in 0.12s ease-out;
+}
+
+/* 浮层是从标签行往上长的，所以从下面 4px 的位置浮上来 */
+@keyframes al-pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ---------- 卡底动作 ---------- */
+
+/*
+ * 底部动作区：一条发丝线，左边一组文字链，右边「使用」。
+ *
+ * `margin-top: auto` 把它钉在卡底 —— 卡片被栅格拉到同一行最高那一张的高度时，
+ * 简介短的那几张多出来的余量落在标签与这条线之间，按钮不会浮在半空。
+ *
+ * 这组动作 **2026-10-20 从详情弹窗搬回卡面**：卡片是「对智能体动手」的地方，
+ * 详情弹窗则是只读信息层（工作区 / ID / 目录 / 时间），入口仍只有一处。
+ */
+.al-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid #f2f3f5;
+  flex-shrink: 0;
+}
+
+/* 一条 30px 高的「使用」决定这行的高度；文字链比它矮，居中摆。
+ *
+ * 宽度是算过的：生产栅格里最窄的一张卡（1360 视口 / 4 列）内容宽约 217px，
+ * 四条中文文字链 + 三个「·」+「使用」约 188px，放得下；英文标签更长，
+ * 放不下时靠 `flex-wrap` 把「使用」换到下一行（`margin-left: auto` 保证它仍靠右）
+ * —— 不缩字号，也不裁字。 */
+.al-card-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  /* 不做额外间距：每颗动作自带 3px 左右内边距，两颗之间已经有 6px 的呼吸 */
+  gap: 0;
+  min-width: 0;
+}
+
+/*
+ * 文字链动作：12px、弱色，悬停才亮。
+ *
+ * 内边距只有 3px：卡片窄，四条动作、三个「·」和右侧主按钮必须挤在一行里；
+ * 悬停底色比文字多探出一点，点得着的面积仍然够。
+ *
+ * 它们是**原生 button**，所以 Tab / Enter / Space 自带，不用补键盘处理；卡片那层的
+ * `closest('button, ...)` 早退也保证点它们不会顺手打开详情。
+ */
+.al-card-action {
+  padding: 4px 3px;
+  border: 0;
+  border-radius: 5px;
+  background: none;
+  color: var(--color-text-weak);
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1.4;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.al-card-action:hover {
+  background: #f2f7ff;
+  color: var(--color-primary);
+}
+
+.al-card-action:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+
+/* 删除：危险色只在悬停时出现，静止时和别的文字链一样弱 —— 破坏性动作不该一直喊 */
+.al-card-action--danger:hover:not(:disabled) {
+  background: #fff1f0;
+  color: #f53f3f;
+}
+
+/* 两颗动作之间的「·」。`user-select: none`：拖选一段文字时不把它带上 */
+.al-card-sep {
+  color: #c9cdd4;
+  font-size: 12px;
+  user-select: none;
+}
+
+/*
+ * 窄卡（3 列断点里最窄的那一档，如 900 视口 ≈ 195px，内容宽 ≈ 155px）：
+ * 动作行 + 「使用」一行放不下（中文至少需要 ~188px）。
+ *
+ * 不缩字号、不裁字，改成**上下摞**：动作照旧一行（四条中文仍放得下），「使用」占满
+ * 下面一整行 —— 与参考稿的窄屏规则同一个处理。判据用容器查询而不是视口媒体查询：
+ * 同一屏里卡片多宽只由栅格列数决定，跟窗口宽度不是一一对应（899 宽的两列反而比
+ * 1024 宽的三列更宽）。阈值 185 是「内容宽」：中文四条动作 + 三个「·」+「使用」约 188px。
+ */
+@container (max-width: 185px) {
+  .al-card-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .al-btn--use {
+    width: 100%;
+  }
+}
+
+/* 「使用」那颗按钮的样式不在这里：它落在文件后半的「按钮」一节（`.al-btn--use`）。
+   修饰类必须排在基础类 `.al-btn` 之后 —— 两者同为主类选择器，摆在前面的会被后到的
+   `.al-btn` 按源序压回去，按钮就成了白底大号（真踩过，看着像「忘了上色」）。 */
+
+/* ---------- 按钮 ---------- */
+
+.al-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  height: 34px;
+  padding: 0 15px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.al-btn:hover:not(:disabled) {
+  background: var(--color-bg);
+}
+
+.al-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.al-btn--primary {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: #fff;
+  font-weight: 500;
+}
+
+.al-btn--primary:hover:not(:disabled) {
+  border-color: #2a61d4;
+  background: #2a61d4;
+}
+
+.al-btn--danger {
+  border-color: #d64545;
+  background: #d64545;
+  color: #fff;
+  font-weight: 500;
+}
+
+.al-btn--danger:hover:not(:disabled) {
+  border-color: #bf3a3a;
+  background: #bf3a3a;
+}
+
+.al-btn--sm {
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 7px;
+  font-size: 12.5px;
+}
+
+/* 卡底那颗「使用」：主色实心 + 比 toolbar 上的按钮小一号，带一层很淡的蓝影。
+   与 `--sm` 一样是尺寸修饰，所以**必须待在这一节里**（基础类之后）—— 见卡片那一节顶部的说明。 */
+.al-btn--use {
+  flex-shrink: 0;
+  /* 单行时靠右；万一动作行把它挤到第二行，也仍然靠右（见 `.al-card-footer` 的说明） */
+  margin-left: auto;
+  height: 30px;
+  padding: 0 12px;
+  gap: 4px;
+  border-radius: 6px;
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(47, 111, 237, 0.2);
+  transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.al-btn--use:hover:not(:disabled) {
+  border-color: #2a61d4;
+  background: #2a61d4;
+  box-shadow: 0 4px 8px rgba(47, 111, 237, 0.3);
+}
+
+.al-btn--use:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.al-spin {
+  width: 11px;
+  height: 11px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: al-spin 0.7s linear infinite;
+}
+
+@keyframes al-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---------- 弹窗（原生 dialog） ---------- */
+
+.al-dialog {
+  width: 420px;
+  max-width: calc(100vw - 32px);
+  padding: 20px 22px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+}
+
+.al-dialog--narrow {
+  width: 380px;
+}
+
+.al-dialog::backdrop {
+  background: rgba(24, 28, 36, 0.38);
+}
+
+.al-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.al-dialog-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.al-dialog-note {
+  margin: 0;
+  color: var(--color-text-weak);
+  font-size: 12.5px;
+  line-height: 1.7;
+}
+
+.al-dialog-note code {
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: var(--color-bg);
+  font-size: 12px;
+}
+
+.al-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.al-field-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.al-field-required {
+  color: #ef4444;
+  font-size: 15px;
+  line-height: 1;
+}
+
+/* 辅助行：左边说事、右边计数（2026-10-16 那版编辑弹窗稿的版式）。
+   两边都可能空着 —— 用 space-between 而不是靠空 span 撑出间距。 */
+.al-field-hint {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  color: #9ca3af;
+  font-size: 12px;
+}
+
+/* 校验没过的原因：占左边那句的位置，只是换成红字 */
+.al-field-problem {
+  color: #ef4444;
+}
+
+.al-input,
+.al-textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: 14px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.al-textarea {
+  min-height: 96px;
+  resize: vertical;
+  line-height: 1.6;
+}
+
+/* 聚焦：边框转蓝 + 一圈很淡的光晕（主色的 15%，即 rgba(47, 111, 237, 0.15)） */
+.al-input:focus,
+.al-textarea:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(47, 111, 237, 0.15);
+  outline: 0;
+}
+
+.al-form-error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 7px;
+  background: #fdf3f2;
+  color: #a52a20;
+  font-size: 12.5px;
+}
+
+.al-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* ---------- 详情弹窗 ---------- */
+
+/*
+ * 760px 双栏（2026-10-18 优化稿）：
+ *   左栏读「简介 / 标签」，右栏是查询用的「基本信息」。
+ * 原先 480px 单栏放不下标签，标签只能留在卡面上；现在详情自己就能看全。
+ *
+ * dialog 不留内边距，顶部留白由 `.al-detail-hero` 自己管；内部滚动交给
+ * `.al-detail-body`，底部动作条始终露在外面。
+ */
+.al-dialog--detail {
+  width: 760px;
+  padding: 0;
+  overflow: hidden;
+}
+
+.al-detail {
+  display: flex;
+  flex-direction: column;
+  max-height: min(88vh, 840px);
+}
+
+/* ---------- 顶部：头像 + 名称（不再铺封面 banner） ---------- */
+
+.al-detail-hero {
+  position: relative;
+  flex-shrink: 0;
+  padding: 26px 26px 16px;
+}
+
+/* 关闭只留右上角这一颗：底部动作条全部让给对智能体的操作 */
+.al-detail-close {
+  position: absolute;
+  top: 18px;
+  right: 20px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid #e4e8ee;
+  border-radius: 50%;
+  background: var(--color-surface);
+  color: #6b7480;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+
+.al-detail-close:hover {
+  background: #f2f4f7;
+  color: #3d4552;
+  transform: scale(1.04);
+}
+
+.al-detail-identity {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.al-detail-avatar {
+  flex-shrink: 0;
+  border-radius: 22px;
+  box-shadow: 0 8px 22px rgba(16, 24, 40, 0.16);
+}
+
+.al-detail-idtext {
+  min-width: 0;
+  /* 给右上角的关闭键让位，长名字别钻到它底下 */
+  padding-right: 40px;
+}
+
+.al-detail-name {
+  margin: 0;
+  overflow: hidden;
+  font-size: 22px;
+  font-weight: 650;
+  letter-spacing: -0.2px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.al-detail-byline {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 5px 0 0;
+  color: var(--color-text-weak);
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+
+/* 工作区名和「最近更新」之间那道 1px 竖线 */
+.al-detail-sep {
+  width: 1px;
+  height: 11px;
+  background: #dfe3e8;
+}
+
+/* ---------- 主体：左（简介 / 标签） + 右（基本信息） ---------- */
+
+.al-detail-body {
+  flex: 1;
+  min-height: 0;
+  padding: 20px 26px 24px;
+  overflow: auto;
+}
+
+.al-detail-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  align-items: start;
+  gap: 26px;
+}
+
+.al-detail-section + .al-detail-section {
+  margin-top: 22px;
+}
+
+.al-detail-section-title {
+  margin: 0 0 9px;
+  color: #8a9099;
+  font-size: 11.5px;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+}
+
+.al-detail-desc {
+  margin: 0;
+  color: #3d4552;
+  font-size: 13.5px;
+  line-height: 1.85;
+  white-space: pre-wrap;
+}
+
+.al-detail-desc--empty,
+.al-detail-empty {
+  color: #9aa1ab;
+  font-style: italic;
+}
+
+.al-detail-empty {
+  margin: 0;
+  font-size: 12.5px;
+}
+
+.al-detail-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+/* 详情里的标签比卡面大一号：这里不抢空间，也没有「摆不下」这回事 */
+.al-detail-tags .al-tag {
+  height: 24px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+/* ---------- 基本信息 ---------- */
+
+.al-facts {
+  overflow: hidden;
+  margin: 0;
+  border: 1px solid #eef0f3;
+  border-radius: 12px;
+  background: #f8f9fb;
+}
+
+.al-facts-row {
+  display: grid;
+  grid-template-columns: 62px minmax(0, 1fr);
+  gap: 10px;
+  padding: 10px 13px;
+  font-size: 12.5px;
+}
+
+.al-facts-row + .al-facts-row {
+  border-top: 1px solid #eef0f3;
+}
+
+.al-facts-row dt {
+  color: var(--color-text-weak);
+}
+
+.al-facts-row dd {
+  min-width: 0;
+  margin: 0;
+  color: var(--color-text);
+  word-break: break-all;
+}
+
+/* 工作区这一行是两层：名称在上、uuid 在下 */
+.al-facts-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.al-facts-uuid {
+  color: #9aa1ab;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  word-break: break-all;
+}
+
+.al-facts-copyline {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.al-facts-copyline code {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  line-height: 1.6;
+  word-break: break-all;
+}
+
+/* 复制键：成功后换成对勾，1.4s 后自己变回复制图标（见 CopyButton） */
+.al-copy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  color: #9aa1ab;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.al-copy:hover {
+  border-color: var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.al-copy--done {
+  color: #0a7d43;
+}
+
+/* 详情没有底部动作条（2026-10-20）：动作在卡面，这里只读信息。 */
+
+/* 窄屏：双栏改单栏 */
+@media (max-width: 860px) {
+  .al-detail-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+}
+
+/* ---------- 编辑弹窗（`.al-dialog--edit`） ---------- */
+
+/*
+ * 编辑弹窗比别处大一号：560px 宽、32px 内边距、20px 的标题、底部一条分隔线、
+ * 输入框聚焦带光晕（照 2026-10-16 那版设计稿）。
+ *
+ * **这些全挂在 `.al-dialog--edit` 作用域下**，而不是改公共类：`.al-dialog` / `.al-form` /
+ * `.al-btn` / `.al-dialog-actions` 同时被详情弹窗和删除确认用着 —— 那边是窄框里的小按钮，
+ * 不该跟着一起变胖。字段级的那几个类（`.al-field*` / `.al-input` / `.al-textarea` / `.al-cover` /
+ * `.al-tags`）只有这一个表单在用，就直接写在它们自己身上了。
+ */
+
+.al-dialog--edit {
+  width: 560px;
+  padding: 32px;
+  border-radius: 16px;
+}
+
+.al-dialog--edit .al-form {
+  gap: 28px;
+}
+
+/* 标题行：左边标题，右边一枚弱化的身份芯片（原来那句「身份是 …，不可改」搬进了它的 tooltip） */
+.al-form-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.al-dialog--edit .al-dialog-title {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.al-form-id {
+  flex-shrink: 0;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: #f9fafb;
+  color: #9ca3af;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  cursor: help;
+}
+
+/* 按钮：这一版是 14px/600 的宽按钮，主按钮带一层蓝影 */
+.al-dialog--edit .al-dialog-actions {
+  gap: 12px;
+  margin-top: 4px;
+  padding-top: 20px;
+  border-top: 1px solid #f3f4f6;
+}
+
+.al-dialog--edit .al-btn {
+  height: auto;
+  padding: 10px 24px;
+  border-color: #d1d5db;
+  border-radius: 10px;
+  color: #4b5563;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.al-dialog--edit .al-btn--primary {
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 4px 6px -1px rgba(47, 111, 237, 0.3);
+}
+
+/* ---------- 封面图 ---------- */
+
+/* 预览、地址与「上传图片」装在**同一个框**里：边框画在这一层，里面的输入框不画自己那条、
+   焦点交给 :focus-within —— 几样东西看起来才是一个控件，而不是「头像 + 输入框 + 一颗按钮」。 */
+.al-cover {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 6px 6px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.al-cover:focus-within {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(47, 111, 237, 0.15);
+}
+
+/* 地址那格占满中间的余量。`min-width: 0` 不能省：flex 子项默认不肯缩到内容宽度以下，
+   长 URL 会把「上传图片」挤出去（与卡片名称那格同一个坑）。 */
+.al-cover .al-input {
+  flex: 1;
+  min-width: 0;
+  width: auto;
+  padding: 6px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.al-cover .al-input:focus {
+  box-shadow: none;
+}
+
+/* 上传键比普通小按钮再矮一点（28px 的 --sm 在这个 48px 高的框里刚好） */
+.al-cover-upload {
+  flex-shrink: 0;
+}
+
+/* 「移除」：只在有封面且不在上传中出现。它清的是 `Agent.icon`，不是磁盘上的旧文件 */
+.al-cover-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: #9aa1ab;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.al-cover-clear:hover {
+  border-color: var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+/* ---------- 标签编辑 ---------- */
+
+/* 已加的一颗颗 + 一个输入框，也装在同一个框里（与封面那格同一个路数）。
+   胶囊**不用卡面那套灰**：表单里它是「待提交的输入项」，蓝色表示「可以删 / 还没提交」，
+   与卡面上只读的灰标签分开。 */
+
+.al-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  background: var(--color-surface);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.al-tags:focus-within {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(47, 111, 237, 0.15);
+}
+
+.al-tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.al-tag-chip-x {
+  display: inline-flex;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #60a5fa;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.al-tag-chip-x:hover {
+  color: #1d4ed8;
+}
+
+/* 框里那个输入框：自己不带边框（边框是 .al-tags 的），跟着胶囊换行 */
+.al-tags-input {
+  flex: 1;
+  min-width: 100px;
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.al-tags-input:focus {
+  outline: 0;
+}
+
+.al-tags-input:disabled {
+  cursor: not-allowed;
+}

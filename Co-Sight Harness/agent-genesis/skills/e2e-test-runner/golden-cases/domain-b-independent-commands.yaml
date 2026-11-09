@@ -1,0 +1,8 @@
+domain: "B-命令路由"
+description: "测试 skill-foundry 自然语言路由 — Skill 创建/优化请求的正确识别与流水线分派"
+test_cases:
+  - id: "TC-CMD-01"
+    input: "创建一个代码审查的skill，输入是PR diff，输出是审查报告"
+    expected: "路由→skill-foundry(create mode)→Plan Mode"
+    expected_phase: "PLAN_MODE"
+    timeout: 300

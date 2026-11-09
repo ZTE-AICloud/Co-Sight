@@ -1,0 +1,43 @@
+{
+  "name": "harness-server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Co-Sight Harness 框架后端：工作区 / 专家 / 模型配置 / Agent 代理配置的 REST API。",
+  "main": "./src/index.ts",
+  "engines": {
+    "node": "^22.19.0 || >=24.0.0"
+  },
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc --noEmit",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "db:generate": "drizzle-kit generate",
+    "db:seed": "tsx src/seed/run.ts"
+  },
+  "dependencies": {
+    "@fastify/cookie": "^11.1.3",
+    "@fastify/cors": "11.3.1",
+    "@fastify/rate-limit": "^11.2.1",
+    "@fastify/static": "10.1.6",
+    "@fastify/swagger": "9.9.2",
+    "@fastify/swagger-ui": "6.1.2",
+    "@libsql/client": "0.18.0",
+    "drizzle-orm": "0.45.4",
+    "fastify": "5.12.7",
+    "fastify-type-provider-zod": "7.0.0",
+    "harness-shared": "workspace:*",
+    "yaml": "2.9.1",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.2",
+    "@vitest/coverage-v8": "5.0.4",
+    "drizzle-kit": "0.31.11",
+    "tsx": "4.23.15",
+    "vitest": "5.0.4"
+  }
+}

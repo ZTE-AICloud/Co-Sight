@@ -1,0 +1,46 @@
+diff --git a/src/api/user.py b/src/api/user.py
+index 3f2a1c9..8b9e4d2 100644
+--- a/src/api/user.py
++++ b/src/api/user.py
+@@ -10,6 +10,9 @@ def get_user(uid):
+     return db.query(User).get(uid)
+
++def search_users(keyword):
++    query = "SELECT * FROM users WHERE name LIKE '%" + keyword + "%'"
++    return db.execute(query)
++
+ def delete_user(uid):
+     db.query(User).filter_by(id=uid).delete()
+diff --git a/src/config/settings.py b/src/config/settings.py
+index 1a2b3c4..5d6e7f8 100644
+--- a/src/config/settings.py
++++ b/src/config/settings.py
+@@ -20,3 +20,6 @@ DEBUG = False
+
++AWS_SECRET_ACCESS_KEY = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
++DB_PASSWORD = "Str0ng!Passw0rd123"
++
+ LOG_LEVEL = "INFO"
+diff --git a/src/services/report.py b/src/services/report.py
+index 9c8d7e6..1f2a3b4 100644
+--- a/src/services/report.py
++++ b/src/services/report.py
+@@ -30,6 +30,12 @@ def generate_report():
+     rows = []
+     for order in Order.query.all():
+         rows.append({
++            "user": order.user.full_profile(),
+             "items": [i.serialize() for i in order.items],
+         })
+     return rows
+diff --git a/src/web/dashboard.js b/src/web/dashboard.js
+new file mode 100644
+index 0000000..4b5c6d8
+--- /dev/null
++++ b/src/web/dashboard.js
+@@ -0,0 +1,6 @@
++function renderAnalytics(data) {
++    const el = document.getElementById("chart");
++    el.innerHTML = "<div>" + data.title + "</div>";
++    return el;
++}

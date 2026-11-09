@@ -1,0 +1,44 @@
+# knowledge/fast-lane/criteria.yaml — fast lane 判据数据（唯一权威）
+# 来源: docs/plan/fast-lane-criteria-reflux-plan.md §1.3（v1.2 判据简化; 调判据只改本文件, C8-3 单一落点）
+# 消费方: 两线 SKILL.md §Lane 判定节（T1 资格判定, FA 消费 agent 段 / FB 消费 skill_create 段 /
+#   FB-FC 共用 skill_optimize 段）; 判据评估与模式锚定为 LLM 语义判断（红线 R2——本文件
+#   只声明判据项与预算, 不写判定逻辑）
+# 语义: 全部满足才建议 fast; 任一不满足 → 静默走 full（optimize 语境例外见方案裁定 6）。
+#   ——v1.3 起 agent 段为例外: 单判据 OR 语义（三分支任一命中即候选）, 见该段注释（用户裁定 D-02）
+# 判定契约三层（v1.2）: 澄清未收敛 → 回 Step 1 继续澄清（不作路由依据, 不写 lane-decision）;
+#   本文件缺失/解析失败/键缺失 → 静默走 full（C8-1, 配置完整性兜底——与澄清歧义性质不同）
+# 数量判据已删（v1.2）: 能力单元/subagent/文件数阈值被模式锚蕴含——模式形态条目规定交付物
+#   结构, 形态被规定则复杂度有上界, 数量只是影子。generated_files_max 保留为 builder 预算。
+# 外部集成不设判据（v1.2 用户裁定 D-01）: 命中模式即准入; 外部集成 few-shot 由运营轴补
+#   实例包承载（golden 池）, 见方案 §6 D-01 裁定记录。
+
+version: 1
+experimental: true
+
+agent:                      # FA 车道 2; v1.3(D-02 用户裁定): 单判据 OR 语义
+  generated_files_max: 15   # builder 单轮生成预算（非判据; fast-lane-builder/report schema 消费, T1 不消费）
+  criteria: [fast_path_hit]
+  # fast_path_hit 三分支任一命中即 fast 候选（语义判断, R2; 留痕注明命中分支供批4审计）:
+  #   anchor:         主场景锚定 task-mode-pattern-mapping.md 核心模式之一
+  #     （11 唯一 id 分布于 12 场景行）, 拓扑/外部集成不限
+  #   low_complexity: 单 Agent 或简单 Agent 协同可交付（无需设计评审的常规形态）
+  #   sampled:        golden 池有同场景/同锚定模式实例包（few-shot 可套用）
+  # 撤除 form_fully_prescribed（v1.3 D-02）: 形态条目无逐场景对照清单, 判定不可证伪,
+  #   退化为从严默认值（knowledge-scout 等实例实证, 与 D-01 意图冲突）;
+  #   形态把关下沉出口侧（机器检查 + 用户自测 + 重跑 full）, 与 D-01 风险 posture 一致
+
+skill_create:               # FB 车道 4; v1.3(D-03): 单判据 OR, 同 agent 段结构
+  criteria: [fast_path_hit]
+  # fast_path_hit 三分支任一命中即 fast 候选（语义判断, R2; 留痕注明命中分支供批4审计）:
+  #   light:         单一 Skill 职责 + 知识内联或单文件（原 single_skill +
+  #     no_multi_file_references 合并——"轻"的两个侧面）
+  #   template_form: 命中既有模板形态（流程型/检查清单型等标准 Skill 形态）
+  #   sampled:       golden 池有同形态实例包（few-shot 可套用; skill fast 驱动
+  #     --few-shot golden-lookup 已就位）
+  # 原 AND 三判据降格说明（v1.3 D-03）: template_form_hit 无标准形态清单可对照
+  #   （全仓仅"流程型/检查清单型等"举例, 无注册表）, AND 必要条件下不可证伪 → 从严默认,
+  #   与 agent 段 form_fully_prescribed（D-02 撤除）同病; 降为充分分支后轻量形态新颖
+  #   skill 不再被卡
+
+skill_optimize:             # FB 车道 6（裁定 6, 最简三条）
+  criteria: [delta_files_le_2, no_structural_change, target_statically_locatable]

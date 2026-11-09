@@ -1,0 +1,8 @@
+{
+  "step_id": "step-5-readiness",
+  "gate_id": "G003-readiness-score",
+  "verdict": "DEFERRED",
+  "rationale": "P0 baseline scope = ceremony timing measurement, NOT agent quality scoring. Readiness-verifier SubAgent not invocable in current environment (no agent-genesis:* SubAgent registration). Static checks executed instead — all 7 PASS. Runtime-eval (Step 6) deferred to next invocation when SubAgents available.",
+  "static_proxy_passed": true,
+  "checked_at": "2026-10-05T03:58:30Z"
+}

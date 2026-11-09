@@ -1,0 +1,33 @@
+# golden manifest — skill-router（G0 试抽包）
+# 契约见 schemas/golden-manifest.schema.yaml（字段语义单点在该文件）
+
+task_tag: skill-router
+line: skill
+mode_id: W2-Router                      # 货架位（检索键）, 非身份声明（R9）
+patterns:                               # 如实完整模式维度集（现行词汇, §3.5②重映射后）
+  - W2-Router
+  - K4-Rule-Driven
+  - DT1-Linear-Pass-Through
+  - IH1-Fire-and-Forget
+  - CD1-Input-Gating
+anchor_fit: real                        # RESOLVER 即 W2-Router 纯正实现
+standard_ref: knowledge/skill/skill-design-guide.md
+shape_counts: {SKILL_md: 1, references: 3, scripts: 0, templates: 0}
+acceptance:
+  - 路由表按工作流阶段四段分路, 触发列用用户原话词汇
+  - 消歧规则按特异性从高到低排列, IF-THEN 格式, 兜底规则永远最后
+  - 链式调用默认手动触发, 仅当前请求明确授权后续动作时例外
+  - 能力边界按 fat-skill vs deterministic-script 决策框架划分
+anchors:
+  build_plan: anchors/build-plan.md
+  self_report: anchors/self-report.md
+  derived: true                         # 外部启发过程锚（§3.5⑤）
+known_concerns: []                      # G0 准入跑 G028 后如实回填
+provenance:
+  origin_repo: "tw93/Waza（外部参照库 golden-examples 策展）"
+  license: MIT
+  snapshot_date: "2026-10-16"
+  reshaped: true
+source: "G0 试抽批次（docs/plan/golden-asset-pool-plan.md §4 G0）"
+reshape_ruling: "源为 8-Skill 插件集 → 提炼重塑为单 Skill 包（机制四件, 不搬业务清单）; G2 批同类裁量先例, 详见 anchors/self-report.md"
+status: active

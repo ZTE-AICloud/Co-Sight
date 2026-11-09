@@ -1,0 +1,185 @@
+/**
+ * 技能库 tab。类名统一 sl- 前缀，与 al- / ac- / fv- 同一约定。
+ *
+ * **技能卡与专家卡是同一套版式**（2026-10-22 对齐）：20px 内边距 / 10px 圆角、
+ * 40px 卡头图标、16px 名称、右上角来源徽标、13px 两行简介、底部发丝线 + 文字链动作。
+ * 能直接复用的就复用，不再抄一份：
+ *   - 来源徽标 → `.al-card-badge`（库技能再用 `--builtin` 那档蓝）
+ *   - 简介     → `.al-card-desc`（13px、两行、定高 42px）
+ *   - 卡底     → `.al-card-footer` + `.al-card-action` + `.al-card-sep`
+ * 这些样式由 `agent-list.css` 提供。卡头首字头像直接复用 `shared/components/AgentAvatar`。
+ * **只写技能卡自己的**：名称省略、版本徽标、时间、智能体提示语。
+ *
+ * 栅格也用专家的 `.al-grid`（2026-10-27 按评审拉齐）：技能 tab 原先自己排 3 列，
+ * 切 tab 时卡片一宽一窄。宽度跟专家卡逐断点一致；高度随内容（技能卡少一行标签，
+ * 钉成和专家卡等高只会在简介下面留一大段空白，见 `.sl-card`）。
+ */
+
+.sl {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* 工具条：计数在左、搜索与刷新在右，与专家 tab 同一套「信息弱化、动作靠右」 */
+.sl-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sl-count {
+  color: var(--color-text-weak);
+  font-size: 12.5px;
+}
+
+.sl-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ---------- 卡片 ---------- */
+
+/*
+ * 尺寸、底色、圆角与 `.al-card` 一致；没有 hover 抬升（卡上只有动作能点，整卡不可点）。
+ *
+ * **高度随内容**，不钉 239px（2026-10-27 按评审改回来一次）：钉了高度就得靠留白补齐 ——
+ * 技能卡没有专家卡那行标签，多出来的约 46px 全堆在简介和卡底之间，看着像没画完。
+ * 同一行的高度由栅格的 `align-items: stretch` 拉齐，卡底 `margin-top: auto` 保证动作行
+ * 贴底；只有同行里有名称折了两行 / 带智能体提示语的卡时，矮的那几张才补出约 20px 的差量。
+ */
+.sl-card {
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface);
+}
+
+/* 骨架卡：按真卡的定量高度留位（≈ 库里最短的那张卡），数据回来时不会塌一下 */
+.sl-card--skeleton {
+  min-height: 194px;
+  border-style: dashed;
+  animation: al-pulse 1.4s ease-in-out infinite;
+}
+
+/*
+ * 卡头：40px 首字头像 + 名称 + 版本 + 来源，与专家卡同高（40px）同间距（12px）。
+ *
+ * `center`：名称一行时和头像居中对齐（`flex-start` 会让名称贴在卡头顶上，头像却在
+ * 40px 里居中，看起来名称是往上飘的）。名称折成两行时整块高于头像，版本与来源跟着
+ * 居中在名称右侧 —— 名称仍是卡头唯一的视觉重心，不需要一小块标签去抢第一行。
+ */
+.sl-card-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  min-height: 40px;
+  margin-bottom: 14px;
+  flex-shrink: 0;
+}
+
+/*
+ * 名称：**不伸张**（`flex: 0 1 auto`），版本才会紧跟在名称后面；伸张的话名称吃满整行，
+ * 版本被顶到来源旁边 —— 看起来像「名称 …… v1 来源」。
+ * 最多两行：长技能名（`csv-statistics-export`）折行比 `csv-statistics-e…` 好读。
+ */
+.sl-card-name {
+  display: -webkit-box;
+  flex: 0 1 auto;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.4;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+/*
+ * 版本徽标：中性灰小签。来源已经是描边签（库技能蓝、智能体紫），版本再上色会像
+ * 第二枚「来源戳」—— 它只是名称的一部分。
+ */
+.sl-card-version {
+  flex-shrink: 0;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: #f2f3f5;
+  color: #4e5969;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+/*
+ * 来源：复用 `.al-card-badge` 的描边签，靠 `margin-left: auto` 贴到卡头右上角。
+ * 只写「技能库」/「智能体」这档短字（归属智能体名进 title 与卡底提示）：卡片宽度与
+ * 专家卡一样之后，右上角挂一串名字会把技能名挤到只剩几个像素。
+ * `max-width: 45%` 仍是兜底 —— 文案换长了，宁可徽标自己截断，也不压掉名称。
+ */
+.sl-card-source {
+  flex-shrink: 0;
+  max-width: 45%;
+  min-width: 0;
+  margin-left: auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 更新时间：与动作同一行、贴右；数字等宽，一屏扫下来不会跳 */
+.sl-card-time {
+  flex-shrink: 0;
+  margin-left: auto;
+  color: var(--color-text-weak);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* 智能体技能：优化是就地改，会动该智能体的当前产物 —— 在卡底动作上方先说一句 */
+.sl-card-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  margin: 0 0 2px;
+  color: #9a5b00;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+/* 装配成功的临时提示：不刷新列表（库没变），只在工具条下面说一句 */
+.sl-notice {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 12px;
+  border: 1px solid #c7e9d8;
+  border-radius: 7px;
+  background: #eefaf3;
+  color: #1c7f4e;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+/* 装配：卡底唯一的主色调动作（复制进产物是这张卡唯一的「产生副作用」的操作） */
+.sl-card-assemble {
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+.sl-card-assemble:hover {
+  background: #eaf1fe;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sl-card--skeleton {
+    animation: none;
+  }
+}

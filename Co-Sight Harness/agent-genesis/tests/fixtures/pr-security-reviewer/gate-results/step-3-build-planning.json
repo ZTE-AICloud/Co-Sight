@@ -1,0 +1,13 @@
+{
+  "step_id": "step-3-build-planning",
+  "gate_id": "G021-milestone",
+  "verdict": "PASS",
+  "artifacts": [
+    "agent-creation/build-plan.md",
+    "agent-creation/human-review.md",
+    "agent-creation/matched-assets.yaml",
+    "agent-creation/adapted-assets.yaml",
+    "output/agents/pr-security-reviewer/v1/phase/gates/gates.yaml"
+  ],
+  "checked_at": "2026-10-05T03:55:00Z"
+}

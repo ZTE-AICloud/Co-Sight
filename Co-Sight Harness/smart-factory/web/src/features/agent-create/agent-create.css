@@ -1,0 +1,785 @@
+/*
+ * 智能体创建页的外壳样式：顶栏 + 三阶段进度条 + 主体区。
+ *
+ * 主体区的布局按阶段走：生产 / 评估是左对话 + 右工作区（在各自 Stage 里用
+ * SplitLayout），预览是单列居中对话。阶段面板的样式跟着组件走
+ * （FileViewer.css / EvaluatePanel.css）；对话区（输入框 + 对话内容）是共享组件，
+ * 样式在 shared/components/Conversation/Conversation.css —— 这里只管外壳与分栏轨道。
+ */
+
+/*
+ * 右侧文件预览面板的宽度。面板本身是 fixed（FilePreview.css），这个变量给
+ * `.ac--dock-open` 和面板共用，两边永远同一个值。
+ */
+:root {
+  --ac-dock-width: clamp(420px, 46vw, 760px);
+}
+
+.ac {
+  /*
+   * 高度钉在视口上，而不是让内容把页面撑长。
+   * .app-shell 是 min-height: 100vh（内容多高它就多高），链路上没有一处确定高度，
+   * 于是对话区的 overflow 永远不生效 —— 对话一长就把发送框顶出视口，
+   * 要滚动得滚整个文档（顶栏、侧栏跟着走）。这里补上确定高度，内部滚动才能接管。
+   * flex-basis 用 auto 让 height 说了算（flex: 1 会把 basis 压成 0，高度就落回内容）。
+   */
+  flex: 1 0 auto;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--color-surface);
+}
+
+/*
+ * 打开预览面板时**挤压而不是盖住**：内容区让出右侧宽度，面板固定贴在视口右边。
+ * 三个 stage 通用，不改 SplitLayout 的 grid 模板 —— 预览阶段单列居中同样被挤压。
+ */
+.ac--dock-open {
+  padding-right: var(--ac-dock-width);
+}
+
+/* 窄屏退化成全宽覆盖：这时再让出宽度，内容就只剩一条缝了 */
+@media (max-width: 767px) {
+  .ac--dock-open {
+    padding-right: 0;
+  }
+}
+
+/* ---------- 顶栏 ---------- */
+
+.ac-top {
+  flex-shrink: 0;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.ac-top-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.ac-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-text-weak);
+  cursor: pointer;
+}
+
+.ac-back:hover {
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.ac-agent {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+/* 拿到身份时用的是 shared/components/AgentAvatar（圆形）；这个类只剩骨架屏与
+   「取不到」两个分支在用，所以形状必须跟它对齐 —— 同一个专家在两页上该长得一样。 */
+.ac-agent-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(47, 111, 237, 0.1);
+  color: var(--color-primary);
+}
+
+.ac-agent-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.ac-agent-name {
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+}
+
+.ac-agent-desc {
+  font-size: 11.5px;
+  color: var(--color-text-weak);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 420px;
+}
+
+/*
+ * 身份块的两个非正常态。
+ *
+ * 骨架的尺寸照抄真内容（名称 13px、描述 11.5px），取回来时顶栏不跳 ——
+ * 这个页面的顶栏是固定 58px，块内元素一变高变矮，下面的进度条会跟着抖。
+ */
+.ac-skeleton {
+  background: var(--color-border);
+  animation: ac-pulse 1.4s ease-in-out infinite;
+}
+
+.ac-skeleton--name {
+  display: block;
+  width: 110px;
+  height: 13px;
+  border-radius: 4px;
+}
+
+.ac-skeleton--desc {
+  display: block;
+  margin-top: 6px;
+  width: 220px;
+  height: 11px;
+  border-radius: 4px;
+}
+
+@keyframes ac-pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+/* 取不到智能体时头像换警示色，与整页的「找不到」面板是同一件事的两种呈现 */
+.ac-agent-avatar--bad {
+  background: #fdf3f2;
+  color: #d64545;
+}
+
+.ac-btn {
+  height: 34px;
+  padding: 0 15px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.ac-btn:hover {
+  background: var(--color-bg);
+}
+
+.ac-btn--primary {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: #fff;
+  font-weight: 500;
+}
+
+.ac-btn--primary:hover {
+  background: #2a61d4;
+  border-color: #2a61d4;
+}
+
+/*
+ * 查不到这个智能体时，顶栏以下的整块（进度条 + 会话区 + 工作区都不渲染）。
+ * flex: 1 让它吃掉剩下的高度并居中 —— .ac 是定高 100vh 的 flex column，
+ * 所以这里不需要再算高度。
+ */
+.ac-missing {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 40px 24px;
+  color: #a52a20;
+}
+
+/*
+ * 内置智能体的只读说明沿用 `.ac-missing` 的版式，但**不是错误**：
+ * 红色（`.ac-missing` 的默认色，给的是「找不到 / 读失败」）会把一句「它本来就这样」
+ * 说成「出事了」。这里只把图标压成中性色，标题/正文本来就是正常文字色。
+ */
+.ac-missing--readonly {
+  color: var(--color-text-weak);
+}
+
+.ac-missing-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.ac-missing-title code {
+  font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+  font-size: 13px;
+}
+
+.ac-missing-desc {
+  margin: 0 0 8px;
+  max-width: 460px;
+  text-align: center;
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--color-text-weak);
+}
+
+/* ---------- 三阶段进度条 ---------- */
+
+.ac-stepper {
+  flex-shrink: 0;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.ac-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  flex-shrink: 0;
+  padding: 7px 14px;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--color-text-weak);
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.ac-step:hover {
+  background: var(--color-bg);
+}
+
+.ac-step-dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 50%;
+  background: var(--color-surface);
+  font-size: 11px;
+  font-weight: 650;
+  color: var(--color-text-weak);
+}
+
+.ac-step--done .ac-step-dot {
+  border-color: #10b981;
+  background: #10b981;
+  color: #fff;
+}
+
+.ac-step--done .ac-step-label {
+  color: var(--color-text);
+}
+
+/*
+ * 位置在当前阶段之前、但没有可验证的完成信号（预览 / 评估）：
+ * 不画绿勾 —— 那是在替用户宣布「这一步做完了」—— 只把文字提到正常色，序号照常显示。
+ */
+.ac-step--past .ac-step-label {
+  color: var(--color-text);
+}
+
+.ac-step--active {
+  background: rgba(47, 111, 237, 0.09);
+}
+
+.ac-step--active:hover {
+  background: rgba(47, 111, 237, 0.13);
+}
+
+.ac-step--active .ac-step-dot {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.ac-step--active .ac-step-label {
+  color: var(--color-primary);
+  font-weight: 640;
+}
+
+/*
+ * 产物没生成完时的阶段标记（预览 / 评估）。**仍然可点**：点了会现拉一次状态，
+ * 这个角标只表示「上次读到的状态」，不代替判定（判据在 useProductionGate）。
+ */
+.ac-step--locked .ac-step-label {
+  color: var(--color-text-weak);
+}
+
+.ac-step-gate {
+  display: inline-flex;
+  align-items: center;
+  margin-left: -3px;
+  color: #b7791f;
+}
+
+.ac-stepper-line {
+  flex: 1;
+  height: 1.5px;
+  margin: 0 6px;
+  min-width: 20px;
+  background: var(--color-border);
+}
+
+.ac-stepper-line--done {
+  background: #10b981;
+  opacity: 0.45;
+}
+
+/*
+ * 预览 / 评估进不去时的**整块占位**（契约 4.10）。
+ *
+ * 不是一条提示条：用户点这个阶段就是想用它，进不去时整个主体区都要回答
+ * 「为什么进不来、什么时候能进」。所以它撑满 `.ac-main--single`，内容居中。
+ */
+.ac-locked {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 48px 24px;
+  text-align: center;
+}
+
+/* 大一号的警示图标：这一屏只有一件事，别让图标跟正文一个分量 */
+.ac-locked-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 54px;
+  height: 54px;
+  margin-bottom: 2px;
+  border-radius: 50%;
+  background: #fff4e5;
+  color: #b7791f;
+}
+
+/* 「正在确认」那版：同一块占位，但不是警告，所以换成主色 + 转圈 */
+.ac-locked-icon--busy {
+  background: #f2f7ff;
+  color: var(--color-primary);
+}
+
+.ac-locked-icon--busy svg {
+  animation: ac-spin 0.8s linear infinite;
+}
+
+@keyframes ac-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.ac-locked-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 640;
+  color: var(--color-text);
+}
+
+.ac-locked-desc {
+  margin: 0;
+  max-width: 520px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--color-text);
+}
+
+.ac-locked-hint {
+  margin: 0 0 6px;
+  max-width: 520px;
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--color-text-weak);
+}
+
+.ac-locked-actions {
+  display: inline-flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+/* ---------- 主体两栏（中间是可拖的分栏条） ---------- */
+
+/*
+ * 三列：对话区（宽度由 JS 写在 --ac-conv-width 上）/ 分栏条 / 工作区。
+ * 右列用 minmax(0, 1fr) 而不是 1fr：文件树里的长路径不能把轨道顶宽。
+ */
+.ac-main {
+  flex: 1;
+  display: grid;
+  grid-template-columns: var(--ac-conv-width, 480px) 8px minmax(0, 1fr);
+  min-height: 0;
+}
+
+/*
+ * 预览阶段：只有一场对话，不需要分栏。
+ * 轨道换成单列，分栏条与右栏都不渲染（见 PreviewStage）。
+ */
+.ac-main--single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* 对话区自己那圈 border-right 由分栏条接替，否则会与分隔线并排出现两条 */
+.ac-conv > .conversation {
+  border-right: none;
+}
+
+/*
+ * 单列时的对话列：居中并限宽。整屏拉通读起来太累，900px 大约是一屏舒适行宽。
+ * 高度仍吃满：`.ac-conv > .conversation` 的 flex: 1 在后面生效。
+ *
+ * 用 margin auto 而不是父级 align-items: center —— 后者会把一次性的提示条
+ * 也按内容宽度收缩，跟对话列对不齐。
+ */
+.ac-conv--single > .ac-note,
+.ac-conv--single > .conversation {
+  width: 100%;
+  max-width: 900px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ---------- 可拖分栏条 ---------- */
+
+/*
+ * 命中区 8px（太窄拖不住），可见的只有中间那条 1px 线。
+ * touch-action: none 让触摸拖动不被浏览器的滚动手势抢走。
+ */
+.ac-split {
+  position: relative;
+  z-index: 1;
+  cursor: col-resize;
+  touch-action: none;
+  background: var(--color-bg);
+}
+
+.ac-split::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  transform: translateX(-50%);
+  background: var(--color-border);
+  transition: width 0.12s ease, background-color 0.12s ease;
+}
+
+.ac-split:hover::before,
+.ac-split:focus-visible::before,
+.ac-split--active::before {
+  width: 3px;
+  background: var(--color-primary);
+}
+
+.ac-split:focus-visible {
+  outline: none;
+}
+
+/* ---------- 左栏对话区 ---------- */
+
+/*
+ * Conversation 外面那层壳。
+ *
+ * 只为一件事：往对话头上面摆一条提示条（`.ac-note`）—— Conversation 是栅格轨道的
+ * 直接子元素、自己带 border-right 与内部滚动，兄弟节点塞不进去。
+ * 壳负责分高，`.conversation` 负责在壳里吃满剩下的高度。
+ */
+.ac-conv {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.ac-conv > .conversation {
+  flex: 1;
+  min-height: 0;
+}
+
+/*
+ * 一次性提示条（send 被挡下、附件没有出网这类）。**不自动消失** ——
+ * 消失的提示等于没提示，用户刚要读它就没了。关掉靠右边的 ×。
+ */
+.ac-note {
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 9px 12px;
+  background: #fff8f0;
+  border-bottom: 1px solid #f5e0c8;
+  color: #8a4b00;
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+.ac-note svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.ac-note span {
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
+}
+
+.ac-note-close {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.ac-note-close:hover {
+  background: #f5e0c8;
+}
+
+/*
+ * 对话头右侧的通道状态。**这三档是「这一刻到底能不能说话」的唯一表示** ——
+ * 组件自带的那个「在线」圆点永远绿，是演示期的装饰（见 AgentCreatePage 的 LinkPill）。
+ */
+.ac-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  font-weight: 600;
+}
+
+.ac-link-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.ac-link--ok {
+  color: var(--color-ok);
+}
+
+.ac-link--wait {
+  color: var(--color-warn);
+}
+
+.ac-link--bad {
+  color: var(--color-danger);
+}
+
+/*
+ * 预览阶段对话头的动作区：重新开始 + 通道状态。
+ * 「重新开始」比发送框的按钮轻一档 —— 它是一次性的会话操作，不该抢正文的注意力。
+ */
+.ac-head-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ac-restart {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 9px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-surface);
+  color: var(--color-text-weak);
+  font-family: inherit;
+  font-size: 11px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.ac-restart:hover:not(:disabled) {
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.ac-restart:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 工作区会话准备好之前（以及失败时）占住整块对话区 —— 与默认空态换个位置的角色 */
+.ac-boot {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 24px;
+  text-align: center;
+  color: var(--color-text-weak);
+}
+
+.ac-boot-title {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.ac-boot-desc {
+  margin: 0 0 6px;
+  font-size: 12.5px;
+  line-height: 1.7;
+}
+
+/* ---------- 右侧工作区 ---------- */
+
+.ac-work {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 22px 26px 60px;
+  background: var(--color-bg);
+}
+
+/*
+ * 生成阶段：右栏是文件浏览器，要占满剩余高度、内部各自滚动。
+ * 把 .ac-work 从「整块滚动」换成定高 flex column —— 文件树与预览各自 overflow，
+ * 页面整体不滚，否则树一长会把预览区顶出视口。
+ */
+.ac-work--files {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding-bottom: 22px;
+}
+
+.ac-work--files .ac-work-head {
+  flex-shrink: 0;
+}
+
+.ac-work-head {
+  margin-bottom: 18px;
+}
+
+.ac-work-head h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.ac-work-head p {
+  max-width: 680px;
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--color-text-weak);
+}
+
+/* 本阶段的会话参数：在哪起 CC、调什么技能 */
+.ac-work-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 18px;
+  margin-top: 12px;
+}
+
+.ac-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--color-text-weak);
+  /* 分栏被拖窄时，「目录」这类标签不许被压成竖排；让后面的 code 去换行 */
+  white-space: nowrap;
+}
+
+.ac-meta-item svg {
+  color: #9aa3af;
+}
+
+/* 可点的 meta 项（产物技能入口）：外形与旁边的信息项一致，悬停才提示能点 */
+.ac-meta-item--button {
+  padding: 3px 7px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: none;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.ac-meta-item--button:hover {
+  border-color: var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-primary);
+}
+
+.ac-meta-item--button:hover svg {
+  color: var(--color-primary);
+}
+
+.ac-meta-item code {
+  min-width: 0;
+  padding: 2px 7px;
+  border-radius: 5px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+  font-size: 11.5px;
+  color: var(--color-text);
+  /* 覆盖父级的 nowrap：长路径在窄栏里可以折行，但不把标签挤成竖排 */
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.ac-meta-item em {
+  font-style: normal;
+  color: #9aa3af;
+}
+
+@media (max-width: 1100px) {
+  /* 列宽由 JS 的 --ac-conv-width 控制（见 AgentCreatePage 的 clamp），这里只收内边距 */
+  .ac-work {
+    padding: 18px 16px 50px;
+  }
+
+  .ac-work--files {
+    padding-bottom: 18px;
+  }
+}

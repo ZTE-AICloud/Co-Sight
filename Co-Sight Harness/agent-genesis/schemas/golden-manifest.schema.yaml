@@ -1,0 +1,57 @@
+# golden-manifest — 知识资产池 manifest 契约（每包一件, 策展步骤 LLM/人工核对用）
+# 本 schema 为契约文档（非机检脚本）; 检索/准入消费方按字段约定读取
+# 单源: 字段语义只在本文档定义一次（R4 规格单点）
+task_tag:
+  type: string
+  description: "kebab-case, 与包目录名一致, 检索主键"
+line:
+  type: string
+  enum: [agent, skill]
+mode_id:
+  type: string
+  description: "货架位 = task-mode-pattern-mapping.md 核心模式全 id（键域 11 核心, 含 W2-Router）。语义 = 检索货架位, 非身份声明（R9）"
+patterns:
+  type: array
+  items: {type: string}
+  description: "该模板如实的完整模式维度集（现行词汇, 重映射后）——builder few-shot 看到的是这层"
+anchor_fit:
+  type: string
+  enum: [real, partial, forced]
+  description: "挂靠贴合度; forced 必须附 rationale 一句"
+anchor_fit_rationale:
+  type: string
+  optional: true
+  description: "anchor_fit=forced 时必填一句理由（partial 建议附）"
+standard_ref:
+  type: string
+  description: "形态标准文件相对路径（自描述, 防漂移）"
+shape_counts:
+  type: object
+  description: "required/conditional/generate/copy 计数（部分形态包如实计数, R3）"
+acceptance:
+  type: array
+  items: {type: string}
+  description: "该形态的验收要点（few-shot 注入用）"
+anchors:
+  type: object
+  optional: true
+  description: "过程锚件: {build_plan, self_report} 相对路径; 有则 few-shot 双锚, 无则仅形态锚; 外部启发包加 derived: true"
+  properties:
+    build_plan: {type: string}
+    self_report: {type: string}
+    derived: {type: boolean, optional: true}
+known_concerns:
+  type: array
+  optional: true
+  items: {type: string}
+  description: "入池时 G028 concerns 原文留档（不阻塞; 资产修补后应清空并注明）"
+provenance:
+  type: object
+  optional: true
+  description: "溯源注记: {origin_repo, license, snapshot_date, reshaped: true}; 合规留档, 不代表资产分类（池成员一律本仓库模板资产, R8）"
+source:
+  type: string
+  description: "构建出处（commit/构建名/抽取批次, 追溯）"
+status:
+  type: string
+  enum: [active, deprecated]

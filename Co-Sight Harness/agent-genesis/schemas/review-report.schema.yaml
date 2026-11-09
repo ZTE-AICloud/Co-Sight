@@ -1,0 +1,25 @@
+# review-report — Phase 2 审查产出
+reviewer_id:
+  type: string
+timestamp:
+  type: string
+  format: "ISO8601"
+verdict:
+  type: string
+  enum: [pass, fail]
+findings:
+  type: array
+  items:
+    severity:
+      type: string
+      enum: [critical, high, medium, low]
+    dimension:
+      type: string
+      enum: [completeness, consistency, traceability, constraint, coverage]
+    description:
+      type: string
+    suggestion:
+      type: string
+pass_condition:
+  type: string
+  description: "critical=0 AND high=0 → pass"

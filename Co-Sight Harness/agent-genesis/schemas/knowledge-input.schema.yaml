@@ -1,0 +1,23 @@
+# knowledge.json 输入契约（--input-dir 模式）
+#
+# 位置: <input-dir>/knowledge.json
+# 作用: 指定 co-knowledge 侧的 RAG 工作流 id；注入器据此渲染内置
+#       rag-knowledge-search skill 的 DEFAULT_WORKFLOW_ID。
+#
+# 约束:
+#   - 只允许 workflow_id 一个消费键；base_url 等端点信息一律由环境变量控制，
+#     不接受输入目录注入（防 SSRF）。
+#   - workflow_id 会被写进 Python 字面量，字符集必须收紧。
+#   - 同一目录下的 mcp.json 不在迁移范围内，注入器会忽略并记录 warning。
+
+version: "1.0"
+
+input:
+  type: object
+  required: [workflow_id]
+  additionalProperties: false
+  properties:
+    workflow_id:
+      type: string
+      pattern: "^[A-Za-z0-9_-]{1,128}$"
+      description: "co-knowledge 中已发布 RAG 工作流的 appId，形如 RAG_Workflow_xxx"

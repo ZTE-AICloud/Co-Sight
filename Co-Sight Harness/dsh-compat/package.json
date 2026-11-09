@@ -1,0 +1,14 @@
+{
+  "name": "cosight-plugin-compat",
+  "version": "0.1.0",
+  "description": "Compatibility layer that lets the cosight Claude Code plugins (agent-genesis, agent-evaluator/goldeval, skill-optimizer, cosight-bot) — skills, commands, agents and hooks untouched — run natively inside DeepSeek Harness (dsh).",
+  "type": "module",
+  "main": "src/index.mjs",
+  "license": "Apache-2.0",
+  "private": true,
+  "dsh": {
+    "bundle": {
+      "patch": "./bundle.patch.yml"
+    }
+  }
+}

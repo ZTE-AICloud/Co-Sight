@@ -1,0 +1,228 @@
+# AgentGenesis Knowledge INDEX
+# 覆盖边界声明（2026-09-30 整理; 2026-10-08 P8 修订行号）:
+#   登记范围 = agent-creation 热路径大数据文件（INDEX-driven offset/limit 读取）
+#   未登记但合法: knowledge/skill/*(skill 流水线 SKILL.md 显式硬编码引用, 量小无需索引)
+#   rules/ 树不由本索引登记(属行为约束层, 由消费者按职责直读)
+# 用途: LLM SubAgent (尤其 pattern-matcher, build-planner) Read 全文前先 Read 这个，
+#       按 line_start/line_count 用 Read offset/limit 精准读相关段。
+#
+# 行号治理规则（P8.1）:
+#   1. 本文件是 offset/limit 的唯一权威源——agent prompt 禁止内联行号
+#   2. <300 行文件（cascading-matcher 191 / harness-design-principles 159 等）全文读，不登记 sections
+#   3. 小幅改动手改 line_start；大改 heredoc 重出骨架 diff（三次法则，不写永久脚本）
+
+schema_version: 1
+
+quick_reference:
+  decision_flow:
+    - step: 1
+      name: MN 任务性质判定
+      read: shared/cascading-matcher.yaml → Tier 0 section
+      output: "MN ∈ {analysis, creation, operation}"
+    - step: 2
+      name: Tier 1 子集过滤
+      read: shared/cascading-matcher.yaml → Tier 1 section
+      depends_on: step 1 的 MN
+    - step: 3
+      name: Tier 2 精细匹配
+      read: shared/pattern-catalog.yaml 类别 + agent-creation/pattern-matcher.yaml 子维度
+      depends_on: step 2 的子集
+    - step: 4
+      name: 案例参考
+      read: agent-creation/agent-classic-cases.yaml（全文）
+      depends_on: step 3 的模式组合
+  priority_meaning:
+    high: 匹配决策必经
+    medium: 场景匹配才读
+    low: 兜底参考
+
+files:
+
+  # ──── 必读：MN 判定和级联匹配硬约束 ────
+
+  shared/cascading-matcher.yaml:
+    file_purpose: "三级级联匹配的硬约束和决策日志（每次匹配都必读）"
+    total_lines: 191
+    sections:
+      - title: "Tier 0: 任务性质判定（前置维度，在子维度匹配前执行）"
+        line_start: 15
+        line_count: 64
+        use_when: "匹配流程第一步，把 23 模式缩到 8-12 子集（analysis/creation/operation 三选一）"
+        priority: high
+      - title: "Tier 1: 子集过滤"
+        line_start: 79
+        line_count: 21
+        use_when: "Tier 0 后用，基于 MN 缩子集"
+        priority: high
+      - title: "Tier 2: 子域内精细匹配"
+        line_start: 100
+        line_count: 26
+        use_when: "Tier 1 后用，在缩小子集内做 indicator 匹配"
+        priority: high
+      - title: "硬约束（全三级适用）"
+        line_start: 127
+        line_count: 43
+        use_when: "任何匹配决策前确认不违反硬约束（互斥/必选/排除规则）"
+        priority: high
+      - title: "决策日志集成"
+        line_start: 170
+        line_count: 22
+        use_when: "可选：写决策日志（decisions.md）时参考"
+        priority: low
+
+  # ──── 必读：23 模式完整定义（按类别 0-6 分组） ────
+  shared/pattern-catalog.yaml:
+    file_purpose: "23 个设计模式的完整定义（按类别 0-6 分组）"
+    total_lines: 613
+    sections:
+      - title: "类别0: 任务性质（前置维度，在 15 子维度匹配前判定）"
+        line_start: 20
+        line_count: 84
+        key_patterns: [MN-analysis, MN-creation, MN-operation]
+        use_when: "可选参考：cascading-matcher Tier 0 段已自足，通常不读；需 MN 模式完整定义/区分细节时才读"
+        priority: medium
+      - title: "类别1: 工作流与编排"
+        line_start: 104
+        line_count: 115
+        key_patterns: [P1-sequential, P2-parallel, P3-state-machine, P4-pipeline]
+        use_when: "Agent 涉及步骤分解、顺序/并行执行、状态流转"
+        priority: high
+      - title: "类别2: 知识体系"
+        line_start: 219
+        line_count: 34
+        key_patterns: [K1-rag, K2-context, K3-reference, K4-knowledge-distillation]
+        use_when: "Agent 需要外部知识、RAG、上下文检索、知识管理"
+        priority: medium
+      - title: "类别3: 数据流"
+        line_start: 253
+        line_count: 37
+        key_patterns: [D1-pipeline, D2-stream, D3-batch, D4-cache, D5-queue]
+        use_when: "Agent 涉及数据 IO、管道、批处理、缓存、消息队列"
+        priority: medium
+      - title: "类别4: 交互模式"
+        line_start: 290
+        line_count: 47
+        key_patterns: [I1-cli, I2-api, I3-streaming, I4-multi-turn, I5-webhook]
+        use_when: "Agent 有用户交互或外部接口"
+        priority: medium
+      - title: "类别5: 约束与安全"
+        line_start: 337
+        line_count: 39
+        key_patterns: [C1-permission, C2-rate-limit, C3-validation, C4-isolation]
+        use_when: "Agent 处理敏感数据、需权限控制、速率限制"
+        priority: low
+      - title: "类别6: 自进化"
+        line_start: 376
+        line_count: 52
+        key_patterns: [E1-self-eval, E2-learning, E3-adaptation]
+        use_when: "Agent 需要自我评估、学习能力、自适应"
+        priority: low
+      - title: "嵌套规则"
+        line_start: 428
+        line_count: 23
+        use_when: "选中模式需作子结构嵌套时读（max_depth=2 等限制）"
+        priority: low
+      - title: "范式预置组合"
+        line_start: 451
+        line_count: 32
+        use_when: "需求命中预置组合（多模式打包）时读，避免逐模式重复匹配"
+        priority: low
+      - title: "模式间关系（用于LLM推理）"
+        line_start: 483
+        line_count: 68
+        use_when: "互斥/依赖推理参考——HC-06 校验、Tier 2 排除论证时读"
+        priority: medium
+      - title: "加载策略模板 (Loading Strategy Templates)"
+        line_start: 551
+        line_count: 63
+        use_when: "生成 L2 rules/ 或 L3 skills/ 时读（build-planner 阶段主要消费者）"
+        priority: low
+
+  # ──── 必读：Tier 2 indicator 匹配规则 ────
+  agent-creation/pattern-matcher.yaml:
+    file_purpose: "Tier 2 子维度 indicator 匹配规则（每个子维度对应一段）"
+    total_lines: 349  # P4-4.4-A2: WF4-WF7 移出 (387 → 349)
+    sections:
+      - title: "匹配指南：LLM 如何做决策"
+        line_start: 12
+        line_count: 20
+        use_when: "首次进入 Tier 2 时读，理解语义匹配方法论（不做关键词穷举）"
+        priority: high
+      - title: "子维度 1: 工作流-分解模式 (4选1, 互斥)"
+        line_start: 33
+        line_count: 86  # P4-4.4-A2: WF4-WF7 移出后 387→349；子维度 1 收敛为 86 行
+        key_patterns: [P1-sequential, P2-parallel, P3-pipeline, P4-recursive]
+        use_when: "匹配工作流分解策略时读（4 选 1 互斥）"
+        priority: high
+      - title: "子维度 3: 工作流-状态管理 (可选叠加)"
+        line_start: 119
+        line_count: 57
+        key_patterns: [P5-stateful, P6-stateless]
+        use_when: "需要状态机或无状态设计时读"
+        priority: medium
+      - title: "子维度 5: 数据-拓扑 (可混合)"
+        line_start: 176
+        line_count: 29
+        key_patterns: [D1-pipeline, D2-stream, D3-batch]
+        use_when: "匹配数据拓扑时读"
+        priority: medium
+      - title: "子维度 7: 数据-溯源 (可选)"
+        line_start: 205
+        line_count: 18
+        use_when: "需要数据溯源/可追溯性时读"
+        priority: low
+      - title: "子维度 8: 交互-人机 (可按阶段混合)"
+        line_start: 223
+        line_count: 35
+        use_when: "匹配人机交互模式时读"
+        priority: medium
+      - title: "子维度 9: 交互-工具策略 (3选1)"
+        line_start: 258
+        line_count: 33
+        use_when: "匹配工具调用策略时读（并行/串行/分层）"
+        priority: medium
+      - title: "子维度 10: 交互-可见性 (可选)"
+        line_start: 291
+        line_count: 18
+        use_when: "需要进度可见性/状态暴露时读"
+        priority: low
+      - title: "子维度 11: 约束-域模板 (可选, 多选)"
+        line_start: 309
+        line_count: 35
+        use_when: "匹配领域模板约束时读"
+        priority: low
+      - title: "子维度 12: 自进化 (依赖链)"
+        line_start: 344
+        line_count: 6
+        use_when: "需要自进化机制时读"
+        priority: low
+
+  # ──── 参考：5 个经典案例（YAML 数据，无 # section header，全文读） ────
+  agent-creation/agent-classic-cases.yaml:
+    file_purpose: "5 个经典 Agent 案例作为匹配参考（cases: list 结构）"
+    total_lines: 326
+    full_read: false  # P4-4.4-A1: 改为按 task_mode 选读 1-2 个案例
+    use_when: "Pattern 组合确定后，从 5 个案例挑最相似的 1-2 个参考结构和 key_patterns（按 task_mode grep 选读，勿 full_read）"
+    sections: []
+
+  # ──── 扩展参考（P4-4.4-A2: WF4-WF7 移出热路径，priority=low 按需读） ────
+  agent-creation/wf-extensions.yaml:
+    file_purpose: "WF4-WF7 扩展模式（不在 27 模式 catalog 内，仅作资产索引标签）"
+    total_lines: 60
+    full_read: false
+    use_when: "用户描述含 '多方案对比/辩论' (WF4) 或 '审批/锁定' (WF5) 或 '重试/熔断' (WF6) 或 '经验积累/越用越好' (WF7) 时按需 Read；勿进热路径"
+    priority: low
+    sections: []
+
+  # ──── 小文件，全文读 ────
+  agent-creation/agent-output-standard.yaml:
+    file_purpose: "Agent 产出 9+2 文件清单和命名规范"
+    total_lines: 105
+    full_read: true
+    sections: []
+
+  assets/INDEX.yaml:
+    file_purpose: "资产库索引（gates/rules/skills/agent-definitions 子目录）"
+    total_lines: 93
+    full_read: true
+    sections: []

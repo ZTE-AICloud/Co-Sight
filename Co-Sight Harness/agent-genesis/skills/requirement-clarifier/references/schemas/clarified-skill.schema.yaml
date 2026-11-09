@@ -1,0 +1,96 @@
+# clarified-skill-requirements.yaml — skill 模式需求澄清产出（Skill 私有 schema）
+# 唯一权威: workflow-skill.md 阶段 4 + skill-questions.md
+# 判定/阈值/4 mode 名称/400 行阈值: 全部指 knowledge/skill/skill-creation-guide.yaml（不内联）
+# 引用方: skill-planner step-s1-skill-plan-create
+
+# === target 段（基础身份）===
+target_type:
+  type: string
+  enum: [skill]
+  description: "固定 skill（v0.18: 全部 8 SubAgent 中只有 skill-foundry 走此 schema）"
+skill_name:
+  type: string
+  pattern: "^[a-z][a-z0-9-]+$"
+  description: "目标 Skill 目录名（kebab-case）"
+
+# === Q1 决策（指回 guide.yaml，不复制 mode 名称）===
+operation_mode:
+  type: string
+  description: "判定标准唯一权威 = knowledge/skill/skill-creation-guide.yaml §1 Q1"
+  # 不内联 4 个 enum 值, 由 planner 阶段 1 Read guide.yaml 后填
+
+# === Q2 决策（指回 guide.yaml）===
+knowledge_assets:
+  type: object
+  properties:
+    references:
+      type: array
+      items: {path: "string", role: "string", necessity: "string"}
+      description: "必要性论证唯一权威 = guide.yaml §1 Q2"
+    scripts:
+      type: array
+      items: {path: "string", role: "string", necessity: "string"}
+    templates:
+      type: array
+      items: {path: "string", role: "string", necessity: "string"}
+  description: "三项资产的必要性论证由 guide.yaml §1 Q2 决策, 本字段只填结论"
+
+# === G1/G2 决策（指回 guide.yaml, 不复制 400 行阈值）===
+granularity_hint:
+  type: string
+  enum: [split, single]
+  description: "split/单 Skill 决策; 阈值与判定标准唯一权威 = guide.yaml §2 G1-G2 (400 行阈值等)"
+
+# === 去重检查（与已有 Skill 撞名/撞触发词）===
+dedup_check:
+  type: object
+  properties:
+    candidates:
+      type: array
+      items:
+        name: "string"
+        description: "string"
+        similarity: "number (0-100)"
+    verdict: "string"
+    enum: [pass, warn, block]
+
+# === 触发场景 + 描述草稿（Q3 + SF-6 公式前半）===
+trigger_scenarios:
+  type: array
+  items: "string"
+  description: "Q3 问答结果; 至少 1 条, \"当...时\" 句式"
+frontmatter_draft:
+  type: object
+  properties:
+    name: "string"
+    description: "string"
+    version: "string"
+  description: "SF-6 描述公式四要素: 做什么+何时触发+输入+输出（缺一 FAIL, builder 阶段 4 自检）"
+
+# === 验收标准（Q4, 通用 given/when/then）===
+acceptance_criteria:
+  type: array
+  items:
+    given: "string"
+    when: "string"
+    then: "string"
+  minItems: 1
+
+# === 通用澄清元数据（两 mode 共享, 给 DC-010 + 状态机用）===
+open_questions:
+  type: array
+  items:
+    question: "string"
+    recommendation: "string"
+    status: "resolved | pending | blocked"
+build_mode:
+  type: string
+  enum: [greenfield, incremental]
+confidence:
+  type: integer
+  minimum: 0
+  maximum: 100
+dc010_channel:
+  type: string
+  enum: [fast, full]
+  description: "skill 通道通过标准: confidence ≥ 70 / Q1-Q4 决策+触发场景+验收标准均非空 / blocked ≤ 1"

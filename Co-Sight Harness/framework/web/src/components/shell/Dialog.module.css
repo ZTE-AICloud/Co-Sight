@@ -1,0 +1,72 @@
+/*
+ * 模态弹窗外壳。
+ *
+ * 结构与样式参照 OpenHands 的设置面板（用户要求 3.x 着重参考它）：居中模态、
+ * 左侧竖向页签、右侧内容区。数值按本项目令牌换算，不照搬 OpenHands 的取值。
+ */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgb(0 0 0 / 25%);
+  /* 遮罩淡入，避免弹窗"闪"出来。 */
+  animation: fade var(--duration-fast) var(--ease-out);
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  max-width: 100%;
+  overflow: hidden;
+  border-radius: var(--r-lg);
+  background: var(--color-surface);
+  box-shadow: 0 12px 48px 0 rgb(0 0 0 / 24%);
+}
+
+/* 设置 / 工作区：左右分栏，需要固定高度才能让两侧各自滚动。 */
+.panelMd {
+  width: 720px;
+  /* 用视口高度而不是固定高：笔记本上 560 会超出屏幕可用高度。 */
+  height: min(560px, 100%);
+}
+
+/* 确认框：内容只有几句话，固定高会让它看起来很空。 */
+.panelSm {
+  width: 420px;
+  max-height: 100%;
+}
+
+/* 弹窗自己接管焦点管理，所以它自身的 :focus-visible 环要去掉（见 global.css 的约定）。 */
+.panel:focus {
+  outline: none;
+}
+
+.header {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  padding: 0 12px 0 24px;
+  border-bottom: 1px solid var(--border-panel);
+}
+
+.title {
+  margin: 0;
+  color: var(--text-heading);
+  font-family: var(--font-medium);
+  font-weight: var(--fw-medium);
+  font-size: var(--fs-page-title);
+  line-height: var(--lh-label);
+}

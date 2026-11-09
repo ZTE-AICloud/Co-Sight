@@ -1,0 +1,385 @@
+/*
+ * 右侧文件预览面板。
+ *
+ * 全部色值走 global.css 的 token：组件在 shared/ 下，不能自带 feature 方言。
+ * 宽度变量由页面级样式给（agent-create.css 的 --ac-dock-width），这里留同一个
+ * 缺省值，单独挂面板时也能用。
+ */
+
+.fp-dock {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  width: var(--ac-dock-width, clamp(420px, 46vw, 760px));
+  min-height: 0;
+  border-left: 1px solid var(--color-border);
+  background: var(--color-surface);
+  box-shadow: -8px 0 24px rgba(15, 23, 42, 0.06);
+}
+
+/* ---------- 标签条 ---------- */
+
+.fp-tabs {
+  flex-shrink: 0;
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  min-height: 38px;
+  padding: 0 6px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg);
+}
+
+.fp-tab {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  max-width: 220px;
+  margin: 5px 0;
+  border: 1px solid transparent;
+  border-radius: 7px;
+}
+
+.fp-tab--active {
+  border-color: var(--color-border);
+  background: var(--color-surface);
+}
+
+.fp-tab__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  padding: 4px 2px 4px 8px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-weak);
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.fp-tab--active .fp-tab__label {
+  color: var(--color-text);
+}
+
+.fp-tab__label svg {
+  flex-shrink: 0;
+  color: var(--color-text-weak);
+}
+
+.fp-tab__label span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fp-tab__x {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  margin-right: 3px;
+  padding: 0;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--color-text-weak);
+  cursor: pointer;
+}
+
+.fp-tab__x:hover {
+  background: #e3e6ea;
+  color: var(--color-text);
+}
+
+.fp-tab-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  align-self: center;
+  width: 26px;
+  height: 26px;
+  margin-left: auto;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-text-weak);
+  cursor: pointer;
+}
+
+.fp-tab-close:hover {
+  background: #e3e6ea;
+  color: var(--color-text);
+}
+
+/* ---------- 路径条 / 工具条 ---------- */
+
+.fp-path {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-bottom: 1px solid #eef0f3;
+}
+
+.fp-path code {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-text-weak);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fp-toolbar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.fp-toolbar-spacer {
+  flex: 1;
+}
+
+.fp-lang {
+  flex-shrink: 0;
+  padding: 2px 7px;
+  border-radius: 5px;
+  background: #f2f4f7;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--color-text-weak);
+}
+
+.fp-toggle {
+  display: inline-flex;
+  padding: 2px;
+  border-radius: 7px;
+  background: var(--color-bg);
+}
+
+.fp-toggle__item {
+  padding: 3px 10px;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--color-text-weak);
+  font-family: inherit;
+  font-size: 11.5px;
+  cursor: pointer;
+}
+
+.fp-toggle__item--active {
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+
+.fp-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-text-weak);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.fp-icon-btn:hover {
+  background: #eef0f3;
+  color: var(--color-text);
+}
+
+/* ---------- 内容区 ---------- */
+
+.fp-content {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+.fp-body {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+.fp-body--image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  overflow: auto;
+  background: var(--color-bg);
+}
+
+.fp-body--image img {
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.1);
+}
+
+.fp-body--html {
+  display: flex;
+  flex-direction: column;
+}
+
+.fp-body--html iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #fff;
+}
+
+.fp-body--md {
+  padding: 18px 20px 40px;
+  overflow: auto;
+}
+
+.fp-body--code {
+  display: flex;
+  flex-direction: column;
+}
+
+.fp-code-bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 12px;
+  border-bottom: 1px solid #eef0f3;
+  background: #fafbfc;
+}
+
+.fp-ext {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: #9aa3af;
+}
+
+.fp-code {
+  flex: 1;
+  margin: 0;
+  padding: 12px 14px 40px;
+  overflow: auto;
+  background: #fcfcfd;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.65;
+  tab-size: 2;
+  white-space: pre;
+}
+
+/* ---------- 空态 / 错误态 ---------- */
+
+.fp-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 32px 22px;
+  text-align: center;
+  color: var(--color-text-weak);
+}
+
+.fp-empty p {
+  margin: 0;
+  max-width: 460px;
+  font-size: 12.5px;
+  line-height: 1.7;
+  word-break: break-word;
+}
+
+.fp-empty--error {
+  color: #a52a20;
+}
+
+.fp-error-path {
+  max-width: 90%;
+  overflow: hidden;
+  padding: 2px 7px;
+  border-radius: 5px;
+  background: var(--color-bg);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--color-text-weak);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fp-empty-actions {
+  display: inline-flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.fp-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 11px;
+  border: 1px solid var(--color-border);
+  border-radius: 7px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: 12px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.fp-btn:hover {
+  background: var(--color-bg);
+}
+
+.fp-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: fp-spin 0.8s linear infinite;
+}
+
+@keyframes fp-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 窄屏：面板盖满整屏，页面不再让出宽度（见 agent-create.css 的同一条媒体查询） */
+@media (max-width: 767px) {
+  .fp-dock {
+    width: 100%;
+    border-left: none;
+  }
+}

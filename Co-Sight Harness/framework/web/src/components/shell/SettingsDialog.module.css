@@ -1,0 +1,111 @@
+/*
+ * 设置弹窗的**内容区**样式（遮罩与面板外壳在 Dialog.module.css）。
+ *
+ * 结构与样式参照 OpenHands 的设置面板（用户要求 3.x 着重参考它）：左侧竖向页签、
+ * 右侧内容区。数值按本项目令牌换算，不照搬 OpenHands 的取值。
+ */
+
+.body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.nav {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 2px;
+  width: 176px;
+  padding: 12px 8px;
+  border-right: 1px solid var(--border-panel);
+  overflow-y: auto;
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  height: var(--history-item-h);
+  padding: 0 12px;
+  border: none;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--text-heading);
+  font-family: var(--font-regular);
+  font-size: var(--fs-label);
+  line-height: var(--lh-label);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--duration-fast) var(--ease-out);
+}
+
+.tab:hover:not(.tabActive) {
+  background: var(--color-hover);
+}
+
+.tabActive {
+  background: var(--color-selected-soft);
+  font-family: var(--font-medium);
+  font-weight: var(--fw-medium);
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+  padding: 20px 24px;
+  overflow-y: auto;
+}
+
+.section {
+  margin-bottom: 24px;
+}
+
+.sectionTitle {
+  margin: 0 0 12px;
+  color: var(--text-secondary);
+  font-size: var(--fs-label);
+  line-height: var(--lh-label);
+}
+
+/* 只读信息行：左侧标签与说明，右侧一个不可编辑的值。可编辑字段见 ui/form。 */
+.field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 0;
+}
+
+.fieldLabel {
+  color: var(--text-heading);
+  font-size: var(--fs-label);
+  line-height: var(--lh-label);
+}
+
+.fieldHint {
+  margin: 2px 0 0;
+  max-width: 360px;
+  color: var(--text-secondary);
+  font-size: var(--fs-sidebar-sub);
+  line-height: var(--lh-sidebar-sub);
+}
+
+.fieldValue {
+  flex: none;
+  max-width: 300px;
+  overflow: hidden;
+  color: var(--text-body);
+  font-family: var(--font-regular);
+  font-size: var(--fs-label);
+  /* 路径与版本号一律等宽显示：换行时能看出是哪一段，也不会被当成正文读。 */
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.divider {
+  height: 1px;
+  margin: 4px 0;
+  border: none;
+  background: var(--border-sidebar);
+}

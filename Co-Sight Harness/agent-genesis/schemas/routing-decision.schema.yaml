@@ -1,0 +1,26 @@
+# routing-decision.yaml — 意图识别与路由产出
+goal:
+  type: string
+  enum: [create, improve, diagnose, evaluate, understand]
+target:
+  type: string
+  enum: [agent, skill, system]
+completeness:
+  type: string
+  enum: [clear, vague, too_short]
+confidence:
+  type: integer
+  minimum: 0
+  maximum: 100
+phase0_needed:
+  type: boolean
+  description: "confidence<80 或 completeness≠clear → true"
+clarified_requirements:
+  type: string
+  description: "若经过需求澄清 (requirement-clarifier, v0.18 起; 旧名 agent-requirement-clarifier)，这里是增强后的需求描述。否则为空"
+pipeline:
+  type: string
+  description: "选中的 workflow 文件路径，如 skills/harness-create/references/workflow.md"
+rationale:
+  type: string
+  description: "路由理由"

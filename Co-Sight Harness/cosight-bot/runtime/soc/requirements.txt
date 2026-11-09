@@ -1,0 +1,59 @@
+# CoSightBot runtime 依赖清单
+# Python 3.10+
+
+# --- 构建工具（部分包编译需要）---
+setuptools>=80.0.0
+wheel>=0.40.0
+
+# --- 核心：LlamaIndex ---
+llama-index>=0.14.21
+llama-index-core>=0.14.21
+llama-index-llms-openai-like>=0.7.2
+llama-index-vector-stores-lancedb>=0.5.0
+llama-index-embeddings-openai>=0.6.0
+llama-index-readers-file>=0.6.0
+
+# --- 核心：向量数据库 ---
+lancedb>=0.21.0
+filelock>=3.29.1
+
+# --- 核心：HTTP / 事件基类（watchdog 仅取 FileSystemEventHandler 基类，不启动监听进程）---
+watchdog>=6.0.0
+requests>=2.32.0
+aiohttp~=3.13.3
+
+# --- 预处理：PDF → Markdown ---
+# pypdfium2：PDFium 绑定（BSD-3-Clause OR Apache-2.0），负责页面渲染 / 文字抽取 / 内嵌图抽取
+# pdfplumber：MIT，负责 PDF 表格检测（pdfminer.six 由它传递引入；Pillow 由它与 llama-index-core / python-pptx 传递引入，均无需单独声明）
+pypdfium2>=5.14.0
+pdfplumber>=0.11
+
+# --- 预处理：Word → Markdown ---
+pywin32; sys_platform == "win32"
+mammoth>=1.8.0
+markdownify>=0.14.0
+python-docx>=1.1.0
+
+# --- 预处理：PPT → Markdown ---
+python-pptx>=1.0.0
+# PowerPoint COM 自动化（每页 PPT 导出 PNG，Windows 专用，可选）
+comtypes>=1.1.11; sys_platform == "win32"
+
+# --- 预处理：通用文档转换 ---
+markitdown>=0.1.0
+
+# --- 预处理：HTML → Markdown ---
+trafilatura>=2.0.0
+
+# --- 预处理：Excel 解析 ---
+openpyxl>=3.1.0
+# 旧版 .xls 读取（xlrd 2.0 起仅支持 .xls，正好覆盖本场景）
+xlrd>=2.0.1
+
+# --- 预处理：其他 ---
+pandas>=2.3.3
+lxml>=6.0.2
+beautifulsoup4>=4.14.3
+
+# --- 进程管理 ---
+psutil>=7.0.0

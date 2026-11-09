@@ -1,0 +1,36 @@
+# runtime-eval — Phase 5 运行时评估产出
+verdict:
+  type: string
+  enum: [pass, fail]
+weighted_total:
+  type: number
+  minimum: 0.0
+  maximum: 5.0
+  description: "加权总分。pass ≥ 3.5"
+dimensions:
+  correctness:
+    type: number
+    minimum: 0.0
+    maximum: 5.0
+    description: "输出是否正确，pass ≥ 3.0"
+  completeness:
+    type: number
+    minimum: 0.0
+    maximum: 5.0
+    description: "覆盖是否完整，pass ≥ 3.0"
+  format:
+    type: number
+    minimum: 0.0
+    maximum: 5.0
+  actionability:
+    type: number
+    minimum: 0.0
+    maximum: 5.0
+diagnosis:
+  type: string
+  description: "低分维度的根因分析"
+suggestions:
+  type: array
+  items:
+    type: string
+  description: "改进建议列表"

@@ -1,0 +1,299 @@
+/*
+ * Markdown 排版。
+ *
+ * 色值 / 字体全部走 global.css 的 token：这个组件在 shared/ 下，不能自带 feature 方言。
+ * 只约束「正文里会出现的块」，不重做浏览器默认样式之外的东西 —— 模型的输出可长可短，
+ * 样式越克制，越不会在某个没预料到的元素上显得突兀。
+ */
+
+.md {
+  min-width: 0;
+  /* 长英文串 / URL / 行内代码都可能没有断点：不许横向撑破对话栏 */
+  word-break: break-word;
+}
+
+/* 首尾块不贡献外边距：正文和折叠条 / 分隔线之间的间距由外层 gap 统一给 */
+.md > :first-child {
+  margin-top: 0;
+}
+
+.md > :last-child {
+  margin-bottom: 0;
+}
+
+/* ---------- 段落 ---------- */
+
+/*
+ * 段内的单个换行照原样断行。
+ *
+ * Markdown 规范里单个换行只是「软换行」，渲染时折叠成一个空格 —— 对成段的散文是对的，
+ * 但模型常拿「一行一个值」的纯文本卡片来排版（天气卡片就是：城市 / 坐标 / 实时 / 7 天预报，
+ * 每行一条）。折叠之后整张卡片挤成一大段带着 `|` 的流水账，看起来像 Markdown 没生效。
+ * 这些换行和连续空格都是作者有意排的版，pre-wrap 让它们原样落地，超过宽度的行仍会正常折行。
+ * 粘在 markdown 源码里的硬换行（行尾两个空格）本来就渲染成 <br>，这里不重复处理。
+ */
+.md p,
+.md li {
+  white-space: pre-wrap;
+}
+
+/* ---------- 标题 ---------- */
+
+/*
+ * 比文档排版整体小一档：对话栏最宽也就几百像素，h1 按浏览器默认的 2em 会把
+ * 一行拆成三行。层级仍靠字号 + 字重区分。
+ */
+.md h1,
+.md h2,
+.md h3,
+.md h4,
+.md h5,
+.md h6 {
+  margin: 18px 0 8px;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+.md h1 {
+  font-size: 17px;
+}
+
+.md h2 {
+  font-size: 15.5px;
+}
+
+.md h3 {
+  font-size: 14px;
+}
+
+.md h4,
+.md h5,
+.md h6 {
+  font-size: 13px;
+}
+
+/* ---------- 列表 ---------- */
+
+.md ul,
+.md ol {
+  margin: 0 0 10px;
+  padding-left: 20px;
+}
+
+.md li {
+  margin: 2px 0;
+}
+
+/* 列表项里的段落不再额外撑开行距 —— 那样一个三层嵌套列表会散成三段 */
+.md li > p {
+  margin: 0 0 4px;
+}
+
+.md li::marker {
+  color: var(--color-text-weak);
+}
+
+/* GFM 任务列表：勾选框代替圆点，缩进也收一档 */
+.md .contains-task-list {
+  padding-left: 4px;
+  list-style: none;
+}
+
+.md .task-list-item input[type='checkbox'] {
+  margin-right: 6px;
+  vertical-align: -1px;
+}
+
+/* ---------- 行内元素 ---------- */
+
+.md a {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.md a:hover {
+  text-decoration: underline;
+}
+
+.md strong {
+  font-weight: 650;
+}
+
+/* 删除线（GFM）用弱化色：它表达的就是「这条不算数了」 */
+.md del {
+  color: var(--color-text-weak);
+}
+
+.md code {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+}
+
+/* 行内代码。用 :not(pre) > 是为了避开代码块里的 code（那个由 .md-code 统一样式） */
+.md :not(pre) > code {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: #f0f2f5;
+}
+
+/*
+ * 文件引用按钮（对话里的行内代码 / 本地 Markdown 链接）。
+ *
+ * 长得仍像行内代码，只是底色偏紫、带一枚文件徽标 —— 一眼能看出「这个能点」，
+ * 又不至于在整段正文里跳出来。字体跟随正文：链接里的文字是模型写的自然语言，
+ * 不该被压成等宽。
+ */
+.md-file-mention {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin: 0 1px;
+  padding: 1px 5px;
+  border: none;
+  border-radius: 4px;
+  background: #eef1ff;
+  color: #4a5cc4;
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  line-height: 1.5;
+  text-align: left;
+  cursor: pointer;
+  vertical-align: baseline;
+}
+
+.md-file-mention:hover {
+  background: #e1e6ff;
+  color: #3847a8;
+  text-decoration: underline;
+}
+
+.md-file-mention svg {
+  flex-shrink: 0;
+  opacity: 0.75;
+}
+
+/* 本地 Markdown 链接：文字是自然语言，字体跟正文走，不套等宽 */
+.md-file-mention--link {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+/* ---------- 引用 / 分隔线 ---------- */
+
+.md blockquote {
+  margin: 0 0 10px;
+  padding: 2px 0 2px 12px;
+  border-left: 3px solid var(--color-border);
+  color: var(--color-text-weak);
+}
+
+.md blockquote > :last-child {
+  margin-bottom: 0;
+}
+
+.md hr {
+  margin: 14px 0;
+  border: none;
+  border-top: 1px solid #eef0f3;
+}
+
+/* ---------- 图片 ---------- */
+
+.md img {
+  max-width: 100%;
+  border-radius: 6px;
+}
+
+/* ---------- 代码块 ---------- */
+
+.md-code {
+  margin: 0 0 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: #f8f9fb;
+  /* 圆角只作用在外壳上：头栏的背景色/边框不能从方角里漏出来 */
+  overflow: hidden;
+}
+
+.md-code__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 3px 7px 3px 11px;
+  border-bottom: 1px solid var(--color-border);
+  background: #f2f4f7;
+}
+
+.md-code__lang {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--color-text-weak);
+}
+
+.md-code__copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  padding: 2px 6px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--color-text-weak);
+  font-family: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.md-code__copy:hover {
+  background: #e3e6ea;
+  color: var(--color-text);
+}
+
+/*
+ * 代码块横向滚而不是折行：折行会破坏缩进，缩进一没，代码就没法看了。
+ * 纵向也不限高 —— 正文里的代码块通常是模型给的完整片段，截成半截反而要用户再点一次。
+ */
+.md-code__pre {
+  margin: 0;
+  padding: 10px 12px;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  line-height: 1.6;
+  tab-size: 2;
+}
+
+.md-code__pre code {
+  font-size: inherit;
+  white-space: pre;
+}
+
+/* ---------- 表格 ---------- */
+
+.md-table {
+  margin: 0 0 12px;
+  overflow-x: auto;
+}
+
+.md-table table {
+  border-collapse: collapse;
+  min-width: 100%;
+  font-size: 12.5px;
+}
+
+.md-table th,
+.md-table td {
+  padding: 6px 10px;
+  border: 1px solid var(--color-border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.md-table th {
+  background: #f7f8fa;
+  font-weight: 620;
+}

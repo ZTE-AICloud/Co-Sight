@@ -1,0 +1,178 @@
+# Skill 创建知识库 — 操作标记矩阵 + 约束推导规则 + 目录设计决策树
+# 版本: V1.0 | 日期: 2026-05-09
+
+# ============================================================
+# §1 操作需求分析矩阵 (Q1-Q4)
+# ============================================================
+
+operational_analysis:
+  Q1_knowledge_base:
+    question: "是否需要查询外部知识库/文档？"
+    triggers:
+      - "需要参考规范/标准/规则"
+      - "需要查询文档/API/数据库获取信息"
+      - "需要外部知识支持判断"
+      - "领域知识超出 LLM 训练数据可靠范围"
+    marker: needs_knowledge_base
+    directory_required: references/
+    anti_patterns:
+      - "内联大段领域知识到 SKILL.md（应放 references/）"
+      - "假设 LLM 训练数据已包含最新规范"
+
+  Q2_scripts:
+    question: "是否包含确定性操作？"
+    triggers:
+      - "精确比对（字符串/数值精确匹配）"
+      - "格式校验（Schema 验证、正则匹配）"
+      - "数学计算（需要精确结果的运算）"
+      - "数据转换（结构化格式间转换）"
+      - "调用外部工具/API"
+    marker: needs_scripts
+    directory_required: scripts/
+    anti_patterns:
+      - "让 LLM 执行正则匹配替代 grep"
+      - "让 LLM 执行 JSON Schema 校验替代 jsonschema 库"
+      - "让 LLM 做数学计算替代 Python/Bash 脚本"
+
+  Q3_templates:
+    question: "输入/输出是否有固定格式要求？"
+    triggers:
+      - "输出必须遵循特定 Markdown 模板"
+      - "输入需要 JSON/YAML 格式"
+      - "报告/清单有固定结构"
+      - "需要标准化表单/清单格式"
+    marker: needs_templates
+    directory_required: templates/
+    anti_patterns:
+      - "在 SKILL.md 正文中描述输出格式而不提供模板（不一致风险）"
+
+  Q4_operation_mode:
+    question: "核心操作模式是什么？"
+    modes:
+      iterates_and_judges:
+        description: "遍历多项逐一判定"
+        keywords: ["逐一检查", "逐项审查", "逐个比对", "遍历", "逐条", "逐行", "审计"]
+        instruction_skeleton: "对于每个输入项 → 对照标准判定 → 记录判定结果和依据"
+      fetch_filter_rank:
+        description: "查找筛选最匹配项"
+        keywords: ["查找", "搜索", "筛选", "匹配", "推荐", "检索", "发现"]
+        instruction_skeleton: "接收查询条件 → 检索候选集 → 按条件筛选/排序 → 返回 Top-K"
+      transform:
+        description: "格式/结构转换"
+        keywords: ["转换", "格式化", "导出", "生成", "转写", "编译", "转换格式"]
+        instruction_skeleton: "读取源格式 → Schema 校验 → 转换为目标格式 → Schema 校验输出"
+      record_report:
+        description: "记录/汇报状态"
+        keywords: ["记录", "报告", "汇报", "汇总", "日志", "总结", "统计"]
+        instruction_skeleton: "收集状态数据 → 按模板组织 → 输出格式化报告"
+
+# ============================================================
+# §2 粒度决策规则 (G1-G2)
+# ============================================================
+
+granularity_decision:
+  G1_independent_trigger:
+    description: "这些能力是否可以独立触发？"
+    test: "一个用户说'帮我做 A'时，他是否也一定需要 B？"
+    yes_means_split: true
+    examples:
+      split:
+        - "PEP8 检查 vs 安全扫描 — 用户可能只需要风格检查"
+        - "代码审查 vs 报告生成 — 用户可能用其他方式查看结果"
+      merge:
+        - "读取数据 + 展示数据 — 总是成对出现"
+
+  G2_size_limit:
+    description: "合并后 SKILL.md 是否过大？"
+    threshold: 400
+    estimation_formula: "N × 80~150 + 40"
+    where:
+      N: "独立能力数量"
+      80_150: "每个能力的执行步骤+输入输出+约束（行）"
+      40: "共享章节：触发条件+参考资源（行）"
+
+  decision_table:
+    - { G1: true, G2: any, decision: "拆分" }
+    - { G1: false, G2: false, decision: "单 Skill" }
+    - { G1: false, G2: true, decision: "拆分（规模过大）" }
+
+# ============================================================
+# §3 约束推导规则
+# ============================================================
+
+constraint_derivation:
+  needs_knowledge_base:
+    - "严禁编造知识库中不存在的内容"
+    - "检索失败必须阻断并告知用户"
+    - "推理结论必须引用 references/ 中的具体出处"
+  needs_scripts:
+    - "脚本执行失败必须阻断"
+    - "严禁用 LLM 推理替代脚本调用"
+    - "脚本输出必须记录到 work/ 供审查"
+  iterates_and_judges:
+    - "必须遍历全部输入项，不得提前终止"
+    - "判定依据必须引用原文/原始数据"
+    - "判定标准必须在执行前明确并告知用户"
+  fetch_filter_rank:
+    - "筛选条件必须明确告知用户"
+    - "Top-K 参数必须在执行前确定"
+    - "排序依据必须透明可复查"
+  transform:
+    - "输出必须通过 Schema 校验"
+    - "转换失败必须保留原始数据"
+    - "输入/输出格式必须在 SKILL.md 中声明"
+  record_report:
+    - "时间戳格式必须一致（ISO 8601）"
+    - "报告必须包含生成时间和数据来源"
+  universal:
+    - "输入文件不存在 → 阻断并告知用户"
+    - "输出路径使用 Agent 约定的 work/ 目录"
+    - "关键步骤完成后输出 checkpoint 状态"
+
+# ============================================================
+# §4 目录结构决策树
+# ============================================================
+
+directory_decision:
+  rules:
+    - condition: "needs_knowledge_base=是"
+      create: "references/"
+      contents: "领域知识文档、规范文件、检查清单、评分标准"
+    - condition: "needs_scripts=是"
+      create: "scripts/"
+      contents: "确定性操作脚本（Python/Bash），独立可运行"
+    - condition: "needs_templates=是"
+      create: "templates/"
+      contents: "输入/输出模板文件"
+    - condition: "以上均无 AND 预估行数 < 200"
+      create: "仅 SKILL.md"
+
+# ============================================================
+# §5 Description 公式 (SF-6)
+# ============================================================
+
+description_formula:
+  template: "{做什么}。在{触发场景}时加载。接收{输入描述}，产出{输出描述}。"
+  example: "检查 Python 代码是否符合 PEP8 规范。在用户提及'代码风格检查''PEP8 检查''代码规范检查'时加载。接收文件路径或代码 diff，产出 Markdown 格式的违规清单和修复建议。"
+  anti_patterns:
+    - "缺少触发条件（'一个代码检查工具'）"
+    - "触发条件过于宽泛（'在用户需要时'）"
+    - "输出格式模糊（'产出结果'）"
+
+# ============================================================
+# §6 子 Skill 关系定义
+# ============================================================
+
+sub_skill_relations:
+  independent:
+    description: "可独立触发，无依赖"
+    example: "风格检查 和 安全扫描"
+    build_order: "最后（无依赖约束）"
+  pipeline:
+    description: "A 的输出是 B 的输入"
+    example: "安全扫描 → 报告生成"
+    build_order: "上游先于下游"
+  shared_dep:
+    description: "引用同一个 references/ 或 scripts/"
+    example: "两个 Skill 共用 PEP8 规则文件"
+    build_order: "共享资源最先创建"

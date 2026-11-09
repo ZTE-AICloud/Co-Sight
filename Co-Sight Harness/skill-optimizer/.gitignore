@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.coverage
+
+# 打包产物
+dist/
+
+# 运行期产物
+.drive/
+.tmp-inst/
+_debug/**
+
+# codex 插件的生成物（market 即仓库时写入，含本机绝对路径，勿提交）
+.codex-plugin/
+
+# 快照/编辑残留
+*.orig
+*.rej
+
+# 内部工具
+mock_llm_server_*.log

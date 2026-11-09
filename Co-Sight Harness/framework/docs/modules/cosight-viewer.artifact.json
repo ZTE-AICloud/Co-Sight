@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "cosight-viewer",
+  "moduleRoot": "cosight-viewer",
+  "priority": 10,
+  "bundle": {
+    "include": [
+      "package.json",
+      "server",
+      "scripts",
+      "client/dist",
+      "node_modules"
+    ],
+    "exclude": [
+      "scripts/__tests__",
+      "node_modules/.bin"
+    ],
+    "install": [
+      {
+        "command": ["npm", "ci", "--ignore-scripts"],
+        "cwd": "."
+      },
+      {
+        "command": ["npm", "ci", "--ignore-scripts"],
+        "cwd": "client"
+      }
+    ],
+    "build": {
+      "command": ["npm", "run", "build"],
+      "cwd": "client",
+      "inputs": [
+        "src",
+        "public",
+        "index.html",
+        "vite.config.ts",
+        "tailwind.config.js",
+        "postcss.config.js",
+        "tsconfig.json",
+        "package.json",
+        "package-lock.json"
+      ],
+      "outputs": ["dist/index.html"],
+      "timeoutMs": 300000
+    }
+  },
+  "services": [
+    {
+      "name": "server",
+      "cwd": ".",
+      "command": ["node", "server/index.js"],
+      "port": 4830,
+      "readyPath": "/health",
+      "readyTimeoutMs": 60000,
+      "env": {
+        "NODE_ENV": "production",
+        "CO_SIGHT_MODE": "claude",
+        "PORT": "4830",
+        "DASHBOARD_DATA_DIR": "{{dataDir}}/modules-data/cosight-viewer/data"
+      }
+    }
+  ],
+  "notes": "这是装配态清单，与同目录的 cosight-viewer.launch.json 分工不同：那份给 pnpm dev:all 用（npm run dev、相对仓库根），这份给打包与 start.mjs 用（node server/index.js、相对模块目录）。分两份是因为开发态与产物里根本没有同一套工具链。服务端没有构建步骤，它的 NODE_ENV 缺省就是 production、静态托管 client/dist（路径硬编码在 server/index.js，不可用环境变量改），所以只要 client/dist 在、node server/index.js 就是完整的生产入口。client/dist 是 gitignore 的，打包前按 bundle.build 判新旧并重建（判据复用 module-build.mjs）。client/node_modules 不进包：184 MB 的构建工具链只服务于构建期，运行时用不到。根 node_modules 是纯 JS（SQLite 走 Node 内置 node:sqlite），没有平台原生件，所以一份包同时覆盖 linux-x64 与 win32-x64。node_modules/.bin 里是 15 条符号链接，只服务于 npm exec 与 package script，运行期用不到，必须排除——Windows 自带解压器不建软链。COSIGHT_HOME 刻意不设置：让 claude-home.js 默认使用 ~/.claude，这样会话文件从 ~/.claude/projects/ 读取，与 Claude CLI 写入的位置一致。DASHBOARD_DATA_DIR 指向用户数据目录下的私有目录，避免 db.js 的缺省值把数据库写进产物目录。CO_SIGHT_MODE=claude 沿用 launch.json 的声明：不设的话服务端没有数据库，并且会在 60 秒后自检重启——那与'一个被监督的长期进程'不兼容。CO_SIGHT_PORT 刻意不写：server/index.js 读的是 PORT / DASHBOARD_PORT / 4830，写它只会制造'改了却没生效'的错觉。"
+}

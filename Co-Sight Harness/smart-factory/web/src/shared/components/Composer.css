@@ -1,0 +1,371 @@
+/*
+ * 共享发送框的样式。
+ *
+ * 版式：内容区在上、工具栏在下，同一个边框里。
+ * 两个变体（首页 hero / 创建页 compact）只差尺寸与配色，全部收在 .composer 上的变量里，
+ * 结构规则两边共用 —— 加一条只对某个变体生效的规则前，先想想能不能变成变量。
+ */
+
+.composer {
+  --c-radius: 10px;
+  --c-pad: 7px 9px;
+  --c-font: 13px;
+  --c-line: 1.5;
+  --c-min-h: 29px;
+  --c-max-h: 90px;
+  --c-bar-gap: 6px;
+  --c-bg: #fafbfc;
+  --c-focus-bg: var(--color-surface);
+  --c-send: 29px;
+  --c-send-radius: 8px;
+  --c-send-idle-bg: #c3d3f7;
+  --c-send-idle-fg: #fff;
+  --c-send-ready-bg: var(--color-primary);
+  --c-send-ready-fg: #fff;
+
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: var(--c-pad);
+  border: 1px solid var(--color-border);
+  border-radius: var(--c-radius);
+  background: var(--c-bg);
+  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* 聚焦反馈两个变体都有：发送框是页面的主要输入口，得看得出焦点在哪 */
+.composer:focus-within {
+  border-color: var(--color-primary);
+  background: var(--c-focus-bg);
+  box-shadow: 0 0 0 3px rgba(47, 111, 237, 0.09);
+}
+
+/* 首页：大输入卡片 */
+.composer--hero {
+  --c-radius: 18px;
+  --c-pad: 20px 18px 14px;
+  --c-font: 15px;
+  --c-line: 26px;
+  --c-min-h: 28px;
+  --c-max-h: 200px;
+  --c-bar-gap: 12px;
+  --c-bg: var(--color-surface);
+  --c-focus-bg: var(--color-surface);
+  --c-send: 34px;
+  --c-send-radius: 50%;
+  --c-send-idle-bg: #eef0f3;
+  --c-send-idle-fg: #a8afb9;
+  --c-send-ready-bg: #2b3038;
+
+  min-height: 158px;
+  box-shadow: 0 4px 16px rgba(24, 30, 40, 0.05);
+}
+
+/* 聚焦时叠上光圈，别把卡片本身的投影顶掉 */
+.composer--hero:focus-within {
+  box-shadow: 0 4px 16px rgba(24, 30, 40, 0.05), 0 0 0 3px rgba(47, 111, 237, 0.09);
+}
+
+/* ---------- 内容区 ---------- */
+
+.composer__content {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.composer--hero .composer__content {
+  flex: 1;
+}
+
+.composer--hero .composer__editor-box {
+  flex: 1;
+}
+
+/* 附件 chip（block 变体，创建页）：另起一行，不进 contenteditable。
+   chip 本身的长相（徽标 / 底色 / 字号 / ×）统一在 FileChip.css，行内 token 也是同一套。 */
+.composer__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+/* 正文：contenteditable */
+.composer__editor-box {
+  position: relative;
+  min-height: var(--c-min-h);
+}
+
+/* contenteditable 没有原生 placeholder，用一层不接事件的浮层顶上 */
+.composer__placeholder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  color: #9aa3af;
+  font-size: var(--c-font);
+  line-height: var(--c-line);
+  pointer-events: none;
+}
+
+.composer__editor {
+  min-height: var(--c-min-h);
+  max-height: var(--c-max-h);
+  overflow-y: auto;
+  outline: none;
+  color: var(--color-text);
+  font-size: var(--c-font);
+  /* 固定像素而非倍数：占位符浮层要跟它对齐，两边写同一个值最省事 */
+  line-height: var(--c-line);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* ---------- 工具栏 ---------- */
+
+.composer__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: var(--c-bar-gap);
+}
+
+.composer__bar-left,
+.composer__bar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.composer__icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.composer__icon-btn:hover:not(:disabled) {
+  background: var(--color-bg);
+}
+
+.composer__icon-btn:disabled {
+  color: #b7bdc6;
+  cursor: not-allowed;
+}
+
+/* 菜单开着：`+` 已经变成 `×`，按钮跟着亮起一个圆底，说「再点一下就收」 */
+.composer__icon-btn--open {
+  border-radius: 50%;
+  background: var(--color-bg);
+}
+
+.composer__selector {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 8px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: 13.5px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.composer__selector:hover:not(:disabled) {
+  background: var(--color-bg);
+}
+
+.composer__selector:disabled {
+  color: #b7bdc6;
+  cursor: not-allowed;
+}
+
+/* 模型清单拉失败：与「置灰禁用」区分开 —— 那是「暂时不能用」，这是「出事了」。
+   写在 :disabled 之后且带 :disabled，同权重靠顺序压过上面那条灰色。 */
+.composer__selector--bad:disabled {
+  color: #a52a20;
+}
+
+/* 「正在生成…」这类说明：讲清楚现在为什么发不出去 */
+.composer__status {
+  overflow: hidden;
+  color: var(--color-text-weak);
+  font-size: 12.5px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.composer__send {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: var(--c-send);
+  height: var(--c-send);
+  border: none;
+  border-radius: var(--c-send-radius);
+  background: var(--c-send-idle-bg);
+  color: var(--c-send-idle-fg);
+  cursor: not-allowed;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.composer__send--ready {
+  background: var(--c-send-ready-bg);
+  color: var(--c-send-ready-fg);
+  cursor: pointer;
+}
+
+/* 运行中：同一个位置变停止 */
+.composer__send--stop {
+  background: #1f2329;
+  color: #fff;
+  cursor: pointer;
+}
+
+/* ---------- 下拉菜单（`+` 与选择器共用） ---------- */
+
+.composer__pop {
+  position: relative;
+  display: inline-flex;
+}
+
+.composer__menu {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  z-index: 30;
+  min-width: 196px;
+  padding: 6px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface);
+  box-shadow: 0 12px 32px rgba(24, 30, 40, 0.13);
+}
+
+/* 右侧选择器的菜单贴右边展开，别顶出容器 */
+.composer__menu--right {
+  left: auto;
+  right: 0;
+}
+
+.composer__menu-item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  /* 行高比选择器菜单那套高一点，图标也更大 —— 版式照参考图的 `+` 菜单 */
+  padding: 9px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: 14px;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.composer__menu-item:hover {
+  background: var(--color-bg);
+}
+
+.composer__menu-item>svg {
+  flex-shrink: 0;
+  color: var(--color-text-weak);
+}
+
+.composer__menu-check {
+  display: inline-flex;
+  margin-left: auto;
+  color: var(--color-primary);
+}
+
+/* 锁住时整体降透明，让「不能点」看得出来 */
+.composer--locked .composer__bar,
+.composer--locked .composer__content {
+  opacity: 0.7;
+}
+
+/* 编辑区锁住（editableWhileLocked=false 且 locked）时的光标提示 */
+.composer__editor--locked {
+  cursor: not-allowed;
+}
+
+/* ---------- `/` 命令 token（行内） ---------- */
+
+/*
+ * 与附件 chip 同一种机制（contentEditable=false 的原子件），但语义不同：
+ * 附件交给 attachments，命令是正文的一部分（见 Composer 的 readEditorText）。
+ * 所以长相也分开：等宽字体 + 蓝色系，一眼能看出「这是一个可执行的命令」。
+ */
+.command-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 260px;
+  margin: 0 1px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #edf3ff;
+  color: #2456b8;
+  font-family: var(--font-mono);
+  font-size: 0.93em;
+  line-height: 1.35;
+  vertical-align: baseline;
+  white-space: nowrap;
+  user-select: none;
+  cursor: default;
+}
+
+.command-chip:hover {
+  background: #e1ebff;
+}
+
+.command-chip__name {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* × 平时收起来，悬停 / 聚焦才展开 —— 与行内附件 chip 同一套手感 */
+.command-chip__x {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 0;
+  height: 16px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #5b7bbd;
+  overflow: hidden;
+  opacity: 0;
+  cursor: pointer;
+  transition: width 0.12s ease, opacity 0.12s ease;
+}
+
+.command-chip:hover .command-chip__x,
+.command-chip:focus-within .command-chip__x {
+  width: 16px;
+  opacity: 1;
+}
+
+.command-chip__x:hover {
+  background: #d5e2ff;
+  color: #1d4baa;
+}

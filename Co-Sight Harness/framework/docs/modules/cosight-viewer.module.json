@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "id": "cosight-viewer",
+  "name": {
+    "zh-CN": "会话观测",
+    "en-US": "Session Observability"
+  },
+  "description": {
+    "zh-CN": "Claude Code 会话、事件流与运行状态监控",
+    "en-US": "Monitor Claude Code sessions, event streams, and runtime status"
+  },
+  "version": "1.2.1",
+  "entry": "http://localhost:4830/",
+  "allowedOrigins": ["http://localhost:4830"],
+  "mounts": [
+    {
+      "capability": "conversation",
+      "path": "/"
+    },
+    {
+      "capability": "observability",
+      "path": "/observability"
+    }
+  ],
+  "icon": null,
+  "healthcheck": "http://localhost:4830/health"
+}

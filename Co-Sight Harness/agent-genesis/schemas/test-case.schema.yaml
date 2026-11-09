@@ -1,0 +1,29 @@
+# test-case.schema.yaml
+# Step 6 (product-tester SubAgent) 产出的 golden case YAML schema
+type: map
+required: true
+mapping:
+  case_id:
+    type: str
+    required: true
+    pattern: "^TV-(AC|SC|SO)-[A-Z]+-[0-9]+$"
+  domain:
+    type: str
+    required: true
+    enum: [L-产品验证]
+  dimension:
+    type: str
+    required: true
+    enum: [正向触发, 反向不触发, 执行正确性, 输出格式, 脚本可用性, 引用闭合, 回归验证, 问题修复, 无新增问题]
+  input:
+    type: str
+    required: true
+    min_length: 10
+  expected:
+    type: str
+    required: true
+    min_length: 5
+  expected_phase:
+    type: str
+    required: true
+    enum: [EXECUTING, CODE_GENERATED, CODE_GENERATED_PARTIAL, PLAN_MODE, IH2_CLARIFY, DONE]

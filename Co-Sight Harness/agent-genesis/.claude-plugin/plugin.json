@@ -1,0 +1,45 @@
+{
+  "name": "agent-genesis",
+  "version": "0.23.0",
+  "license": "Apache-2.0",
+  "description": "Agent 工厂：自然语言需求 → 完整 Agent / Skill，支持 Claude Code 与 DSH（DeepSeek Harness）双平台产物（--platform claude-code|dsh|both）。两条 Pipeline（Agent 创建 8 步 · Agent 优化 fast 车道 / Skill 创建·优化·诊断）+ 23 类设计模式级联匹配 + 质量门禁与 goal-loop 执行协议。DSH 侧产出可安装的 bundle 包（package.json + cordis.patch.yml preset 行），并由 gate.dsh.output 结构门禁校验。简单场景可用样例模式（按样例套用、机器检查把关，配套样例车道三件：fast-lane-builder/fast-skill-builder/trace-analyzer + optimize 安全件 + legacy sunset 语义键）。",
+  "author": {
+    "name": "AgentGenesis"
+  },
+  "keywords": [
+    "agent-factory",
+    "meta-agent",
+    "agent-generator",
+    "skill-generator",
+    "pipeline",
+    "design-patterns",
+    "quality-gates",
+    "deepseek-harness",
+    "dsh",
+    "claude-code"
+  ],
+  "agents": [
+    "./agents/pattern-matcher.md",
+    "./agents/build-planner.md",
+    "./agents/skill-planner.md",
+    "./agents/skill-builder.md",
+    "./agents/skill-verifier.md",
+    "./agents/product-tester.md",
+    "./agents/readiness-verifier.md",
+    "./agents/runtime-evaluator.md",
+    "./agents/agent-executor.md",
+    "./agents/fast-lane-builder.md",
+    "./agents/fast-skill-builder.md",
+    "./agents/trace-analyzer.md"
+  ],
+  "skills": [
+    "./skills/agent-design-patterns",
+    "./skills/cross-verifier",
+    "./skills/e2e-test-runner",
+    "./skills/harness-create",
+    "./skills/requirement-clarifier",
+    "./skills/skill-foundry"
+  ],
+  "commands": [],
+  "hooks": []
+}

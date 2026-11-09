@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "skill-optimizer",
+  "displayName": "Skill Optimizer",
+  "version": "1.0.0",
+  "description": "Skill 评测-优化循环编排器（SkillX 移植版）：把 Skill 评测命令包成「评测 → 缺口分析 → 优化 → 再评测」闭环，优化已有 skill 的命中率与稳定性。提供 /skill_create、/skill_evolve、/skill_optimize 三个入口：静态多维评分 + 多轮 hill-climb / 评测驱动 evolve / 结构重构 refactor / 0→1 创建。",
+  "author": {
+    "name": "SkillX (ported to cosight-harness)"
+  },
+  "homepage": "https://github.com/ZTE-AICloud/Co-Sight/tree/master/Co-Sight%20Harness/skill-optimizer",
+  "repository": "https://github.com/ZTE-AICloud/Co-Sight/tree/master/Co-Sight%20Harness/skill-optimizer",
+  "keywords": [
+    "claude-code",
+    "plugin",
+    "skill",
+    "skill-optimizer",
+    "evaluate",
+    "optimize",
+    "harness",
+    "eval-loop",
+    "refactor",
+    "skill-create"
+  ],
+  "license": "Apache-2.0",
+  "agents": [
+    "./agents/code-implementer-agent.md",
+    "./agents/code-optimizer-agent.md",
+    "./agents/evolution-report-agent.md",
+    "./agents/extraction-agent.md",
+    "./agents/failure-analysis-agent.md",
+    "./agents/gap-analysis-agent.md",
+    "./agents/proposal-agent.md",
+    "./agents/refactor-applier-agent.md",
+    "./agents/score-analyzer.md",
+    "./agents/skill-evaluator-agent.md",
+    "./agents/skill-optimizer-agent.md",
+    "./agents/skill-refactor-agent.md",
+    "./agents/skill-scaffolder-agent.md",
+    "./agents/skill-unified-agent.md",
+    "./agents/specification-writer-agent.md",
+    "./agents/static-revision-agent.md"
+  ],
+  "commands": [
+    "./commands/skill_create.md",
+    "./commands/skill_evolve.md",
+    "./commands/skill_optimize.md"
+  ],
+  "skills": [
+    "./skills/debug-pro",
+    "./skills/编码原则"
+  ]
+}

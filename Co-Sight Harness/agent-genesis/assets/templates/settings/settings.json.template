@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "mode": "default",
+    "allow": ["Read", "Grep", "Glob"],
+    "additionalDirectories": ["{{write_scope_dir}}"]
+  }
+}

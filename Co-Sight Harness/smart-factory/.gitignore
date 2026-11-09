@@ -1,0 +1,31 @@
+# Node
+node_modules/
+dist/
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# 环境变量（保留 .env.example）
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# 脚本运行时产物（PID / 日志 / 工作区）
+.run/
+.workspace/
+
+# 本地开发数据（SQLite / 工作目录 / 测试临时库）
+/server/.tmp/
+
+# 编辑器 / 系统
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# 本地文件不提交
+/CLAUDE.md
+/WORKLOG.md

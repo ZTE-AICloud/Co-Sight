@@ -1,0 +1,291 @@
+/*
+ * 设计令牌（唯一真相）。
+ *
+ * 全部数值来自 UX 稿的机械提取，明细与出处见 `framework/web/docs/design-tokens.md`。
+ * 每个区块末尾标了三种来源之一：
+ *   [稿]   稿中明确画出的值，直接照抄，不要"顺手调一下"
+ *   [推]   稿里没有、按稿的风格推导出来的值。改成别的值不算违反设计，但要知道这是设计决策
+ *   [增]   稿里没有、也推不出来，是本项目新增的能力（如交互态、动效、断点）
+ *
+ * 组件的 CSS 一律只引用这里的变量，不写裸色值/裸像素。这样换主题、校字号、
+ * 或对照设计稿复核时都只改一个文件。
+ */
+
+:root {
+  /* ===================== 颜色 · 表面 ===================== */
+  /* [稿] */
+  --color-surface: #ffffff; /* 卡片 / 输入框 / 选中页签 / 搜索框 */
+  --color-surface-tint: #e6ecf6; /* 分段控件轨道 */
+  --color-tag-bg: #eeeeee; /* Gray-3，标签底 */
+  --color-panel: rgb(255 255 255 / 85%); /* 主内容面板 */
+  --color-topbar: rgb(255 255 255 / 30%); /* 会话顶栏 */
+  --color-banner: rgb(223 233 239 / 40%); /* 会话横幅 */
+
+  /*
+   * [增] 侧栏与画布底色。
+   * 稿里侧栏区没有背景矩形（颜色来自画板画布），因此没有可提取的值。
+   * 侧栏取与主面板同系的极浅蓝白，使 280px 的侧栏和 85% 白的面板能分层，
+   * 否则两者都是白底、只靠一条 1px 边框区分，在高亮屏幕上几乎看不出分界。
+   */
+  --color-canvas: #f7f9fb;
+  --color-sidebar: #ffffff;
+
+  /*
+   * [增] 标签底色（需求 UX-3.6：卡片上的标签不必都是灰的）。
+   *
+   * 稿里标签只有 Gray-3 一种底色。全灰的标签在卡片墙里是一串同质的灰点，扫视时
+   * 帮不上忙；给每个标签按名字取一个**稳定**的浅色底之后，"法务"这类跨卡片的标签
+   * 就能靠颜色被认出来。
+   *
+   * 取值约束：亮度全部贴着稿中的 #eeeeee（浅底配 --text-body 的深灰字，10px 字号下
+   * 对比度仍在 7:1 以上），色相只在蓝/青/绿/紫/橙/粉之间取，不引入饱和色——
+   * 底色在这里只做区分，不承担语义，抢眼反而会让卡片显得吵。
+   */
+  --color-tag-blue: #e3f0ff;
+  --color-tag-teal: #e0f3f5;
+  --color-tag-green: #e3f6ec;
+  --color-tag-purple: #f0e9fb;
+  --color-tag-amber: #fdf1dd;
+  --color-tag-rose: #fdeaf0;
+
+  /* ===================== 颜色 · 品牌与强调 ===================== */
+  /* [稿] */
+  --color-primary: #1993ff; /* 选中卡片边框、链接、历史项高亮 */
+
+  /*
+   * [增] 品牌蓝的**文字版**。`--color-primary` 在稿里的三种用法（边框、图标、
+   * 历史项底色）都是非文字，3:1 就够；一旦把它当**正文大小的文字**用（卡片底部
+   * 那四个按钮的蓝字，见 Button 的 `.outline`），阈值就变成 4.5:1，而
+   * #1993ff 在白底上只有 **3.15:1**——不达标。
+   *
+   * 实测（WCAG 2.x 相对亮度，脚本见 tests/token-contrast.test.ts）：
+   *
+   *   色值       白底    悬浮底 #edf6ff   按下底 #dff0ff
+   *   #1993ff    3.15      2.89            2.71     ← 三个状态全不达标
+   *   #0a66c2    5.69      5.21            4.89     ← 本值，三态全部 ≥4.5
+   *
+   * 取 #0a66c2 而不是更深的蓝，是因为它是"同时压住按下态"的最浅一档：再浅一档
+   * （#0b6fd1）在按下底上就掉到 4.29。色相没动（仍是 211°），只是明度压低，
+   * 所以"蓝字 = 可点"这个信号保持不变，变的只是它终于读得清了。
+   */
+  --color-primary-text: #0a66c2;
+  --color-primary-bubble: #53aeff; /* Blue-2，用户气泡 */
+  --color-primary-soft: #bde5ff; /* 会话标题 chip */
+  --color-send-bg: #333333; /* 发送按钮底 */
+
+  /*
+   * [增] 交互态用色。
+   * 稿中零个 hover/active/disabled/focus 状态（见 design-tokens.md §8.1），
+   * 所以这四个值是本项目新增的，取值原则是"用稿中已有的色，只改透明度"，
+   * 以免引入设计稿配色板之外的新色相。
+   */
+  --color-hover: rgb(25 147 255 / 8%);
+  --color-active: rgb(25 147 255 / 14%);
+  --color-selected-soft: rgb(25 147 255 / 10%); /* 稿中选中历史项的写法 */
+  --color-disabled-bg: #f2f3f5;
+  --color-disabled-text: #b9bcc0;
+
+  /* ===================== 颜色 · 状态 ===================== */
+  /*
+   * [增] 稿里只有"正常"一种状态，没有任何错误/危险色（design-tokens.md §8.1）。
+   *
+   * 这是全稿之外**唯一**新增的色相，加它的理由不成立就不该加：删除是不可逆操作，
+   * 而删除按钮、删除确认、表单校验失败三种场合都必须一眼可辨——用蓝色或灰色
+   * 表达"危险"是在赌用户会读完文字。取值沿用常见的错误红，与品牌蓝在明度上拉开。
+   */
+  --color-danger: #d92d20;
+  --color-danger-hover: #b42318;
+
+  /* ===================== 颜色 · 描边 ===================== */
+  /* [稿] 4 个中性描边 + 2 个强调描边，全部 1px */
+  --border-card: #dce8ea;
+  --border-reco: #cddde5;
+  --border-panel: #d9d9d9;
+  --border-sidebar: #d7e0e5;
+  --border-selected: #1993ff;
+  --border-icon: #737373;
+
+  /*
+   * [增] 交互态描边。
+   * 卡片 hover 时把描边从 #dce8ea 压深一档，而不是加阴影——阴影是"选中"的语义
+   * （稿中选中卡片用 0 1px 16px），两者混用会让用户分不清悬浮和选中。
+   */
+  --border-hover: #b9d3db;
+  --border-focus: #1993ff;
+
+  /* ===================== 颜色 · 文字 ===================== */
+  /* [稿] */
+  --text-heading: #333333; /* 页标题、导航项、历史项、AI 正文 */
+  --text-body: #4d4d4d; /* 卡片描述、标签文字、上传者 */
+  --text-secondary: #737373; /* 副标题、分组名、时间戳 */
+  --text-placeholder: #999999; /* 输入框/搜索框占位、免责声明 */
+  --text-on-brand: #ffffff; /* 品牌底色上的文字（用户气泡） */
+  --text-wordmark: #000000; /* 字标 */
+
+  /* ===================== 字体 ===================== */
+  /*
+   * [稿] 稿中字体族名是 `Alibaba-PuHuiTi-R` / `-M`（字重后缀写进了族名），
+   * 并且 Regular 与 Medium 是两个独立族。
+   *
+   * [增] 回退链。稿只给了族名，没有字体文件（design-tokens.md §8.2），而本机
+   * 并没有安装普惠体，因此**回退链必须自带同字重的替代**：
+   * 若只写 sans-serif 兜底，`font-weight: 500` 会在只有 400/700 两个字面的
+   * 系统上解析成 400，标题与正文粗细完全一样。这里点名 "思源黑体 CN Medium"
+   * 这类**字重内建在族名里**的字体，才能真正拿到中等字重。
+   *
+   * 自托管字体就位后（见 public/fonts/README.md），前两项命中，回退链自动失效。
+   */
+  --font-regular: 'Alibaba-PuHuiTi-R', 'Alibaba PuHuiTi', '思源黑体 CN Regular',
+    'Source Han Sans SC', 'Noto Sans CJK SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-medium: 'Alibaba-PuHuiTi-M', 'Alibaba PuHuiTi Medium', '思源黑体 CN Medium',
+    'Source Han Sans SC Medium', 'Noto Sans CJK SC Medium', 'PingFang SC', 'Microsoft YaHei',
+    sans-serif;
+  --font-brand: 'Helvetica-Bold', Helvetica, Arial, sans-serif;
+  --font-tc: 'PingFangTC-Regular', 'PingFang TC', 'Microsoft JhengHei', 'PingFang SC', sans-serif;
+  /*
+   * [增] 稿里没有等宽场景，这条是为界面上的**可复制文本**加的：文件路径、接口地址、
+   * 可以直接粘进终端的命令（模型设置里的模块接入卡）。这类内容的读者要做的事是
+   * "逐字符核对"，等宽才能对齐数字与标点。回退链只放系统自带的等宽族，
+   * 不去 fetch 一个 web font——为几行代码块多一次网络请求不值得。
+   */
+  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas,
+    'Liberation Mono', monospace;
+
+  /*
+   * [稿] 字号只有 6 档，行高只有 4 档 + auto。字距恒为 0，全稿无一例外，
+   * 所以刻意不设 --ls-* 变量：设了就会有人去调。
+   *
+   * 命名按用途而非尺寸后缀（--fs-card-desc 而不是 --fs-10-b），因为同一尺寸
+   * 在稿中对应不同行高的三处用途（标签 18 / 描述 16 / 上传者 auto），
+   * 按尺寸命名会立刻撞名。
+   */
+  --fs-tag: 10px;
+  --lh-tag: 18px;
+  --fs-card-desc: 10px;
+  --lh-card-desc: 16px;
+  --fs-card-author: 10px;
+  --fs-sidebar-sub: 10px;
+  --lh-sidebar-sub: 18px;
+
+  --fs-label: 12px;
+  --lh-label: 18px;
+  --fs-card-title: 12px;
+  --lh-card-title: 22px;
+  --fs-reco-tag: 12px;
+  --lh-reco-tag: 22px;
+  --fs-page-title: 16px;
+  --fs-wordmark: 18px;
+  --fs-hero: 40px;
+
+  --fs-nav: 14px;
+  --lh-nav: auto;
+  --fs-history: 14px;
+  --lh-history: 18px;
+  --fs-input: 14px;
+  --lh-input: 22px;
+
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-bold: 700;
+
+  /* ===================== 圆角 ===================== */
+  /* [稿] 9 档 + 1 个非对称 */
+  --r-xs: 3px; /* 标签、搜索框 */
+  --r-sm: 8px; /* 气泡、历史项高亮 */
+  --r-md: 10px; /* 侧栏项胶囊 */
+  --r-card: 12px; /* 专家卡片 */
+  --r-pill: 15px; /* 分段控件活动块 */
+  --r-lg: 16px; /* 分段轨道、推荐标签 */
+  --r-xl: 20px; /* 输入框、发送按钮 */
+  --r-full: 56px; /* 头像（等效圆形） */
+  --r-panel: 12px 0 0 12px; /* 主面板只圆左边 */
+
+  /* ===================== 阴影 ===================== */
+  /* [稿] 4 条，全部照抄 */
+  --shadow-item: 0 1px 3px 0 rgb(0 0 0 / 15%); /* 侧栏项胶囊 */
+  --shadow-input: 0 1px 8px 0 rgb(13 139 211 / 15%); /* 首页输入框 */
+  --shadow-input-chat: 0 1px 1px 0 rgb(13 139 211 / 15%); /* 会话输入框 */
+  --shadow-card-selected: 0 1px 16px 0 rgb(0 0 0 / 15%); /* 选中卡片 */
+
+  /*
+   * [增] 卡片悬浮（需求 UX-3.4）。
+   * 与上面那条的区别不只是大小：这条**向下偏移**（6px、扩散收到 -6），所以阴影只堆在
+   * 卡片底部，读作"卡片浮起来一点点"；--shadow-card-selected 是全向的 16px 大阴影，
+   * 只属于选中态。取色沿用稿中输入框那条阴影的蓝，跟整个界面的冷色调一致。
+   */
+  --shadow-card-hover: 0 6px 16px -6px rgb(13 139 211 / 25%);
+
+  /* ===================== 渐变 ===================== */
+  /* [稿] 全稿仅此一条 */
+  --gradient-card-selected: linear-gradient(
+    151deg,
+    rgb(216 240 255 / 20%) 35%,
+    rgb(239 191 255 / 20%) 100%
+  );
+
+  /* ===================== 布局 ===================== */
+  /*
+   * [稿] 1920 画板上的实测值。
+   *
+   * 侧栏宽度（稿 280）与导航项宽度（稿 248）**不在这里**：侧栏现在可以被拖拽
+   * （264–420，见 src/lib/sidebarWidth.ts），宽度由 JS 写成内联样式；导航项则改成
+   * 跟随侧栏内容区（100%），所以固定值 248 已经没有意义了——它只是"280 减去左右
+   * 各 16"的结果，留着会变成第二个真相。
+   */
+  --content-padding-x: 24px;
+  --nav-item-h: 40px;
+  --nav-item-gap: 8px;
+  --nav-icon: 16px;
+  --history-item-h: 36px;
+  --card-w: 252px; /* [稿] 卡片设计宽度；真实网格按列等分（见 ExpertsPage.module.css），这里只作来历记录 */
+  --card-h: 166px; /* [推] 稿为 134px；D17 = A 加高到 166px 以容纳常驻操作栏 */
+  --grid-gap: 16px;
+  --grid-cols: 4; /* [增] 需求 UX-3.1：每行四张（稿是 1920 画板上的 6 张） */
+  --page-title-h: 40px;
+  --search-w: 200px;
+  --search-h: 32px;
+  --tab-track-h: 32px;
+  --tab-pill-h: 28px;
+  --input-h-home: 148px;
+  --input-h-chat: 130px;
+  --send-btn: 32px;
+  --avatar-sm: 24px;
+  --avatar-md: 32px; /* 卡片头像 */
+  --avatar-lg: 40px; /* 会话头像 */
+
+  /*
+   * [推] 面板圆角与上下留白。
+   * 稿把面板画成 1640×1080、贴满画板右边（y 从 0 开始），所以没有"面板内边距"
+   * 这个概念。真实浏览器里面板贴到视口边缘会显得很挤，故四周留 8px，
+   * 并让面板高度自适应而不是固定 1080。
+   */
+  --panel-inset: 8px;
+
+  /* ===================== 动效 ===================== */
+  /*
+   * [增] 稿中没有任何 transition / duration / easing（见 design-tokens.md §8.1）。
+   * 这里新增一套极短的时长：卡片与导航项的 hover 若完全无过渡会显得生硬，
+   * 但时长必须短——这是工作台而不是展示页，动效只用于"确认操作被接收"。
+   * 尊重系统的"减少动态效果"设置，见 global.css。
+   */
+  --duration-instant: 90ms;
+  --duration-fast: 150ms;
+  --duration-normal: 240ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* ===================== 层级 ===================== */
+  /* [增] 稿未编码层级 */
+  --z-sidebar: 10;
+  --z-overlay: 100;
+  --z-modal: 200;
+  --z-popover: 300;
+  --z-toast: 400;
+
+  /* ===================== 断点（供 JS 读取，CSS 里用 @media） ===================== */
+  /*
+   * [增] 稿只有 1920×1080 三个画板，没有任何响应式约束（§8.2）。
+   * 网格列数按可用宽度回退：1920 上 6 列（对齐设计稿），窄屏依次减少。
+   * 断点值见 global.css 的 @media 区块，这里只保留设计稿基准宽度。
+   */
+  --design-width: 1920px;
+}

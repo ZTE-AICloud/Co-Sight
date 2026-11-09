@@ -1,0 +1,35 @@
+{
+  "name": "cosight-harness-framework",
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "private": true,
+  "type": "module",
+  "description": "Co-Sight Harness 框架：串联各模块的统一前后端外壳（见 framework/ 模块）",
+  "packageManager": "pnpm@11.28.5",
+  "engines": {
+    "node": "^22.19.0 || >=24.0.0"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter \"./framework/*\" run dev",
+    "dev:all": "node framework/scripts/dev-all.mjs",
+    "dev:server": "pnpm --filter harness-server run dev",
+    "dev:web": "pnpm --filter harness-web run dev",
+    "build": "pnpm -r run build",
+    "typecheck": "pnpm -r run typecheck",
+    "test": "pnpm run test:scripts && pnpm -r run test",
+    "test:scripts": "node --test \"framework/scripts/tests/**/*.test.mjs\"",
+    "test:coverage": "pnpm -r run test:coverage",
+    "lint": "oxlint --deny-warnings framework/shared framework/server framework/web framework/scripts",
+    "lint:fix": "oxlint --fix framework/shared framework/server framework/web framework/scripts",
+    "format:check": "oxlint --deny-warnings framework/shared framework/server framework/web framework/scripts",
+    "verify": "pnpm run typecheck && pnpm run lint && pnpm run test",
+    "start": "node framework/scripts/start.mjs",
+    "package": "node framework/scripts/package.mjs",
+    "package:plugin": "node framework/scripts/package-plugin.mjs",
+    "smoke:package": "node framework/scripts/smoke-package.mjs"
+  },
+  "devDependencies": {
+    "oxlint": "1.88.0",
+    "typescript": "6.0.3"
+  }
+}

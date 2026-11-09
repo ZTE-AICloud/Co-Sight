@@ -1,0 +1,11 @@
+{
+  "name": "goldeval",
+  "version": "2.0.0",
+  "type":"module",
+  "devDependencies": {
+    "@types/node": "^26.6.5"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

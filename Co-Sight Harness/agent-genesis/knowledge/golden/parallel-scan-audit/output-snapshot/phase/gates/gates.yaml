@@ -1,0 +1,7 @@
+gates:
+  - id: G003
+    type: condition_check
+    description: 就绪度分数达标放行
+  - id: G005
+    type: condition_check
+    description: 交付物零占位符放行

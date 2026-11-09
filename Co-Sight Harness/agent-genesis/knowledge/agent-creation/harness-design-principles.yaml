@@ -1,0 +1,167 @@
+# Harness 设计原则 — 模式之外的架构设计原则
+#
+# 生产者: pattern-matcher Step 2a 步骤 4.5（结构决策）/ 4.6（决策物化）
+# 消费者: matching-decision v2「结构决策」「决策物化」节 / G017 M4-M6 / build-planner Step 5（标准编译）
+# 风格: 决策表 + 输出契约——LLM 只做判定与填空，不做发明
+# 校准基线: pr-security-reviewer(S1/multi/3 subagents) / adversarial-test-agent(S2/game pair) / 需求分析Agent(single)
+version: "1.0"
+
+# ============================================================
+# 区块 1: subagent 拆分 —— 何时拆 subagent
+# ============================================================
+subagent_split:
+  triggers:                        # any-of 命中即拆
+    S1_independent_dimensions:
+      description: "相互独立的分析维度 ≥2，可并行且无读写冲突"
+      exemplar: "pr-security-reviewer: 安全/性能/可维护性三维审查"
+    S2_adversarial_pair:
+      description: "生成-审查/提案-批判博弈结构（G1 game 的落地载体）"
+      exemplar: "adversarial-test-agent: test-writer × mutation-critic 双向 forbidden_inputs"
+    S3_knowledge_budget:
+      description: "合并执行时单 context 需加载的领域知识 >600 行"
+      note: "参照: AgentGenesis 自身将 1,213 行模式知识隔离在 pattern-matcher SubAgent"
+    S4_permission_isolation:
+      description: "某角色需受限工具集（如只读审查）且与主 agent 工具集冲突"
+  anti_triggers:                   # 命中任一则不拆（防过度拆分）
+    - "步骤间字段级数据依赖（前步输出是后步输入）——序列化开销 > 上下文收益"
+    - "单步任务——拆 subagent 无质量收益（YAGNI）"
+  limits:
+    min: 2
+    max: 5
+    rationale: "<2 无意义；>5 orchestration 成本超收益"
+
+# ============================================================
+# 区块 2: multi_agent_topology —— single vs multi + 拓扑选择
+# （补上 spec-assembler.yaml 消费的悬空输入 build_type_decision 的生产端）
+# ============================================================
+multi_agent_topology:
+  default: {type: single}
+  decision_table:
+    - {when: "无 S1-S4 触发", type: single}
+    - {when: "S1 命中且子任务角色构建时已知", type: multi_agent, topology: W1_stage_parallel}
+    - {when: "子任务类型构建时已知、数量可变", type: multi_agent, topology: W3_mapreduce}
+    - {when: "子任务运行时才能决定", type: multi_agent, topology: W4_leader_worker}
+  output_contract:                 # → matching-decision v2「结构决策」节全文
+    type: {enum: [single, multi_agent]}
+    topology: "W1_stage_parallel | W3_mapreduce | W4_leader_worker | W5_wrap（选中时须含 base_topology）"
+    subagents:
+      - role: "kebab-case 角色名"
+        split_trigger: {enum: [S1, S2, S3, S4]}
+        knowledge_budget_lines: int
+        isolation_point: "forbidden_inputs 要点一句话"
+    skills:
+      - name: "kebab-case"
+        scope_trigger: {enum: [K1_reusable, K2_triggerable, K3_llm_judgment, K4_context_budget]}
+        rationale: string
+  consistency_rule: "topology 对应的基础 W 模式 ∈ selected_patterns（G017 M6 查闭合）"
+
+# ============================================================
+# 区块 3: skill_design —— 几个 skill、什么范围抽成 skill
+# 价值模型: skill = 上下文经济学。抽取判定先问"这条能力以 skill 形态
+# 存在是否更省（上下文）/更稳（可独立测试的资产）"，再谈数量上限。
+# ============================================================
+skill_design:
+  value_sources:                   # 每个 skill 至少指认一条；指认写进 rationale
+    V1_precompile: "预编译——知识/流程只在触发时加载（常驻上下文仅 name+description），不占每轮预算"
+    V2_progressive: "渐进披露——SKILL.md 薄壳 + references/scripts/templates 按需读取，重知识不进 L2"
+    V3_asset: "资产封装——确定性内容（SOP / 脚本+LLM判断 / 规则集）打包为可独立测试、可跨 agent 复用的资产"
+  count:
+    min: 0
+    max: 3
+    zero_rule: "n=0 合法（流程轻且强耦合会话状态时，留在 workflow 更简单）；无需写 rationale 辩解"
+    per_skill_rule: "n>0 时每个 skill 的 scope_trigger 必须在 rationale 中指认一条 value_sources"
+    beyond_action: "超过 3 → agent 职责过宽信号，回 Step 1 重澄清或拆成多个 agent"
+  scope_triggers:                  # any-of 成立才抽成 skill
+    K1_reusable: "能力可被其他 agent 或本 agent 后续会话复用（I/O 自包含）"
+    K2_triggerable: "触发条件可写成 SF-6 描述公式（做什么+何时触发+输入+输出）"
+    K3_llm_judgment: "确定性流程中需 LLM 判断的环节（脚本做确定部分，skill 编排判断部分）"
+    K4_context_budget: "相关知识/流程较重（>100 行）且非每次会话必需 → 抽 skill 换常驻上下文（V1+V2 落地形态）"
+  anti_scope:
+    - "无确定性核心、无复用面、知识量小且强耦合当前会话状态的流程不抽 skill"
+    - "一次性步骤不抽 skill"
+    - "禁止姊妹 skill 结构对齐（skill-diagnosis-rules §6.5）"
+  granularity_reuse: "粒度细则与 knowledge/skill/skill-creation-guide.yaml §2 的 G1/G2 表共用，不重复定义"
+
+# ============================================================
+# 区块 4: materialization_hints —— 模式 → 控制数据机制候选（决策物化映射表）
+# 未列出的机制 LLM 从模式 constraints 推导，标注 free_form 并在 rationale 注明
+# ============================================================
+materialization_hints:
+  W1:
+    mechanisms: ["步骤序列表（Step ID + 输入/输出契约 + 不可跳过声明）进 workflow"]
+  W2:
+    mechanisms: ["路由键判定表（客观可判定）+ 默认/兜底路径 + 路由失败阻断声明"]
+  W3:
+    mechanisms: ["子任务模板 + 最大并行数声明 + Reduce 完整性校验步骤"]
+  W4:
+    mechanisms: ["Worker 模板实例化规则 + 最大派生深度 + Leader 完整性校验"]
+  W5:
+    mechanisms: ["adaptation_rules 判定表 + audit_trail 记录 + 切换次数硬限 + base_topology 声明"]
+  G1:
+    mechanisms:
+      - "独立 Reviewer SubAgent + 回压协议（FAIL→修正→重审≤N轮）"
+      - "确定性校验门禁替代独立 Reviewer（轻量实现，须在 rationale 注明）"
+      - "博弈对: 双 SubAgent + 双向 forbidden_inputs + convergence policy 文件"
+  SM1:
+    mechanisms: ["状态文件 + checkpoint 协议 + 回溯产物保留/丢弃规则 + 恢复步骤进 workflow"]
+  M1:
+    mechanisms: ["workflow 每步/每 SubAgent 标注推荐模型（默认 sonnet，偏离须理由）"]
+  K2:
+    mechanisms: ["knowledge/ 文档随 Agent 分发 + 结论引用段落协议 + CD3 边界声明"]
+  K3:
+    mechanisms: ["检索策略声明（TopK/阈值）+ 检索失败阻断 + 引用出处协议"]
+  K4:
+    mechanisms: ["rules/ 规则文件随 Agent 分发 + 规则变更不改 Agent 声明 + 查表判定协议"]
+  DT1:
+    mechanisms: ["workflow 步骤间文件传递契约（producer→consumer 逐行声明）"]
+  DT2:
+    mechanisms: ["共享状态文件 + 维护者/读写权限表 + 并发写约束"]
+  DF1:
+    mechanisms: ["schemas/*.json 输出契约 + 校验步骤进 workflow + 不合规阻断"]
+    default_target_roles: [schema, workflow_step]
+  DP1:
+    mechanisms: ["结论来源标注协议（文档段落 + 产生步骤双锚点）"]
+  IH1:
+    mechanisms: ["workflow 无审批节点声明 + 输入完整性前置校验（CD1 配合）"]
+  IH2:
+    mechanisms: ["workflow 澄清步骤 + AskUserQuestion 交互点声明"]
+  IH3:
+    mechanisms: ["workflow 审批节点（关键决策点）+ CLAUDE.md 交互节 + 输出 approval 字段"]
+    default_target_roles: [workflow_step, claude_md_section]
+  IT1:
+    mechanisms: ["CLAUDE.md 工具策略硬条款（先 Read/先调用再下结论）+ SubAgent 级复述"]
+  IV1:
+    mechanisms: ["阶段边界汇报格式声明（开始/关键节点/完成）"]
+  CD1:
+    mechanisms: ["输入存在性前置检查步骤 + 缺失即阻断"]
+  CD2:
+    mechanisms: ["CLAUDE.md 安全约束节（禁止操作清单）+ 工具白名单收窄 + 写范围限定"]
+  CD3:
+    mechanisms:
+      - "规则/知识文件 + 禁裸判断条款 + 引用行号协议"
+      - "frontmatter forbidden_inputs 排除非权威知识来源"
+    default_target_roles: [rule_file, executor_subagent, claude_md_section]
+  E1:
+    mechanisms: ["自评协议 + 评分输出格式 + 触发阈值声明"]
+  E2:
+    mechanisms: ["allowed_scopes 声明 + gap_analysis 步骤 + 修改前置 snapshot 协议"]
+  E3:
+    mechanisms: ["三段式 Delta Diff 协议 + 回滚触发条件 + evolution-log 记录"]
+  MN_Exploratory:
+    mechanisms: ["分阶段模式声明（每段 mission_nature + 模式倾向）"]
+  MN_Deterministic:
+    mechanisms: ["全流程单一模式集 + 无动态探索声明"]
+  MN_Hybrid:
+    mechanisms: ["phases 分段表（每段标注 mission_nature 和模式倾向）"]
+  free_form_fallback: "模式不在上表时，从 pattern-catalog.yaml 该模式的 constraints 推导机制，rationale 注明 free_form"
+
+# ============================================================
+# 区块 5: file_type_checklists —— brief 模板槽位来源（build-planner 消费）
+# ============================================================
+file_type_checklists:
+  claude_md: [身份与边界, 安全约束节, 工具策略节, "物化模式条款(逐条)", 错误处理]
+  subagent: [frontmatter契约, role, forbidden_inputs, "物化的模式决策", 输出契约]
+  rule: [规则列表, 检查清单, 通过标准, "指向CLAUDE.md的交叉引用"]
+  schema: ["$schema", properties, required, "与实体表一致"]
+  workflow_md: [步骤序列, 门禁绑定, knowledge refs, "审批节点(IH3时)"]
+  script: [CLI 入口契约, 沙箱/路径约束, 错误退出码]

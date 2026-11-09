@@ -1,0 +1,93 @@
+/*
+ * 基础重置。
+ *
+ * 只做"把浏览器默认值清成可预期起点"的事，不做设计决策——设计值全部在 tokens.css。
+ * 刻意不引入 normalize.css 之类的完整方案：本项目是单一目标环境（现代常青浏览器）
+ * 的内部工作台，为 IE / 老 Safari 兜底的那一大半规则永远走不到。
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  /* 稿中字距恒为 0；某些中文字体的默认字距不为 0，显式压掉。 */
+  letter-spacing: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+figure,
+blockquote {
+  margin: 0;
+}
+
+ul,
+ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+button {
+  font: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+input,
+textarea,
+select {
+  font: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+}
+
+/* 占位符颜色在稿中是统一的 #999999，不是各浏览器默认的灰。 */
+::placeholder {
+  color: var(--text-placeholder);
+  opacity: 1; /* Firefox 默认给占位符降透明度，会把 #999 压得更浅 */
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+/*
+ * 去掉 iOS 点击时的灰色高亮块，但**保留** :focus-visible 的焦点环
+ * （见 global.css）。两者是不同的东西，不能一起删掉。
+ */
+* {
+  -webkit-tap-highlight-color: transparent;
+}

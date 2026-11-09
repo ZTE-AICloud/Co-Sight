@@ -1,0 +1,23 @@
+domain: "C-模式匹配"
+description: "测试三级级联模式匹配 — Tier 0/1/2 匹配准确性和硬约束校验"
+test_cases:
+  - id: "TC-DP-01"
+    input: "串行处理：先分析需求，每步完成后由独立审查者检查，审查通过才能进入下一步，数据逐步传递"
+    expected: "识别W1(Pipeline)+G1(审查门禁)+DT1(数据传递)"
+    expected_phase: "PHASE_1"
+    timeout: 120
+  - id: "TC-DP-02"
+    input: "根据请求类型分发：如果是bug报告走修复流程，如果是功能请求走开发流程，分别处理"
+    expected: "识别W2(Router)+DT2(分支路由)"
+    expected_phase: "EXECUTING"
+    timeout: 120
+  - id: "TC-DP-03"
+    input: "并行分析多个代码文件，每个文件独立检测问题，最后汇总成一份综合报告"
+    expected: "识别W3(并行/MapReduce)"
+    expected_phase: "PHASE_1"
+    timeout: 120
+  - id: "TC-DP-04"
+    input: "Leader根据任务复杂度动态创建Worker，每个Worker独立执行子任务，Leader汇总结果，执行过程中可能向用户澄清需求"
+    expected: "识别W4(MapReduce)+IH2(交互澄清)"
+    expected_phase: "PHASE_1"
+    timeout: 300

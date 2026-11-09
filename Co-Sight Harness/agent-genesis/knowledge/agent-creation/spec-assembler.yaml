@@ -1,0 +1,371 @@
+# AgentGenesis Spec 拼装指南
+# 用于 Creator Phase 2: LLM 从子维度决策表拼装完整的 Agent Spec
+#
+# 设计原则：告诉 LLM "每个 Spec 章节的语义目的是什么，为什么这些模式应该填充它"，
+# 而非穷举"模式X→章节Y"的映射规则。LLM 理解章节目的后自行决定如何组织内容。
+#
+# 使用方式：LLM 读取决策表 → 参考此文件的章节目的说明和拼装顺序 →
+# 从 pattern-catalog.yaml 中提取对应模式的模板片段 → 填充用户需求内容 → 拼装为完整 Spec。
+
+# ============================================================
+# 拼装指南：LLM 如何拼装 Agent Spec
+# ============================================================
+assembly_guide: |
+  你是一个 Agent Spec 编写专家。你的任务是根据子维度决策表，
+  将选中的设计模式拼装为完整的 Agent 定义文件。
+
+  拼装方法：
+  1. 阅读下方每个 Spec 章节的"语义目的"和"哪些模式应该影响它以及为什么"
+  2. 理解 WHY 这些模式影响这个章节（而非死记映射表）
+  3. 从 pattern-catalog.yaml 中查找选中模式的 template_file 路径
+  4. 读取对应的 .template.md 文件，理解其变量声明（frontmatter）和模板结构
+  5. 从用户需求 / 决策表 / 上游步骤获取变量值，替换模板中的 {{placeholders}}
+  6. 根据 build_type_decision 选择拼装变体（single_agent 或 multiagent_pipeline），按对应 assembly_orders 顺序逐章节拼装
+  7. 使用 dedup_guidance 去重合并
+  8. 确保最终 Spec 是一个连贯的整体，而非模板片段的机械拼接
+
+  关键原则：
+  - 理解章节目的优先于记住模式映射。如果某个模式明显应该影响某章节但映射表没列出来，信任你的判断。
+  - 去重合并时保留最严格的约束版本。
+  - 模板文件中的变量声明（source 字段）指示了值的来源：user_input / derived / llm_generate / decision_table。
+  - 若 M1 启用：每个执行步骤和 SubAgent 调用需标注推荐模型（opus/sonnet/haiku），默认 sonnet，仅在决策表中有明确分配时偏离。
+  - W5 adaptation_decision 步骤推荐 opus（拓扑切换涉及架构变更）。
+
+# ============================================================
+# 平台说明（v1.2）
+# 以下章节中的 `.claude/...` 路径均以 claude-code 平台为例。
+# platform ∈ {dsh, both} 时，落点按 knowledge/agent-creation/platforms/dsh.yaml 改写：
+#   技能   .claude/skills/{x}  -> dsh/skills/{x}
+#   规则   .claude/rules/{x}   -> dsh/rules/{x}（仅随包分发，不自动加载）
+#   子代理 .claude/agents/{x}.md -> preset 内一行 tool-subagent
+#   settings/hooks -> 不生成
+# ============================================================
+
+# ============================================================
+# Spec 章节目的与模式关联
+# ============================================================
+spec_sections:
+
+  frontmatter:
+    purpose: >
+      Agent 的元数据声明——名称、用途、需要的工具和 Skill。
+      这不是推理章节，是声明式元信息。
+    influenced_by:
+      - "ALL: 从所有选中的模式中提取需要的 tools 和 skills 声明"
+    assembly_note: >
+      tools 字段从选中的模式中提取所有工具依赖（如 DT2 需要 Bash 读写状态文件）。
+      skills 字段从 IT1 的工具策略中提取声明的 Skill 依赖。
+      若 Step 1b 已注入知识库资产（injected-assets.yaml status ∈ {injected, noop}），
+      skills 字段必须包含 "rag-knowledge-search"；同时在"使用方式"中说明：
+      知识类问题先调用该 skill（`python {skills_root}/rag-knowledge-search/scripts/execute.py`，
+      stdin 传 {"question": "..."}），成功时以其 answer + citations 作答，
+      success=false 时如实告知错误、不得编造答案。
+      `{skills_root}` 按平台取值：claude-code = `.claude/skills`；
+      dsh = `dsh/skills`（由 preset 的 customSkillDirs 挂载）；both = 两处各写一句。
+
+  role_and_boundaries:
+    purpose: >
+      定义 Agent 的定位（它是什么角色）、负责范围（它管什么）、
+      不越权（它不管什么）。这是整个 Spec 的"宪法"——后面所有章节
+      都在这个边界内展开。
+    influenced_by:
+      - "Hard-Constraint: 硬约束定义的禁止操作 → 填充'不越权'列表"
+      - "CD1: 输入门禁的边界 → 填充'负责范围'中的输入校验责任"
+      - "CD2: 安全约束的边界 → 填充'不越权'中的安全限制"
+    assembly_note: >
+      Role & Boundaries 是叙述性的，不是列表。需要将约束语言转化为
+      自然语言角色描述。例如 Hard约束"禁止直接操作数据库" →
+      "不越权：不直接操作数据库，所有数据变更通过……"
+
+  io_contract:
+    purpose: >
+      声明 Agent 的输入文件和输出文件——路径、格式、缺失行为。
+      这是 Agent 与外界的数据接口，不是内部数据流。
+    influenced_by:
+      - "CD1: 输入门禁声明了哪些输入是必须的，缺失时如何处理"
+      - "用户需求中明确提到的输入/输出文件"
+    assembly_note: >
+      I/O Contract 聚焦于 Agent 外部的文件接口。内部中间产物的数据流
+      属于 Data Flow 章节。两个章节互补但不重复：I/O Contract = 外部接口，
+      Data Flow = 内部流转。
+
+  knowledge_contract:
+    purpose: >
+      声明 Agent 的知识来源——从哪里获取信息、如何检索、检索不到怎么办、
+      哪些领域禁止依赖 LLM 内嵌知识。这是垂直领域 Agent 最关键的章节。
+    influenced_by:
+      - "K1-K4: 知识来源 → 填充'知识依赖总览'表，每个来源一行"
+      - "CD3: 知识边界 → 填充'知识边界'章节，声明禁止使用LLM的领域"
+    assembly_note: >
+      多知识来源合并到同一张表中，不要在表外另起段落。
+      K2+K3+K4 共存时，各自声明自己的检索策略，不要合并为"统一检索策略"。
+      知识边界（CD3）必须引用具体的知识来源（K2/K3/K4）——不能说"不准用LLM"
+      而不说"应该用哪个"。
+
+  data_flow:
+    purpose: >
+      建模 Agent 内部的数据流转——哪些数据实体在步骤间产生和消费、
+      数据如何校验、共享状态如何管理、溯源要求如何满足。
+    influenced_by:
+      - "DT1: 链式传递 → 填充'数据实体表'和'数据流转图'"
+      - "DT2: 共享状态 → 填充'共享状态文件'的读写权限"
+      - "DF1: 格式约束 → 填充'数据校验规则'和 Schema 声明"
+      - "DP1: 溯源要求 → 填充'可追溯性要求'"
+    assembly_note: >
+      DT1 和 DT2 的数据实体合并到同一张数据实体表，但要标注类型（流转/共享）。
+      如果 DF1 启用，为每个数据实体声明 Schema 文件路径。
+      如果 DP1 启用，在每个数据实体后增加来源标注字段。
+
+  execution_workflow:
+    purpose: >
+      定义 Agent 的执行步骤——做什么、什么顺序、每步的输入输出、
+      审查门禁、进展汇报。这是 Agent 的"操作手册"。
+    influenced_by:
+      - "W1-W4: 分解模式 → 填充 Workflow 的骨架结构"
+      - "W5: 自适应拓扑 → 填充 adaptation_rules 和 audit_trail"
+      - "M1: 模型选择 → 每个步骤标注推荐模型 (opus/sonnet/haiku)"
+      - "G1: 审查门禁 → 在每个步骤后插入审查子章节"
+      - "SM1: 状态管理 → 叠加状态节点和转换表"
+      - "IV1: 进展汇报 → 填充每个阶段的汇报规则"
+    assembly_note: >
+      这是最复杂的拼装章节。拼装顺序严格按照：W骨架 → W5 adaptation_rules → M1模型标注 → G1门禁插入 → SM1状态叠加 → IV1汇报。
+      如果 W5 启用，adaptation_decision 步骤推荐标注 opus 模型（M1）。
+      如果 G1 启用，审查维度必须具体（可验证的判定标准），不能写成"检查输出质量"。
+      如果 SM1 启用，状态转换条件必须可客观判定。
+
+  safety_constraints:
+    purpose: >
+      声明 Agent 的行为约束——什么绝对不能做（Hard）、什么建议避免（Soft）、
+      什么条件触发什么约束。这是 Agent 的"安全网"。
+    influenced_by:
+      - "CD1: 输入门禁 → 填充输入文件校验规则"
+      - "CD2: 安全优先 → 填充禁止操作清单和沙箱约束"
+      - "CD3: 知识边界 → 填充知识域的可信/禁止列表"
+      - "用户需求中的自定义约束 → 每一条作为独立规则行"
+    assembly_note: >
+      所有约束统一组织为"约束规则表"——每行一条规则，标注强度(Hard/Soft)、
+      作用域(Input/Safety/Knowledge/General)、触发条件、违规处理。
+      CD1-CD3 作为域模板提供基线规则集，用户自定义规则追加到同表中。
+
+  evaluation_contract:
+    purpose: >
+      定义如何评估 Agent 的输出质量——通过标准、测试用例、评分维度。
+      这是 Optimizer 自动模式的基础——没有 Evaluation Contract 就无法自动评分。
+    influenced_by:
+      - "DERIVED: 从其他章节推导。硬校验项从 DF1 的 Schema 校验推导，
+         软校验项从 CD3 的知识边界推导，流程完整性从 W1 的步骤声明推导"
+    assembly_note: >
+      Evaluation Contract 不是从某个模式模板直接生成的——它是从 Spec 的整体
+      中推导出来的。要点：硬校验（可自动判定，如Schema格式），
+      软校验（需人工判定，如内容正确性）。至少声明 1 个硬校验和 1 个软校验。
+
+  runtime_adaptation:
+    purpose: >
+      定义 Agent 在运行时遇到未预期情况时的自适应策略——
+      何时可以动态调整、何时必须停止等待人工介入。
+    influenced_by:
+      - "W4: Leader-Worker 需要运行时动态派生Worker → 声明派生规则"
+      - "SM1: FSM 需要运行时状态转换 → 声明转换条件"
+    assembly_note: >
+      此章节仅在 W4 或 SM1 启用时填充。静态 Pipeline(W1) 不需要 Runtime Adaptation。
+
+  validation:
+    purpose: >
+      定义 Agent 执行后的验证规则——输出文件应该满足什么条件、
+      数据格式是否合规、业务规则是否匹配。
+    influenced_by:
+      - "DF1: Schema校验规则"
+      - "G1: 审查维度和通过标准"
+    assembly_note: >
+      Validation 与 Evaluation Contract 互补：Validation 是 Agent 自身执行的检查，
+      Evaluation Contract 是外部评估的标准。两者可以共享 Schema 和通过标准。
+
+  evolution_contract:
+    purpose: >
+      定义 Agent 的自我进化能力——何时评估自己（E1）、在什么范围内可以修改自己（E2）、
+      修改协议是什么（E3）、什么时候必须升级到人工或工厂重建（Escalation Gate）。
+    influenced_by:
+      - "E1: 自评框架 → 填充评分维度、触发时机、通过阈值"
+      - "E2: 受控进化 → 填充 allowed_scopes、进化流程、Escalation Gate 条件"
+      - "E3: 增量修改 → 填充 Delta 协议、回滚机制、禁止修改列表"
+    assembly_note: >
+      此章节仅在 E1/E2/E3 至少一个启用时填充。
+      E1/E2/E3 严格依赖链：E3 requires E2，E2 requires E1。
+      进化 scope deny-by-default——仅 allowed_scopes 中声明的区域可自动修改。
+      禁止修改列表（Safety Constraints、allowed_scopes 自身、cycle_max）必须在 E3 中硬编码。
+
+# ============================================================
+# 拼装顺序（按构建类型分变体）
+# ============================================================
+assembly_orders:
+
+  # --- 单Agent 构建（已有，保持不变）---
+  single_agent:
+    - step: 1
+      action: "生成 Execution Workflow 骨架"
+      from_patterns: ["W1|W2|W3|W4 (decomposition)"]
+      description: "从选中的分解模式提取Workflow模板，填充步骤名和核心动作。若 M1 启用，为每步标注推荐模型。"
+
+    - step: 1.5
+      action: "叠加 W5 自适应拓扑"
+      from_patterns: ["W5 (if selected)"]
+      description: "若 W5 启用，声明 base_topology + adaptation_rules 表 + audit_trail 格式。adaptation_decision 步骤推荐 opus。"
+
+    - step: 2
+      action: "插入审查门禁"
+      from_patterns: ["G1 (if selected)"]
+      description: "若 G1 启用，在每个步骤后插入审查子章节，声明审查维度和通过标准"
+
+    - step: 3
+      action: "叠加状态管理"
+      from_patterns: ["SM1 (if selected)"]
+      description: "若 SM1 启用，叠加状态节点定义、转换表和回溯规则"
+
+    - step: 4
+      action: "拼装 Knowledge Contract"
+      from_patterns: ["K1-K4 + CD3"]
+      description: "合并所有选中的知识来源到'知识依赖总览'表。CD3 的知识边界单独成节"
+
+    - step: 5
+      action: "拼装 Data Flow"
+      from_patterns: ["DT1-DT2 + DF1 + DP1"]
+      description: "DT1/DT2 声明数据实体和流转图/共享状态。DF1 声明 Schema 校验规则。DP1 声明溯源格式"
+
+    - step: 6
+      action: "拼装交互规则"
+      from_patterns: ["IH1|IH2|IH3 + IT1 + IV1"]
+      description: "按阶段声明人机交互模式、工具策略和Skill依赖表、进展汇报格式"
+
+    - step: 7
+      action: "拼装 Safety Constraints"
+      from_patterns: ["CD1-CD3 + 用户自定义约束"]
+      description: "域模板提供基线规则集，自定义规则追加到同一张约束规则表"
+
+    - step: 8
+      action: "推导 Evaluation Contract"
+      from_patterns: ["DERIVED from assembled spec"]
+      description: "从已拼装的 Spec 推导硬校验项（DF1 Schema）和软校验项（CD3 知识边界 + G1 审查维度）"
+
+    - step: 10
+      action: "填充 Runtime Adaptation"
+      from_patterns: ["W4 or SM1 or W5 (if selected)"]
+      description: "W4/SM1/W5 启用时填充。W5 填充 adaptation_rules 表 + audit_trail 格式。"
+
+    - step: 10.5
+      action: "填充 Evolution Contract"
+      from_patterns: ["E1 or E2 or E3 (if selected)"]
+      description: "若 E1/E2/E3 任一启用，填充进化能力：自评框架(E1) + 受控进化范围(E2) + Delta 协议(E3) + Escalation Gate。"
+
+    - step: 11
+      action: "填充 Validation"
+      from_patterns: ["DF1 + G1"]
+      description: "合并 DF1 的 Schema 校验和 G1 的审查维度为Validation规则"
+
+    - step: 12
+      action: "拼装 frontmatter"
+      from_patterns: ["ALL"]
+      description: "从所有模式中提取 tools/skills 声明，填充 frontmatter"
+
+    - step: 13
+      action: "执行加载策略分发 — 生成L2 Rules与L3 Skills"
+      from_patterns: ["L2-ER", "L2-DF", "L2-RT", "L2-VAL", "L2-RR", "L3-SKILL", "ARCH-INTENT"]
+      description: >
+        根据 matching_decision.architectural_intent 中的 L2/L3 决策，
+        用对应模板文件生成 L2 .claude/rules/*.md 文件、L3 skills/*/SKILL.md 文件、
+        和 L3 knowledge/ 文件。在 CLAUDE.md 中添加引用指针、IT1约束、和 Skill 声明。
+        LLM 语义判断每个模块是否需要 L2/L3 提取——不基于硬规则阈值。
+
+  # --- Multi-Agent Pipeline 构建（Phase 4a 新增）---
+  multiagent_pipeline:
+    - step: 1
+      action: "生成 Main Agent CLAUDE.md"
+      from_patterns: ["ALL (system-level)"]
+      description: >
+        使用 system-spec-generation-rules.md 第1节的模板，生成 Main Agent 的 CLAUDE.md。
+        包含 system_composition 字段和 SubAgent Orchestration 章节（调度表+调用规范+状态文件+门禁表）。
+        若 M1 启用，每个 SubAgent 调用标注推荐模型 (opus/sonnet/haiku)。
+        若 W5 启用，在 Main Agent 调度逻辑中添加 adaptation_rules + audit_trail。
+        与单Agent区别：增加 SubAgent 调度章节（六），从所有 SubAgent 推导全局知识依赖。
+
+    - step: 2
+      action: "生成 SubAgent Specs（每个 SubAgent 独立）"
+      from_patterns: ["W1 (Pipeline) + DT1 + DF1"]
+      description: >
+        使用 subagent-generation-rules.md 的模板骨架，对每个 build_type_decision.suggested_subagents
+        生成独立的精简版 CLAUDE.md。
+        填充：角色+职责边界+I/O文件契约+继承知识源+工具权限。
+        关键约束：命名 convention = {domain}-{role}-agent，禁止自审。
+
+    - step: 3
+      action: "生成 Global Rules"
+      from_patterns: ["CD1-CD3 (system-level) + Hard-Constraints"]
+      description: >
+        使用 system-spec-generation-rules.md 第2节模板，生成 .claude/rules/global-rules.md。
+        包含：SubAgent 硬约束、调用规范、状态文件权限、审查门禁协议。
+
+    - step: 4
+      action: "生成 Pipeline Status Schema"
+      from_patterns: ["DT2 (Shared-State) + DF1"]
+      description: >
+        使用 system-spec-generation-rules.md 第3节模板，生成 schemas/pipeline-status.schema.json。
+        覆盖所有 Phase 的状态字段 + artifacts 跟踪。
+
+    - step: 5
+      action: "生成审查门禁配置"
+      from_patterns: ["G1 (per-SubAgent)"]
+      description: >
+        使用 system-spec-generation-rules.md 第4节模板，生成 evaluation/review-gates.yaml。
+        为每个 SubAgent 产出定义审查维度+通过标准+最大重试次数。
+        执行禁止自审检查。
+
+    - step: 6
+      action: "生成 Data Flow 契约"
+      from_patterns: ["DT1 + DF1 + DP1"]
+      description: >
+        为所有 SubAgent 间的数据链路生成数据契约文件。
+        每个链路：producer→consumer + 数据实体 + Schema 引用 + 验证规则。
+
+    - step: 7
+      action: "生成 Phase SOP 文件"
+      from_patterns: ["W1 (Pipeline orchestration)"]
+      description: >
+        生成每个 Phase 的 SOP 文件（phases/phase{N}-*.md）。
+        每个 SOP 声明：调用哪个 SubAgent + 输入文件 + 输出文件 + 完成标准。
+
+    - step: 7.5
+      action: "填充 Evolution Contract (系统级)"
+      from_patterns: ["E1 or E2 or E3 (if selected, system-level)"]
+      description: "若 E1/E2/E3 启用，在 Main Agent 和 SubAgent 中填充进化能力。Main Agent 负责进化编排（Escalation Gate），SubAgent 负责执行 E1 自评。"
+
+    - step: 8
+      action: "跨系统一致性检查"
+      from_patterns: ["ALL (system-level)"]
+      description: >
+        验证：Main Agent 调度表引用全部 SubAgent 名存在；
+        Global Rules 约束可追溯到 Safety Constraints；
+        状态文件 Schema 覆盖所有 Phase；
+        审查门禁覆盖所有 SubAgent 产出且无自审。
+
+    - step: 9
+      action: "执行加载策略分发 — 生成 L2 Rules 与 L3 Skills"
+      from_patterns: ["L2-ER", "L2-DF", "L2-RT", "L2-VAL", "L2-RR", "L3-SKILL", "ARCH-INTENT"]
+      description: >
+        与单Agent 的 step 12 相同。对识别出的能力模块执行 L2/L3 分发。
+        对 Multi-Agent 系统，SubAgent 自身的 L2/L3 文件在各自的 .claude/ 目录下生成。
+
+# ============================================================
+# 去重合并指南
+# ============================================================
+dedup_guidance: |
+  当多个模式产生相同类型的内容时，按以下原则合并：
+
+  1. **约束去重**：Hard约束和CD2都声明禁止操作时，合并到同一张约束规则表。
+     每条规则标注来源模式，保留最严格的版本。
+
+  2. **数据实体去重**：DT1和DT2都声明数据实体时，合并到同一张Data Flow数据实体表。
+     标注每个实体的类型（流转/共享）。
+
+  3. **审查维度去重**：G1和DF1都有校验规则时，合并到审查规则文件。
+     G1的审查维度关注内容正确性，DF1的Schema校验关注格式正确性——两者互补，不冲突。
+
+  4. **当存疑时**：保留两个来源，标注哪个是主导。不要强行去重导致信息丢失。

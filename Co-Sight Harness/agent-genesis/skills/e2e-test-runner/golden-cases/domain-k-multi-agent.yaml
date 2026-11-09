@@ -1,0 +1,8 @@
+domain: "K-Multi-Agent"
+description: "测试 Multi-Agent 系统构建 — SubAgent生成、全局规则、状态文件Schema、审查门禁"
+test_cases:
+  - id: "TC-MA-01"
+    input: "创建一个多Agent协作系统：主Agent负责编排调度，包含需求分析Agent、代码生成Agent、代码审查Agent三个子Agent，各子Agent通过I/O契约传递数据"
+    expected: "Multi-Agent创建→4个CLAUDE.md+global-rules.md+pipeline-status.schema.json+review-gates.yaml"
+    expected_phase: "DONE"
+    timeout: 900

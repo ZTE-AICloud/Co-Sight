@@ -1,0 +1,18 @@
+# matched-assets.yaml — 步骤3a 资产匹配产出
+build_mode:
+  type: string
+  enum: [greenfield, incremental]
+task_mode:
+  type: string
+  description: "11类任务模式之一"
+selected_patterns:
+  type: array
+  items: {type: string}
+  description: "选中的设计模式ID列表"
+files:
+  type: array
+  items:
+    target: {type: string, description: "目标文件路径"}
+    source: {type: string, enum: [generic_copy, asset_adapt, template, direct_map, generate, conditional]}
+    from: {type: string, description: "来源资产路径（assets/ 下的文件）"}
+    task_mode: {type: string, description: "generate 模式时的 task_mode"}

@@ -1,0 +1,8 @@
+domain: "E-Skill创建"
+description: "测试 Skill 创建全流程 — 从需求分析到 SKILL.md 产出"
+test_cases:
+  - id: "TC-SC-01"
+    input: "创建一个Python代码格式化检查的skill，检查PEP8合规性，输入文件路径，输出问题列表"
+    expected: "skill-foundry(create mode)→生成SKILL.md+references/+scripts/"
+    expected_phase: "DONE"
+    timeout: 600

@@ -1,0 +1,28 @@
+# readiness-report — Phase 4 就绪度评分产出
+verdict:
+  type: string
+  enum: [pass, fail]
+score:
+  type: integer
+  minimum: 0
+  maximum: 100
+level:
+  type: string
+  enum: [L0, L1, L2, L3]
+  description: "L0(<38) / L1(≥38) / L2(≥58) / L3(≥78)"
+checks:
+  type: array
+  items:
+    name:
+      type: string
+      enum: [proposal_completeness, workflow_existence, skills_count, rules_count, gates_count, review_count, reference_closure, io_closure, constraint_consistency, no_placeholders]
+    score:
+      type: integer
+    max:
+      type: integer
+    status:
+      type: string
+      enum: [pass, fail]
+cross_validation_matrix:
+  type: string
+  description: "19_dimensions × 5_task_types"

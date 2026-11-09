@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "zte-ai-lab",
+  "description": "ZTE AI Lab Claude Code 插件源",
+  "owner": {
+    "name": "ZTE AI Lab",
+    "url": "https://github.com/ZTE-AICloud/Co-Sight"
+  },
+  "plugins": [
+    {
+      "name": "drive",
+      "source": ".",
+      "description": "5-stage workflow harness (start → analyze → plan → execute → evaluate) with decision-level HITL. 编排结构写在 workflow.yaml，agent 持有阶段并自行汇报状态，hooks 强制不变量。"
+    }
+  ]
+}

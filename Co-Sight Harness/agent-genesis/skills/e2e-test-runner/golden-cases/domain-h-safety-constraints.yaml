@@ -1,0 +1,8 @@
+domain: "H-安全约束"
+description: "测试 Safety Constraints 的正确应用 — 约束声明、工具权限、禁止操作"
+test_cases:
+  - id: "TC-SF-01"
+    input: "创建一个代码审查Agent，要求：禁止修改源代码，禁止访问网络，所有操作必须在沙箱内执行"
+    expected: "创建Agent+Safety Constraints约束"
+    expected_phase: "PHASE_1"
+    timeout: 300

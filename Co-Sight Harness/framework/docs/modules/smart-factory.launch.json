@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "id": "smart-factory",
+  "moduleRoot": "smart-factory",
+  "priority": 30,
+  "services": [
+    {
+      "name": "server",
+      "cwd": "server",
+      "command": ["npm", "run", "dev"],
+      "port": 4100,
+      "readyPath": "/api/smart-factory/v1/health",
+      "readyTimeoutMs": 30000
+    },
+    {
+      "name": "web",
+      "cwd": "web",
+      "command": ["npm", "run", "dev"],
+      "port": 4110,
+      "readyPath": "/",
+      "readyTimeoutMs": 30000
+    }
+  ],
+  "env": {},
+  "isolatedEnv": {},
+  "notes": "与模块自带的 node scripts/dev.mjs start 等价，但由总脚本统一监督、统一收尾：后端必须先于前端，前端的 vite proxy 依赖后端已在监听。数据库跟随模块自己的 COSIGHT_HOME 口径（server/src/config/index.ts 里是 {COSIGHT_HOME}/smart-factory.db），dev-all 会把它传下去，与框架用同一个数据目录。开发编排清单，不进产物；装配态见 D41（smart-factory 目前还没有 artifact 清单，等模块方补生产链路）。"
+}

@@ -1,0 +1,21 @@
+# Patch overlay for loading cosight-plugin-compat into a dsh profile without
+# installing it as a bundle (development / one-off):
+#
+#   dsh --profile <name> --patch ./dsh-compat/cordis.patch.yml
+#
+# Fully relocatable: `name` is relative to THIS file's directory, and the
+# plugin repo root is inferred from its own location (dsh-compat sits directly
+# inside the repo that holds agent-genesis/, agent-evaluator/, skill-optimizer/
+# and cosight-bot/). Override with config.pluginsRoot or env
+# COSIGHT_COMPAT_PLUGINS_ROOT if your layout differs.
+#
+# For a permanent install use `bash install-dsh.sh` instead — it also installs
+# drive-compat and writes the config block into the profile.
+
+- insert:
+    - id: cosight-plugin-compat
+      name: ./src/index.mjs
+      config:
+        hooks: true
+        skills: true
+        shims: true

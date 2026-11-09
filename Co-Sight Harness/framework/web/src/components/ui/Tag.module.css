@@ -1,0 +1,74 @@
+/* 标签。[稿] 10px / 行高 18 / 圆角 3 / 底色 Gray-3。 */
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  height: var(--lh-tag);
+  padding: 0 6px;
+  border-radius: var(--r-xs);
+  font-family: var(--font-regular);
+  font-size: var(--fs-tag);
+  line-height: var(--lh-tag);
+  /* 标签文字比正文淡一档，稿中如此；长标签不换行，由父级决定是否截断。 */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.neutral {
+  background: var(--color-tag-bg);
+  color: var(--text-body);
+}
+
+/*
+ * 「预置」标记（D13 = A 新增，稿中没有）。
+ *
+ * 底用 Blue-4 浅蓝、字用 #333333 而不是品牌蓝：10px 的字号下，
+ * #1993ff 落在 #bde5ff 上对比度只有 2.3:1，远低于可读阈值。
+ * 这个徽标的意义是"这条不能改"，宁可少一点品牌感也要看得清。
+ */
+.brand {
+  background: var(--color-primary-soft);
+  color: var(--text-heading);
+}
+
+/*
+ * 需求 UX-3.6：标签底色不再只有灰色。
+ *
+ * 文字统一用 --text-body（不是 --text-heading）：浅底上 10px 的字，唯一要保证的是
+ * 看得清，而底色的作用只是把同名标签在一屏卡片里认出来。所以六个色只改背景，
+ * 不改字号、不改内边距——变的是"这是哪个标签"，不是"这是哪一类的标签"。
+ */
+.blue {
+  background: var(--color-tag-blue);
+}
+
+.teal {
+  background: var(--color-tag-teal);
+}
+
+.green {
+  background: var(--color-tag-green);
+}
+
+.purple {
+  background: var(--color-tag-purple);
+}
+
+.amber {
+  background: var(--color-tag-amber);
+}
+
+.rose {
+  background: var(--color-tag-rose);
+}
+
+.blue,
+.teal,
+.green,
+.purple,
+.amber,
+.rose {
+  color: var(--text-body);
+}

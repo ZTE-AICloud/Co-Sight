@@ -1,0 +1,63 @@
+/*
+ * 侧栏导航项。[稿] 248×40 胶囊、圆角 10、图标 16、文字 14/500 #333333。
+ *
+ * 选中态用「白底胶囊 + --shadow-item」而不是换文字颜色：稿中的 --shadow-item
+ * 注释就写着"侧栏项胶囊"，且侧栏底色是浅蓝白，白胶囊浮在上面正好分层。
+ */
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  /* 跟随侧栏内容区（侧栏可以被拖宽，见 src/lib/sidebarWidth.ts），不再是稿里的固定 248。 */
+  width: 100%;
+  height: var(--nav-item-h);
+  padding: 0 12px;
+  border-radius: var(--r-md);
+  color: var(--text-heading);
+  font-family: var(--font-medium);
+  font-weight: var(--fw-medium);
+  font-size: var(--fs-nav);
+  line-height: var(--lh-nav);
+  text-decoration: none;
+  /* 「知识库」这一项是 `<button>`（它执行动作而不是导航），reset 之后需要显式给回手型。 */
+  cursor: pointer;
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.item:hover {
+  background: var(--color-hover);
+}
+
+.item.active {
+  background: var(--color-sidebar);
+  box-shadow: var(--shadow-item);
+}
+
+.icon {
+  flex: none;
+  color: var(--border-icon);
+}
+
+.item.active .icon {
+  color: var(--color-primary);
+}
+
+.label {
+  /* 长标签（`专家·技能` 在英文下是 `Experts · Skills`）不换行、直接截断，
+     否则侧栏会出现两行高的一颗胶囊，整个导航的节奏就乱了。 */
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* ===================== 折叠态 ===================== */
+
+.collapsed {
+  width: var(--nav-item-h);
+  justify-content: center;
+  gap: 0;
+  padding: 0;
+}

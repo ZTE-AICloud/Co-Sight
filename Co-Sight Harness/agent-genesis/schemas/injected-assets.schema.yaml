@@ -1,0 +1,96 @@
+# injected-assets.yaml — Step 1b 输入资产注入清单
+#
+# 生产者: scripts/inject-input-assets.py
+# 消费者: agents/build-planner.md（生成 pre_staged 条目）
+#         scripts/gates/g029-knowledge-injection-audit.sh（审计）
+#         agents/agent-executor.md（跳过 pre_staged 生成）
+#
+# 范围: 仅知识库能力。不包含 MCP 相关字段。
+
+version: "1.0"
+
+manifest:
+  type: object
+  required:
+    [status, generated_at, input_dir, target_platform, error,
+     knowledge, renames, applied_renames, warnings]
+  additionalProperties: false
+  properties:
+    status:
+      type: string
+      enum: [injected, noop, error]
+      description: "injected=本次写入；noop=已是最新；error=注入失败"
+    generated_at:
+      type: string
+      description: "ISO 8601 带时区时间戳"
+    input_dir:
+      type: [string, "null"]
+      description: "输入目录绝对路径；CLI 直传 workflow id 时可为 null"
+    target_platform:
+      type: string
+      enum: [claude-code, dsh, both]
+      description: "技能落点平台（claude-code=.claude/skills/；dsh=dsh/skills/；both=两处都落）"
+    error:
+      type: [string, "null"]
+      description: "status=error 时的失败原因"
+    knowledge:
+      type: object
+      required:
+        [injected, workflow_id, base_url, query_path, relative_dirs, relative_dir, files]
+      additionalProperties: false
+      properties:
+        injected:
+          type: boolean
+        workflow_id:
+          type: string
+          pattern: "^[A-Za-z0-9_-]{1,128}$"
+        base_url:
+          type: string
+          pattern: "^https?://"
+        query_path:
+          type: string
+          enum: ["/api/co-knowledge/v1/agent/query"]
+        scope:
+          type: string
+          enum: ["", "dev"]
+          description: "已废弃：旧版网关 scope。Agent API 只执行已发布工作流，注入器不再写入该字段"
+        relative_dirs:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            type: string
+            enum:
+              - ".claude/skills/rag-knowledge-search"
+              - "dsh/skills/rag-knowledge-search"
+          description: "技能落点目录全集；target_platform=both 时为两项"
+        relative_dir:
+          type: string
+          enum:
+            - ".claude/skills/rag-knowledge-search"
+            - "dsh/skills/rag-knowledge-search"
+          description: "兼容字段：relative_dirs 的首项（新消费方应以 relative_dirs 为准）"
+        files:
+          type: array
+          minItems: 1
+          items:
+            type: string
+          description: "相对 output_dir 的文件路径清单（posix 分隔）"
+    renames:
+      type: array
+      description: "冲突备份记录；正常首次注入为空数组"
+      items:
+        type: object
+        required: [from, to, reason]
+        properties:
+          from: {type: string}
+          to: {type: string}
+          reason: {type: string, enum: [content_mismatch]}
+    applied_renames:
+      type: array
+      items: {type: object}
+      description: "预留：外部已处理的改名记录"
+    warnings:
+      type: array
+      items: {type: string}
+      description: "非阻断告警（如 mcp.json 被忽略、co-knowledge 不可达）"

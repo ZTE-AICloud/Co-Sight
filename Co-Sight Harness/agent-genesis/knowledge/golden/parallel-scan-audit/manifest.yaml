@@ -1,0 +1,31 @@
+# golden manifest — parallel-scan-audit（v1.2 批 2 档 1 实例, 自有产物）
+# 契约见 schemas/golden-manifest.schema.yaml（字段语义单点在该文件）
+
+task_tag: parallel-scan-audit
+line: agent
+mode_id: W3-MapReduce                # 货架位（检索键）, 非身份声明（R9）
+patterns:                             # 如实完整模式维度集（现行词汇）
+  - W3-MapReduce
+  - K4-Rule-Driven
+  - CD1-Input-Gating
+  - IT1-Enforced
+anchor_fit: real                      # 三路扫描扇出 + 确定性汇聚即 W3 纯正实现
+standard_ref: knowledge/agent-creation/agent-output-standard.yaml
+shape_counts: {agent_entry: 1, skill: 4, script: 4, workflow: 1, review_rules: 1,
+               gate: 2, gate_registry: 1, rule: 1, config: 1, evaluation: 1, spec: 1}
+acceptance:
+  - 扇出/汇聚结构完整——三路独立扫描技能(map) + 汇总技能(reduce) 确定性合并, 计数无 LLM 判断
+  - findings 四字段纪律（相对路径+行号+规则名+摘录）贯穿三路与汇总报告
+  - 单文件读取失败跳过不中断, 跳过项入报告"跳过清单"留痕
+  - 目标目录不存在即报错退出不产空报告（输入门 fail-closed）
+anchors:
+  build_plan: anchors/build-plan.md
+  self_report: anchors/self-report.md    # 自有产物锚, 不标 derived
+known_concerns: []                        # G028 准入后如实回填
+provenance:
+  origin_repo: "本仓库 agent-Genesis（agent-creation 线产物 code-style-auditor, 构建车道 fast）"
+  license: "本仓库自有"
+  snapshot_date: "2026-10-17"
+  reshaped: false                         # 自有标准产物, 零重塑直接入库
+source: "v1.2 批 2 档 1 实例（REFLUX.md §1 例外条款: fast 产物形态未被既有样例覆盖 + 用户确认）"
+status: active

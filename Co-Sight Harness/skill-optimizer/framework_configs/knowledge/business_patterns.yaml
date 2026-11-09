@@ -1,0 +1,231 @@
+# 通用业务模式清单 — 适用于任意业务领域
+# Subagent 根据 brief 关键词自动匹配,推断产物结构和步骤清单
+# 严禁包含:特定业务的字段名、文件名、代码片段
+
+version: "1.2.0"
+description: "通用业务模式清单。subagent 用 brief 关键词匹配,推断 Skill 的产物结构 + 步骤清单 + LLM 断点位置。"
+_v1_2_changes: "flow_design 模式新增 5 个 mandatory_design_principles 段(分类-分支/结构化提取/输入解析/阻断/统一 LLM 入口),均为抽象规则,具体业务实例见 framework_configs/norms/flow_design_style_guide.md(非规范性示例)。"
+
+# === 4 个通用业务模式 ===
+
+patterns:
+
+  # 模式 1: 流程设计类
+  flow_design:
+    description: |
+      在系统/子系统层面设计消息交互流程的 Skill。
+      典型特征:从"粗粒度协作"细化到"细粒度交互",需要生成表格 + 可视化图 + 详细描述。
+    triggers:
+      keywords: ["流程设计", "时序设计", "组件协作", "消息交互", "组件间"]
+      file_signals: ["系统协作", "组件变更", "交互时序", "子系统流程", "step_graph"]
+      script_signals: ["render_diagram", "render_table", "render_detail", "render_puml"]
+    # === 5 条必含的强制设计原则(2026-07-13 新增,均为抽象规则,不绑定具体业务实例) ===
+    # 注:具体业务实例(如"业务流变更类型三分支"的"修改/待验证/新增")见
+    # framework_configs/norms/flow_design_style_guide.md(非规范性示例)
+    mandatory_design_principles:
+      - principle_id: "categorical_branch_handling"
+        name: "分类-分支独立处理"
+        applies_to_step_kinds: ["transform"]
+        abstract_rule: |
+          当 transform 步骤的输入数据含有"分类列"(即某个字段将数据划分为 N 个类别),
+          该步骤必须为每个已知类别定义独立的处理分支。
+          严禁合并为单一默认分支(否则"已知类别"会被静默跳过或被错误兜底覆盖)。
+        reasoning: |
+          N 个类别对应 N 个独立分支是"代码化优先"原则的具体体现 — 把高频/已知的 N-1 个类别
+          完全代码化,仅在低频/未知类别上让 LLM 兜底,可显著降低 LLM 介入量。
+        must_have_in_spec:
+          - "§4 transform 步骤含 N 个分支处理表(分支数 N 由业务决定)"
+          - "附录 B 异常处理矩阵为各分支各列 ≥ 1 行"
+          - "校验类步骤校验'已知类别'不出现'未分类'占位符"
+      - principle_id: "structured_knowledge_extraction"
+        name: "知识结构化提取(优于 raw dump)"
+        applies_to_step_kinds: ["knowledge_collection", "context_aggregation"]
+        abstract_rule: |
+          当 step 涉及"收集知识/上下文"以供后续 LLM 推理时,严禁 raw dump 整篇文档。
+          必须按"结构化字段"提取关键信息,字段的数量、命名、提取规则由业务决定,
+          框架不预设具体值。
+        reasoning: |
+          raw dump 让 LLM 在大段文本中找关键信息,易漏字段。结构化提取让 LLM
+          在明确的字段名上做推理,信息保真度显著提升。
+        must_have_in_spec:
+          - "knowledge_collection 步骤显式列出 N 个结构化字段(每个含类型+提取规则)"
+          - "目标集合过滤规则:仅保留'两端都在目标集合内'的关系(目标集合自动推导)"
+          - "禁止 jq -n --rawfile content file.md / grep 整篇 dump"
+      - principle_id: "explicit_input_parsing_strategy"
+        name: "显式输入解析策略(避免假设目录结构)"
+        applies_to_step_kinds: ["read"]
+        abstract_rule: |
+          read 步骤必须从业务方实际的输入文件直接解析,严禁假设未在 brief 中明示的目录结构。
+          解析策略由输入文件实际形态决定(单文件 / 目录 / 多文件),不预设。
+        reasoning: |
+          业务方提供的输入形态千差万别(单文件含多章节 / 多文件目录 / 多个独立文档),
+          框架不预设任何一种,read 步骤必须显式声明自己的解析策略,
+          让业务方在 spec 一眼就能看出 Skill 是怎么读输入的。
+        must_have_in_spec:
+          - "read 步骤显式声明:输入形态 + 解析方法 + 关键键 + 过滤逻辑"
+          - "若解析策略是'单文件 + 章节定位',需说明定位什么章节、解析什么结构"
+          - "若解析策略是'目录扫描',需说明目录模式 + 文件匹配规则"
+      - principle_id: "block_dont_skip"
+        name: "数据完整性错误必须阻断"
+        applies_to_step_kinds: ["transform", "validate", "knowledge_collection"]
+        abstract_rule: |
+          关键数据完整性错误必须阻断退出 + 写追溯报告,严禁静默跳过。
+          阻断后用户修复可调 --resume 续跑,不需要重头开始。
+        reasoning: |
+          跳过哲学让用户不知道哪一行被跳过;阻断哲学让用户必须修复后才能继续。
+          阻断哲学提高数据保真度,且通过 --resume 机制降低用户修复成本。
+        must_have_in_spec:
+          - "异常处理矩阵(附录 B)显式列出'阻断+报告'行(覆盖关键数据缺失/不一致场景)"
+          - "阻断报告路径明确:${STATE_DIR}/step{N}_block_report.json"
+          - "阻断后必须支持 --resume 续跑(不重头开始)"
+      - principle_id: "unified_llm_breakpoint"
+        name: "统一 LLM 断点入口(避免按子场景拆分)"
+        applies_to_step_kinds: ["dependency_analysis", "semantic_judgment", "naming_generation"]
+        abstract_rule: |
+          当 LLM 推理有多个子场景(如 N=1 vs N>1、单组件 vs 多组件)时,推荐走同一个
+          LLM 断点入口,LLM 一次响应覆盖所有子场景,各子场景的差异作为输入参数传递。
+        reasoning: |
+          按子场景拆分会带来:① LLM 看到不完整上下文;② 多次调用 + 多次 checkpoint 增加复杂度;
+          ③ 子场景边界划分难,容易漏掉中间状态。
+          统一入口让 LLM 看到完整数据 + 全部变更 + 子场景标识,信息更连贯。
+        must_have_in_spec:
+          - "LLM 断点契约采用 minimal_core_combo(3 字段必含)或扩展模式"
+          - "子场景差异(如 N=1 vs N>1)由脚本确定性生成,作为 LLM 输入的一部分"
+          - "禁止按子场景拆分成多个独立 LLM 断点(如 LLM-A-for-N1 + LLM-B-for-N>1)"
+    typical_product_parts:
+      - part_id: "interaction_table"
+        name: "交互时序表"
+        format: "Markdown 表格(发送方/接口/接收方/描述)"
+        required: true
+      - part_id: "visual_diagram"
+        name: "可视化时序图"
+        format: "PlantUML / Mermaid / ASCII 流程图"
+        required: true
+      - part_id: "detail_description"
+        name: "详细变更/变更点描述"
+        format: "列表/段落,描述每个变更的原因和影响"
+        required: true
+    typical_step_kinds:
+      - read        # 从源读输入
+      - filter      # 过滤无关行
+      - transform   # 转换格式(组件引用补齐)
+      - insert      # 插入变更消息
+      - render      # 渲染最终产物
+      - write       # 写入产物
+      - validate    # 校验
+    typical_validation_kinds:
+      - topology    # 拓扑校验(变更组件完整性、首末行流向、重复消息对)
+      - content     # 内容校验(无占位符、字段完整)
+      - output      # 产物校验(文件存在、格式正确)
+    typical_llm_breakpoints:
+      - "semantic_judgment"      # 语义判断(存量是否满足)
+      - "dependency_analysis"    # 依赖分析(多组件关系)
+      - "naming_generation"      # 命名生成(接口名/业务流名)
+    has_revision_loop: true
+
+  # 模式 2: 文档生成类
+  document_generation:
+    description: |
+      基于模板和数据生成结构化文档的 Skill。
+      典型特征:输入结构化数据 + 模板,输出渲染后的文档。
+    triggers:
+      keywords: ["生成", "文档", "报告", "模板填充"]
+      file_signals: ["template_fill", "doc_template", "render_markdown", "render_html"]
+      script_signals: ["render_doc", "fill_template", "render_pdf"]
+    typical_product_parts:
+      - part_id: "rendered_document"
+        name: "渲染后的文档"
+        format: "Markdown / HTML / PDF"
+        required: true
+    typical_step_kinds:
+      - read
+      - template_fill
+      - render
+      - write
+    typical_validation_kinds:
+      - "output"   # 文件存在 + 格式正确
+    typical_llm_breakpoints:
+      - "content_generation"
+    has_revision_loop: false
+
+  # 模式 3: 数据提取类
+  data_extraction:
+    description: |
+      从非结构化数据中提取结构化字段的 Skill。
+      典型特征:输入是非结构化数据(日志/文本/表格),输出是结构化字段。
+    triggers:
+      keywords: ["提取", "抽取", "解析", "字段抽取"]
+      file_signals: ["extract", "parse_log", "field_map"]
+      script_signals: ["extract", "parse", "structure_data"]
+    typical_product_parts:
+      - part_id: "structured_data"
+        name: "结构化数据"
+        format: "JSON / YAML / CSV"
+        required: true
+    typical_step_kinds:
+      - read
+      - parse
+      - validate
+      - structure
+    typical_validation_kinds:
+      - "content"
+    typical_llm_breakpoints:
+      - "semantic_extraction"
+    has_revision_loop: false
+
+  # 模式 4: 工具调用类
+  tool_invocation:
+    description: |
+      调用外部工具/API 完成任务的 Skill。
+      典型特征:输入是任务描述,输出是操作结果(日志/状态码/产物)。
+    triggers:
+      keywords: ["调用", "工具", "API", "执行"]
+      file_signals: ["tool_invoke", "api_call", "exec_log"]
+      script_signals: ["invoke", "call_api", "exec_tool"]
+    typical_product_parts:
+      - part_id: "operation_result"
+        name: "操作结果"
+        format: "JSON / 日志"
+        required: true
+    typical_step_kinds:
+      - read
+      - invoke
+      - collect_result
+      - report
+    typical_validation_kinds:
+      - "output"
+    typical_llm_breakpoints: []
+    has_revision_loop: false
+
+# === 模式匹配规则 ===
+
+matching_rules:
+  specificity_order:
+    - "flow_design"             # 最具体(产物 3 部分 + 校验 + LLM 断点)
+    - "document_generation"
+    - "data_extraction"
+    - "tool_invocation"         # 最通用
+  minimum_match: 1
+  fallback_action: |
+    若无任何模式匹配,subagent 应警告用户并提供"添加新模式"的建议。
+
+# === 产物部分完整性规则 ===
+
+product_part_completeness:
+  flow_design:
+    min_parts: 3
+    required_part_ids: ["interaction_table", "visual_diagram", "detail_description"]
+    rationale: |
+      流程类 Skill 的产物必须包含 3 部分,缺一不可:
+      1. 表格:核心结构化产物
+      2. 可视化图:不只是表格的重复,提供时序直观视图
+      3. 详细描述:解释"为什么"变更,不只描述"是什么"
+  document_generation:
+    min_parts: 1
+    required_part_ids: ["rendered_document"]
+  data_extraction:
+    min_parts: 1
+    required_part_ids: ["structured_data"]
+  tool_invocation:
+    min_parts: 1
+    required_part_ids: ["operation_result"]

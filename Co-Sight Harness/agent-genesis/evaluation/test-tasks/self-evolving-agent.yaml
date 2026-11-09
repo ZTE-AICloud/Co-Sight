@@ -1,0 +1,68 @@
+test_name: "self-evolution-cycle"
+description: "验证自进化 Agent 是否能正确执行 E1 自评 → E2 受控进化 → E3 Delta 修改的完整链路"
+agent_type: SINGLE_AGENT
+
+input:
+  type: "scenario"
+  scenario: |
+    你是一个代码审查 Agent，每次审查完成后对自己的输出进行 4 维自评（E1：correctness/completeness/format/actionability）。
+    当自评总分 < 3.5 且根因在 allowed_scopes 内时，触发 E2 受控进化。
+    allowed_scopes：
+    - execution_workflow.step_2（工具调用参数调整），每周期最多 2 次修改
+    - knowledge_contract.sources（知识来源的检索参数调整），每周期最多 1 次修改
+    最大进化周期 = 3。
+    修改通过 E3 Delta 协议执行（Before/After/Reason 三段式）。
+    修改前必须 snapshot，失败自动回滚。
+    超出 scope 或周期耗尽时通过 Escalation Gate 升级。
+  prompt_template: |
+    请根据以下需求构建自进化 Agent Spec：
+    需求：{scenario}
+    请确保：
+    1. E1 自评框架含 4 维评分 + 触发时机 + 通过阈值
+    2. E2 allowed_scopes deny-by-default + 进化流程含自审查 (G1) + Escalation Gate
+    3. E3 Delta 协议（Before/After/Reason）+ 回滚机制 + snapshot 格式
+    4. E1→E2→E3 依赖链完整
+    5. Safety Constraints 不可修改 (S-13)
+
+expected_output:
+  type: "checklist"
+  items:
+    - id: "e1-framework-complete"
+      description: "E1 自评框架含 4 维评分、触发时机 (every_execution/scheduled/on_demand)、通过阈值"
+      required: true
+    - id: "e1-phase5-consistency"
+      description: "E1 评分维度与 Phase 5 一致 (correctness/completeness/format/actionability)"
+      required: true
+    - id: "e2-allowed-scopes"
+      description: "E2 allowed_scopes deny-by-default，含 scope 名称/每周期最大修改次数"
+      required: true
+    - id: "e2-evolution-flow"
+      description: "E2 进化流程：差距分析 → Snapshot → Delta生成 → 自审查(G1) → 应用 → 重评估(E1)"
+      required: true
+    - id: "e2-escalation-gate"
+      description: "E2 Escalation Gate：scope外/周期耗尽/审查失败 → 升级到AgentGenesis工厂"
+      required: true
+    - id: "e3-delta-format"
+      description: "E3 Delta 协议含 Before/After/Reason 三段式"
+      required: true
+    - id: "e3-rollback"
+      description: "E3 回滚机制：修改前 snapshot + 回滚触发条件 (E1退化/G1失败/scope越界)"
+      required: true
+    - id: "e3-max-sections"
+      description: "E3 单次修改 ≤2 个 Spec 章节 (context collapse 保护)"
+      required: true
+    - id: "dependency-chain"
+      description: "E3 depends_on E2, E2 depends_on E1 — 依赖链完整"
+      required: true
+    - id: "safety-s13"
+      description: "Safety Constraints 标注为不可修改 (S-13)"
+      required: true
+    - id: "evolution-contract-chapter"
+      description: "CLAUDE.md 含 Evolution Contract 章节（自评+受控进化+增量修改+升级门）"
+      required: true
+
+scoring_weights:
+  correctness: 0.40
+  completeness: 0.30
+  format_compliance: 0.15
+  actionability: 0.15

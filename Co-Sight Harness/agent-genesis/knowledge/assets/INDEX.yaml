@@ -1,0 +1,80 @@
+# AgentGenesis 预置资产索引 — 双轴交叉（11任务模式 × 23设计模式）
+# 全部资产为 AgentGenesis 自研（原外部血统资产已于 2026-09-29 替换，见 docs/migrations/v0.17-v0.18.md §11）
+# 无良好示例的 3 个模式(WF5/WF6/WF7)需 AgentGenesis 自己构建
+
+meta:
+  version: "2.1"
+  total_patterns_covered: 20
+  patterns_without_example: [WF5-Contract-Lock, WF6-Circuit-Breaker, WF7-Knowledge-Reflux]
+  assets_origin: "agentgenesis-selfbuilt"
+  date: "2026-09-29"
+
+# ============================================================
+# 设计模式 → 资产映射
+# ============================================================
+pattern_to_asset:
+  W1-Pipeline: {asset: orchestration.md, evidence: "阶段化编排 + 文件传产物 + I/O 契约"}
+  W2-Router: {asset: skill-routing.md, evidence: "描述驱动路由 + 消歧规则"}
+  W3-MapReduce: {asset: orchestration.md, evidence: "切片→并行→聚合拓扑"}
+  G1-Reviewer-Gate: {asset: critic.md, evidence: "对抗审查 + 上下文隔离 + 回压重试"}
+  WF4-Multi-Agent-Debate: {asset: orchestration.md, evidence: "博弈对：生成/审查隔离"}
+  WF5-Contract-Lock: {asset: null, note: "无示例，需 AgentGenesis 自建"}
+  WF6-Circuit-Breaker: {asset: null, note: "无示例，需 AgentGenesis 自建"}
+  WF7-Knowledge-Reflux: {asset: null, note: "无示例，需 AgentGenesis 自建"}
+  K1-LLM-Native: {asset: durable-context.md, evidence: "上下文维护与防坍缩规则"}
+  K2-Document-Grounded: {asset: durable-context.md, evidence: "状态外置 + 断点恢复"}
+  K3-KB-Backed: {asset: durable-context.md, evidence: "中间产物落盘传递"}
+  K4-Rule-Driven: {asset: anti-patterns.md, evidence: "始终生效的行为护栏规则"}
+  DT1-Linear-Pass-Through: {asset: orchestration.md, evidence: "阶段间文件传递，无悬空实体"}
+  DF1-Schema-Enforced: {asset: hooks-config.json, evidence: "hook JSON schema 化配置"}
+  DP1-Traceable-Lineage: {asset: orchestration.md, evidence: "产物来源标注与追溯"}
+  IH1-Fire-and-Forget: {asset: orchestration.md, evidence: "自包含 SubAgent 单元"}
+  IH2-Interactive-Clarify: {asset: architect.md, evidence: "聚焦问题 + 推荐选项 + 不代猜"}
+  IH3-Plan-Approval: {asset: architect.md, evidence: "方案对比 + 用户确认后执行"}
+  IT1-Tool-Orchestrated: {asset: hooks-config.json, evidence: "PreToolUse/PostToolUse 门禁"}
+  IV1-Progress-Streaming: {asset: orchestration.md, evidence: "关键节点自然语言汇报"}
+  CD1-Input-Gating: {asset: health-checker.md, evidence: "启动前工具链/配置/路径巡检"}
+  CD2-Safety-First: {asset: security.md, evidence: "提交前安全底线清单"}
+  CD3-Knowledge-Boundary: {asset: durable-context.md, evidence: "可信域与边界声明"}
+
+# ============================================================
+# 任务模式 → 资产映射
+# ============================================================
+task_mode_to_asset:
+  研发场景:
+    探索与定义: {assets: [architect.md, skill-routing.md]}
+    实施与构建: {assets: [code-reviewer.md, coding-style.md, orchestration.md]}
+    验证与校验: {assets: [check-verifier.md, anti-patterns.md]}
+    效能与基建: {assets: [orchestration.md, durable-context.md]}
+    共识与传达: {assets: [orchestration.md]}
+  运维场景:
+    监测与响应: {assets: [health-checker.md, skill-routing.md]}
+    故障诊断与恢复: {assets: [check-verifier.md]}
+    变更执行: {assets: [security.md]}
+  个人办公场景:
+    信息处理与摘要: {assets: [coding-style.md]}
+    安排与协调: {assets: [orchestration.md]}
+    检索与整合: {assets: [durable-context.md]}
+
+# ============================================================
+# 自研资产清单
+# ============================================================
+selfbuilt_assets:
+  agent-definitions: # 4 个
+    - {file: architect.md, source: agentgenesis-original, patterns: [IH2, IH3], task_modes: [探索与定义]}
+    - {file: orchestration.md, source: agentgenesis-original, patterns: [W1, W3, DP1, IV1], task_modes: [效能与基建, 共识与传达, 探索与定义]}
+    - {file: code-reviewer.md, source: agentgenesis-original, patterns: [G1, CD2, K4], task_modes: [实施与构建, 验证与校验]}
+    - {file: critic.md, source: agentgenesis-original, patterns: [G1], task_modes: [验证与校验]}
+  skills: # 2 个
+    - {file: health-checker.md, source: agentgenesis-original, patterns: [CD1], task_modes: [监测与响应]}
+    - {file: check-verifier.md, source: agentgenesis-original, patterns: [W2, CD1], task_modes: [验证与校验]}
+  gates: # 1 个
+    - {file: hooks-config.json, source: agentgenesis-original, patterns: [DF1, IT1], type: "PreToolUse/PostToolUse/Stop hook 配置模板"}
+  rules: # 6 个
+    - {file: anti-patterns.md, source: agentgenesis-original, type: "Agent 行为负面清单（20 条）"}
+    - {file: durable-context.md, source: agentgenesis-original, type: "持久上下文与防坍缩规则"}
+    - {file: skill-routing.md, source: agentgenesis-original, type: "Skill 路由与消歧规则"}
+    - {file: coding-style.md, source: agentgenesis-original, type: "通用编码规范"}
+    - {file: security.md, source: agentgenesis-original, type: "通用安全规则"}
+    - {file: testing.md, source: agentgenesis-original, type: "通用测试规范（80%覆盖率）"}
+  total: 13

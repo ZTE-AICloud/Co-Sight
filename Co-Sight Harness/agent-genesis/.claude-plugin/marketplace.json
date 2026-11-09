@@ -1,0 +1,14 @@
+{
+  "name": "agent-genesis",
+  "description": "AgentGenesis 官方插件市场：Agent 工厂（自然语言需求 → 完整 Claude Code Agent / Skill，两条 Pipeline + 23 类设计模式级联匹配 + 质量门禁与 goal-loop 执行协议）",
+  "owner": {
+    "name": "AgentGenesis"
+  },
+  "plugins": [
+    {
+      "name": "agent-genesis",
+      "source": "./",
+      "description": "Agent 工厂：自然语言需求 → 完整 Claude Code Agent / Skill（Agent 创建 8 步 / Skill 创建·优化·诊断 三 mode 两条 Pipeline）"
+    }
+  ]
+}

@@ -1,0 +1,115 @@
+/*
+ * 附件 chip：全站唯一一份长相。
+ *
+ * 同一个文件会出现在三处 —— 首页发送框（行内 token）、设计页发送框（正文外一行）、
+ * 对话气泡下方（已发出的消息）。位置和字号按场景不同（inline / md / sm），
+ * 但**徽标、底色、圆角、字号关系三处一样**：用户在首页挂的文件，进设计页后
+ * 得一眼认出是同一个东西。
+ */
+
+.file-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  /* 路径可能很长：横向上不许撑破容器，超了走省略号 */
+  min-width: 0;
+  max-width: 100%;
+  border-radius: 999px;
+  background: #f2f2f2;
+  color: var(--color-text);
+  white-space: nowrap;
+}
+
+/* 发送框里的待发附件：比正文小一档，别抢正文 */
+.file-chip--md {
+  padding: 3px 5px 3px 8px;
+  font-size: 12px;
+}
+
+/* 对话气泡下方的已发附件：再弱一档，它是补充，不是正文 */
+.file-chip--sm {
+  padding: 2px 7px 2px 6px;
+  font-size: 11.5px;
+  color: var(--color-text-weak);
+}
+
+.file-badge {
+  flex-shrink: 0;
+}
+
+/* 已发附件在预览面板里可点：按钮化后去掉浏览器默认边框与字体，长相仍是那颗 chip */
+.file-chip--button {
+  border: none;
+  font-family: inherit;
+  font-size: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.file-chip--button:hover {
+  background: #e9eaee;
+}
+
+.file-chip__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-chip__x {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-text-weak);
+  cursor: pointer;
+}
+
+.file-chip__x:hover:not(:disabled) {
+  background: #e3e6ea;
+  color: var(--color-text);
+}
+
+.file-chip__x:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/*
+ * 行内 token（首页）：它待在 contenteditable 里，跟正文一起排版 ——
+ * 字号随正文、没有外边距、不撑开行高，× 平时收起来（悬停或聚焦才展开）。
+ */
+.file-chip--inline {
+  max-width: 240px;
+  margin: 0 1px;
+  padding: 1px 6px 1px 5px;
+  font-size: inherit;
+  line-height: 1.35;
+  vertical-align: baseline;
+  cursor: default;
+  user-select: none;
+}
+
+.file-chip--inline:hover {
+  background: #e9eaee;
+}
+
+.file-chip--inline .file-chip__x {
+  width: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: width 0.12s ease, opacity 0.12s ease;
+}
+
+.file-chip--inline:hover .file-chip__x,
+.file-chip--inline:focus-within .file-chip__x {
+  width: 16px;
+  opacity: 1;
+}

@@ -1,0 +1,44 @@
+# Test Fixture: 5G 网络优化 Agent 输入场景
+# 来源: 利兹大学 Edge Agentic AI Framework (arxiv:2507.21696)
+#       马德里理工大学 Agentic AI for RAN Management
+#       中兴+中国移动 TN-AutoRCA (TN-RCA530 基准)
+# 用途: TC-AC-03, TC-E2E-02
+
+fixture_id: "E2E-F-002"
+test_cases: [TC-AC-03, TC-E2E-02]
+domain: "5g-network-optimization"
+
+user_input: |
+  构建一个5G网络优化分析Agent，用于基站KPI数据分析与网络问题诊断。
+
+  核心能力：
+  1. KPI异常检测：分析PM(Performance Management)计数器数据，
+     检测接入成功率、掉线率、切换成功率、PRB利用率等核心KPI的异常波动
+  2. PCI规划优化：检测PCI冲突、PCI混淆，基于测量报告(MDT/MRO)
+     给出PCI重分配建议，避免共覆盖区域的冲突
+  3. 邻区关系调整：基于UE测量报告分析漏配/冗余邻区，
+     生成邻区优化方案（添加/删除/优先级调整）
+  4. 根因分析：利用知识图谱建模设备拓扑和告警关系，
+     对KPI劣化进行自动化根因定位（覆盖/干扰/负载/硬件/传输五大类）
+  5. 规范合规检查：基于3GPP TS 38.331(空闲态)、TS 38.423(Xn接口)、
+     TS 38.413(NG接口)等规范进行参数配置合规性验证
+
+  数据输入需验证：文件格式(CSV/XML/JSON)、必需字段完整性、
+  KPI计数器名称与规范一致性
+
+  诊断流程使用状态机管理：数据加载→预处理→异常检测→根因分析→方案生成，
+  每个步骤失败时回溯到上一步重试
+
+expected_patterns:
+  workflow: W4  # LeaderWorker: Leader按KPI类别/网元类型动态派生Worker
+  knowledge: [K3, K4]  # K3(3GPP规范知识库) + K4(Rule-Driven: 外部合规规则)
+  data_flow: DT2  # Shared State: 共享小区/基站配置上下文
+  interaction: IH1  # Fire-and-Forget: 输入KPI文件, 输出诊断报告
+  safety: CD1  # Input-Gating: 验证输入数据格式和完整性
+  workflow_aux: SM1  # FSM: 5步骤状态机管理诊断流程
+  traceability: DP1  # 诊断结论可追溯到具体KPI数据和3GPP规范条目
+
+golden_pattern_match:
+  required: [W4, K3, K4, CD1, SM1]
+  optional: [DT2, DP1]
+  forbidden: [W2, W3, K1, K2]

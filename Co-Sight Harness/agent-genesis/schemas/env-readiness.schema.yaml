@@ -1,0 +1,35 @@
+# env-readiness.schema.yaml
+# Step 0 (env-probe) 产物 schema
+type: map
+required: true
+mapping:
+  env_id:
+    type: str
+    required: true
+    pattern: "^env-probe-[a-z0-9-]+$"
+  timestamp:
+    type: str
+    required: true
+  probes:
+    type: seq
+    required: true
+    sequence:
+      - type: map
+        mapping:
+          tool:
+            type: str
+            required: true
+          path:
+            type: str
+            required: true
+          version:
+            type: str
+            required: false
+          status:
+            type: str
+            required: true
+            enum: [ok, missing, version_mismatch]
+  overall:
+    type: str
+    required: true
+    enum: [ok, partial, fail]

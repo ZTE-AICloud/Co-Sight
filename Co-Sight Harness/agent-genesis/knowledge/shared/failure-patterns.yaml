@@ -1,0 +1,249 @@
+# AgentGenesis 问题诊断知识库
+# 用于 Optimizer Phase 1: LLM 基于因果推理诊断 Agent 执行问题
+#
+# 设计原则：LLM 做因果推理，不做现象→模式查表。
+# 诊断逻辑：每个模式定义了它"保护什么"，当该保护失效时，
+# 问题会以什么症状表现出来。LLM 从症状反推失效的模式。
+#
+# 使用方式：将此文件作为 AgentGenesis Optimizer 的上下文，
+# LLM 阅读 Agent 的执行反馈后，推理根因并定位需要修改的 Spec 章节。
+
+# ============================================================
+# 诊断指南：LLM 如何做问题诊断
+# ============================================================
+diagnostic_guide: |
+  你是一个 Agent 架构诊断专家。你的任务是根据 Agent 执行中暴露的问题，
+  反查哪个设计模式缺失或约束不足，定位到 Agent Spec 的具体章节。
+
+  诊断推理方法：
+  1. 阅读问题描述，提取关键事实（不是关键词匹配，是理解发生了什么）
+  2. 对每个设计模式，问："这个模式试图保护什么？如果它失效了，会怎样？"
+  3. 根据问题的语义（而非表面措辞），判断哪些模式可能失效了
+  4. 定位到 Agent Spec 中该模式对应的具体章节
+  5. 生成根因假设和修复方向
+
+  注意：
+  - 同一个问题可能涉及多个模式的复合失效（如幻觉 = CD3缺失 + K2约束不足）
+  - 部分问题根因不在模式层面而在 Skill 层面 → 委托 Skill-Builder
+  - 部分问题根因是"整个Spec需要大幅修改"而非局部修复 → 建议返回Creator
+
+# ============================================================
+# 诊断维度 1: 知识完整性（Knowledge Integrity）
+# ============================================================
+knowledge_integrity:
+  description: >
+    诊断 Agent 输出的事实性内容是否忠实于声明的知识来源。
+    核心问题：Agent 是否在"不知道"的时候假装"知道"。
+
+  causal_chains:
+    - failure: "Agent 输出了知识源中不存在的事实"
+      root_causes:
+        - pattern: CD3 (Knowledge-Boundary)
+          role: "定义'哪些领域LLM不可信'。如果缺失，Agent不知道哪里可以用LLM知识、哪里必须检索。"
+          failure_symptoms: "Agent在垂直领域（协议/标准/规范）自创了不存在的内容。LLM幻觉在没有任何边界的领域自由发挥。"
+          check_in_spec: "Knowledge Contract → 知识边界章节：该领域是否在'禁止依赖LLM内嵌知识'列表中？"
+          fix_approach: "在知识边界表中新增该领域的禁止条目，声明'必须从X检索'"
+
+        - pattern: K2 (Document-Grounded)
+          role: "确保每个推理步骤都有文档依据。如果约束不足——只说了'基于文档'但没要求引用段落——Agent可能泛泛而谈。"
+          failure_symptoms: "Agent引用了正确的文档，但结论与文档内容不符，或断章取义。"
+          check_in_spec: "Knowledge Contract → K2检索策略：是否要求'每个结论标注文档具体段落'？"
+          fix_approach: "强化K2约束：增加'每个结论必须引用文档具体章节/段落'的要求"
+
+        - pattern: K3 (KB-Backed)
+          role: "确保从知识库检索到的内容被正确使用。如果检索策略不当（TopK太小、阈值太高），可能漏掉关键信息。"
+          failure_symptoms: "Agent调用了检索但返回空，然后'自行猜测'。或检索结果不相关，Agent勉强使用。"
+          check_in_spec: "Knowledge Contract → K3检索策略：TopK、相似度阈值、空结果处理"
+          fix_approach: "调整K3检索参数或增加多路召回"
+
+    - failure: "Agent 在应该检索的时候没有检索"
+      root_causes:
+        - pattern: CD3 (Knowledge-Boundary)
+          role: "CD3不仅声明'哪些域不能信LLM'，还强制'这些域必须检索'。缺失时Agent可能跳过检索直接靠LLM。"
+          failure_symptoms: "Agent的Knowledge Contract声明了知识库依赖，但实际执行中直接用了LLM知识。"
+          check_in_spec: "Safety Constraints → 知识边界：是否强制了'必须检索'的行为约束？"
+          fix_approach: "在CD3中增加'违规检测'规则：模糊引用判定标准 + 阻断处理"
+
+        - pattern: IT1 (Enforced)
+          role: "强制通过Skill/工具完成特定操作。如果IT1是Optional而非Enforced，Agent可能'走捷径'不调用工具。"
+          failure_symptoms: "Agent spec中提到了Skill但实际Agent自行用LLM替代了Skill调用。"
+          check_in_spec: "交互规则 → 工具策略：IT1是Enforced还是Optional？"
+          fix_approach: "将IT1从Optional升级为Enforced，增加'严禁不使用Skill替代'的硬约束"
+
+# ============================================================
+# 诊断维度 2: 流程完整性（Workflow Integrity）
+# ============================================================
+workflow_integrity:
+  description: >
+    诊断 Agent 是否按照设计的步骤执行，有无跳过、越权、或顺序错乱。
+
+  causal_chains:
+    - failure: "Agent 跳过了某个步骤"
+      root_causes:
+        - pattern: W1 (Pipeline)
+          role: "W1定义固定顺序的步骤。如果约束不足——只列出了步骤但未声明'禁止跳过'——Agent可能'优化'掉某些步骤。"
+          failure_symptoms: "Agent的Execution Workflow声明了Step 1-4，但实际只执行了Step 1,3,4。"
+          check_in_spec: "Execution Workflow：是否声明了'禁止跳过步骤'的约束？步骤间是否有强制的前置条件检查？"
+          fix_approach: "在Execution Workflow增加'每步完成后校验输出完整性'和'缺失输出阻断'规则"
+
+        - pattern: "Hard-Constraint"
+          role: "硬约束保护不可违反的规则。如果缺失，Agent可能基于'效率'或'常识'绕过Workflow。"
+          failure_symptoms: "Agent跳过了某个看似'不必要'的步骤（如校验步骤）。"
+          check_in_spec: "Safety Constraints → 约束规则表：是否有'禁止跳过步骤X'的Hard规则？"
+          fix_approach: "将'步骤不可跳过'声明为Hard约束"
+
+    - failure: "Agent 越权执行了不该做的操作"
+      root_causes:
+        - pattern: "Hard-Constraint"
+          role: "Role & Boundaries中的'不越权'是软性的，需要Hard约束将其具体化：列出禁止的具体操作。"
+          failure_symptoms: "Agent执行了Role & Boundaries中声明为'不负责'的操作。"
+          check_in_spec: "Safety Constraints → 禁止操作清单：是否具体列出了禁止的操作？"
+          fix_approach: "在Safety Constraints中新增禁止操作条目"
+
+        - pattern: CD2 (Safety-First)
+          role: "安全敏感的禁止操作清单。如果缺失，Agent可能在安全敏感场景中越权。"
+          failure_symptoms: "Agent修改了源代码/操作了数据库/访问了外部网络——在安全敏感场景中。"
+          check_in_spec: "Safety Constraints → 安全约束章节"
+          fix_approach: "应用CD2域模板：声明沙箱类型、网络策略、文件系统范围"
+
+# ============================================================
+# 诊断维度 3: 数据流完整性（Data Flow Integrity）
+# ============================================================
+data_flow_integrity:
+  description: >
+    诊断数据在步骤间传递是否完整、格式是否符合预期、流转链路是否闭合。
+
+  causal_chains:
+    - failure: "中间产物丢失，下游步骤报错（找不到输入文件）"
+      root_causes:
+        - pattern: DT1 (Linear-Pass-Through)
+          role: "DT1声明数据流转图和生产-消费关系。如果数据流转图不闭合（某个产物有消费者没生产者、或有生产者没消费者），运行时必然断链。"
+          failure_symptoms: "下游步骤报告'找不到输入文件X'，而X应该在前面某步产出。"
+          check_in_spec: "Data Flow → 数据流转图：是否有中间产物没有被任何步骤声明为输出？数据实体表的产生/消费列是否完整？"
+          fix_approach: "补充缺失的数据实体行，确保每个消费端的输入都有明确的产生端"
+
+    - failure: "输出格式不符预期（下游程序无法解析）"
+      root_causes:
+        - pattern: DF1 (Schema-Enforced)
+          role: "DF1要求每步输出通过Schema校验。如果缺失，格式错误会传递到下游才被发现。"
+          failure_symptoms: "输出的JSON/表格/文档结构与预期不一致，下游自动化处理失败。"
+          check_in_spec: "Data Flow → 数据校验规则：是否有Schema定义和校验步骤？"
+          fix_approach: "增加JSON Schema文件 + 校验规则声明"
+
+    - failure: "多个组件的状态不同步（A说完成了，B说还在执行）"
+      root_causes:
+        - pattern: DT2 (Shared-State)
+          role: "DT2定义共享状态的读写权限和更新时机。如果权限不清晰（谁写谁读），状态可能被错误覆盖。"
+          failure_symptoms: "多个Agent对同一状态文件的认知不一致。"
+          check_in_spec: "Data Flow → 共享状态文件：读写权限是否清晰？并发控制是否声明？"
+          fix_approach: "明确每个共享状态文件的维护者和读写权限"
+
+# ============================================================
+# 诊断维度 4: 质量控制（Quality Control）
+# ============================================================
+quality_control:
+  description: >
+    诊断审查机制是否有效——审查是否真正拦截了坏输出。
+
+  causal_chains:
+    - failure: "审查不生效，有问题的输出通过了审查"
+      root_causes:
+        - pattern: G1 (Reviewer-Gate)
+          role: "G1定义审查维度、通过标准和重试上限。如果审查维度太模糊（'检查输出质量'而非'检查X字段是否在允许值范围内'），审查Agent无法有效判定。"
+          failure_symptoms: "审查Agent每次都返回'通过'，即使输出明显有问题。或审查维度太主观，无法自动判定。"
+          check_in_spec: "Execution Workflow → 审查门禁：审查维度是否具体且可验证？通过标准是否客观？"
+          fix_approach: "增加具体的审查维度 + 可验证的通过标准 + 不通过示例"
+
+        - pattern: G1_superposition (叠加规则)
+          role: "G1要求审查由独立Agent执行。如果是执行Agent自审（self-review），审查形同虚设。"
+          failure_symptoms: "同一个Agent既执行又审查——没有独立的ReviewAgent。"
+          check_in_spec: "检查是否声明了独立的ReviewAgent"
+          fix_approach: "声明审查由独立Agent执行"
+
+# ============================================================
+# 诊断维度 5: 交互体验（Interaction Experience）
+# ============================================================
+interaction_experience:
+  description: >
+    诊断 Agent 与用户的交互是否顺畅——用户是否知道进展、是否在关键决策点被确认。
+
+  causal_chains:
+    - failure: "用户等太久不知道进度，焦虑或中断执行"
+      root_causes:
+        - pattern: IV1 (Progress-Streaming)
+          role: "IV1声明进度汇报的频率和格式。缺失时长流程像黑盒——用户不知道Agent是还在工作还是卡住了。"
+          failure_symptoms: "执行超过1分钟但没有任何进度更新。"
+          check_in_spec: "Execution Workflow 中是否有进展汇报规则？"
+          fix_approach: "增加IV1：声明每个阶段开始/结束时的汇报格式"
+
+    - failure: "Agent 执行了用户确认要跳过的事情"
+      root_causes:
+        - pattern: IH3 (Plan-Approval)
+          role: "IH3在关键决策点插入确认步骤。缺失时Agent替用户做了决定。"
+          failure_symptoms: "Agent直接执行了，但用户说'我其实想的是另一个方向'。"
+          check_in_spec: "交互规则 → 确认节点：关键决策点是否声明了用户审批？"
+          fix_approach: "在关键决策节点增加IH3审批步骤"
+
+# ============================================================
+# 诊断维度 6: Skill 质量委托
+# ============================================================
+skill_quality_delegation:
+  description: >
+    当问题根因指向Skill（而非Agent模式），AgentGenesis Optimizer 应委托 Skill-Builder
+    来诊断和修复，而不是自己去修改Skill。
+
+  causal_chains:
+    - failure: "Skill输出被Agent误用或格式错误"
+      likely_cause: "Skill输出格式与Agent期望不一致"
+      action: "→ 委托 Skill-Builder Optimizer 检查 Skill 输出格式定义"
+      not_agent_pattern_issue: true
+
+    - failure: "Skill调用返回空或不完整结果"
+      likely_cause: "Skill的检索参数不当或遍历逻辑不完整"
+      action: "→ 委托 Skill-Builder Optimizer 检查 Skill 步骤和检索参数"
+      not_agent_pattern_issue: true
+
+    - failure: "Skill产出的结论与预期相反"
+      likely_cause: "Skill的评分规则或判断阈值有误"
+      action: "→ 委托 Skill-Builder Optimizer 检查 Skill 的判断逻辑"
+      not_agent_pattern_issue: true
+
+  delegation_protocol: >
+    当诊断指向Skill质量问题时：
+    1. 将问题现象和已执行的诊断步骤打包为 Skill 问题 Spec
+    2. 委托 Skill-Builder（读取 .claude/agents/skill-builder.md 获取调用方式）
+    3. Skill-Builder 修改 Skill 后，检查 Agent Spec 是否需要同步更新（如Skill输出路径变更）
+
+# ============================================================
+# 诊断维度 7: 跨维度问题
+# ============================================================
+cross_dimension:
+  description: "有些问题是多个模式复合失效的结果，需要跨维度诊断。"
+  cases:
+    - failure: "Prompt坍缩为简短通用指令（Context Collapse）"
+      root_causes:
+        - "全量重写Agent Spec导致历史积累的领域细节丢失"
+        - "这是Optimizer修改策略的问题（全量替换 vs 增量Delta），而非单一模式失效"
+      action: "→ Optimizer 强制使用增量修改，不改动已有内容只增加新条目"
+
+# ============================================================
+# 修复处方
+# ============================================================
+repair_principles: |
+  定位到问题模式后，按以下原则做增量修改：
+
+  1. **最小修改**：只改动与根因直接相关的章节。不重写整个Agent Spec。
+  2. **模式内闭合**：修改后检查该模式的自洽性（如 CD3+另选了K2即'有边界+有替代来源'）
+  3. **跨模式校验**：修改后检查不破坏其他模式的兼容性
+  4. **保留已有内容**：不删除、不重写与问题无关的章节。Delta增量追加。
+
+repair_targets:
+  CD3: {section: "Knowledge Contract → 知识边界", method: "增加禁止依赖LLM的领域条目"}
+  Hard-Constraint: {section: "Safety Constraints → 禁止操作 / 约束规则表", method: "增加一条Hard约束"}
+  CD1: {section: "Safety Constraints → 输入门禁", method: "增加输入文件校验声明"}
+  G1: {section: "Execution Workflow → 审查子章节 + 审查规则文件", method: "增加审查维度 + 可验证的通过标准 + 不通过示例"}
+  DF1: {section: "Data Flow → 数据校验规则 + schemas/ 目录", method: "增加JSON Schema文件 + 校验规则"}
+  K3: {section: "Knowledge Contract → 检索策略", method: "调整TopK/阈值/增加多路召回"}
+  DT1: {section: "Data Flow → 数据流转图", method: "补充缺失的中间产物实体"}
+  IV1: {section: "Execution Workflow → 汇报规则", method: "增加阶段汇报声明"}
+  Skill-Quality: {section: "不修改Agent Spec", method: "→ 委托Skill-Builder Optimizer"}

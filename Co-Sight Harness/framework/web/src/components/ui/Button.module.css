@@ -1,0 +1,162 @@
+/*
+ * 按钮。
+ *
+ * 稿中只有两个按钮实例（页头「专家智能体创建」、会话发送按钮），**没有任何变体、
+ * 没有 hover/active/focus/disabled 态**（design-tokens.md §8.1）。所以这个文件的
+ * 大部分内容是新增的设计决策，取值原则：能复用稿中已有色的就不引入新色。
+ */
+
+.button {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  font-family: var(--font-medium);
+  font-weight: var(--fw-medium);
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  /* 只过渡颜色类属性：尺寸变化走 layout，过渡它会让按钮"跳"。 */
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  border-color: transparent;
+  background: var(--color-disabled-bg);
+  color: var(--color-disabled-text);
+}
+
+/* ===================== 尺寸 ===================== */
+
+/* 卡片底部操作栏用：252px 宽的卡片里要放下 4 个。 */
+.sm {
+  height: 24px;
+  padding: 0 6px;
+  font-size: var(--fs-label);
+}
+
+.md {
+  height: 32px;
+  padding: 0 16px;
+  font-size: var(--fs-label);
+}
+
+/* 只有图标的按钮：正方形，不留内边距。 */
+.iconOnly {
+  padding: 0;
+}
+
+.iconOnly.sm {
+  width: 24px;
+}
+
+.iconOnly.md {
+  width: 32px;
+}
+
+/* ===================== 变体 ===================== */
+
+.primary {
+  background: var(--color-primary);
+  color: var(--text-on-brand);
+}
+
+.primary:hover:not(:disabled) {
+  /* Blue-2，稿中已有的浅一档蓝。 */
+  background: var(--color-primary-bubble);
+}
+
+.primary:active:not(:disabled) {
+  /*
+   * 用"叠加一层 8% 黑"来表达按下，而不是引入一个更深的蓝色令牌：
+   * 叠色对任何底色都成立，将来换主题色时这里不用跟着改。
+   */
+  box-shadow: inset 0 0 0 999px rgb(0 0 0 / 8%);
+}
+
+.secondary {
+  border-color: var(--border-panel);
+  background: var(--color-surface);
+  color: var(--text-heading);
+}
+
+.secondary:hover:not(:disabled) {
+  border-color: var(--border-hover);
+  background: var(--color-hover);
+}
+
+.secondary:active:not(:disabled) {
+  background: var(--color-active);
+}
+
+/*
+ * 删除类操作。只在**确认框的确认按钮**与表单底部的删除按钮上用：
+ * 列表行里常驻的删除也用它的话，一整页红色会把真正需要停留的那一下也稀释掉。
+ */
+.danger {
+  background: var(--color-danger);
+  color: var(--text-on-brand);
+}
+
+.danger:hover:not(:disabled) {
+  background: var(--color-danger-hover);
+}
+
+.danger:active:not(:disabled) {
+  box-shadow: inset 0 0 0 999px rgb(0 0 0 / 8%);
+}
+
+/*
+ * 专家卡片底部操作栏（需求 UX-3.3）。
+ *
+ * 与 `secondary` 的区别只有取色：描边用卡片自己的描边色（所以四个按钮看起来是卡片
+ * 的一部分，而不是从别处搬来的控件），文字用品牌蓝——蓝字是整个界面里"这里可以点"
+ * 的通用信号（正文是深灰），悬浮/按下时补上底色，让"整块可点"这件事有落点。
+ *
+ * 文字用的是 `--color-primary-text` 而不是 `--color-primary`：#1993ff 当文字只有
+ * 3.15:1（悬浮 2.89、按下 2.71），12px 的正文需要 4.5:1。深一档的同色相蓝在三个
+ * 状态下都过线——取值与实测见 tokens.css 里那条令牌的注释。
+ *
+ * 描边仍用稿里的 `--border-card`（白底上 1.25:1）。这一条**故意**不改：
+ * 1.4.11 管的是"识别控件所必需"的视觉信息，而这四个按钮各自有可见文字，边界
+ * 不是识别它们的必要条件；把描边压到 3:1（约 #949494）会让它们比卡片自身的描边
+ * 重得多，看起来像贴在卡片上的外来控件——而"看起来是卡片的一部分"正是这里的设计意图。
+ * 悬浮时描边转品牌蓝（3.15:1），状态变化本身是有指示的。
+ */
+.outline {
+  border-color: var(--border-card);
+  background: transparent;
+  color: var(--color-primary-text);
+}
+
+.outline:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  background: var(--color-hover);
+}
+
+.outline:active:not(:disabled) {
+  /* 按下比悬浮再深一档：`--color-hover` 是 8% 蓝，`--color-active` 是 14%。 */
+  background: var(--color-active);
+}
+
+/* 卡片底部操作栏、侧栏项等"文字即按钮"的位置。 */
+.ghost {
+  background: transparent;
+  color: var(--text-body);
+}
+
+.ghost:hover:not(:disabled) {
+  background: var(--color-hover);
+  color: var(--text-heading);
+}
+
+.ghost:active:not(:disabled) {
+  background: var(--color-active);
+}

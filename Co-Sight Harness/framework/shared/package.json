@@ -1,0 +1,31 @@
+{
+  "name": "harness-shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "框架前后端共享契约层：zod schema、API 信封、错误码、模块清单、iframe 桥协议。契约的唯一真相。",
+  "exports": {
+    ".": "./src/index.ts",
+    "./contracts": "./src/contracts/index.ts",
+    "./bridge": "./src/bridge.ts",
+    "./errors": "./src/errors.ts",
+    "./envelope": "./src/envelope.ts",
+    "./module-models": "./src/contracts/module-model.ts",
+    "./module-rag-knowledge": "./src/contracts/module-rag-knowledge.ts"
+  },
+  "types": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsc --noEmit",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.2",
+    "@vitest/coverage-v8": "5.0.4",
+    "vitest": "5.0.4"
+  }
+}

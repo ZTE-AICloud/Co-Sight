@@ -1,0 +1,43 @@
+/* 分段控件（专家页的「全部 / 最热 / 最新 / 预置」）。[稿] 轨道 32、活动块 28、圆角 16/15。 */
+
+.group {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  height: var(--tab-track-h);
+  /* 轨道内边距 = (32 - 28) / 2，活动块才能正好居中。 */
+  padding: 2px;
+  border-radius: var(--r-lg);
+  background: var(--color-surface-tint);
+}
+
+.option {
+  height: var(--tab-pill-h);
+  padding: 0 14px;
+  border: none;
+  border-radius: var(--r-pill);
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-regular);
+  font-size: var(--fs-label);
+  line-height: var(--lh-label);
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+}
+
+.option:hover:not(.selected) {
+  color: var(--text-heading);
+}
+
+/* [稿] 选中态是"白底块"，不靠颜色区分，因此未选中项保持灰字即可。 */
+.selected {
+  background: var(--color-surface);
+  color: var(--text-heading);
+  font-family: var(--font-medium);
+  font-weight: var(--fw-medium);
+  /* 白块落在浅蓝轨道上，不加阴影分不出层次（稿中活动块也没有阴影）。 */
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 6%);
+}

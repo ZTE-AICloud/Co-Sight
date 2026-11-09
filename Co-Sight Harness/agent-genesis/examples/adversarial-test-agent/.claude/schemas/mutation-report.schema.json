@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-genesis.dev/.claude/schemas/mutation-report.schema.json",
+  "title": "Adversarial Mutation Test Report",
+  "type": "object",
+  "required": ["schema_version", "target", "verdict", "rounds", "final_score", "approval"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "target": { "type": "string", "minLength": 1 },
+    "verdict": { "enum": ["converged", "partial"], "description": "partial = 达 max_rounds 未收敛" },
+    "rounds": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["round", "mutants", "killed", "survived", "equivalent", "kill_rate"],
+        "properties": {
+          "round": { "type": "integer", "minimum": 1 },
+          "mutants": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["id", "op", "rule_ref", "line", "verdict"],
+              "properties": {
+                "id": { "type": "string", "pattern": "^M[0-9]+-[0-9]+$" },
+                "op": { "type": "string", "pattern": "^OP-[A-Z][0-9]$" },
+                "rule_ref": { "type": "string" },
+                "line": { "type": "integer", "minimum": 1 },
+                "verdict": { "enum": ["killed", "survived", "equivalent"] },
+                "why_survived": { "type": "string" }
+              },
+              "additionalProperties": false
+            }
+          },
+          "killed": { "type": "integer", "minimum": 0 },
+          "survived": { "type": "integer", "minimum": 0 },
+          "equivalent": { "type": "integer", "minimum": 0 },
+          "kill_rate": { "type": "number", "minimum": 0, "maximum": 1 }
+        },
+        "additionalProperties": false
+      }
+    },
+    "final_score": {
+      "type": "object",
+      "required": ["kill_rate", "streak"],
+      "properties": {
+        "kill_rate": { "type": "number", "minimum": 0, "maximum": 1 },
+        "streak": { "type": "integer", "minimum": 0, "description": "收敛时的连续零存活轮数" }
+      },
+      "additionalProperties": false
+    },
+    "unresolved_mutants": {
+      "type": "array",
+      "description": "partial 时的未击杀清单",
+      "items": { "type": "string" }
+    },
+    "approval": {
+      "type": "object",
+      "required": ["required", "status"],
+      "properties": {
+        "required": { "const": true },
+        "status": { "enum": ["pending", "approved", "rejected"] },
+        "delivered_to": { "type": "string", "description": "批准的 tests/ 目标路径" },
+        "decided_at": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

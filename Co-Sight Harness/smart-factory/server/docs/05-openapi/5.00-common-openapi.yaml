@@ -1,0 +1,87 @@
+# 跨资源共用的形状：错误体、分页参数、时间戳。
+#
+# 本文件不是一篇契约 - paths 恒为空，只为被 5.0x-*-openapi.yaml 用跨文件 $ref 引用，
+# 让同一个形状只定义一次（散文版那份文档把错误码表抄了 6 份，正是要避免的事）。
+#
+# 「有哪些接口」以 ../04-api/4.01-接口总览.md 的索引表为准；本目录不另设总览，免得多一个入口。
+openapi: 3.0.3
+
+info:
+  title: Smart Factory 公共形状
+  version: 0.1.0
+  description: 05-openapi/ 下各资源文档共用的 schema 与参数。不含端点。
+
+servers:
+  - url: http://localhost:4100/api/smart-factory/v1
+    description: 本文件不含端点；servers 仅为满足规范对文档结构的要求。
+
+paths: {}
+
+components:
+  schemas:
+    Error:
+      type: object
+      required: [error, message, messageKey]
+      description: |
+        所有失败的统一响应体。
+        判定逻辑按 error 分，不要按 message 文本分 - message 是给人读的。
+        messageKey 是给调用方做 i18n 的键；服务端不出词典，中文 message 只是兜底。
+      properties:
+        error:
+          type: string
+          enum: [BAD_REQUEST, NOT_FOUND, CONFLICT, PAYLOAD_TOO_LARGE, INTERNAL_ERROR, BAD_GATEWAY, FRAMEWORK_UNAVAILABLE]
+          description: |
+            只有这七个取值。分界：形态非法判 BAD_REQUEST(400)；
+            形态合法但查不到判 NOT_FOUND(404)；当前状态不允许该操作判 CONFLICT(409)；
+            读取超过大小上限判 PAYLOAD_TOO_LARGE(413)；框架模块面不可达、令牌无效或上游非 2xx 判 BAD_GATEWAY(502)；
+            /models/list 的代理失败判 FRAMEWORK_UNAVAILABLE(502)；其余未预期错误判 INTERNAL_ERROR(500)。
+            409 都不是重试能自愈的，调用方应以库里的最新状态刷新界面。
+        messageKey:
+          type: string
+          description: |
+            i18n 键，形如 `error.not_found.agent` / `error.bad_request.required`。
+            服务端不出词典；调用方按当前语言查自己的词表，同一条错误切语言不需要重新请求。
+            查找顺序：精确 key → 逐段截短 → 分组的 `default` → `message`（中文兜底）→ 通用 `error.internal`。
+            该字段是增量字段：只读 error / message 的旧客户端不受影响。
+          example: error.not_found.agent
+        params:
+          type: object
+          nullable: true
+          additionalProperties:
+            oneOf:
+              - type: string
+              - type: integer
+          description: |
+            messageKey 的插值参数，对应词条里的 `{name}` / `{max}` 等占位符；没有参数时为 null。
+          example: { agentId: agt_9f8c1e2a-9a4f-4c0e-9b1d-3f2a7c6e5d40 }
+        message:
+          type: string
+          description: |
+            服务端已渲染的中文兜底。旧客户端、日志，以及调用方词表里没有该 messageKey 时用它。
+            措辞属契约的一部分，调用方可原样透出给用户。
+      example:
+        error: NOT_FOUND
+        message: 智能体 agt_9f8c1e2a-… 不存在
+        messageKey: error.not_found.agent
+        params: { agentId: agt_9f8c1e2a-… }
+
+    Timestamp:
+      type: string
+      format: date-time
+      description: ISO 8601、UTC、毫秒三位、Z 结尾。由服务端生成，客户端只解析不拼装。
+      example: '2026-10-15T07:41:22.308Z'
+
+  parameters:
+    Page:
+      name: page
+      in: query
+      required: false
+      description: 页码，从 1 起。缺省 1；非正整数或非数值静默回落为 1，不报错。
+      schema: { type: integer, minimum: 1, default: 1 }
+
+    PageSize:
+      name: pageSize
+      in: query
+      required: false
+      description: 每页条数。缺省 20，上限 200（超出按 200 截断，不报错）。
+      schema: { type: integer, minimum: 1, maximum: 200, default: 20 }

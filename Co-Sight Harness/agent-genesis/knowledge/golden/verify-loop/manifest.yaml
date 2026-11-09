@@ -1,0 +1,37 @@
+# golden manifest — verify-loop（G2 批, 源自 dexter 改造）
+# 契约见 schemas/golden-manifest.schema.yaml（字段语义单点在该文件）
+
+task_tag: verify-loop
+line: agent
+mode_id: WF6-Circuit-Breaker           # 货架位（检索键）, 非身份声明（R9）
+patterns:                               # 如实完整模式维度集（现行词汇, §3.5②重映射后）
+  - WF6-Circuit-Breaker
+  - MN-Hybrid
+  - DT1-Linear-Pass-Through
+  - G1-Review-Gate
+  - K2-Document-Grounded
+  - K3-KB-Backed
+  - K4-Rule-Driven
+  - CD3-Knowledge-Boundary
+anchor_fit: partial                     # Plan→Execute→Verify→Iterate 循环修正贴 WF6 熔断面;
+                                        # 源无熔断上限实现, 重塑时补齐（rationale 见 self-report）
+anchor_fit_rationale: "源范式是管线加反馈回路的增强形态, 循环修正控制语义贴 WF6 熔断面; 但源未实现任何迭代上限（只声明 iterate until goal）, 需重塑补熔断条款, 故为 partial 而非 real"
+standard_ref: knowledge/agent-creation/agent-output-standard.yaml
+shape_counts: {agent_entry: 1, identity_file: 1, tech_file: 1, scripts: 0, templates: 0}
+acceptance:
+  - 闭环四步齐全（Plan/Execute/Verify/Iterate）, Verify 是自动条件分支
+  - 迭代上限显式声明（默认 3 轮 / 单步 2 次）, 超限停下交人并留痕
+  - 每步落盘独立文件, 中断后可从最后落盘件断点恢复
+  - 身份层与技术层分文件维护, 信念为软约束表述
+anchors:
+  build_plan: anchors/build-plan.md
+  self_report: anchors/self-report.md
+  derived: true                         # 外部启发过程锚（§3.5⑤）
+known_concerns: []                      # G2 准入跑 G028 后如实回填
+provenance:
+  origin_repo: "virattt/dexter（外部参照库 golden-examples 策展）"
+  license: MIT
+  snapshot_date: "2026-10-16"
+  reshaped: true
+source: "G2 批量抽取批次（docs/plan/golden-asset-pool-plan.md §4 G2 步骤 2）"
+status: active

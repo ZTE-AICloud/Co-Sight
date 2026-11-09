@@ -1,0 +1,13 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    /**
+     * 显式列 types 而非依赖自动收集：共享层用到的 `URL` 是 Node 与浏览器共有的
+     * 全局量，但都不在 ES2023 lib 里。这里取 Node 的声明即可（线上两端都有）。
+     * 显式声明还能避免将来某个依赖偷偷带入全局类型。
+     */
+    "types": ["node"]
+  },
+  "include": ["src"]
+}

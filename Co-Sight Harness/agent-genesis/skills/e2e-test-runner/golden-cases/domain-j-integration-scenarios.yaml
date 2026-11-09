@@ -1,0 +1,8 @@
+domain: "J-集成场景"
+description: "测试跨 Pipeline 的集成场景 — 多Skill协作、Agent+Skill联合创建"
+test_cases:
+  - id: "TC-IS-01"
+    input: "创建一个代码审查系统：包含一个主Agent负责调度，一个安全审查Skill和一个性能审查Skill，主Agent根据PR类型自动选择合适的Skill"
+    expected: "Multi-Agent创建→2个Skill创建→主Agent调度表正确"
+    expected_phase: "DONE"
+    timeout: 900

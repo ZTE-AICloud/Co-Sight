@@ -1,0 +1,844 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Drive 插件架构图（原则 A：按元素类型分层）</title>
+<style>
+  :root {
+    --bg: #fafafa;
+    --ink: #0f172a;
+    --muted: #475569;
+    --rule: #e2e8f0;
+    --accent: #0ea5e9;
+  }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink);
+               font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                            "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+                            Roboto, sans-serif; }
+  .wrap { max-width: 1560px; margin: 0 auto; padding: 24px 28px 64px; }
+  h1 { font-size: 26px; margin: 0 0 4px; letter-spacing: -0.01em; }
+  h2 { font-size: 18px; margin: 28px 0 8px; border-left: 4px solid var(--accent);
+       padding-left: 10px; }
+  h3 { font-size: 15px; margin: 16px 0 6px; color: #1e293b; }
+  .lede { color: var(--muted); margin: 0 0 18px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0 18px;
+            font-size: 12px; color: var(--muted); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .sw { display: inline-block; width: 14px; height: 14px; border-radius: 3px;
+        border: 1px solid rgba(0,0,0,.08); }
+  .figure { background: white; border: 1px solid var(--rule); border-radius: 8px;
+            padding: 12px; overflow-x: auto; }
+  figure { margin: 0; }
+  figcaption { color: var(--muted); font-size: 12px; text-align: center;
+               margin-top: 6px; }
+  details { background: white; border: 1px solid var(--rule); border-radius: 6px;
+            padding: 8px 14px; margin: 8px 0; }
+  details > summary { cursor: pointer; font-weight: 600; color: #1e293b; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px;
+          background: white; }
+  th, td { border: 1px solid var(--rule); padding: 6px 10px; text-align: left;
+           vertical-align: top; }
+  th { background: #f1f5f9; }
+  code, kbd, .mono { font-family: "JetBrains Mono", "SF Mono", Consolas,
+                     "Liberation Mono", monospace; font-size: 12.5px;
+                     background: #f8fafc; padding: 1px 5px; border-radius: 3px;
+                     border: 1px solid #e2e8f0; }
+  p { line-height: 1.65; margin: 8px 0; }
+  ul, ol { line-height: 1.65; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 1100px) { .grid2 { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Drive 插件架构图（原则 A · 按元素类型分层）</h1>
+<p class="lede">
+  Drive 只由三种元素组成：<strong>agents</strong> / <strong>skills</strong> / <strong>hooks</strong>。
+  本图严格按"同类成层"绘制：每个 layer 只放一类东西（元素 / 元数据 / skill / script / 产物），
+  不混类。scripts 是 skill 内部被 <code>allowed-tools</code> 允许跑的工具，产物是 skill 跑出来的数据 / 文件。
+</p>
+
+<div class="legend">
+  <span><i class="sw" style="background:#0f172a"></i>L1 Runtime</span>
+  <span><i class="sw" style="background:#fef3c7"></i>L2 元素清单</span>
+  <span><i class="sw" style="background:#fef9c3"></i>L2b 元数据 + 入口</span>
+  <span><i class="sw" style="background:#dbeafe"></i>L3 Setup skill</span>
+  <span><i class="sw" style="background:#e0e7ff"></i>L3b Setup 脚本</span>
+  <span><i class="sw" style="background:#e0f2fe"></i>L3c Setup 产物</span>
+  <span><i class="sw" style="background:#dcfce7"></i>L4 执行 skill (phase)</span>
+  <span><i class="sw" style="background:#ede9fe"></i>L4 执行 skill (DAG)</span>
+  <span><i class="sw" style="background:#fce7f3"></i>L5 Worker agents</span>
+  <span><i class="sw" style="background:#fee2e2"></i>L6 Hooks 元素 + 实现</span>
+  <span><i class="sw" style="background:#cffafe"></i>L7 观测 skill</span>
+  <span><i class="sw" style="background:#ecfeff"></i>L7b 观测产物</span>
+  <span><i class="sw" style="background:#f1f5f9"></i>L8 横切 skill</span>
+</div>
+
+<div class="figure">
+<figure>
+<svg viewBox="0 0 1500 1530" xmlns="http://www.w3.org/2000/svg"
+     font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif"
+     font-size="13">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#475569"/>
+    </marker>
+  </defs>
+
+  <!-- ============ L1 · Runtime (host) ============ -->
+  <rect x="20" y="20" width="1460" height="70" rx="6" fill="#0f172a"/>
+  <text x="36" y="44" fill="#f8fafc" font-size="14" font-weight="600">
+    L1 · Runtime（宿主运行时，非 Drive 元素）
+  </text>
+  <text x="36" y="62" fill="#cbd5e1" font-size="11">
+    Claude Code (orchestrator host)  ·  MCP: AskUserQuestion / chrome-devtools  ·  git / fs（宿主基础能力）
+  </text>
+  <g>
+    <rect x="900"  y="32" width="200" height="40" rx="4" fill="#1e293b"
+          stroke="#334155"/>
+    <text x="1000" y="56" text-anchor="middle" fill="#e2e8f0">Claude Code</text>
+    <rect x="1120" y="32" width="170" height="40" rx="4" fill="#1e293b"
+          stroke="#334155"/>
+    <text x="1205" y="56" text-anchor="middle" fill="#e2e8f0">MCP tools</text>
+    <rect x="1310" y="32" width="150" height="40" rx="4" fill="#1e293b"
+          stroke="#334155"/>
+    <text x="1385" y="56" text-anchor="middle" fill="#e2e8f0">git / fs</text>
+  </g>
+
+  <!-- ============ L2 · Drive 三种元素（元素清单） ============ -->
+  <rect x="20" y="100" width="1460" height="120" rx="6"
+        fill="#fef3c7" stroke="#fde68a"/>
+  <text x="36" y="124" fill="#78350f" font-size="14" font-weight="600">
+    L2 · Drive 三种元素（元素清单 · 全部 7+17+4 = 28 件元素本体）
+  </text>
+  <g>
+    <rect x="36"  y="138" width="450" height="70" rx="4" fill="#fff"
+          stroke="#fbbf24"/>
+    <text x="261" y="160" text-anchor="middle" font-weight="600">agents · 7 件</text>
+    <text x="261" y="178" text-anchor="middle" fill="#78350f" font-size="11">
+      agents/*.md（7 个角色 prompt + 工具白名单）
+    </text>
+    <text x="56" y="196" fill="#78350f" font-size="11">analyzer / planner / executor / evaluator</text>
+
+    <rect x="506" y="138" width="450" height="70" rx="4" fill="#fff"
+          stroke="#fbbf24"/>
+    <text x="731" y="160" text-anchor="middle" font-weight="600">skills · 17 件</text>
+    <text x="731" y="178" text-anchor="middle" fill="#78350f" font-size="11">
+      skills/<name>/SKILL.md（每个含 scripts/ + references/）
+    </text>
+    <text x="526" y="196" fill="#78350f" font-size="11">
+      drive / startup / workflow-builder / state-machine / dag-runtime
+    </text>
+    <text x="526" y="208" fill="#78350f" font-size="11">
+      wave-scheduling / wave-barrier / drive-trace / drive-record / ...
+    </text>
+
+    <rect x="976" y="138" width="484" height="70" rx="4" fill="#fff"
+          stroke="#fbbf24"/>
+    <text x="1218" y="160" text-anchor="middle" font-weight="600">hooks · 4 类触发器</text>
+    <text x="1218" y="178" text-anchor="middle" fill="#78350f" font-size="11">
+      hooks/hooks.json（声明）+ hooks/*.py（实现）
+    </text>
+    <text x="996" y="196" fill="#78350f" font-size="11">
+      PreToolUse Write|Edit|MultiEdit · PreToolUse Bash
+    </text>
+    <text x="996" y="208" fill="#78350f" font-size="11">
+      PreToolUse Task|Agent|Skill · SubagentStop
+    </text>
+  </g>
+
+  <!-- ============ L2b · 元数据 + 用户入口 ============ -->
+  <rect x="20" y="230" width="1460" height="92" rx="6"
+        fill="#fef9c3" stroke="#fde047"/>
+  <text x="36" y="254" fill="#713f12" font-size="14" font-weight="600">
+    L2b · 元数据 + 用户入口（宿主读这些文件来发现和调用 Drive）
+  </text>
+  <g>
+    <rect x="36"  y="268" width="450" height="46" rx="4" fill="#fff"
+          stroke="#facc15"/>
+    <text x="261" y="290" text-anchor="middle" font-weight="600">marketplace.json</text>
+    <text x="261" y="304" text-anchor="middle" fill="#713f12" font-size="11">
+      Claude Code 插件市场元数据（zte-ai-lab 源）
+    </text>
+
+    <rect x="506" y="268" width="450" height="46" rx="4" fill="#fff"
+          stroke="#facc15"/>
+    <text x="731" y="290" text-anchor="middle" font-weight="600">plugin.json</text>
+    <text x="731" y="304" text-anchor="middle" fill="#713f12" font-size="11">
+      Drive 清单（version + agents 列表 + keywords）
+    </text>
+
+    <rect x="976" y="268" width="484" height="46" rx="4" fill="#fff"
+          stroke="#facc15"/>
+    <text x="1218" y="290" text-anchor="middle" font-weight="600">drive skill ⤳ /drive</text>
+    <text x="1218" y="304" text-anchor="middle" fill="#713f12" font-size="11">
+      17 个 skill 中唯一一个 user-invocable:true（暴露成 slash-command）
+    </text>
+  </g>
+
+  <!-- ============ L3 · Setup 阶段 skill ============ -->
+  <rect x="20" y="332" width="1460" height="120" rx="6"
+        fill="#dbeafe" stroke="#bfdbfe"/>
+  <text x="36" y="356" fill="#1e3a8a" font-size="14" font-weight="600">
+    L3 · Setup 阶段 skill（被 drive skill §1/§2 调度，建 plan + 解析 workflow）
+  </text>
+  <g>
+    <rect x="36"  y="370" width="450" height="74" rx="4" fill="#fff"
+          stroke="#93c5fd"/>
+    <text x="261" y="392" text-anchor="middle" font-weight="600">startup skill</text>
+    <text x="261" y="408" text-anchor="middle" fill="#1e3a8a" font-size="11">
+      (user-invocable:false) · drive §1 调用
+    </text>
+    <text x="56" y="424" fill="#1e3a8a" font-size="11">· 跑 init_planning.py 建骨架</text>
+    <text x="56" y="436" fill="#1e3a8a" font-size="11">· 跑 discover_inputs.py 扫输入</text>
+
+    <rect x="506" y="370" width="450" height="74" rx="4" fill="#fff"
+          stroke="#93c5fd"/>
+    <text x="731" y="392" text-anchor="middle" font-weight="600">workflow-builder skill</text>
+    <text x="731" y="408" text-anchor="middle" fill="#1e3a8a" font-size="11">
+      (user-invocable:true) · 暴露成 /workflow-builder
+    </text>
+    <text x="526" y="424" fill="#1e3a8a" font-size="11">· 生成 workflow.yaml</text>
+    <text x="526" y="436" fill="#1e3a8a" font-size="11">· 校验 yaml 合法性</text>
+
+    <rect x="976" y="370" width="484" height="74" rx="4" fill="#fff"
+          stroke="#93c5fd"/>
+    <text x="1218" y="392" text-anchor="middle" font-weight="600">drive skill（作为 setup 执行者）</text>
+    <text x="1218" y="408" text-anchor="middle" fill="#1e3a8a" font-size="11">
+      (user-invocable:true) · 用户入口 /drive
+    </text>
+    <text x="996" y="424" fill="#1e3a8a" font-size="11">· §1 调 startup</text>
+    <text x="996" y="436" fill="#1e3a8a" font-size="11">· §2 跑 read_workflow.py 解析 yaml</text>
+  </g>
+
+  <!-- ============ L3b · Setup 脚本 ============ -->
+  <rect x="20" y="462" width="1460" height="92" rx="6"
+        fill="#e0e7ff" stroke="#a5b4fc"/>
+  <text x="36" y="486" fill="#312e81" font-size="14" font-weight="600">
+    L3b · Setup 脚本（skill 的内部 allowed-tools 工具，不是元素）
+  </text>
+  <g>
+    <rect x="36"  y="500" width="340" height="44" rx="4" fill="#fff"
+          stroke="#818cf8"/>
+    <text x="206" y="522" text-anchor="middle" font-weight="600">init_planning.py</text>
+    <text x="206" y="536" text-anchor="middle" fill="#312e81" font-size="11">
+      startup skill 的脚本
+    </text>
+
+    <rect x="386" y="500" width="340" height="44" rx="4" fill="#fff"
+          stroke="#818cf8"/>
+    <text x="556" y="522" text-anchor="middle" font-weight="600">discover_inputs.py</text>
+    <text x="556" y="536" text-anchor="middle" fill="#312e81" font-size="11">
+      startup skill 的脚本
+    </text>
+
+    <rect x="736" y="500" width="340" height="44" rx="4" fill="#fff"
+          stroke="#818cf8"/>
+    <text x="906" y="522" text-anchor="middle" font-weight="600">serve.py</text>
+    <text x="906" y="536" text-anchor="middle" fill="#312e81" font-size="11">
+      drive-trace skill 的脚本 · :8080
+    </text>
+
+    <rect x="1086" y="500" width="374" height="44" rx="4" fill="#fff"
+          stroke="#818cf8"/>
+    <text x="1273" y="522" text-anchor="middle" font-weight="600">read_workflow.py</text>
+    <text x="1273" y="536" text-anchor="middle" fill="#312e81" font-size="11">
+      drive skill 的脚本（解析 yaml）
+    </text>
+  </g>
+
+  <!-- ============ L3c · Setup 产物 ============ -->
+  <rect x="20" y="564" width="1460" height="92" rx="6"
+        fill="#e0f2fe" stroke="#7dd3fc"/>
+  <text x="36" y="588" fill="#075985" font-size="14" font-weight="600">
+    L3c · Setup 产物（skill 跑出来的数据 / 文件，不是元素）
+  </text>
+  <g>
+    <rect x="36"  y="602" width="450" height="44" rx="4" fill="#fff"
+          stroke="#38bdf8"/>
+    <text x="261" y="624" text-anchor="middle" font-weight="600">envelope.data</text>
+    <text x="261" y="638" text-anchor="middle" fill="#075985" font-size="11">
+      { plan_name, plan_dir, intent, auto_mode } · 下游唯一来源
+    </text>
+
+    <rect x="506" y="602" width="450" height="44" rx="4" fill="#fff"
+          stroke="#38bdf8"/>
+    <text x="731" y="624" text-anchor="middle" font-weight="600">.drive/<plan_dir>/</text>
+    <text x="731" y="638" text-anchor="middle" fill="#075985" font-size="11">
+      文件系统骨架（含 executeState · run-log · ...）
+    </text>
+
+    <rect x="976" y="602" width="484" height="44" rx="4" fill="#fff"
+          stroke="#38bdf8"/>
+    <text x="1218" y="624" text-anchor="middle" font-weight="600">workflow.yaml</text>
+    <text x="1218" y="638" text-anchor="middle" fill="#075985" font-size="11">
+      workflow-builder skill 写出，含 mode + phases/agents
+    </text>
+  </g>
+
+  <!-- ============ L4 · 执行模式 skill ============ -->
+  <!-- phase mode band -->
+  <rect x="20" y="666" width="720" height="220" rx="6"
+        fill="#dcfce7" stroke="#86efac"/>
+  <text x="36" y="690" fill="#14532d" font-size="14" font-weight="600">
+    L4a · 执行模式 skill · phase mode
+  </text>
+  <text x="36" y="706" fill="#166534" font-size="11">
+    顺序五段：start → analyze → plan → execute → evaluate
+  </text>
+  <g>
+    <!-- 5 phase pills (topology illustration, not element) -->
+    <rect x="36"  y="720" width="120" height="36" rx="18" fill="#fff"
+          stroke="#22c55e"/>
+    <text x="96"  y="742" text-anchor="middle" font-weight="600">start</text>
+    <rect x="170" y="720" width="120" height="36" rx="18" fill="#fff"
+          stroke="#22c55e"/>
+    <text x="230" y="742" text-anchor="middle" font-weight="600">analyze</text>
+    <rect x="304" y="720" width="120" height="36" rx="18" fill="#fff"
+          stroke="#22c55e"/>
+    <text x="364" y="742" text-anchor="middle" font-weight="600">plan</text>
+    <rect x="438" y="720" width="120" height="36" rx="18" fill="#fff"
+          stroke="#22c55e"/>
+    <text x="498" y="742" text-anchor="middle" font-weight="600">execute</text>
+    <rect x="572" y="720" width="120" height="36" rx="18" fill="#fff"
+          stroke="#22c55e"/>
+    <text x="632" y="742" text-anchor="middle" font-weight="600">evaluate</text>
+
+    <rect x="36"  y="772" width="320" height="100" rx="4" fill="#fff"
+          stroke="#86efac"/>
+    <text x="196" y="794" text-anchor="middle" font-weight="600">state-machine skill</text>
+    <text x="196" y="810" text-anchor="middle" fill="#14532d" font-size="11">
+      state_cli.py · state_rules.py · audit_append.py
+    </text>
+    <text x="56" y="830" fill="#166534" font-size="11">· read / require / update / transition</text>
+    <text x="56" y="844" fill="#166534" font-size="11">· request-confirmation / log</text>
+    <text x="56" y="858" fill="#166534" font-size="11">· fcntl 锁 + revision 自增</text>
+
+    <rect x="376" y="772" width="316" height="100" rx="4" fill="#fff"
+          stroke="#86efac"/>
+    <text x="534" y="794" text-anchor="middle" font-weight="600">executeState.json（产物）</text>
+    <text x="534" y="810" text-anchor="middle" fill="#14532d" font-size="11">
+      阶段权威状态
+    </text>
+    <text x="396" y="830" fill="#166534" font-size="11">· active_stage / pending_plan_review</text>
+    <text x="396" y="844" fill="#166534" font-size="11">· confirmed_stages（default-deny 闸门）</text>
+    <text x="396" y="858" fill="#166534" font-size="11">· state.verdicts[id]</text>
+  </g>
+
+  <!-- DAG mode band -->
+  <rect x="760" y="666" width="720" height="220" rx="6"
+        fill="#ede9fe" stroke="#c4b5fd"/>
+  <text x="776" y="690" fill="#4c1d95" font-size="14" font-weight="600">
+    L4b · 执行模式 skill · DAG mode
+  </text>
+  <text x="776" y="706" fill="#5b21b6" font-size="11">
+    拓扑波次 · agents[i].agent · depends_on · 并行 fan-out
+  </text>
+  <g>
+    <!-- DAG mini graph (topology illustration) -->
+    <circle cx="840"  cy="744" r="16" fill="#fff" stroke="#7c3aed"/>
+    <text x="840"  y="748" text-anchor="middle">a1</text>
+    <circle cx="920"  cy="722" r="16" fill="#fff" stroke="#7c3aed"/>
+    <text x="920"  y="726" text-anchor="middle">a2</text>
+    <circle cx="920"  cy="766" r="16" fill="#fff" stroke="#7c3aed"/>
+    <text x="920"  y="770" text-anchor="middle">a3</text>
+    <circle cx="1000" cy="744" r="16" fill="#fff" stroke="#7c3aed"/>
+    <text x="1000" y="748" text-anchor="middle">a4</text>
+    <circle cx="1080" cy="722" r="16" fill="#fff" stroke="#7c3aed"/>
+    <text x="1080" y="726" text-anchor="middle">a5</text>
+    <circle cx="1080" cy="766" r="16" fill="#fff" stroke="#7c3aed"/>
+    <text x="1080" y="770" text-anchor="middle">a6</text>
+    <circle cx="1160" cy="744" r="16" fill="#fff" stroke="#7c3aed"/>
+    <text x="1160" y="748" text-anchor="middle">a7</text>
+    <line x1="856" y1="744" x2="904" y2="724" stroke="#7c3aed"/>
+    <line x1="856" y1="744" x2="904" y2="764" stroke="#7c3aed"/>
+    <line x1="936" y1="722" x2="984" y2="742" stroke="#7c3aed"/>
+    <line x1="936" y1="766" x2="984" y2="746" stroke="#7c3aed"/>
+    <line x1="1016" y1="742" x2="1064" y2="722" stroke="#7c3aed"/>
+    <line x1="1016" y1="746" x2="1064" y2="766" stroke="#7c3aed"/>
+    <line x1="1096" y1="722" x2="1144" y2="742" stroke="#7c3aed"/>
+    <line x1="1096" y1="766" x2="1144" y2="746" stroke="#7c3aed"/>
+
+    <rect x="1196" y="712" width="260" height="74" rx="4" fill="#fff"
+          stroke="#c4b5fd"/>
+    <text x="1326" y="734" text-anchor="middle" font-weight="600">dag-runtime skill</text>
+    <text x="1216" y="750" fill="#5b21b6" font-size="11">dag_runtime.py</text>
+    <text x="1216" y="764" fill="#5b21b6" font-size="11">active_agents[] / current_wave</text>
+    <text x="1216" y="778" fill="#5b21b6" font-size="11">confirmed_nodes[]（HITL）</text>
+
+    <rect x="1196" y="794" width="260" height="40" rx="4" fill="#fff"
+          stroke="#c4b5fd"/>
+    <text x="1326" y="816" text-anchor="middle" font-weight="600">wave-scheduling skill</text>
+
+    <rect x="776"  y="794" width="200" height="40" rx="4" fill="#fff"
+          stroke="#c4b5fd"/>
+    <text x="876" y="816" text-anchor="middle" font-weight="600">wave-barrier skill</text>
+
+    <rect x="986"  y="794" width="200" height="40" rx="4" fill="#fff"
+          stroke="#c4b5fd"/>
+    <text x="1086" y="816" text-anchor="middle" font-weight="600">aggregates（产物）</text>
+
+    <rect x="776"  y="842" width="410" height="36" rx="4" fill="#fff"
+          stroke="#c4b5fd"/>
+    <text x="981" y="864" text-anchor="middle" fill="#5b21b6" font-size="11">
+      waves.yaml · topo-state.json · active_agents[]（产物，由上述 skill 写出）
+    </text>
+    <rect x="1196" y="842" width="260" height="36" rx="4" fill="#fff"
+          stroke="#c4b5fd"/>
+    <text x="1326" y="864" text-anchor="middle" fill="#5b21b6" font-size="11">
+      失败模式：wave_mismatch / fs diff barrier
+    </text>
+  </g>
+
+  <!-- ============ L5 · Worker agents ============ -->
+  <rect x="20" y="906" width="1460" height="120" rx="6"
+        fill="#fce7f3" stroke="#f9a8d4"/>
+  <text x="36" y="930" fill="#831843" font-size="14" font-weight="600">
+    L5 · Worker agents（运行时派发的 7 个角色，drive 全局 run_in_background=False · 并发靠同消息多次 Agent()）
+  </text>
+  <g>
+    <rect x="36"   y="948" width="190" height="62" rx="4" fill="#fff"
+          stroke="#f472b6"/>
+    <text x="131" y="970" text-anchor="middle" font-weight="600">analyzer agent</text>
+    <text x="131" y="986" text-anchor="middle" fill="#831843" font-size="11">
+      解析 / 澄清需求
+    </text>
+    <text x="131" y="1000" text-anchor="middle" fill="#831843" font-size="11">
+      写 manifest.md
+    </text>
+
+    <rect x="246"  y="948" width="190" height="62" rx="4" fill="#fff"
+          stroke="#f472b6"/>
+    <text x="341" y="970" text-anchor="middle" font-weight="600">planner agent</text>
+    <text x="341" y="986" text-anchor="middle" fill="#831843" font-size="11">
+      拆解 taskRecord.yaml
+    </text>
+    <text x="341" y="1000" text-anchor="middle" fill="#831843" font-size="11">
+      调 wave-scheduling
+    </text>
+
+    <rect x="456"  y="948" width="190" height="62" rx="4" fill="#fff"
+          stroke="#f472b6"/>
+    <text x="551" y="970" text-anchor="middle" font-weight="600">executor agent</text>
+    <text x="551" y="986" text-anchor="middle" fill="#831843" font-size="11">
+      实施任务
+    </text>
+    <text x="551" y="1000" text-anchor="middle" fill="#831843" font-size="11">
+      写 SUMMARY.md / commit
+    </text>
+
+    <rect x="666"  y="948" width="190" height="62" rx="4" fill="#fff"
+          stroke="#f472b6"/>
+    <text x="761" y="970" text-anchor="middle" font-weight="600">evaluator agent</text>
+    <text x="761" y="986" text-anchor="middle" fill="#831843" font-size="11">
+      verdict_required 终态
+    </text>
+    <text x="761" y="1000" text-anchor="middle" fill="#831843" font-size="11">
+      写 state.verdict
+    </text>
+
+    <rect x="876"  y="948" width="190" height="62" rx="4" fill="#fff"
+          stroke="#f472b6"/>
+    <text x="971" y="970" text-anchor="middle" font-weight="600">code-reviewer agent</text>
+    <text x="971" y="986" text-anchor="middle" fill="#831843" font-size="11">
+      静态 + 设计评审
+    </text>
+
+    <rect x="1086" y="948" width="190" height="62" rx="4" fill="#fff"
+          stroke="#f472b6"/>
+    <text x="1181" y="970" text-anchor="middle" font-weight="600">security-reviewer agent</text>
+    <text x="1181" y="986" text-anchor="middle" fill="#831843" font-size="11">
+      OWASP / 凭据 / 注入
+    </text>
+
+    <rect x="1296" y="948" width="164" height="62" rx="4" fill="#fff"
+          stroke="#f472b6"/>
+    <text x="1378" y="970" text-anchor="middle" font-weight="600">gate-human agent</text>
+    <text x="1378" y="986" text-anchor="middle" fill="#831843" font-size="11">
+      HITL 中介
+    </text>
+    <text x="1378" y="1000" text-anchor="middle" fill="#831843" font-size="11">
+      approve / revise
+    </text>
+  </g>
+
+  <!-- ============ L6 · Hooks 元素 + 实现 ============ -->
+  <rect x="20" y="1046" width="1460" height="160" rx="6"
+        fill="#fee2e2" stroke="#fca5a5"/>
+  <text x="36" y="1070" fill="#7f1d1d" font-size="14" font-weight="600">
+    L6 · Hooks 元素 + 实现（hooks.json 4 类触发器 + 实现脚本 + 校验函数 · default-deny 强制层）
+  </text>
+  <text x="36" y="1086" fill="#991b1b" font-size="11">
+    confirm_stage.py / confirm_node.py 不在任何 allowed-tools 内 → 权限弹窗即人工确认
+  </text>
+
+  <!-- sub-section: 触发器 -->
+  <rect x="36"  y="1100" width="450" height="92" rx="4" fill="#fff"
+        stroke="#fca5a5"/>
+  <text x="261" y="1120" text-anchor="middle" font-weight="600">hooks.json 4 类触发器</text>
+  <text x="56" y="1140" fill="#7f1d1d" font-size="11">PreToolUse Write|Edit|MultiEdit</text>
+  <text x="60" y="1156" fill="#7f1d1d" font-size="11">PreToolUse Bash</text>
+  <text x="60" y="1172" fill="#7f1d1d" font-size="11">PreToolUse Task|Agent|Skill</text>
+  <text x="60" y="1188" fill="#7f1d1d" font-size="11">SubagentStop</text>
+
+  <!-- sub-section: 实现脚本 -->
+  <rect x="506" y="1100" width="450" height="92" rx="4" fill="#fff"
+        stroke="#fca5a5"/>
+  <text x="731" y="1120" text-anchor="middle" font-weight="600">hooks 实现脚本</text>
+  <text x="526" y="1140" fill="#7f1d1d" font-size="11">planning_write_guard.py</text>
+  <text x="530" y="1156" fill="#7f1d1d" font-size="11">state_transition_guard.py</text>
+  <text x="530" y="1172" fill="#7f1d1d" font-size="11">audit_events.py</text>
+  <text x="530" y="1188" fill="#7f1d1d" font-size="11">subagent_report_guard.py</text>
+
+  <!-- sub-section: HITL 校验 -->
+  <rect x="976" y="1100" width="240" height="92" rx="4" fill="#fff"
+        stroke="#fca5a5"/>
+  <text x="1096" y="1120" text-anchor="middle" font-weight="600">HITL 校验函数</text>
+  <text x="986" y="1140" fill="#7f1d1d" font-size="11">check_stage_confirmation</text>
+  <text x="990" y="1156" fill="#7f1d1d" font-size="11">check_dag_node_confirmation</text>
+  <text x="990" y="1172" fill="#7f1d1d" font-size="11">check_confirmation_tampering</text>
+  <text x="990" y="1188" fill="#7f1d1d" font-size="11">（hooks_protocol.py）</text>
+
+  <!-- sub-section: skill 内部校验 -->
+  <rect x="1236" y="1100" width="224" height="92" rx="4" fill="#fff"
+        stroke="#fca5a5"/>
+  <text x="1348" y="1120" text-anchor="middle" font-weight="600">skill 内部校验</text>
+  <text x="1246" y="1140" fill="#7f1d1d" font-size="11">state_rules.VALID_TRANSITIONS</text>
+  <text x="1250" y="1156" fill="#7f1d1d" font-size="11">state_cli.cmd_mark_status</text>
+  <text x="1250" y="1172" fill="#7f1d1d" font-size="11">（state-machine skill 脚本）</text>
+  <text x="1250" y="1188" fill="#7f1d1d" font-size="11">· 双重闸门互不依赖</text>
+
+  <!-- ============ L7 · Observability skill ============ -->
+  <rect x="20" y="1226" width="1460" height="92" rx="6"
+        fill="#cffafe" stroke="#67e8f9"/>
+  <text x="36" y="1250" fill="#155e75" font-size="14" font-weight="600">
+    L7 · Observability skill（观测用的 3 个 skill）
+  </text>
+  <g>
+    <rect x="36"   y="1264" width="450" height="44" rx="4" fill="#fff"
+          stroke="#22d3ee"/>
+    <text x="261" y="1286" text-anchor="middle" font-weight="600">drive-trace skill</text>
+    <text x="261" y="1300" text-anchor="middle" fill="#155e75" font-size="11">
+      在线浏览器 live view · :8080
+    </text>
+
+    <rect x="506"  y="1264" width="450" height="44" rx="4" fill="#fff"
+          stroke="#22d3ee"/>
+    <text x="731" y="1286" text-anchor="middle" font-weight="600">drive-record skill</text>
+    <text x="731" y="1300" text-anchor="middle" fill="#155e75" font-size="11">
+      离线复盘 run-log.jsonl
+    </text>
+
+    <rect x="976"  y="1264" width="484" height="44" rx="4" fill="#fff"
+          stroke="#22d3ee"/>
+    <text x="1218" y="1286" text-anchor="middle" font-weight="600">drive-viz skill</text>
+    <text x="1218" y="1300" text-anchor="middle" fill="#155e75" font-size="11">
+      DAG / 阶段视觉化（token 驱动）
+    </text>
+  </g>
+
+  <!-- ============ L7b · Observability 产物 ============ -->
+  <rect x="20" y="1328" width="1460" height="92" rx="6"
+        fill="#ecfeff" stroke="#a5f3fc"/>
+  <text x="36" y="1352" fill="#155e75" font-size="14" font-weight="600">
+    L7b · Observability 产物（观测 skill 写出的数据 / 文件）
+  </text>
+  <g>
+    <rect x="36"   y="1366" width="340" height="44" rx="4" fill="#fff"
+          stroke="#67e8f9"/>
+    <text x="206" y="1388" text-anchor="middle" font-weight="600">run-log.jsonl</text>
+    <text x="206" y="1402" text-anchor="middle" fill="#155e75" font-size="11">
+      audit_events + state_cli log 追加
+    </text>
+
+    <rect x="386"  y="1366" width="340" height="44" rx="4" fill="#fff"
+          stroke="#67e8f9"/>
+    <text x="556" y="1388" text-anchor="middle" font-weight="600">executeState.json</text>
+    <text x="556" y="1402" text-anchor="middle" fill="#155e75" font-size="11">
+      fcntl 锁 · revision 自增 · 当前权威状态
+    </text>
+
+    <rect x="736"  y="1366" width="340" height="44" rx="4" fill="#fff"
+          stroke="#67e8f9"/>
+    <text x="906" y="1388" text-anchor="middle" font-weight="600">waves.yaml</text>
+    <text x="906" y="1402" text-anchor="middle" fill="#155e75" font-size="11">
+      wave-scheduling 写出 · wave + budget + upstream
+    </text>
+
+    <rect x="1086" y="1366" width="374" height="44" rx="4" fill="#fff"
+          stroke="#67e8f9"/>
+    <text x="1273" y="1388" text-anchor="middle" font-weight="600">topo-state.json</text>
+    <text x="1273" y="1402" text-anchor="middle" fill="#155e75" font-size="11">
+      wave-scheduling 中间态
+    </text>
+  </g>
+
+  <!-- ============ L8 · Cross-cutting skill ============ -->
+  <rect x="20" y="1440" width="1460" height="80" rx="6"
+        fill="#f1f5f9" stroke="#cbd5e1"/>
+  <text x="36" y="1464" fill="#0f172a" font-size="14" font-weight="600">
+    L8 · 横切 skill（任意阶段按需调用的 skill）
+  </text>
+  <g>
+    <rect x="36"   y="1474" width="200" height="36" rx="4" fill="#fff"
+          stroke="#cbd5e1"/>
+    <text x="136" y="1496" text-anchor="middle" font-weight="600">execution-patterns</text>
+
+    <rect x="246"  y="1474" width="200" height="36" rx="4" fill="#fff"
+          stroke="#cbd5e1"/>
+    <text x="346" y="1496" text-anchor="middle" font-weight="600">eval-fresh-evidence</text>
+
+    <rect x="456"  y="1474" width="200" height="36" rx="4" fill="#fff"
+          stroke="#cbd5e1"/>
+    <text x="556" y="1496" text-anchor="middle" font-weight="600">smart-decomposition</text>
+
+    <rect x="666"  y="1474" width="200" height="36" rx="4" fill="#fff"
+          stroke="#cbd5e1"/>
+    <text x="766" y="1496" text-anchor="middle" font-weight="600">critic-3-perspectives</text>
+
+    <rect x="876"  y="1474" width="200" height="36" rx="4" fill="#fff"
+          stroke="#cbd5e1"/>
+    <text x="976" y="1496" text-anchor="middle" font-weight="600">context-packaging</text>
+
+    <rect x="1086" y="1474" width="200" height="36" rx="4" fill="#fff"
+          stroke="#cbd5e1"/>
+    <text x="1186" y="1496" text-anchor="middle" font-weight="600">bootstrap-data-completer</text>
+
+    <rect x="1296" y="1474" width="164" height="36" rx="4" fill="#fff"
+          stroke="#cbd5e1"/>
+    <text x="1378" y="1496" text-anchor="middle" font-weight="600">drive-cleanup</text>
+  </g>
+</svg>
+<figcaption>
+  图 1 · Drive 插件架构（原则 A：L2=元素清单 / L2b=元数据 / L3=Setup skill / L3b=Setup 脚本 / L3c=Setup 产物 / L4=执行 skill / L5=worker agents / L6=hooks 元素+实现 / L7=观测 skill / L7b=观测产物 / L8=横切 skill）
+</figcaption>
+</figure>
+</div>
+
+<!-- ===================== DETAILED EXPLANATION ===================== -->
+
+<h2>1. 设计目标与边界</h2>
+<p>
+  Drive 是 <strong>基于 Claude Code 的声明式多 agent 编排引擎</strong>，v2.3.4。
+  它不打包独立的运行时引擎 —— Claude Code 自身就是 runtime，Drive 通过 <code>plugin.json</code>
+  注册插件、由 <code>drive</code> skill（用户通过 <code>/drive</code> 调用）触发、按 <code>workflow.yaml</code> 调度。
+</p>
+<p><strong>组成元素只有三种</strong>（理解 Drive 的关键）：</p>
+<ul>
+  <li><strong>agents</strong>（7）—— <code>plugin.json</code> 的 <code>agents: [...]</code> 字段定义角色。</li>
+  <li><strong>skills</strong>（17）—— 每个 skill 自带 <code>SKILL.md</code> + <code>scripts/</code> + <code>references/</code>；其中 <code>user-invocable: true</code> 的会暴露成 slash-command（如 <code>/drive</code>、<code>/workflow-builder</code>）。</li>
+  <li><strong>hooks</strong>（4 类触发器）—— 由 <code>hooks/hooks.json</code> 声明，实现落在 <code>hooks/*.py</code>。</li>
+</ul>
+<p>没有第四种。scripts 不算独立元素，是 skill / hook 内部被 <code>allowed-tools</code> 允许跑的工具。本图严格按"同类成层"原则绘制 —— 每个 layer 只放一类东西。</p>
+
+<h2>2. 逐层拆解</h2>
+
+<h3>L1 · Runtime（宿主）</h3>
+<p>
+  宿主运行时，<strong>不是 Drive 元素</strong>。Claude Code 负责接收用户输入、维护会话、调度 <code>Agent(...)</code>
+  子调用、执行 Bash/Write/Edit 等工具。MCP 提供两个常用集成：
+</p>
+<ul>
+  <li><code>AskUserQuestion</code> —— Drive 主对话用来真向用户发起 HITL 决策。</li>
+  <li><code>chrome-devtools navigate_page</code> —— <code>startup skill</code> 在 <code>live_trace=true</code> 时自动开浏览器看 trace。</li>
+  <li><code>git / fs</code> —— 宿主基础能力，drive-cleanup / drive-record 间接消费。</li>
+</ul>
+
+<h3>L2 · Drive 三种元素（元素清单）</h3>
+<p>
+  Drive <strong>本体只有这三类元素</strong>，共 7 + 17 + 4 = 28 件。所有可见能力都从这 28 件元素派生。
+</p>
+<table>
+  <tr><th>类型</th><th>数量</th><th>落点</th></tr>
+  <tr><td>agents</td><td>7</td><td><code>agents/*.md</code></td></tr>
+  <tr><td>skills</td><td>17</td><td><code>skills/<name>/SKILL.md</code> + <code>scripts/</code> + <code>references/</code></td></tr>
+  <tr><td>hooks</td><td>4 类触发器</td><td><code>hooks/hooks.json</code>（声明）+ <code>hooks/*.py</code>（实现）</td></tr>
+</table>
+
+<h3>L2b · 元数据 + 用户入口</h3>
+<p>
+  不是 Drive 元素本身，而是<strong>宿主读取它们来发现和调用 Drive</strong>的文件：
+</p>
+<table>
+  <tr><th>文件</th><th>作用</th></tr>
+  <tr><td><code>marketplace.json</code></td><td>Claude Code 插件市场元数据：注册 <code>zte-ai-lab</code> 内部插件源，列出 drive 条目。</td></tr>
+  <tr><td><code>plugin.json</code></td><td>Drive 清单：version、<strong>7 个 agent</strong>、keywords。</td></tr>
+  <tr><td><code>drive skill</code> ⤳ <code>/drive</code></td><td>17 个 skill 中<strong>唯一一个</strong>面向用户的入口（<code>user-invocable: true</code>）。</td></tr>
+</table>
+
+<h3>L3 · Setup 阶段 skill</h3>
+<p>
+  setup 阶段被 drive skill 调度的 3 个 skill（其余 skill 在 L4 / L7 / L8 出现）。
+</p>
+<table>
+  <tr><th>skill</th><th>user-invocable</th><th>调用方</th><th>职责</th></tr>
+  <tr><td><code>startup</code></td><td>false</td><td>drive §1</td><td>建 plan_dir + 启 trace + 写 envelope</td></tr>
+  <tr><td><code>workflow-builder</code></td><td>true ⤳ <code>/workflow-builder</code></td><td>用户</td><td>生成 / 校验 <code>workflow.yaml</code></td></tr>
+  <tr><td><code>drive</code></td><td>true ⤳ <code>/drive</code></td><td>用户</td><td>§1 调 startup；§2 跑 <code>read_workflow.py</code> 解析 yaml</td></tr>
+</table>
+
+<h3>L3b · Setup 脚本（skill 内部 allowed-tools）</h3>
+<p>setup 阶段 4 个 skill 各自允许跑的脚本：</p>
+<table>
+  <tr><th>脚本</th><th>所属 skill</th><th>作用</th></tr>
+  <tr><td><code>init_planning.py</code></td><td>startup</td><td>建 <code>.drive/<plan_dir>/</code> 骨架</td></tr>
+  <tr><td><code>discover_inputs.py</code></td><td>startup</td><td>扫 proposal / workflow / skills / rules，给 readiness 评分</td></tr>
+  <tr><td><code>serve.py</code></td><td>drive-trace</td><td>起 <code>:8080</code> 浏览器 trace（被 startup 拉起）</td></tr>
+  <tr><td><code>read_workflow.py</code></td><td>drive</td><td>解析 <code>workflow.yaml</code> → <code>{ mode, phases[], agents[] }</code></td></tr>
+</table>
+
+<h3>L3c · Setup 产物</h3>
+<p>setup 阶段跑出来的 3 类产物（不是元素）：</p>
+<table>
+  <tr><th>产物</th><th>形态</th><th>用途</th></tr>
+  <tr><td><code>envelope.data</code></td><td>运行时数据</td><td><code>{ plan_name, plan_dir, intent, auto_mode }</code>，下游唯一来源</td></tr>
+  <tr><td><code>.drive/<plan_dir>/</code></td><td>目录骨架</td><td>含 <code>executeState.json</code> / <code>run-log.jsonl</code> 等</td></tr>
+  <tr><td><code>workflow.yaml</code></td><td>配置文件</td><td>workflow-builder 写出，含 <code>mode + phases/agents</code></td></tr>
+</table>
+
+<h3>L4 · 执行模式 skill</h3>
+<p>
+  drive skill §3 根据 <code>workflow.yaml</code> 的 <code>mode</code> 字段选一种执行模式；两种模式对应不同 skill：
+</p>
+
+<div class="grid2">
+  <details open>
+  <summary>L4a · phase mode（顺序五段）</summary>
+  <p>
+    经典五段流水线：<strong>start → analyze → plan → execute → evaluate</strong>。
+    <code>phases[i].agent</code> 决定每段派哪个 worker；阶段必须出现在 <code>confirmed_stages</code>
+    里才能流出。
+  </p>
+  <p>
+    <strong>执行 skill</strong>：<code>state-machine skill</code>（其脚本 <code>state_cli.py</code> / <code>state_rules.py</code> / <code>audit_append.py</code>）。
+  </p>
+  <p>
+    <strong>对应产物</strong>：<code>executeState.json</code>（fcntl 排他锁 + revision 单调自增；agent 自己写自己的阶段状态，编排层只读）。
+  </p>
+  </details>
+
+  <details open>
+  <summary>L4b · DAG mode（拓扑波次 · 并行 fan-out）</summary>
+  <p>
+    把任务图按 <code>depends_on</code> 拆成 wave，每 wave 内部并发跑。
+  </p>
+  <p>
+    <strong>执行 skill × 3</strong>：
+  </p>
+  <ul>
+    <li><strong>dag-runtime skill</strong>（<code>dag_runtime.py</code>）—— <code>active_agents[]</code>、<code>current_wave</code>、<code>confirmed_nodes[]</code>、<code>state.verdicts[id]</code> 四个字段的读写 + HITL 入口。</li>
+    <li><strong>wave-scheduling skill</strong> —— Kahn BFS 拓扑排序 + 环检测 → 落 <code>waves.yaml</code> + <code>topo-state.json</code>，<strong>不调 LLM</strong>。</li>
+    <li><strong>wave-barrier skill</strong> —— 每 wave 收尾聚合 <code>aggregate.py</code>，做 <strong>task_id 强比对</strong> + <strong>fs diff barrier</strong>，不通过就不写 state。</li>
+  </ul>
+  <p>
+    <strong>对应产物</strong>：<code>waves.yaml</code>（权威依赖账）、<code>topo-state.json</code>（运行中间态）、<code>active_agents[]</code>。
+  </p>
+  <p>
+    <strong>失败模式</strong>：<code>advance-wave</code> 是 fail-closed —— 当前 wave 还有 running 节点 → <code>wave_barrier_not_ready</code>；跳 wave → <code>wave_skip</code>。
+  </p>
+  </details>
+</div>
+
+<h3>L5 · Worker agents（运行时派发）</h3>
+<p>七种角色各司其职，由 drive 全局策略派发：</p>
+<table>
+  <tr><th>角色</th><th>职责</th></tr>
+  <tr><td><code>analyzer agent</code></td><td>解析 / 澄清需求，写 manifest.md。</td></tr>
+  <tr><td><code>planner agent</code></td><td>拆解为 taskRecord.yaml（带 depends_on / agent_name），调 wave-scheduling。</td></tr>
+  <tr><td><code>executor agent</code></td><td>实施任务，写 SUMMARY.md；驱动 wave-barrier aggregate。</td></tr>
+  <tr><td><code>evaluator agent</code></td><td>对 verdict_required agent 做终态判定，写 state.verdict。</td></tr>
+  <tr><td><code>code-reviewer agent</code></td><td>静态 + 设计评审。</td></tr>
+  <tr><td><code>security-reviewer agent</code></td><td>OWASP / 凭据 / 注入扫描。</td></tr>
+  <tr><td><code>gate-human agent</code></td><td>HITL 中介：approve → confirm-node → mark-completed；revise → mark-skipped。</td></tr>
+</table>
+<p>
+  调度策略（全局）：<code>run_in_background=False</code>，<strong>并发靠"同消息多次 Agent() 调用"</strong>。
+</p>
+
+<h3>L6 · Hooks 元素 + 实现</h3>
+<p>hooks 这一类元素的全部内容物，4 个 sub-section：</p>
+<table>
+  <tr><th>sub-section</th><th>内容</th></tr>
+  <tr><td><strong>hooks.json 4 类触发器</strong></td><td>PreToolUse Write|Edit|MultiEdit / PreToolUse Bash / PreToolUse Task|Agent|Skill / SubagentStop</td></tr>
+  <tr><td><strong>hooks 实现脚本</strong></td><td>planning_write_guard / state_transition_guard / audit_events / subagent_report_guard</td></tr>
+  <tr><td><strong>HITL 校验函数</strong></td><td>check_stage_confirmation / check_dag_node_confirmation / check_confirmation_tampering（hooks_protocol.py）</td></tr>
+  <tr><td><strong>skill 内部校验</strong></td><td>state_rules.VALID_TRANSITIONS / state_cli.cmd_mark_status（state-machine skill 脚本）</td></tr>
+</table>
+<p><strong>HITL 默认人工的奥秘</strong>：</p>
+<ul>
+  <li><code>hooks_protocol._CONFIRM_ENTRYPOINTS = ("confirm_stage.py", "confirm_node.py")</code> —— <strong>唯一</strong>写 <code>confirmed_stages</code> / <code>confirmed_nodes</code> 的入口。</li>
+  <li>这两个脚本<strong>刻意不在任何 skill 的 <code>allowed-tools</code> 内</strong> —— 执行时由 Claude Code 弹授权请求，<strong>权限弹窗本身即人工确认</strong>。</li>
+  <li><code>hooks_protocol.check_confirmation_tampering</code> 拦截绕过 attempt（如直接改 state.json 字段）。</li>
+  <li><strong>双重闸门</strong>：DAG 模式 <code>mark-completed</code> 既要 hook 通过，又要 <code>dag_runtime.cmd_mark_status</code> CLI 内部校验，单独绕任一道都不够。</li>
+</ul>
+
+<h3>L7 · Observability skill</h3>
+<p>观测用的 3 个 skill：</p>
+<table>
+  <tr><th>skill</th><th>形态</th><th>用途</th></tr>
+  <tr><td><code>drive-trace skill</code></td><td>浏览器 :8080</td><td>live view，可被 chrome-devtools 自动开</td></tr>
+  <tr><td><code>drive-record skill</code></td><td>离线 HTML/JSON</td><td>事后复盘 run-log.jsonl</td></tr>
+  <tr><td><code>drive-viz skill</code></td><td>token-driven SVG</td><td>DAG / 阶段视觉化</td></tr>
+</table>
+
+<h3>L7b · Observability 产物</h3>
+<p>观测 skill 写出的 4 个产物：</p>
+<table>
+  <tr><th>产物</th><th>形态</th><th>来源</th></tr>
+  <tr><td><code>run-log.jsonl</code></td><td>追加事件流</td><td>audit_events.py + state_cli log</td></tr>
+  <tr><td><code>executeState.json</code></td><td>fcntl 锁文件</td><td>state-machine skill</td></tr>
+  <tr><td><code>waves.yaml</code></td><td>配置文件</td><td>wave-scheduling skill</td></tr>
+  <tr><td><code>topo-state.json</code></td><td>运行中间态</td><td>wave-scheduling skill</td></tr>
+</table>
+
+<h3>L8 · 横切 skill</h3>
+<p>
+  任意阶段按需调用的 skill：
+</p>
+<ul>
+  <li><strong>execution-patterns</strong>：wave 并行 / retry ceiling / checkpoint trigger 模板</li>
+  <li><strong>eval-fresh-evidence</strong>：<code>verdict_required</code> 终态闸的判定规则</li>
+  <li><strong>smart-decomposition</strong>：自动拆解任务到 taskRecord</li>
+  <li><strong>critic-3-perspectives</strong>：三视角审视方案（事实 / 高级工程师 / 安全）</li>
+  <li><strong>context-packaging</strong>：把上下文打包成 worker 可消费的 envelope</li>
+  <li><strong>bootstrap-data-completer</strong>：缺 manifest / taskRecord 时诊断 + 补齐</li>
+  <li><strong>drive-cleanup</strong>：drive 收尾清理（kill trace server、归档状态）</li>
+</ul>
+
+<h2>3. 关键不变量（hard NO）</h2>
+<ol>
+  <li><strong>阶段/节点必须经 HITL</strong>：phase 模式 stage 必须出现在 <code>confirmed_stages</code>；DAG 模式节点必须出现在 <code>confirmed_nodes</code>。</li>
+  <li><strong>写入口唯一</strong>：<code>confirm_stage.py</code> / <code>confirm_node.py</code> 是唯一合法写入口，不在任何 <code>allowed-tools</code>。</li>
+  <li><strong>agent 自己汇报状态</strong>：编排层只读，agent 履职完毕自己写自己的阶段/节点状态。</li>
+  <li><strong>wave barrier 强比对</strong>：summary task_id 与 <code>waves.yaml</code> 不一致 → 不写 state。</li>
+  <li><strong>fs diff barrier</strong>：status=done 但 <code>files_changed</code> 空 → 不写 state。</li>
+  <li><strong>retry budget</strong>：<code>retry_count >= max-retries</code>（默认 3）时 <code>REASON_RETRY_BUDGET_EXCEEDED</code>。</li>
+  <li><strong>auto_mode 是唯一全局旁路</strong>，开了就跳过 confirm，hook 不挡。</li>
+</ol>
+
+<h2>4. 一条典型请求的生命周期</h2>
+<ol>
+  <li>用户 <code>/drive add-user-auth</code> → <strong>drive skill</strong> §1 调 <strong>startup skill</strong> → 跑 <code>init_planning.py</code> + <code>discover_inputs.py</code> + 拉起 <strong>drive-trace skill</strong> 的 <code>serve.py</code>。</li>
+  <li><strong>startup skill</strong> 写 <code>envelope.data</code>；<strong>workflow-builder skill</strong> 生成 <code>workflow.yaml</code>。</li>
+  <li><strong>drive skill</strong> §2 跑自己的 <code>read_workflow.py</code> → 拿到 <code>{ mode, phases[], agents[] }</code>。</li>
+  <li>drive 按 <code>phases[i].agent</code> 派 <strong>analyzer agent</strong> → 写 manifest.md → 通过 <strong>state-machine skill</strong> 的 <code>state_cli update</code>。</li>
+  <li>analyzer 完成 → drive 触发 <strong>gate-human agent</strong> 做 HITL（<code>request-confirmation</code>）→ 用户回 approve。</li>
+  <li>hook 校验函数 <strong>check_stage_confirmation</strong> 通过 → drive 推进到 plan 阶段。</li>
+  <li>重复 4-6 直到 evaluate 阶段 → <strong>evaluator agent</strong> 写 <code>state.verdict == pass</code> → drive 收尾。</li>
+  <li><strong>drive-cleanup skill</strong> 关 trace server；<strong>drive-record skill</strong> 生成复盘报告。</li>
+</ol>
+
+<h2>5. 与业界差异</h2>
+<ul>
+  <li><strong>声明式编排</strong>：<code>workflow.yaml</code> 把"造编排"和"跑编排"分开。</li>
+  <li><strong>runtime 即 Claude Code</strong>：不引入独立 runtime。</li>
+  <li><strong>钩子即事实权威</strong>：HITL / 状态流转 / 写入白名单由钩子层强制。</li>
+  <li><strong>多层观测</strong>：live trace + 离线 record + 视觉 viz + run-log + git 五重追溯。</li>
+  <li><strong>双模式 + 双闸门</strong>：phase / DAG 共享 worker pool，HITL 入口一致。</li>
+</ul>
+
+</div>
+</body>
+</html>

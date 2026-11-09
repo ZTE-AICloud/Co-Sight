@@ -1,0 +1,691 @@
+/*
+ * 使用说明页。
+ *
+ * 视觉方向是"编辑式长文 + 三步入职"，不是又一组等距卡片：
+ * - 页头用大字号和一根短横线建立层次，不加渐变球或背景大图；
+ * - 目录靠左、正文靠右，滚动时目录吸附，长文里始终知道自己在哪一节；
+ * - 三步是页面唯一的主线，序号用大号字，动作按钮跟着每一步走。
+ *
+ * 颜色、圆角、字号全部取 tokens.css 里已有的值；这里只新增长文需要的行高与留白。
+ */
+
+.page {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  /*
+   * 这页活在侧栏旁边：窗口 1024 宽时真正能用的可能只有 700。
+   * 断点因此挂在容器宽度上，而不是视口宽度——否则窄面板里还在排三列。
+   */
+  container-type: inline-size;
+  /*
+   * 极淡的蓝只在页头右上方出现一次：说明页是阅读面，背景不该抢正文。
+   * 用 background-image 而不是伪元素，免得它压在文字上面还要调 z-index。
+   */
+  background-image: radial-gradient(900px 380px at 84% -12%, rgb(25 147 255 / 12%), transparent 70%);
+  background-repeat: no-repeat;
+}
+
+/*
+ * 铺满主面板，只留呼吸用的内边距。上限 1680 是给超宽屏兜底的：
+ * 再宽下去，一行正文会长到需要转头。长段落另有 62–64ch 的行宽限制。
+ */
+.inner {
+  width: 100%;
+  max-width: 1680px;
+  margin: 0 auto;
+  padding: clamp(28px, 4vw, 56px) clamp(20px, 3vw, 48px) 72px;
+}
+
+/* ===================== 页头 ===================== */
+
+.hero {
+  padding: 4px 0 36px;
+  border-bottom: 1px solid var(--border-card);
+}
+
+/* 短横线 + 小字标签：比一个彩色胶囊更像文档，也更省视觉噪音。 */
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-primary-text);
+  font-family: var(--font-medium);
+  font-size: var(--fs-tag);
+  letter-spacing: 0.14em;
+}
+
+.eyebrow::before {
+  content: '';
+  width: 18px;
+  height: 1px;
+  background: currentColor;
+}
+
+.title {
+  /*
+   * 中文标题按字数换行，`ch` 量的是"0"的宽度（约半字），22ch 只够 11 个汉字，
+   * 会把最后两个字挤到下一行。放宽到整句能排下的宽度，再让浏览器均分两行。
+   */
+  max-width: 30ch;
+  text-wrap: balance;
+  margin: 14px 0 12px;
+  color: var(--text-wordmark);
+  font-family: var(--font-medium);
+  font-size: clamp(26px, 3.2vw, 38px);
+  font-weight: var(--fw-medium);
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+/*
+ * 页头这句是整页的定位语，桌面上应该一眼读完，不要被 62ch 的行宽拆成两行。
+ * 不写 white-space: nowrap——窄面板里它必须还能换行，否则会横向溢出。
+ */
+.lead {
+  color: var(--text-body);
+  font-size: var(--fs-input);
+  line-height: 1.75;
+}
+
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+/* ===================== 目录 + 正文 ===================== */
+
+.body {
+  display: grid;
+  grid-template-columns: 164px minmax(0, 1fr);
+  gap: clamp(24px, 4vw, 56px);
+  align-items: start;
+  padding-top: 36px;
+}
+
+/*
+ * 吸附在滚动容器顶部。`top` 与小屏的 `scroll-margin-top` 取同一个值，
+ * 点目录跳到某一节时标题不会被顶边切掉。
+ */
+.toc {
+  position: sticky;
+  top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* 目录上方的小标题：让这一列读起来是"章节大纲"，不是一串零散链接。 */
+.tocHeading {
+  margin-bottom: 8px;
+  padding: 0 10px;
+  color: var(--text-secondary);
+  font-family: var(--font-medium);
+  font-size: var(--fs-tag);
+  letter-spacing: 0.12em;
+}
+
+.tocLink {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 8px 10px;
+  border-left: 2px solid transparent;
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  color: var(--text-secondary);
+  font-size: var(--fs-label);
+  line-height: 1.5;
+  text-decoration: none;
+  transition:
+    color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out);
+}
+
+.tocLink:hover {
+  border-left-color: var(--border-hover);
+  background: var(--color-hover);
+  color: var(--text-heading);
+}
+
+/*
+ * 当前读到的章节：左侧主色竖条 + 浅底 + 加粗。
+ * 三条同时出现才够醒目——单靠颜色在低对比度屏幕上不够分得清。
+ */
+.tocLinkActive {
+  border-left-color: var(--color-primary);
+  background: var(--color-selected-soft);
+  color: var(--color-primary-text);
+  font-family: var(--font-medium);
+}
+
+.tocIndex {
+  flex: none;
+  color: var(--text-secondary);
+  font-family: var(--font-brand);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  opacity: 0.7;
+  transition: color var(--duration-fast) var(--ease-out);
+}
+
+.tocLink:hover .tocIndex {
+  color: var(--color-primary-text);
+}
+
+.tocLinkActive .tocIndex {
+  color: var(--color-primary-text);
+  opacity: 1;
+}
+
+.content {
+  min-width: 0;
+}
+
+.section {
+  padding-bottom: 40px;
+  scroll-margin-top: 24px;
+}
+
+.section + .section {
+  padding-top: 36px;
+  border-top: 1px solid var(--border-card);
+}
+
+.sectionHead {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.sectionIndex {
+  color: var(--color-primary);
+  font-family: var(--font-brand);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+}
+
+.sectionTitle {
+  color: var(--text-heading);
+  font-family: var(--font-medium);
+  font-size: 18px;
+  font-weight: var(--fw-medium);
+  line-height: 1.4;
+}
+
+.sectionLead {
+  max-width: 64ch;
+  margin-top: 10px;
+  color: var(--text-body);
+  font-size: var(--fs-input);
+  line-height: 1.75;
+}
+
+/* ===================== 三步上手 ===================== */
+
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.step {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: start;
+  padding: 18px 20px;
+  border: 1px solid var(--border-card);
+  border-radius: var(--r-card);
+  background: var(--color-surface);
+  transition:
+    border-color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.step:hover {
+  border-color: var(--border-hover);
+  box-shadow: var(--shadow-card-hover);
+}
+
+/*
+ * 步骤标识用图标，不再用序号。
+ *
+ * 页面本身已经有 01–05 的章节编号，三步里再排一套 01/02/03，
+ * 读者会分不清"这是第几步"还是"这是第几章"。换成图标后，
+ * 章节数字只剩一套；图标还顺带说明了这一步在做什么
+ * （设置 / 工作区 / 对话），比数字更好认。
+ */
+.stepIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-sm);
+  background: var(--color-tag-blue);
+  color: var(--color-primary-text);
+}
+
+.stepText {
+  min-width: 0;
+}
+
+.stepTitle {
+  color: var(--text-heading);
+  font-family: var(--font-medium);
+  font-size: var(--fs-input);
+  font-weight: var(--fw-medium);
+  line-height: 1.5;
+}
+
+.stepBody {
+  margin-top: 6px;
+  color: var(--text-body);
+  font-size: var(--fs-label);
+  line-height: 1.7;
+}
+
+/*
+ * 每一步的动作做成"浅蓝胶囊 + 右箭头"，垂直居中在卡片右侧。
+ *
+ * 之前是 24px 的描边小按钮，贴在卡片右上角：尺寸比正文还小，又和下面的
+ * 说明文字脱节，读起来像别处搬来的控件。换成带底色的胶囊后，它在三步卡片里
+ * 是唯一的高饱和块，视线会直接落到"下一步做什么"；悬浮时底色转实心蓝、
+ * 箭头右移 2px，动作方向不用文字解释。
+ *
+ * 选择器多带一层 `.step`：Button 自己的 `.sm` 也定义了 height/padding，
+ * 只靠单类选择器谁覆盖谁取决于打包顺序，多一层父类就不依赖顺序了。
+ */
+.step .stepAction {
+  align-self: center;
+  gap: 4px;
+  height: 30px;
+  padding: 0 14px;
+  border-color: transparent;
+  border-radius: var(--r-pill);
+  background: var(--color-tag-blue);
+  color: var(--color-primary-text);
+}
+
+.step .stepAction:hover:not(:disabled) {
+  background: var(--color-primary);
+  color: var(--text-on-brand);
+}
+
+.step .stepAction:active:not(:disabled) {
+  /* 与主按钮一致：叠一层 8% 黑表示按下，不额外引入深蓝色令牌。 */
+  box-shadow: inset 0 0 0 999px rgb(0 0 0 / 8%);
+}
+
+.step .stepAction:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.stepArrow {
+  flex: none;
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.step .stepAction:hover .stepArrow {
+  transform: translateX(2px);
+}
+
+/* ===================== 模型 / 工作区 ===================== */
+
+.subTitle {
+  margin-top: 24px;
+  color: var(--text-heading);
+  font-family: var(--font-medium);
+  font-size: var(--fs-label);
+  font-weight: var(--fw-medium);
+  line-height: 1.5;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.list li {
+  position: relative;
+  padding-left: 18px;
+  color: var(--text-body);
+  font-size: var(--fs-label);
+  line-height: 1.7;
+}
+
+.list li::before {
+  content: '';
+  position: absolute;
+  top: 0.72em;
+  left: 2px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  opacity: 0.7;
+}
+
+.noteGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.note {
+  padding: 16px 18px;
+  border: 1px solid var(--border-card);
+  border-left: 2px solid var(--color-primary-soft);
+  border-radius: var(--r-card);
+  background: var(--color-canvas);
+}
+
+.noteTitle {
+  color: var(--text-heading);
+  font-family: var(--font-medium);
+  font-size: var(--fs-label);
+  font-weight: var(--fw-medium);
+  line-height: 1.5;
+}
+
+.noteBody {
+  margin-top: 6px;
+  color: var(--text-body);
+  font-size: var(--fs-label);
+  line-height: 1.7;
+}
+
+/* 一条"切换工作区会重载"的提醒：暖色只在这里出现一次。 */
+.tip {
+  margin-top: 18px;
+  padding: 12px 14px 12px 16px;
+  border-radius: var(--r-sm);
+  background: var(--color-tag-amber);
+  color: var(--text-body);
+  font-size: var(--fs-label);
+  line-height: 1.7;
+}
+
+/* ===================== 功能地图 ===================== */
+
+/*
+ * 五张卡纵向一条线排下来，每张都是"图左、说明右"的同一节奏。
+ * 两列网格会让截图被压成小缩略图，而且五张卡总会剩半行空位；
+ * 单列铺满后每张截图都能看清入口，也不需要为奇偶数量做特殊排版。
+ */
+.moduleGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 20px;
+}
+
+.moduleCard {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(280px, 1fr);
+  align-items: stretch;
+  border: 1px solid var(--border-card);
+  border-radius: var(--r-card);
+  background: var(--color-surface);
+  overflow: hidden;
+  transition: border-color var(--duration-fast) var(--ease-out);
+}
+
+.moduleCard:hover {
+  border-color: var(--border-hover);
+}
+
+.shotButton {
+  display: block;
+  padding: 0;
+  border: 0;
+  border-right: 1px solid var(--border-card);
+  background: var(--color-canvas);
+  line-height: 0;
+  cursor: zoom-in;
+}
+
+.shotButton:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
+
+.shot {
+  display: block;
+  width: 100%;
+  /* 截图统一按 1900×900 输出，保持这个比例，不要被拉变形。 */
+  aspect-ratio: 19 / 9;
+  object-fit: cover;
+  object-position: top center;
+}
+
+/* 说明在行内垂直居中，和左边的截图对齐。 */
+.moduleText {
+  align-self: center;
+  padding: 22px 26px;
+}
+
+.cardIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--r-sm);
+  background: var(--color-tag-blue);
+  color: var(--color-primary-text);
+}
+
+.cardTitle {
+  margin-top: 12px;
+  color: var(--text-heading);
+  font-family: var(--font-medium);
+  font-size: var(--fs-input);
+  font-weight: var(--fw-medium);
+  line-height: 1.5;
+}
+
+.cardBody {
+  margin-top: 6px;
+  color: var(--text-body);
+  font-size: var(--fs-label);
+  line-height: 1.7;
+}
+
+/* ===================== 常见问题 ===================== */
+
+.faqList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.faqItem {
+  border: 1px solid var(--border-card);
+  border-radius: var(--r-sm);
+  background: var(--color-surface);
+}
+
+.faqItem[open] {
+  border-color: var(--border-hover);
+}
+
+.faqSummary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 13px 16px;
+  color: var(--text-heading);
+  font-family: var(--font-medium);
+  font-size: var(--fs-label);
+  line-height: 1.5;
+  list-style: none;
+  cursor: pointer;
+}
+
+/* Safari / Chrome 的默认三角；去掉后自己用 chevron 表达展开态。 */
+.faqSummary::-webkit-details-marker {
+  display: none;
+}
+
+.faqChevron {
+  flex: none;
+  color: var(--text-secondary);
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.faqItem[open] .faqChevron {
+  transform: rotate(180deg);
+}
+
+.faqAnswer {
+  padding: 0 16px 14px;
+  color: var(--text-body);
+  font-size: var(--fs-label);
+  line-height: 1.75;
+}
+
+.footerHint {
+  margin-top: 8px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border-card);
+  color: var(--text-secondary);
+  font-size: var(--fs-label);
+  line-height: 1.75;
+}
+
+/* ===================== 大图预览 ===================== */
+
+/*
+ * 点击截图后在当前页铺满预览：不新开标签页，读者关掉就回到原段落。
+ * 整层都可点关闭（满足"再点一下收起"），右上角另有明确的关闭按钮。
+ */
+.preview {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  background: rgb(8 18 32 / 72%);
+  cursor: zoom-out;
+}
+
+.previewImage {
+  width: auto;
+  height: auto;
+  max-width: min(1600px, 94vw);
+  max-height: 88vh;
+  border-radius: var(--r-card);
+  background: var(--color-surface);
+  box-shadow: 0 24px 80px rgb(0 0 0 / 35%);
+}
+
+.previewClose {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid rgb(255 255 255 / 28%);
+  border-radius: 50%;
+  background: rgb(0 0 0 / 28%);
+  color: #fff;
+  cursor: pointer;
+  transition: background-color var(--duration-fast) var(--ease-out);
+}
+
+.previewClose:hover {
+  background: rgb(0 0 0 / 48%);
+}
+
+.previewClose:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+/* ===================== 响应式 ===================== */
+
+/* 窄面板先把目录收成一行可换行的胶囊，正文不再被 164px 的列挤压。 */
+@container (max-width: 860px) {
+  .body {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .toc {
+    position: static;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border-card);
+  }
+
+  /* 胶囊行里再放"本页目录"四个字只会占地方，隐藏掉。 */
+  .tocHeading {
+    display: none;
+  }
+
+  .tocLink {
+    padding: 6px 10px;
+    border-left: none;
+    border-radius: var(--r-pill);
+  }
+
+  .tocLink:hover {
+    border-left-color: transparent;
+  }
+
+  .tocLinkActive {
+    border-left-color: transparent;
+  }
+}
+
+@container (max-width: 720px) {
+  .noteGrid {
+    grid-template-columns: 1fr;
+  }
+
+  /* 行内两列放不下时，截图回到上方、说明落在下方。 */
+  .moduleCard {
+    grid-template-columns: 1fr;
+  }
+
+  .shotButton {
+    border-right: none;
+    border-bottom: 1px solid var(--border-card);
+  }
+
+  .moduleText {
+    padding: 18px;
+  }
+}
+
+/* 步骤卡在窄面板里把动作按钮收到正文下面，避免三列把正文挤成一列字。 */
+@container (max-width: 640px) {
+  .step {
+    /* 第一列跟着 40px 的图标走；比图标窄会让它压到正文上。 */
+    grid-template-columns: 40px minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .step > :last-child {
+    grid-column: 2;
+    justify-self: start;
+  }
+}

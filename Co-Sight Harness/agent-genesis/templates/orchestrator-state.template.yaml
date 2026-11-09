@@ -1,0 +1,8 @@
+---
+pipeline: agent-creation
+pipeline_status: IN_PROGRESS
+current_step: null
+last_update: {ISO8601-timestamp}
+pipeline_retry_budget: 5
+total_retry_count: 0
+steps: []

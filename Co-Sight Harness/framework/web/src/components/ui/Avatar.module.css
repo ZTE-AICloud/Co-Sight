@@ -1,0 +1,49 @@
+/* 头像。[稿] 三档：24（侧栏用户行）/ 32（卡片）/ 40（会话）。 */
+
+.avatar {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  /*
+   * 无图时的兜底外观：浅色底 + 深色字。
+   *
+   * 底色由内联样式按名字哈希给出（见 Avatar.tsx）。字色固定用 --text-heading
+   * 而不是白色：哈希出来的色相里必然有黄色系，白字落在浅黄上对比度只有 2 点几，
+   * 深字落在同一底色上则有 7:1 以上。也就是说"浅底深字"这套搭配对任意色相都成立，
+   * "深底白字"不是。
+   */
+  border-radius: var(--r-full);
+  background: var(--color-tag-bg);
+  color: var(--text-heading);
+  font-family: var(--font-medium);
+  font-weight: var(--fw-medium);
+  user-select: none;
+}
+
+.sm {
+  width: var(--avatar-sm);
+  height: var(--avatar-sm);
+  font-size: var(--fs-card-author);
+}
+
+.md {
+  width: var(--avatar-md);
+  height: var(--avatar-md);
+  font-size: var(--fs-label);
+}
+
+.lg {
+  width: var(--avatar-lg);
+  height: var(--avatar-lg);
+  font-size: var(--fs-nav);
+}
+
+.image {
+  width: 100%;
+  height: 100%;
+  /* 肖像图按人脸位置裁切比居中裁切更不容易切到头顶。 */
+  object-fit: cover;
+  object-position: center 30%;
+}

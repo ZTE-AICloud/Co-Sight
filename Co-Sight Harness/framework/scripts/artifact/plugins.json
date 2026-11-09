@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "plugins": [
+    {
+      "dir": "drive",
+      "plugin": "drive",
+      "marketplace": "zte-ai-lab",
+      "requires": {
+        "bins": [
+          "python3"
+        ]
+      }
+    },
+    {
+      "dir": "agent-genesis",
+      "plugin": "agent-genesis",
+      "marketplace": "agent-genesis",
+      "requires": {
+        "bins": [
+          "python3"
+        ]
+      }
+    },
+    {
+      "dir": "agent-evaluator",
+      "plugin": "goldeval",
+      "marketplace": "goldeval",
+      "requires": {
+        "bins": []
+      }
+    },
+    {
+      "dir": "skill-optimizer",
+      "plugin": "skill-optimizer",
+      "marketplace": "skillx",
+      "requires": {
+        "bins": []
+      }
+    },
+    {
+      "dir": "cosight-bot",
+      "plugin": "cosightbot",
+      "marketplace": "cosightbot",
+      "requires": {
+        "bins": [
+          "python3"
+        ]
+      }
+    }
+  ]
+}

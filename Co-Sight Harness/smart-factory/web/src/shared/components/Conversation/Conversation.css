@@ -1,0 +1,550 @@
+/*
+ * Conversation 的样式。
+ *
+ * 形状来自 cc-turn-stream 那版设计稿（一轮一折：提问气泡 → 折叠条 → 过程
+ * 明细 → 分隔线 → 最终回答），色值改走 global.css 的 token —— 共享组件里不该再出现
+ * #10b981 这类 feature 方言。
+ *
+ * 命名沿用 Composer.css 的完整 BEM（block__element--modifier），这是 shared/ 下的方言；
+ * agent-create / agent-list 那些 .ac- / .al- 前缀是 feature 自己的方言。
+ *
+ * 相对旧版（.ac-msg / .ac-trace）两处**有意的**变化：
+ *   1. 助手正文不再套气泡 —— 只有用户的提问是气泡，其余一律平铺，让折叠是唯一的边框
+ *   2. 「技能调用轨迹」那个卡头被折叠条自身的摘要吸收，少一层框
+ */
+
+/* ---------- 外壳 ---------- */
+
+.conversation {
+  display: flex;
+  flex-direction: column;
+  /* 两个 min-* 都是防撑破：它是栅格轨道里的直接子元素，长内容不许把轨道顶宽 */
+  min-width: 0;
+  min-height: 0;
+  border-right: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.conversation__head {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px 11px;
+  border-bottom: 1px solid #eef0f3;
+}
+
+.conversation__head h3 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 620;
+}
+
+.conversation__live {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--color-ok);
+}
+
+.conversation__live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-ok);
+}
+
+/* 滚动区的壳：两块浮层（续页提示 / 回到最新）以它为定位基准，发送框长高也不影响 */
+.conversation__viewport {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.conversation__scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  /* 两轮之间的间距。轮内 ask → reply 只隔 10px（见 .conversation__turn），
+     靠这个差把「一轮」在视觉上抱成团 */
+  gap: 20px;
+  padding: 16px 18px;
+}
+
+/* 续页提示：绝对定位，不占滚动内容的高度 —— 否则它出现/消失会把续页的锚点算歪 */
+.conversation__older {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 3px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--color-text-weak);
+  font-size: 11px;
+  pointer-events: none;
+}
+
+/* 「回到最新」：翻上去才出现，贴底就自己消失 */
+.conversation__jump {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-text-weak);
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(17, 24, 39, 0.08);
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.conversation__jump:hover {
+  color: var(--color-text);
+  border-color: #d6dae1;
+}
+
+.conversation__jump-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--color-ok);
+}
+
+.conversation__foot {
+  flex-shrink: 0;
+  padding: 11px 18px 14px;
+  border-top: 1px solid #eef0f3;
+}
+
+/* 发送框本体是 shared/components/Composer，这里只留装它的壳 */
+
+/* ---------- 一轮 ---------- */
+
+.conversation__turn {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.conversation__ask {
+  display: flex;
+  gap: 9px;
+  flex-direction: row-reverse;
+}
+
+.conversation__reply {
+  display: flex;
+  gap: 9px;
+}
+
+.conversation__avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  background: rgba(47, 111, 237, 0.1);
+  color: var(--color-primary);
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.conversation__avatar--user {
+  background: #e5e7eb;
+  color: #4b5563;
+}
+
+/*
+ * 正文列：占满剩下的宽度（折叠条、分隔线要靠它撑开），但最多 84%。
+ * 提问那一侧再靠 align-items 把气泡收到右边 —— 气泡是 flex item，宽度由内容决定，
+ * 所以短问题就是个小气泡，不会拉成一条通栏。
+ */
+.conversation__body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  max-width: 84%;
+  gap: 6px;
+}
+
+.conversation__ask .conversation__body {
+  align-items: flex-end;
+}
+
+.conversation__bubble {
+  max-width: 100%;
+  padding: 9px 13px;
+  border-radius: 11px;
+  border-top-right-radius: 3px;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 13px;
+  line-height: 1.62;
+  /* 用户打的换行要保留：工坊的首条消息是「命令 + 换行 + 正文」两段 */
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* 随消息带进来的本地路径：贴在气泡下面，样式比气泡弱一档 —— 它是补充，不是正文 */
+.conversation__files {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 5px;
+  /*
+   * 必须显式封顶：这是列向 flex 的子项，宽度默认由内容（max-content）决定，
+   * 而路径是一整串不能断行的文本 —— 不封顶的话整行会顶出对话栏，chip 的
+   * `max-width: 100%` 也会失去参照（100% 指的是它自己那条无穷宽的容器）。
+   */
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* chip 本身的长相在 FileChip.css（与发送框共用一套）：这里只管这一行怎么排 */
+
+/* ---------- 过程折叠条 ---------- */
+
+.conversation__procbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 8px;
+  background: #fafbfc;
+  color: var(--color-text-weak);
+  font-family: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.conversation__procbar:hover {
+  background: #f2f4f7;
+}
+
+.conversation__procbar b {
+  font-weight: 620;
+}
+
+.conversation__sep {
+  color: #d1d5db;
+}
+
+.conversation__procbar-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.conversation__caret {
+  display: inline-flex;
+  flex-shrink: 0;
+  margin-left: auto;
+  color: #b7bdc6;
+  transition: transform 0.15s ease;
+}
+
+.conversation__procbar[aria-expanded='true'] .conversation__caret {
+  transform: rotate(180deg);
+}
+
+/* 三态：只有图标着色 + 那句话不一样，其余同形 —— 一眼扫过去能看出成没成 */
+.conversation__procbar[data-state='done'] .conversation__procbar-icon {
+  color: var(--color-ok);
+}
+
+.conversation__procbar[data-state='running'] .conversation__procbar-icon {
+  color: var(--color-primary);
+}
+
+.conversation__procbar[data-state='failed'] .conversation__procbar-icon {
+  color: var(--color-danger);
+}
+
+/* 「正在执行」的占位条不是按钮：里面还没有东西可展开 */
+.conversation__procbar--static {
+  cursor: default;
+}
+
+.conversation__procbar--static:hover {
+  background: #fafbfc;
+}
+
+.conversation__spin {
+  width: 11px;
+  height: 11px;
+  border: 2px solid rgba(47, 111, 237, 0.25);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: conversation-spin 0.7s linear infinite;
+}
+
+@keyframes conversation-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 关掉动效时别停成一个歪着的圈：放慢而不是取消，转还是在转，只是不晃眼 */
+@media (prefers-reduced-motion: reduce) {
+  .conversation__spin {
+    animation-duration: 2.4s;
+  }
+}
+
+/* ---------- 过程明细 ---------- */
+
+.conversation__proc {
+  padding-left: 10px;
+  border-left: 2px solid #eef0f3;
+}
+
+.conversation__entry {
+  border-radius: 6px;
+}
+
+.conversation__entry + .conversation__entry {
+  margin-top: 1px;
+}
+
+.conversation__entry-line {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  padding: 4px 6px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: left;
+  cursor: pointer;
+}
+
+.conversation__entry-line:hover {
+  background: #f7f8fa;
+}
+
+/* 没有明细的条目退化成纯展示：别给按不动的按钮留悬停反馈 */
+.conversation__entry-line:disabled {
+  cursor: default;
+}
+
+.conversation__entry-line:disabled:hover {
+  background: transparent;
+}
+
+.conversation__entry-lead {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 14px;
+  color: var(--color-text-weak);
+}
+
+.conversation__entry-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #d1d5db;
+}
+
+.conversation__entry-line--done .conversation__entry-lead {
+  color: var(--color-ok);
+}
+
+.conversation__entry-line--failed .conversation__entry-lead {
+  color: var(--color-danger);
+}
+
+.conversation__entry-line--running .conversation__entry-lead {
+  color: var(--color-primary);
+}
+
+.conversation__entry-name {
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.conversation__entry-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-text-weak);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/*
+ * 工具条目里的路径摘要：可点开右侧预览。
+ *
+ * 平时就是那行灰字，只是加虚线下划线告诉用户「这里能点」；悬停才升到正文色，
+ * 免得折叠体里一行行都是蓝链接。
+ */
+.conversation__entry-file {
+  padding: 0;
+  border: none;
+  background: transparent;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  text-align: left;
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.conversation__entry-file:hover {
+  color: var(--color-primary);
+}
+
+/* 行里的箭头不吃 margin-left:auto —— 前面的明细已经是 flex:1，会把它顶到右边 */
+.conversation__entry-line .conversation__caret {
+  margin-left: 0;
+  color: #c8ccd3;
+}
+
+.conversation__entry-line[aria-expanded='true'] .conversation__caret {
+  transform: rotate(180deg);
+}
+
+.conversation__entry-detail {
+  margin: 2px 0 5px 26px;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 7px;
+  background: #fcfcfd;
+  /* 明细可能很长（一整段工具输出）：给个上限，让它自己滚，别把折叠体撑到天上 */
+  max-height: 168px;
+  overflow-y: auto;
+  font-size: 12px;
+  line-height: 1.65;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* 工具明细多给一点高度：参数 + 输出两块，168px 只够看个开头 */
+.conversation__entry-detail--tool {
+  max-height: 280px;
+}
+
+.conversation__entry-block + .conversation__entry-block {
+  margin-top: 8px;
+}
+
+.conversation__entry-block-label {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--color-text-weak);
+  font-family: inherit;
+  font-size: 10.5px;
+  line-height: 1.5;
+}
+
+.conversation__entry-pre {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.conversation__entry-pre--error {
+  color: var(--color-danger);
+}
+
+.conversation__more {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  margin-top: 2px;
+  padding: 4px 6px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-text-weak);
+  font-family: inherit;
+  font-size: 11.5px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.conversation__more:hover {
+  background: #f7f8fa;
+  color: var(--color-primary);
+}
+
+.conversation__more .conversation__caret {
+  margin-left: 0;
+}
+
+.conversation__more[aria-expanded='true'] .conversation__caret {
+  transform: rotate(180deg);
+}
+
+/* ---------- 分隔线 + 最终回答 ---------- */
+
+.conversation__rule {
+  height: 1px;
+  margin: 5px 0;
+  background: #eef0f3;
+}
+
+/*
+ * 正文是 Markdown 渲染出来的块（shared/components/Markdown），这里只给排版基线：
+ * 字号、行高、颜色。**不能再写 white-space: pre-wrap** —— 那是纯文本时代的还原手段，
+ * 套在块元素上会把 Markdown 源码里的换行原样留下来，段落和标题的间距都会失真。
+ */
+.conversation__answer {
+  font-size: 13px;
+  line-height: 1.72;
+  color: var(--color-text);
+}
+
+/* ---------- 空态 ---------- */
+
+.conversation__empty {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--color-text-weak);
+}
+
+.conversation__empty p {
+  margin: 0;
+  font-size: 13px;
+}

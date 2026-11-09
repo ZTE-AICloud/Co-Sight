@@ -1,0 +1,174 @@
+#!/usr/bin/env bash
+# 步 1.1 legacy 兼容验证门（确定性收敛重构方案 §4 阶段一 1.1 验证门列）
+# 覆盖: 旧 G0xx 写法经 g026 registry legacy 反查批跑（AC-1）/ 语义键直读双轨 /
+#        语义键请求走同一 schema 必需键门控 / internal module glob 回退 /
+#        未知编号 fail-closed / 两段注册表闭合机检 / blocking 字段零出现 /
+#        check-legacy-names gate 编号解析规则 / C8-2 仓外对拍 / C8-4 畸形输入负例
+# 用法: bash tests/gates/legacy-compat-verify.sh   （在仓库根执行）
+set -uo pipefail
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+cd "$REPO_ROOT"
+TMP="$(mktemp -d)"
+trap 'rm -rf "$TMP"' EXIT
+PASS=0; FAIL=0
+ok()   { PASS=$((PASS+1)); echo "  ✓ $1"; }
+bad()  { FAIL=$((FAIL+1)); echo "  ✗ $1"; }
+check() { if [ "$2" -eq "$3" ]; then ok "$1 (rc=$3)"; else bad "$1 (期望 rc=$2, 实际 rc=$3)"; fi }
+check_json() {
+  if echo "$3" | python3 -I -c "import json,sys; d=json.load(sys.stdin); assert ($2), d" 2>/dev/null; then
+    ok "$1"
+  else
+    bad "$1 —— got: $(echo "$3" | head -c 300)"
+  fi
+}
+
+# ── 公共 fixture: g023 build-plan + 产物 ──
+mkdir -p "$TMP/prod"
+cat > "$TMP/bp.md" <<'EOF'
+# build plan
+
+```yaml
+path: a.txt
+invariants:
+  - {type: content_contains, pattern: "hello"}
+```
+
+```yaml
+path: b.txt
+invariants:
+  - {type: content_contains, pattern: "xyzabsent"}
+```
+EOF
+printf 'hello world\n' > "$TMP/prod/a.txt"
+
+echo "══ legacy G0xx 经 g026 反查批跑（AC-1）══"
+out=$(echo '{"gates":["G023"],"files":["a.txt"],"build_plan":"'"$TMP"'/bp.md","output_dir":"'"$TMP"'/prod"}' | bash scripts/gates/g026-batch-gates.sh); rc=$?
+check "legacy G023 → PASS" 0 "$rc"
+check_json "verdict=PASS 无 failures" "d['verdict']=='PASS' and d['failed']==0" "$out"
+out=$(echo '{"gates":["G023-invariants"],"files":["a.txt"],"build_plan":"'"$TMP"'/bp.md","output_dir":"'"$TMP"'/prod"}' | bash scripts/gates/g026-batch-gates.sh); rc=$?
+check "legacy 带后缀 G023-invariants → PASS" 0 "$rc"
+printf 'nothing here\n' > "$TMP/prod/b.txt"
+out=$(echo '{"gates":["G023"],"files":["b.txt"],"build_plan":"'"$TMP"'/bp.md","output_dir":"'"$TMP"'/prod"}' | bash scripts/gates/g026-batch-gates.sh); rc=$?
+check "legacy G023 坏文件 → FAIL rc3 且点名文件" 3 "$rc"
+check_json "failures 透传 file+invariant" "any(f.get('file')=='b.txt' and f.get('invariant')=='content_contains' for f in d['failures'])" "$out"
+out=$(echo '{"gates":["G023"],"files":["a.txt","ghost.txt"],"build_plan":"'"$TMP"'/bp.md","output_dir":"'"$TMP"'/prod"}' | bash scripts/gates/g026-batch-gates.sh); rc=$?
+check "legacy G023 未声明文件 → FAIL rc3" 3 "$rc"
+check_json "未声明文件以 file+reason 记入" "any(f.get('file')=='ghost.txt' and '不在 build-plan' in (f.get('reason') or '') for f in d['failures'])" "$out"
+rm "$TMP/prod/b.txt"
+
+echo "══ 语义键直读双轨（同一实现, 同一 verdict）══"
+out=$(echo '{"gates":["gate.build.invariants"],"files":["a.txt"],"build_plan":"'"$TMP"'/bp.md","output_dir":"'"$TMP"'/prod"}' | bash scripts/gates/g026-batch-gates.sh); rc=$?
+check "语义键 gate.build.invariants → PASS" 0 "$rc"
+check_json "verdict=PASS" "d['verdict']=='PASS'" "$out"
+
+echo "══ 已裁撤 G022 fail-closed（gate.report.valid 随 executor v2 裁撤, 条目已删）══"
+mkdir -p "$TMP/work"
+printf -- '# execution-report\n\n## overall\nPASS\n\n## per_file_status\nall done\n\n## blockers\nnone\n' > "$TMP/work/phase4-execution-report.md"
+out=$(echo '{"gates":["G022"],"work_dir":"'"$TMP"'/work"}' | bash scripts/gates/g026-batch-gates.sh); rc=$?
+check "legacy G022（无 registry 条目）→ FAIL rc3（不静默）" 3 "$rc"
+check_json "unknown_gate_script + warnings" "any(f.get('type')=='unknown_gate_script' for f in d['failures']) and bool(d.get('warnings'))" "$out"
+
+echo "══ runner 两段双轨 ══"
+mkdir -p "$TMP/rtarget"
+# skill-verify 档含 module.skill.static（步 2.1）——fixture 须为合法最小 skill 交付物
+{ printf -- '---\nname: mini\ndescription: "双轨用例最小技能。"\nversion: "1.0.0"\n---\n# Mini\n'; printf '正文行。\n%.0s' $(seq 1 55); } > "$TMP/rtarget/SKILL.md"
+out=$(echo '{"gates":["G028"],"profile":"skill-verify","target":"'"$TMP"'/rtarget"}' | bash scripts/gates/g026-batch-gates.sh); rc=$?
+check "legacy G028（runner.exit）skill-verify 档 → PASS" 0 "$rc"
+out=$(echo '{"gates":["runner.exit"],"profile":"skill-verify","target":"'"$TMP"'/rtarget"}' | bash scripts/gates/g026-batch-gates.sh); rc=$?
+check "语义键 runner.exit → PASS（双轨同 verdict）" 0 "$rc"
+
+echo "══ internal module glob 回退（未注册顶层条目的 g005/g014/g021）══"
+out=$(echo '{"gates":["G005"],"target":"'"$TMP"'/prod"}' | bash scripts/gates/g026-batch-gates.sh); rc=$?
+check "legacy G005（module.deliver.hygiene 载体脚本）→ PASS" 0 "$rc"
+check_json "非 unknown_gate_script" "not any(f.get('type')=='unknown_gate_script' for f in d.get('failures',[]))" "$out"
+
+echo "══ schema 必需键门控: 语义键请求与 legacy 同一 canon ══"
+out=$(echo '{"gates":["gate.plan.sanity"]}' | bash scripts/gates/g026-batch-gates.sh); rc=$?
+check "语义键缺 mode/report_path → input_error rc3" 3 "$rc"
+check_json "missing_keys 列明（语义键→G027 canon 解析）" "d['failures'][0]['type']=='input_error' and any(m['gate']=='gate.plan.sanity' and 'mode' in m['missing_keys'] for m in d['failures'][0]['missing'])" "$out"
+out=$(echo '{"gates":["G027"]}' | bash scripts/gates/g026-batch-gates.sh); rc=$?
+check "legacy G027 同样 input_error rc3" 3 "$rc"
+
+echo "══ 未知编号 fail-closed（不静默）══"
+out=$(echo '{"gates":["G999"],"target":"'"$TMP"'/prod"}' | bash scripts/gates/g026-batch-gates.sh); rc=$?
+check "未知 G999 → FAIL rc3" 3 "$rc"
+check_json "unknown_gate_script + warnings" "any(f.get('type')=='unknown_gate_script' for f in d['failures']) and bool(d.get('warnings'))" "$out"
+out=$(echo '{"gates":["gate.no.such-gate"]}' | bash scripts/gates/g026-batch-gates.sh); rc=$?
+check "不存在的语义键 → FAIL rc3（不静默回退）" 3 "$rc"
+
+echo "══ C8-4 畸形输入负例 ══"
+out=$(printf 'not json' | bash scripts/gates/g026-batch-gates.sh); rc=$?
+check "非 JSON → input_error rc3" 3 "$rc"
+check_json "input_error 类型" "d['failures'][0]['type']=='input_error'" "$out"
+out=$(echo '{"gates":[]}' | bash scripts/gates/g026-batch-gates.sh); rc=$?
+check "空 gates → input_error rc3" 3 "$rc"
+
+echo "══ C8-2 仓外对拍（注册表路径 SCRIPT_DIR 锚定）══"
+out=$(cd "$TMP" && echo '{"gates":["G023"],"files":["a.txt"],"build_plan":"'"$TMP"'/bp.md","output_dir":"'"$TMP"'/prod"}' | bash "$REPO_ROOT/scripts/gates/g026-batch-gates.sh"); rc=$?
+check "仓外 cwd 跑 legacy 批 → PASS" 0 "$rc"
+
+echo "══ 两段注册表闭合机检（AC-2）══"
+regout=$(bash scripts/check-gate-registry.sh 2>&1); rc=$?
+check "check-gate-registry PASS" 0 "$rc"
+echo "    $regout"
+echo "$regout" | grep -q "4 gates, 3 runners, 7 legacy" && ok "两段计数 4 gates / 3 runners / 7 legacy 别名" || bad "注册表计数异常: $regout"
+blocking=$(python3 -c "
+import yaml
+d = yaml.safe_load(open('phase/gates/gates.yaml'))
+def walk(n):
+    if isinstance(n, dict):
+        assert 'blocking' not in n, n.keys()
+        for v in n.values(): walk(v)
+    elif isinstance(n, list):
+        for v in n: walk(v)
+walk(d)
+print('clean')")
+[ "$blocking" = "clean" ] && ok "blocking 字段零出现（全结构递归, AC-3）" || bad "blocking 字段回归"
+
+echo "══ trigger 引用与新语义键一致（AC-3）══"
+python3 - <<'PY'
+import sys, yaml
+d = yaml.safe_load(open("phase/gates/gates.yaml"))
+keys = set(d.get("gates") or {}) | set(d.get("runners") or {})
+refs = []
+for tid, trig in (d.get("triggers") or {}).items():
+    refs.extend(str(g) for g in (trig or {}).get("gates") or [])
+assert refs, "triggers[].gates 为空"
+assert all(r in keys for r in refs), [r for r in refs if r not in keys]
+assert not any(r.startswith("G") for r in refs), [r for r in refs if r.startswith("G")]
+print("semantic-ok")
+PY
+[ "$?" -eq 0 ] && ok "triggers[].gates 全部为语义键且可解析" || bad "triggers 引用未收敛语义键"
+python3 - <<'PY'
+import yaml
+d = yaml.safe_load(open("phase/gates/gates.yaml"))
+assert "probes" not in d, "probe 段不应存在（OD-1）"
+assert "utilities" not in d, "utilities 已并入 runners"
+m = {a: k for sec in ("gates", "runners") for k, e in (d.get(sec) or {}).items() for a in (e or {}).get("legacy") or []}
+expect = {"G023": "gate.build.invariants", "G017": "gate.match.contract", "G024": "gate.step.outputs",
+          "G027": "gate.plan.sanity", "G026": "runner.gates.batch",
+          "G028": "runner.exit", "G025": "runner.assets"}
+assert m == expect, m
+print("map-ok")
+PY
+[ "$?" -eq 0 ] && ok "legacy 反查映射与方案 §1.3 表逐项一致" || bad "legacy 映射漂移"
+
+echo "══ check-legacy-names gate 编号解析规则 ══"
+bash scripts/check-legacy-names.sh >/dev/null 2>&1 && ok "check-legacy-names 无命中（rc0）" || bad "check-legacy-names 命中"
+python3 -I - <<'PY'
+import subprocess, tempfile, os
+# 负例: 活跃面出现无解析路径的编号 → rc2 且 BAN 行点名
+with tempfile.TemporaryDirectory() as t:
+    os.makedirs(os.path.join(t, "agents"))
+    open(os.path.join(t, "agents", "x.md"), "w").write("引用幽灵 gate G777\n")
+    r = subprocess.run(["bash", os.path.join(os.getcwd(), "scripts", "check-legacy-names.sh"), t],
+                       capture_output=True, text=True)
+    assert r.returncode == 2, r.returncode
+    assert "G777" in r.stdout, r.stdout
+print("ban-ok")
+PY
+[ "$?" -eq 0 ] && ok "负例: 幽灵编号 G777 → BAN rc2" || bad "解析规则负例未拦截"
+
+echo
+echo "════════ PASS=$PASS FAIL=$FAIL ════════"
+[ "$FAIL" -eq 0 ] && echo "ALL PASS" || exit 1

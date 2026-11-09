@@ -1,0 +1,33 @@
+# asset-adaptations.yaml — 步骤 3a+3b 合并产出（P4 §4.1, C5-1）
+# 替代旧 matched-assets.yaml + adapted-assets.yaml（v1.7.0 起）
+# 旧文件（matched-assets.yaml / adapted-assets.yaml）1 个版本周期内仍可读（向后兼容，P4-4.1 政策）
+type: object
+properties:
+  build_mode: {type: string, enum: [greenfield, incremental]}
+  task_mode: {type: string}
+  selected_patterns:
+    type: array
+    items: {type: string}
+  matched:
+    description: "3a 资产匹配（来源轴 + pattern 轴）— 旧 matched-assets.yaml 内容"
+    type: object
+  adaptations:
+    description: "3b 逐资产五维适配（保留/定制/扩展/替换/删除）— 旧 adapted-assets.yaml 内容"
+    type: array
+    items:
+      target: {type: string}
+      base_asset: {type: string}
+      build: {type: string, enum: [custom_build, asset_adapt, generic_copy, reference_only]}
+      adaptations:
+        type: object
+        properties:
+          keep: {type: array, items: {type: string}}
+          customize: {type: array, items: {field: string, add: array}}
+          extend: {type: array, items: {field: string, add: string}}
+          replace: {type: array, items: {field: string, from: string, to: string}}
+          remove: {type: array, items: {type: string}}
+      rationale: {type: string}
+  hooks_integrity_check:
+    type: object
+    description: "可选: hooks 配置包的完整性预检结果"
+required: [build_mode, task_mode, selected_patterns, matched, adaptations]

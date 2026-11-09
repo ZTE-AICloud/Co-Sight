@@ -1,0 +1,45 @@
+{
+  "_comment_1": "本 JSON 是 score-analyzer 的填空模板。LLM 用 Edit/Write 工具把空字段替换为实际诊断内容，不要重写结构、不要新增顶层字段、不要保留任何空占位。framework 从本文件读 JSON 并用预制模板(score_analyzer_report.md)渲染成 score_analyzer_report_round_{N}.md。",
+  "_comment_2": "overall_analysis: 所有低分 case 的共性分析。matrix=失分点矩阵(可表格或要点); common_root_causes=共性根因聚类; full_mark_risk=满分 case 受本次改动影响的回归风险; recommendation=推荐整体优化方向。",
+  "_comment_3": "cases[]: 每个低分 case 一个对象，必须覆盖全部低分 case(缺任何一个都会导致该 case 无诊断)。case_id 必须与评测产物标识符一致(如 RAN-3532502)。core_loss_mode=核心失分模式; deepthink_summary=诊断总结。",
+  "_comment_4": "reproduce: gold/llm 输出对比。gold=R(gold) 内容摘要; llm=C(LLM 输出) 内容摘要; hit=命中项; miss=漏召回项; wrong=误召项。须基于 Read 真文件后的逐列对比。",
+  "_comment_5": "trace_evidence: trace 工具调用链路证据。必须引用真实 trace 行号(如 'trace 行 181-213: agent 名称映射混乱')、工具调用统计、token/耗时。禁止凭印象编造——framework 会统计 Read 次数，未读 trace 引用的行号不可信。",
+  "_comment_6": "root_causes[]: 建议根因，至少 2 个候选。type=数量(元素数差异)|内容(元素数差≤2但语义不对齐)|链路(上游产物缺失); skill_layer=上游产出|下游消费; detail=根因描述+证据。元素数差≤2 时禁止归数量。",
+  "_comment_7": "mod_directions[]: 建议 mod 方向。skill 必须以 '<skill名> SKILL.md §X.Y 加约束' 或 '<skill名> scripts/*.py 加硬门禁' 开头(多 skill 必须指明)；direction=具体方向。禁止只写 SKILL.md 或 scripts/xxx.py。",
+  "_comment_8": "verify: 验证方案。regression_risk: level=高|中|低; affected_cases=可能受影响的满分 case; mitigation=缓解措施。",
+  "overall_analysis": {
+    "matrix": "",
+    "common_root_causes": "",
+    "full_mark_risk": "",
+    "recommendation": ""
+  },
+  "cases": [
+    {
+      "case_id": "RAN-xxx",
+      "f1": 0.0,
+      "core_loss_mode": "",
+      "deepthink_summary": "",
+      "reproduce": {
+        "gold": "",
+        "llm": "",
+        "hit": "",
+        "miss": "",
+        "wrong": ""
+      },
+      "trace_evidence": "",
+      "root_causes": [
+        {"type": "内容", "skill_layer": "上游产出", "detail": ""},
+        {"type": "链路", "skill_layer": "下游消费", "detail": ""}
+      ],
+      "mod_directions": [
+        {"skill": "<skill名> SKILL.md §X.Y 加约束", "direction": ""}
+      ],
+      "verify": "",
+      "regression_risk": {
+        "level": "中",
+        "affected_cases": "",
+        "mitigation": ""
+      }
+    }
+  ]
+}

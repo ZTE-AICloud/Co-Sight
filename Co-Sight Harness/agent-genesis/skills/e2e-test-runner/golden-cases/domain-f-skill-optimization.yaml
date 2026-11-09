@@ -1,0 +1,43 @@
+domain: "F-Skill优化"
+description: "测试 Skill 优化流程 — 诊断→优化→验证闭环，覆盖6维诊断、11优化模式、边界判定"
+test_cases:
+  - id: "TC-SO-01"
+    input: "优化 code-reviewer skill，它在审查大型PR时经常遗漏安全问题"
+    expected: "skill-foundry(optimize mode)→6维诊断→增量修改→验证"
+    expected_phase: "PHASE_5"
+    timeout: 600
+  - id: "TC-SO-02"
+    input: "优化一个12步的单体安全分析Skill，所有步骤都在一个SKILL.md里，步骤间无I/O契约，缺少references/目录，输出质量随步骤递减"
+    expected: "识别Decomposition FAIL(单体过载)+推荐模式1(单体拆解)+模式7(形态重构)"
+    expected_phase: "PHASE_5"
+    timeout: 600
+  - id: "TC-SO-03"
+    input: "优化一个知识全内联的Skill，12类安全检查知识全部写在SKILL.md内超过2000行，没有references/分离，需要外部规范引用"
+    expected: "识别Information FAIL(知识内联)+推荐模式2(文档系统)+模式7(形态重构)"
+    expected_phase: "PHASE_5"
+    timeout: 600
+  - id: "TC-SO-04"
+    input: "优化一个6步数据迁移Skill，无checkpoint无状态文件，中断后需从头执行"
+    expected: "识别State FAIL(无状态追踪)+推荐模式5(状态追踪)"
+    expected_phase: "PHASE_5"
+    timeout: 600
+  - id: "TC-SO-05"
+    input: "优化一个自审代替G1审查的Skill，输出到/tmp/路径，无Schema约束输出格式"
+    expected: "识别Verification FAIL+Global Context FAIL+推荐模式4(Hook门禁)+6(Review Agent)+8(全局对齐)"
+    expected_phase: "PHASE_5"
+    timeout: 600
+  - id: "TC-SO-06"
+    input: "优化一个helper命名的Skill，description模糊(帮助处理代码)，代码示例内联在Markdown中，无references/scripts/templates目录"
+    expected: "识别Design Form FAIL(形态差)+推荐模式7(形态重构)+SF-1/SF-5/SF-6/SF-7违规"
+    expected_phase: "PHASE_5"
+    timeout: 600
+  - id: "TC-SO-07"
+    input: "优化一个违反Agent约束的Skill：修改源代码(违反S-01)、自审代替G1(违反S-02)、输出到/tmp/(违反work/约定)"
+    expected: "识别Global Context FAIL(对齐偏离)+推荐模式8(全局对齐)+边界判定PARTIALLY_EXCEEDED"
+    expected_phase: "PHASE_5"
+    timeout: 600
+  - id: "TC-SO-08"
+    input: "优化一个极简Skill，只有name和description两行，无步骤无内容"
+    expected: "仅Design Form FAIL(内容不足)+推荐模式7(补充结构)+其他维度PASS"
+    expected_phase: "PHASE_5"
+    timeout: 600

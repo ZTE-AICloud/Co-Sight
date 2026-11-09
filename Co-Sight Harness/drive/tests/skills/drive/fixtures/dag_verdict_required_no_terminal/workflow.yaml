@@ -1,0 +1,9 @@
+# DAG 模式 fixture —— verdict_required 但非 terminal（违反 Q8 决策）
+mode: dag
+
+agents:
+  - id: a
+    agent: drive:analyzer
+    depends_on: []
+    verdict_required: true  # 错误：非 terminal 不能设 verdict_required
+    # 注：terminal=false（默认）

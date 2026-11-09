@@ -1,0 +1,31 @@
+{
+  "notFound": {
+    "code": "404",
+    "title": "Page not found",
+    "description": "The route you requested does not exist. Use navigation to return to a valid page.",
+    "goDashboard": "Go to Dashboard",
+    "goBack": "Go Back"
+  },
+  "notifications": {
+    "newSession": "New Session",
+    "sessionDefault": "Session ",
+    "sessionError": "Session Error",
+    "subagentSpawned": "Subagent Spawned",
+    "finishedResponding": "Claude Finished Responding",
+    "readyForInput": "Ready for input",
+    "sessionCompleted": "Session Completed",
+    "sessionClosed": "Session closed",
+    "defaultTitle": "Notification",
+    "defaultBody": "Notification"
+  },
+  "toolLegend": {
+    "read": "Read",
+    "write": "Write",
+    "edit": "Edit",
+    "bash": "Bash",
+    "grep": "Grep",
+    "glob": "Glob",
+    "agent": "Agent",
+    "other": "Other"
+  }
+}

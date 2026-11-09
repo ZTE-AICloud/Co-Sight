@@ -1,0 +1,50 @@
+phases:
+  - name: analyze
+    stage: analyze
+    agent: drive:analyzer
+    description: 发现输入，摸清意图，生成 manifest
+    gate:
+      type: human_review
+      enforced_by: hooks/state_transition_guard.py
+      skip_when: [auto_mode]
+
+  - name: plan
+    stage: plan
+    agent: drive:planner
+    description: 拆 task，分派到岗，放行
+    gate:
+      type: human_review
+      enforced_by: hooks/state_transition_guard.py
+      skip_when: [auto_mode, "complexity == trivial"]
+      on_revise: replan
+
+  - name: execute
+    stage: execute
+    agent: drive:executor
+    description: 按 wave 调度执行 task
+    mode: code
+    wave_barrier: true
+    gate:
+      type: human_review
+      enforced_by: hooks/state_transition_guard.py
+      skip_when: [auto_mode]
+
+  - name: evaluate
+    stage: evaluate
+    agent: drive:evaluator
+    description: 质检产出，不合格打回 plan
+    verdict_required: true
+    terminal_stage: true
+    gate:
+      type: human_review
+      enforced_by: hooks/state_transition_guard.py
+      skip_when: [auto_mode]
+
+complexity_rules:
+  trivial:
+    skip_phases: [plan]
+    evaluate_levels: [L0, L1]
+  standard:
+    evaluate_levels: [L0, L1, L2]
+  complex:
+    evaluate_levels: [L0, L1, L2]

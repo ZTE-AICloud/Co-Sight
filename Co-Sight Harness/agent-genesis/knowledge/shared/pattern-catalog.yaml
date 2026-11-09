@@ -1,0 +1,613 @@
+# AgentGenesis 设计模式目录 V2.1 — LLM 知识库
+# 从 Agent设计模式目录.md 提取
+# 5 类 × 12 子维度，正交化设计
+#
+# 用途: 此文件是 LLM 的"模式参考手册"。
+# - Creator Phase 1 匹配阶段：LLM 阅读 pattern-matcher.yaml 做匹配推理
+# - Creator Phase 2 拼装阶段：LLM 通过 template_file 字段找到对应模板文件，读取并填充变量
+# - Optimizer Phase 3 修改阶段：LLM 从此文件查找模式的 repair_target 进行增量修改
+#
+# 模板文件: 每个模式通过 template_file 引用 .claude/skills/agent-design-patterns/patterns/ 下的 .template.md 文件。
+# 模板文件包含完整的变量声明（frontmatter）和可填充的模板体。
+
+meta:
+  version: "3.1"
+  categories: 6
+  sub_dimensions: 16
+  note: "v3.1: 新增MN任务性质维度（MN-Exploratory/MN-Deterministic/MN-Hybrid）作为前置维度，对15子维度施加推荐性软约束。W5+M1+E1/E2/E3保持不变。"
+
+# ============================================================
+# 类别0: 任务性质（前置维度，在15子维度匹配前判定）
+# ============================================================
+category_0_mission_nature:
+  name: "任务性质"
+  description: "描述任务的认识论特征——问题空间是开放的还是封闭的。作为前置维度，对各子维度的模式选择施加推荐性软约束。"
+  selection_rule: "3选1。一个Agent顶层只能选一种。混合型需分段标注各阶段的倾向。"
+  is_preceding_dimension: true
+
+  MN-Exploratory:
+    name: "探索性"
+    judgment_guidance: >
+      探索性任务的核心特征是"即使信息完整，也无法预知输出"。判定时关注：用户是否接受不确定结果？中间发现是否会改变后续步骤？
+      知识来源是否不完全已知？不要因为用户措辞模糊就判定为探索性——模糊需求应先追问澄清。
+    typical_scenarios:
+      - "开放式研究：'帮我研究5G NR协议中PUSCH配置有哪些可选方案'"
+      - "方案评估：'看看有没有比当前方案更好的实现方式'"
+      - "问题发现：'扫描系统找出所有潜在的安全风险，不预设范围'"
+      - "技术调研：'调研当前业界有哪些主流的流式处理框架，各有什么优劣'"
+    boundary_notes:
+      - "复杂不等于探索性：分析5000行日志仍是确定性任务（W1+K2）"
+      - "模糊不等于探索性：'帮我处理一下这个'应触发IH2追问而非MN-Exploratory"
+      - "探索性的核心标志是'无法预知完整输出'，而非'我不知道要做什么'"
+    cascade_tendencies:
+      workflow_decomposition: "倾向W4 Leader-Worker（动态发现Worker）"
+      adaptive_overlay: "倾向W5（需根据发现结果切换拓扑）"
+      quality_gate: "倾向G1（探索结果需独立验证）"
+      state_management: "倾向SM1（探索路径不确定，需状态管理）"
+      knowledge_sources: "倾向K3检索 + CD3知识边界严格"
+      data_topology: "倾向DT2共享状态（协调动态发现）"
+      data_provenance: "倾向DP1（探索结论需可溯源）"
+      interaction_human: "倾向IH3审批（探索方案需用户确认）"
+      interaction_visibility: "倾向IV1（探索耗时长需进度可见）"
+      interaction_tool_strategy: "倾向IT1-Enforced（防止LLM编造探索结果）"
+      model_selection: "探索段推荐opus（深度推理）"
+
+  MN-Deterministic:
+    name: "确定性"
+    judgment_guidance: >
+      确定性任务的核心特征是"给定输入和规则，输出可验证"。相同输入应产生相同输出。
+      步骤可在开始前完整列举。知识来源明确权威。不要因为任务步骤多或逻辑复杂就否定确定性。
+    typical_scenarios:
+      - "格式转换：'把这份CSV数据转成JSON格式'"
+      - "规范检查：'每次收到PR diff，按安全规范检查并输出报告'"
+      - "数据生成：'根据模板生成100条测试数据'"
+      - "固定流程：'读取日志→提取错误→分类统计→输出报告'"
+    boundary_notes:
+      - "步骤多不等于不确定：10步Pipeline仍是确定性（W1）"
+      - "需要知识不等于探索性：基于权威文档推理是确定性的（K2+CD3）"
+      - "确定性的核心标志是'输出可验证'，而非'任务很简单'"
+    cascade_tendencies:
+      workflow_decomposition: "倾向W1 Pipeline（固定步骤序列）"
+      adaptive_overlay: "不倾向W5"
+      quality_gate: "按需（用户要求质量时启用G1）"
+      state_management: "按需"
+      knowledge_sources: "倾向K2文档锚定 / K4规则驱动"
+      data_topology: "倾向DT1链式传递"
+      interaction_human: "倾向IH1提交即忘"
+      interaction_visibility: "按需"
+      interaction_tool_strategy: "倾向IT1-Optional"
+      model_selection: "sonnet默认"
+
+  MN-Hybrid:
+    name: "混合型"
+    judgment_guidance: >
+      混合型任务包含探索阶段和确定阶段。判定关键：是否明确存在"先发现后执行"或"部分开放部分封闭"的结构？
+      混合型必须在输出中声明phases分段，对各段分别应用不同的模式倾向。
+    typical_scenarios:
+      - "先探索后执行：'先扫描代码库找出所有性能瓶颈，然后逐个优化'"
+      - "调研后决策：'先调研有哪些方案，然后选择最优的实现'"
+      - "分析后修复：'先分析日志中的异常模式，然后修复确认的bug'"
+    boundary_notes:
+      - "混合型必须有明确的分段——不能整个任务都是模糊的混合"
+      - "分段数量通常2段（探索段+确定段），不超过3段"
+      - "每段的模式倾向必须明确声明，不能只说'视情况而定'"
+    phases_guidance:
+      exploration_phase: "使用MN-Exploratory的cascade_tendencies"
+      execution_phase: "使用MN-Deterministic的cascade_tendencies"
+    cascade_tendencies:
+      note: "混合型需分段标注——对各段分别应用探索/确定倾向"
+      workflow_decomposition: "探索段倾向W4，确定段倾向W1"
+      knowledge_sources: "探索段倾向K3+CD3，确定段倾向K2/K4"
+      interaction_human: "探索段倾向IH3，确定段倾向IH1"
+
+# ============================================================
+# 类别1: 工作流与编排
+# ============================================================
+category_1_workflow:
+  name: "工作流与编排"
+  description: "定义 Agent 的步骤分解、质量控制和状态管理"
+
+  decomposition:
+    selection_rule: "4选1互斥。顶层只能选一种。W5 为元分解叠加层，可与 W1-W4 共存。子结构可嵌套另一种(最大深度2层，见嵌套规则)。"
+
+    W1:
+      name: "Pipeline（管道式）"
+      solves: "任务可分解为固定、有序的步骤序列，每步职责单一且不可跳过"
+      template_file: ".claude/skills/agent-design-patterns/patterns/W1-pipeline.template.md"
+      constraints:
+        - "步骤间必须声明输入/输出依赖"
+        - "禁止跳过步骤或回退（除非配合SM1）"
+        - "每步结束前验证输出完整性"
+      references: ["需求分析Agent: Phase 1→2→3→4", "P3内部: 场景→协议→实现→特性域→差分→系统域"]
+
+    W2:
+      name: "Router（路由式）"
+      solves: "不同输入类型需要不同的处理路径，需在入口处判断分流"
+      template_file: ".claude/skills/agent-design-patterns/patterns/W2-router.template.md"
+      constraints:
+        - "路由键必须可客观判定（不得依赖LLM主观判断）"
+        - "所有路径必须覆盖（含默认/兜底路径）"
+        - "路由失败时必须阻断而非猜测"
+      references: ["ECC: /orchestrate feature vs /orchestrate bugfix"]
+
+    W3:
+      name: "Map-Reduce（映射-归约式）"
+      solves: "多个同类子任务相互独立，可并行执行，结果需要汇总"
+      template_file: ".claude/skills/agent-design-patterns/patterns/W3-mapreduce.template.md"
+      constraints:
+        - "子任务必须真正独立（无读写冲突）"
+        - "必须声明最大并行数"
+        - "Reduce阶段必须校验所有子任务已完成"
+      references: ["ECC /multi-plan", "OpenSage Ensemble"]
+
+    W4:
+      name: "Leader-Worker（领导-工人式）"
+      solves: "任务在运行时才知道如何拆解，需要Leader先分析再动态派生Worker"
+      template_file: ".claude/skills/agent-design-patterns/patterns/W4-leaderworker.template.md"
+      constraints:
+        - "Worker必须基于模板实例化（不可从零创建）"
+        - "必须限制最大派生深度防止无限递归"
+        - "Leader必须对所有Worker输出做完整性校验"
+      references: ["ClawTeam: Leader→spawn Worker→看板跟踪→汇总", "OpenSage垂直拓扑"]
+
+    W5:
+      name: "Adaptive（自适应拓扑）"
+      type: "meta-decomposition-overlay"
+      solves: "运行时根据中间结果动态切换执行拓扑，而非构建时完全固定。包装W1-W4，声明何时可切换拓扑。"
+      template_file: ".claude/skills/agent-design-patterns/patterns/W5-adaptive.template.md"
+      wraps: [W1, W2, W3, W4]
+      constraints:
+        - "必须声明 base_topology（默认走哪个拓扑）"
+        - "adaptation_rules 条件必须可客观判定（不依赖 LLM 主观判断）"
+        - "每次拓扑切换必须记录 audit_trail（reason + 切换前状态 + 切换后状态 + timestamp）"
+        - "最大切换次数硬限制（默认3次）"
+        - "禁止循环切换（A→B→A）"
+        - "adaptation_decision 步骤推荐使用 opus 模型（M1）"
+      distinguishes_from_opensage: "OpenSage: LLM自由决定拓扑（不可审计）。AgentGenesis W5: 设计时预定义适应规则，运行时按规则切换（可审计）。"
+      references: ["OpenSage: 运行时拓扑自决定（竞品，无规则约束）"]
+
+  quality_gate:
+    selection_rule: "可选。可叠加到W1-W4任意分解模式之上。"
+
+    G1:
+      name: "Reviewer-Gate（审查门禁）"
+      solves: "每步产出需要独立质检，不通过则不能继续。审查由独立Agent执行。"
+      template_file: ".claude/skills/agent-design-patterns/patterns/G1-reviewer-gate.template.md"
+      constraints:
+        - "审查必须由独立Agent执行（非自审）"
+        - "必须声明最大重试次数"
+        - "重试超限必须阻断"
+      overlay_rules:
+        W1: "每个Step之后插入审查门禁"
+        W2: "每个分支路径的步骤之后插入"
+        W3: "每个并行子任务完成后插入"
+        W4: "每个Worker完成后+Leader汇总后插入"
+      references: ["需求分析Agent: Hooks触发Post-SubAgent-Review", "ECC: /code-review"]
+
+  state_management:
+    selection_rule: "可选。可叠加到W1-W4任意分解模式之上。推荐搭配DT1+DF1。"
+
+    SM1:
+      name: "FSM（有限状态机）"
+      solves: "执行路径不固定，中间结果可能触发不同后续步骤；失败需回溯到之前状态重试"
+      template_file: ".claude/skills/agent-design-patterns/patterns/SM1-fsm.template.md"
+      constraints:
+        - "每个状态必须声明明确的进入/退出条件"
+        - "回溯深度必须有限"
+        - "回溯时声明哪些中间产物保留、哪些丢弃"
+      references: ["MetaAgent(SaFo-Lab/ICML 2025)", "需求分析Agent: phase_status.json状态转换"]
+
+  model_selection:
+    selection_rule: "可选。可叠加到W1-W4或W5任意分解模式之上。为每个执行步骤标注推荐模型。"
+    note: "M1是推荐性基础设施，非强制约束。Agent运行时可选择不同模型。"
+
+    M1:
+      name: "Model Selection（模型选择）"
+      solves: "不同步骤的推理深度、延迟容忍度不同，需要为每步选择合适的模型而非全流程统一模型"
+      template_file: ".claude/skills/agent-design-patterns/patterns/M1-model-selection.template.md"
+      model_tiers:
+        opus: "深度推理：架构决策、复杂分析、安全审查、W5拓扑切换"
+        sonnet: "平衡：主要编码、编排、审查（默认）"
+        haiku: "快速：格式检查、简单验证、高频轻量任务"
+      constraints:
+        - "默认模型为sonnet，仅在有明确理由时偏离"
+        - "W5 adaptation_decision步骤推荐opus（拓扑切换涉及架构变更）"
+        - "haiku不应用于安全或关键业务决策"
+      references: ["Claude Code模型选择最佳实践", "W5-Adaptive(adaptation_decision推荐opus)"]
+
+# ============================================================
+# 类别2: 知识体系
+# ============================================================
+category_2_knowledge:
+  name: "知识体系"
+  description: "定义 Agent 的信息来源和检索策略"
+
+  knowledge_sources:
+    selection_rule: "多选。一个Agent通常依赖多种知识来源。至少选一个。"
+
+    K1:
+      name: "LLM-Native（模型内嵌）"
+      solves: "任务所需知识属于LLM训练数据覆盖范围——通用编程/分析/写作知识"
+      template_file: ".claude/skills/agent-design-patterns/patterns/K1-llm-native.template.md"
+      references: ["通用代码审查Agent"]
+
+    K2:
+      name: "Document-Grounded（文档锚定）"
+      solves: "推理必须基于用户提供的特定文档——每个结论都要能从文档中找到依据"
+      template_file: ".claude/skills/agent-design-patterns/patterns/K2-document-grounded.template.md"
+      references: ["需求分析Agent协议分析: 基于算法思路.md(3GPP规范)"]
+
+    K3:
+      name: "KB-Backed（知识库支撑）"
+      solves: "知识存放在结构化知识库中，量大无法全部放入上下文，需要检索后注入"
+      template_file: ".claude/skills/agent-design-patterns/patterns/K3-kb-backed.template.md"
+      references: ["需求分析Agent: consume_lib知识库", "OpenSage: Neo4j+Embedding双路召回"]
+
+    K4:
+      name: "Rule-Driven（规则驱动）"
+      solves: "Agent行为受外部业务规则文件约束——命名标准、判断阈值、分类标准等"
+      template_file: ".claude/skills/agent-design-patterns/patterns/K4-rule-driven.template.md"
+      references: ["需求分析Agent名称标准化: 标准场景表", "ECC: guardrails.md"]
+
+# ============================================================
+# 类别3: 数据流
+# ============================================================
+category_3_data:
+  name: "数据流"
+  description: "定义数据在组件间如何流动、格式约束和溯源要求"
+
+  topology:
+    selection_rule: "可混合使用"
+    DT1:
+      name: "Linear-Pass-Through（链式传递）"
+      solves: "数据在步骤间逐级传递，每一步的输出是下一步的输入"
+      template_file: ".claude/skills/agent-design-patterns/patterns/DT1-linear-pass-through.template.md"
+      references: ["需求分析Agent P3 SubAgent链"]
+
+    DT2:
+      name: "Shared-State（共享状态）"
+      solves: "多个组件需要读写同一个共享状态，协调执行进度"
+      template_file: ".claude/skills/agent-design-patterns/patterns/DT2-shared-state.template.md"
+      references: ["需求分析Agent: phase_status.json+执行计划.json+任务状态记录表.md"]
+
+  format:
+    selection_rule: "可选。叠加到任意数据拓扑之上。"
+    DF1:
+      name: "Schema-Enforced（格式强制）"
+      solves: "数据格式要求严格，每步输入输出必须通过JSON Schema校验"
+      template_file: ".claude/skills/agent-design-patterns/patterns/DF1-schema-enforced.template.md"
+      references: ["ROMA: Pydantic模型定义"]
+
+  provenance:
+    selection_rule: "可选。叠加到任意数据拓扑之上。"
+    DP1:
+      name: "Traceable-Lineage（可追溯溯源）"
+      solves: "输出的每条结论需能追溯到输入来源——用于审计和调试"
+      template_file: ".claude/skills/agent-design-patterns/patterns/DP1-traceable-lineage.template.md"
+      references: ["需求分析Agent: 场景名标注来源于标准场景表具体条目"]
+
+# ============================================================
+# 类别4: 交互模式
+# ============================================================
+category_4_interaction:
+  name: "交互模式"
+  description: "定义与人、工具、可见性的交互策略"
+
+  human_interaction:
+    selection_rule: "可按执行阶段混合使用"
+    IH1:
+      name: "Fire-and-Forget（提交即忘）"
+      solves: "输入完整，执行过程不需要中断对话"
+      template_file: ".claude/skills/agent-design-patterns/patterns/IH1-fire-and-forget.template.md"
+    IH2:
+      name: "Interactive-Clarify（交互澄清）"
+      solves: "初始信息可能不完整，需要在执行中主动追问"
+      template_file: ".claude/skills/agent-design-patterns/patterns/IH2-interactive-clarify.template.md"
+    IH3:
+      name: "Plan-Approval（方案审批）"
+      solves: "执行方案需要用户预先确认，避免方向性错误"
+      template_file: ".claude/skills/agent-design-patterns/patterns/IH3-plan-approval.template.md"
+  tool_strategy:
+    selection_rule: "3选1。默认Optional。"
+    IT1:
+      name: "Tool-Orchestrated"
+      template_file: ".claude/skills/agent-design-patterns/patterns/IT1-tool-orchestrated.template.md"
+      strength_levels:
+        Enforced:
+          description: "核心能力必须通过外部工具/Skill完成，严禁自行分析"
+          template: |
+            ## 强制约束
+            - **严禁**不使用Skill而用LLM内嵌知识替代{{DOMAIN}}分析
+            - **严禁**模拟Skill调用成功（Skill失败时必须阻断）
+            - 每次Skill调用后必须校验返回结果的完整性
+        Optional:
+          description: "可使用工具/Skill辅助，非强制"
+        Forbidden:
+          description: "纯推理，不使用外部工具"
+
+  visibility:
+    selection_rule: "可选。独立于其他交互子维度。"
+    IV1:
+      name: "Progress-Streaming（进展汇报）"
+      solves: "执行过程长，用户需要知道当前进展和中间状态"
+      template_file: ".claude/skills/agent-design-patterns/patterns/IV1-progress-streaming.template.md"
+      references: ["需求分析Agent: 用户可见执行过程"]
+
+# ============================================================
+# 类别5: 约束与安全
+# ============================================================
+category_5_constraints:
+  name: "约束与安全"
+  description: "定义Agent的行为边界和安全约束"
+  note: "V1.0的C1/C2已融合为约束规则的强度属性(Hard|Soft)。K5→CD3。"
+
+  constraint_rule_structure:
+    description: "每条约束规则统一由此结构定义"
+    fields:
+      content: "具体禁止/要求的行为"
+      strength: "Hard（违反阻断）| Soft（违反警告）"
+      scope: "Input | Safety | Knowledge | General"
+      trigger: "何时检查此规则"
+      violation_action: "阻断 | 警告 | 标注"
+
+  domain_templates:
+    selection_rule: "可选，可多选。预置约束规则集，可与自定义规则共存。"
+
+    CD1:
+      name: "Input-Gating（输入门禁）"
+      solves: "执行前必须确认所有关键输入存在且可读——先检查再执行"
+      template_file: ".claude/skills/agent-design-patterns/patterns/CD1-input-gating.template.md"
+      references: ["需求分析Agent P3: 四文件必须存在"]
+
+    CD2:
+      name: "Safety-First（安全优先）"
+      solves: "安全敏感场景，操作权限需要额外约束——沙箱、禁止操作、输入消毒"
+      template_file: ".claude/skills/agent-design-patterns/patterns/CD2-safety-first.template.md"
+      references: ["AgentBreeder Blue Mode", "AutoAgent: Docker隔离"]
+
+    CD3:
+      name: "Knowledge-Boundary（知识边界）"
+      solves: "明确区分哪些知识可信任LLM、哪些必须从外部检索——防止幻觉"
+      note: "从V1.0的K5移入约束类。CD3的语义是约束(K1不可用于域X)，而非知识来源(从哪获取信息)。"
+      template_file: ".claude/skills/agent-design-patterns/patterns/CD3-knowledge-boundary.template.md"
+      references: ["需求分析Agent: 协议细节禁止LLM自创", "名称标准化: 禁止自创场景名"]
+
+# ============================================================
+# 类别6: 自进化
+# ============================================================
+category_6_evolution:
+  name: "自进化"
+  description: "定义 Agent 的自我评估、受控进化和增量修改能力。严格依赖链：E3 依赖 E2，E2 依赖 E1。不可跳跃选择。"
+
+  self_evaluation:
+    selection_rule: "可选。自进化链第一步。独立工作，每次执行完成后触发。"
+
+    E1:
+      name: "Self-Evaluation（自我评估）"
+      solves: "Agent 执行完成后自动评估输出质量，识别改进空间和退化风险"
+      template_file: ".claude/skills/agent-design-patterns/patterns/E1-self-evaluation.template.md"
+      constraints:
+        - "评分必须基于客观 checkpoints（非纯主观判断）"
+        - "低分（<3.0）必须附具体证据和改进方向"
+        - "自评报告不可覆盖或删除（累积历史记录）"
+        - "评分维度与 Phase 5 外部评估一致（4维：correctness/completeness/format/actionability）"
+      references: ["Phase 5: 运行时质量评估（评分框架复用）"]
+
+  controlled_evolution:
+    selection_rule: "可选。依赖 E1。在 E1 评分 < threshold 且在 allowed_scopes 内时触发。"
+
+    E2:
+      name: "Controlled-Evolution（受控进化）"
+      solves: "在允许范围内自动修正 Agent 行为，超出范围升级到人工或工厂重建"
+      template_file: ".claude/skills/agent-design-patterns/patterns/E2-controlled-evolution.template.md"
+      constraints:
+        - "deny-by-default: 未声明的 scope 禁止修改"
+        - "每次修改前必须 snapshot 当前状态"
+        - "修改后必须经过 E1 重评估"
+        - "修改不得绕过 G1 审查门禁"
+        - "禁止修改 Safety Constraints 章节（S-13）"
+      depends_on: [E1]
+      references: ["REVISE 协议: 反馈闭环（工厂修复 vs 自修复的职责边界）"]
+
+  delta_modification:
+    selection_rule: "可选。依赖 E2+E1。E2 确认修改可行后执行增量修改。"
+
+    E3:
+      name: "Delta-Modification（增量修改）"
+      solves: "对 Agent Spec 执行精确的增量修改，含回滚保护，防止 context collapse"
+      template_file: ".claude/skills/agent-design-patterns/patterns/E3-delta-modification.template.md"
+      constraints:
+        - "单次修改 ≤2 个 spec sections（context collapse 保护）"
+        - "修改必须含 Before/After/Reason 三段式"
+        - "失败自动回滚到最近 snapshot"
+        - "不可修改 Safety Constraints 章节（S-13）"
+        - "不可修改 Evolution Contract 自身的核心规则（allowed_scopes、cycle_max）"
+      depends_on: [E2, E1]
+      references: ["delta-modification-rules.md: 三段式 Diff 协议（复用）"]
+
+# ============================================================
+# 嵌套规则
+# ============================================================
+nesting_rules:
+  max_depth: 2
+  description: "顶层Wx → 子结构Wy。禁止3层及以上嵌套（避免无限递归）。"
+  rules:
+    sub_decomposition: "子结构可选用与顶层不同的W1-W4"
+    sub_G1: "允许子结构内部独立使用G1"
+    sub_SM1: "允许，但需检查状态命名空间不与顶层SM1冲突"
+    sub_interaction: "允许子结构选用与顶层不同的IH模式"
+    sub_knowledge: "子结构继承顶层知识来源，可追加专属依赖"
+  validation:
+    - "必须显式标注嵌套层级: 顶层:W1 → 子结构(Step 3):W3"
+    - "子结构I/O Contract必须在顶层Data Flow中显式声明"
+    - "子结构审查规则合并到顶层审查规则文件，标注scope:sub-structure"
+  verified_example:
+    agent: "名称标准化-agent"
+    top_level: "W1-Pipeline"
+    sub_structure: "W2-Router(Step 2: 场景名匹配)"
+    sub_overlay: ["G1-Reviewer-Gate"]
+    depth: 2
+
+# ============================================================
+# 范式预置组合
+# ============================================================
+paradigm_presets:
+  description: "以下是经过验证的模式组合。当用户需求明确匹配某个范式时，可作为快捷方式直接使用。"
+  presets:
+    pipeline:
+      description: "垂直领域分析系统"
+      formula: "W1 + G1 + K2+K3+K4 + DT1+DT2 + DF1 + IH1+IH3 + IT1(Enforced) + IV1 + CD1+CD3"
+      reference: "需求分析Agent"
+      mission_nature: "MN-Deterministic"
+    agent_pool:
+      description: "通用开发工具集"
+      formula: "W2+W3 + K1+K4 + DT2 + IH1 + IT1(Optional) + CD1"
+      reference: "ECC"
+      mission_nature: "MN-Deterministic"
+    swarm:
+      description: "探索型研究任务"
+      formula: "W4 + K3 + DT2 + SM1 + G1 + IH3 + IV1 + CD2 + DP1"
+      reference: "ClawTeam"
+      mission_nature: "MN-Exploratory"
+    analysis:
+      description: "分析型单Agent"
+      formula: "W1 + K2 + DT1 + IH1 + CD1"
+      mission_nature: "MN-Deterministic"
+    fsm:
+      description: "动态状态机任务"
+      formula: "W1 + SM1 + K4 + DT1 + DF1 + IH1 + CD1"
+      reference: "MetaAgent(SaFo-Lab)"
+      mission_nature: "MN-Hybrid"
+
+# ============================================================
+# 模式间关系（用于LLM推理）
+# ============================================================
+pattern_relationships:
+  description: "这些关系描述帮助LLM理解模式之间的相互影响，用于跨模式校验。"
+  relationships:
+    - when: "W1(Pipeline)"
+      tends_to_imply: "DT1(Linear)"
+      reason: "Pipeline的串行结构天然适合链式数据传递"
+    - when: "W3(Map-Reduce)"
+      tends_to_imply: "DT2(Shared-State)"
+      reason: "并行任务需要共享状态来协调和汇总"
+    - when: "W4(Leader-Worker)"
+      tends_to_imply: ["SM1(FSM)", "K3(KB-Backed)"]
+      reason: "动态Worker生命周期适合FSM管理；动态分解需要知识库支撑决策"
+    - when: "G1(Reviewer-Gate)"
+      pairs_well_with: ["DF1(Schema-Enforced)", "DP1(Traceable-Lineage)"]
+      reason: "审查需要明确的Schema判定依据和溯源的结论来源"
+    - when: "SM1(FSM)"
+      pairs_well_with: "DF1(Schema-Enforced)"
+      reason: "状态转换条件需要格式校验确保客观判定"
+    - when: "IT1(Enforced)"
+      generates: "CD1/CD3约束规则"
+      reason: "强制工具策略自动产生'严禁自行分析'和输入门禁约束"
+    - when: "CD3(Knowledge-Boundary)"
+      requires_at_least_one_of: ["K2", "K3", "K4"]
+      reason: "声明'不准用LLM'后必须指定替代的知识来源"
+    - when: "W5(Adaptive)"
+      requires: "W1|W2|W3|W4 作为 base_topology"
+      reason: "W5是叠加层，必须包装一个默认拓扑"
+    - when: "W5(Adaptive)"
+      pairs_well_with: ["M1(Model-Selection)", "SM1(FSM)", "DP1(Traceable-Lineage)"]
+      reason: "M1为adaptation_decision分配opus；SM1管理base_topology内状态；DP1审计拓扑切换依据"
+    - when: "E1(Self-Evaluation)"
+      pairs_well_with: ["G1(Reviewer-Gate)", "DP1(Traceable-Lineage)"]
+      reason: "G1审查维度可直接作为E1评分checkpoints；DP1为自评提供可追溯证据"
+    - when: "E2(Controlled-Evolution)"
+      incompatible_with: ["IH1(Fire-and-Forget)"]
+      reason: "受控进化需要中间自审查和可能的Escalation，Fire-and-Forget模式下用户不会看到升级请求"
+    - when: "E3(Delta-Modification)"
+      pairs_well_with: ["G1(Reviewer-Gate)"]
+      reason: "Delta修改后的自审查依赖G1的审查维度和通过标准"
+    - when: "MN-Exploratory"
+      soft_constraint: "所有子维度倾向探索配置（见cascade_tendencies）"
+      override_rule: "用户明确信号优先于MN推断"
+      reason: "探索性任务需要动态发现能力，但用户明确要求固定流程时应尊重"
+    - when: "MN-Hybrid"
+      soft_constraint: "按阶段分段应用倾向"
+      requirement: "必须在matching_decision中声明phases分段"
+      reason: "混合型必须明确分段，否则无法对各段应用不同的模式倾向"
+    - when: "MN-Deterministic"
+      soft_constraint: "所有子维度倾向确定配置"
+      note: "确定性任务不排斥G1/DF1/CD1等质量约束"
+      reason: "确定性是问题空间封闭，不等于不需要质量保障"
+
+  incompatibilities:
+    - combination: ["IH1(Fire-and-Forget)", "IH2(Interactive-Clarify)"]
+      issue: "同一执行阶段不能既无对话又追问"
+      resolution: "分阶段混合使用"
+    - combination: ["W1(Pipeline)", "W2(Router)"]
+      issue: "顶层只能有一种分解模式"
+      resolution: "选其一为顶层，另一作为子结构嵌套"
+    - combination: ["Tool-Forbidden", "IT1(Enforced)"]
+      issue: "直接互斥"
+      resolution: "只能选一个"
+    - combination: ["K1(LLM-Native) only", "CD3(Knowledge-Boundary)"]
+      issue: "CD3声明不能依赖LLM但只选了K1——没有替代来源"
+      resolution: "提示用户指定替代知识来源(K2/K3/K4)"
+
+# ============================================================
+# 加载策略模板 (Loading Strategy Templates)
+# ============================================================
+# 用于生成L2 .claude/rules/*.md 和 L3 skills/*/SKILL.md 的模板
+# LLM通过 architectural_intent 分析决定哪些模块使用哪个模板
+loading_strategy_templates:
+  description: "模板用于根据architectural_intent决策生成L2规则文件和L3 Skill文件。不包含硬规则触发条件——LLM语义判断是否使用。"
+
+  L2_execution_rules:
+    name: "L2 Execution Rules Template"
+    solves: "Generate .claude/rules/{agent-name}-execution-rules.md with step protocol, gate points, state management"
+    template_file: ".claude/skills/agent-design-patterns/patterns/L2-execution-rules.template.md"
+    generates: ".claude/rules/{agent-name}-execution-rules.md"
+    guidelines: "LLM判断: 当执行工作流>200行或具有独立语义边界(如Pipeline步骤+Gate位置+状态转换)时，提取为L2文件。参照ECC rules/common/格式：规则列表+检查清单+通过标准。"
+    reference: "ECC rules/common/ — 分层规则结构"
+
+  L2_data_flow:
+    name: "L2 Data Flow Rules Template"
+    solves: "Generate .claude/rules/{agent-name}-data-flow.md with entity table, flow diagram, schema refs"
+    template_file: ".claude/skills/agent-design-patterns/patterns/L2-data-flow.template.md"
+    generates: ".claude/rules/{agent-name}-data-flow.md"
+    guidelines: "LLM判断: 当数据实体>=5个或DF1/DP1同时启用时，数据流文档适合独立为L2文件。内容包含实体表+流转ASCII图+Schema引用+溯源规则。"
+    reference: "需求分析Agent phases/ — 数据文档独立承载"
+
+  L2_runtime:
+    name: "L2 Runtime Adaptation Rules Template"
+    solves: "Generate .claude/rules/{agent-name}-runtime-rules.md with state recovery and adaptive strategies"
+    template_file: ".claude/skills/agent-design-patterns/patterns/L2-runtime-rules.template.md"
+    generates: ".claude/rules/{agent-name}-runtime-rules.md"
+    guidelines: "LLM判断: 当SM1状态机>=5个状态或W4动态Worker管理时，运行时自适应逻辑适合独立。含状态恢复+异常处理+降级路径+升级策略。"
+    reference: "需求分析Agent .claude/rules/阶段2执行规则.md — 运行时状态管理"
+
+  L2_validation:
+    name: "L2 Validation Rules Template"
+    solves: "Generate .claude/rules/{agent-name}-validation-rules.md with schema checks, format constraints, cross-references"
+    template_file: ".claude/skills/agent-design-patterns/patterns/L2-validation-rules.template.md"
+    generates: ".claude/rules/{agent-name}-validation-rules.md"
+    guidelines: "LLM判断: 当DF1启用且有多个Schema文件时，验证规则适合独立以便单独维护和审计。"
+    reference: "ECC rules/common/testing.md — 独立验证规则格式"
+
+  L2_review_rule:
+    name: "L2 Review Rule Template"
+    solves: "Generate .claude/rules/{agent-name}-review-rule.md with G1 review checklist"
+    template_file: ".claude/skills/agent-design-patterns/patterns/L2-review-rule.template.md"
+    generates: ".claude/rules/{agent-name}-review-rule.md"
+    guidelines: "LLM判断: G1模式选择时始终生成此文件。G1审查门禁的检查维度+严重级别+通过标准独立承载于此。"
+    reference: "ECC agents/code-reviewer.md — 审查维度+严重级别+输出格式"
+
+  L3_skill:
+    name: "L3 SKILL.md Template"
+    solves: "Generate skills/{skill-name}/SKILL.md with YAML frontmatter, When to Activate, params, outputs, steps, checklist"
+    template_file: ".claude/skills/agent-design-patterns/patterns/L3-skill-SKILL.template.md"
+    generates: "skills/{skill-name}/SKILL.md"
+    guidelines: "LLM判断: 当能力模块具有独立I/O边界、可跨Agent复用、或需要IT1强制工具调用时，封装为L3 Skill。参照ECC SKILL.md格式：YAML frontmatter+When to Activate+步骤+Checklist。"
+    reference: "ECC skills/api-design/SKILL.md + coding-standards/SKILL.md — 经典SKILL.md格式"
+
+  ARCH_INTENT:
+    name: "Architectural Intent Analysis Template"
+    solves: "LLM-based architectural reasoning replacing hard if-this-then-that loading strategy rules"
+    template_file: ".claude/skills/agent-design-patterns/patterns/ARCHITECTURAL-INTENT.template.md"
+    generates: "matching_decision.architectural_intent section (embedded in matching_decision.md)"
+    guidelines: "LLM判断: 始终在Phase 1 Step 6使用。通过5个定性问题(身份定义性/自包含性/复用潜力/变更频率/内容量级)分析每个能力模块的加载层级。引用ECC和需求分析Agent作为类比锚点。"
+    reference: "ECC SOUL.md + 需求分析Agent CLAUDE.md — Agent身份定义参考"

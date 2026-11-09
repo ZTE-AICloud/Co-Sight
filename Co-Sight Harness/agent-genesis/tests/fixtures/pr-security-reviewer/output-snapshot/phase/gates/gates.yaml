@@ -1,0 +1,27 @@
+# gates.yaml — pr-security-reviewer
+# gate-framework 配置：本 Agent 无自定义 gate 脚本；
+# 内置 G003/G005 由 defaults.fallback_gates 自动生效，不写入本文件。
+
+framework: gate-framework
+version: "1.0"
+
+triggers:
+  - step_id: input-check
+    on_failure: block
+    context: "G001 输入检查失败：阻断 + 明确报错 + 非零退出，不产出部分报告"
+  - step_id: parallel-scan
+    on_failure: retry
+    max_retries: 2
+    context: "扫描器失败：局部修复重试 ≤2 轮，超限 circuit_breaker 升级"
+  - step_id: independent-review
+    on_failure: retry
+    max_retries: 2
+    context: "复核打回：回压来源扫描器修正 → 重审 ≤2 轮，超限阻断上报"
+  - step_id: structured-report
+    on_failure: retry
+    max_retries: 3
+    context: "报告生成失败：重试 ≤3 轮，超限阻断"
+
+defaults:
+  fallback_gates:
+    - output-exists

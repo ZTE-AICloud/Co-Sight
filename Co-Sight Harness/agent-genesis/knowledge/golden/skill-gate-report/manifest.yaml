@@ -1,0 +1,30 @@
+# golden manifest — skill-gate-report（G3 追加包, 自有产物）
+# 契约见 schemas/golden-manifest.schema.yaml（字段语义单点在该文件）
+
+task_tag: skill-gate-report
+line: skill
+mode_id: IV1-Progress-Streaming          # 货架位（检索键）, 非身份声明（R9）
+patterns:                                 # 如实完整模式维度集（现行词汇）
+  - IV1-Progress-Streaming
+  - K4-Rule-Driven
+  - DT1-Linear-Pass-Through
+  - K2-Document-Grounded
+anchor_fit: real                          # 关键验证节点结构化汇报 = IV1 纯正实现
+standard_ref: knowledge/skill/skill-design-guide.md
+shape_counts: {SKILL_md: 1, templates: 1, scripts: 0, references: 0}
+acceptance:
+  - 七项固定清单（5 套件 + 2 机检）声明顺序且禁止增删重排
+  - 计数确定性条款（只用 grep/wc/awk, 禁 LLM 目测计数）
+  - 缺失脚本 fail-closed（计 ERROR 且总判定必 FAIL, 不静默跳过）
+  - 报告三段固定结构（总判定/逐套件结果表/失败明细原文逐字收录）
+anchors:
+  build_plan: anchors/build-plan.md
+  self_report: anchors/self-report.md    # 自有产物锚, 不标 derived
+known_concerns: []                        # G3 准入跑 G028 后如实回填
+provenance:
+  origin_repo: "本仓库 agent-genesis（skill 线收官构建, commit e1e3f8b）"
+  license: "本仓库自有"
+  snapshot_date: "2026-10-16"
+  reshaped: false                         # 自有标准产物, 零重塑直接入库
+source: "G3 追加演练批次（docs/plan/golden-asset-pool-plan.md §4 G3, 验证跨线通用与'追加就行'）"
+status: active

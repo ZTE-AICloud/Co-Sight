@@ -1,0 +1,156 @@
+# 智能体产物状态。1 个端点。
+#
+# 机制与状态推导见 ../04-api/4.10-智能体产物状态.md。
+# 路径规则与 5.01 一致：资源身份进路径，个体动作用 `<集合>/{id}/<动作词>`。
+#
+# 错误响应体统一引用 ./5.00-common-openapi.yaml#/components/schemas/Error
+# （error / message / messageKey / params）；examples 只展开 error 与 message。
+openapi: 3.0.3
+
+info:
+  title: Smart Factory 智能体产物状态
+  version: 0.1.0
+  description: |
+    读 AgentGenesis 的生产过程状态与交付门禁，回答「智能体生成完了没有、能不能进入预览 / 评估」。
+    **只读、不落库**：每次请求从 development 目录现算。
+    状态：**已定稿**。错误形状与通用口径沿用 ../04-api/4.02-通用规范.md。
+
+servers:
+  - url: http://localhost:4100/api/smart-factory/v1
+    description: |
+      本地服务，前缀与 REST/WS 共用。端口取自 PORT（缺省 4100）。
+      开发态前端经 vite 代理写相对路径，不要写绝对地址。
+
+security: []
+
+tags:
+  - name: production
+    description: 智能体生成产物状态。只有 `ready=true` 才允许进入预览 / 评估。
+
+paths:
+  /agents/{agentId}/production:
+    get:
+      tags: [production]
+      summary: 读智能体产物状态
+      operationId: getAgentProduction
+      description: |
+        无请求体、无查询参数；成功恒 `200`，尚未开始也返回 `200` + `status=not_started`。
+        只读：不建实例、不建会话、不触发物化。
+
+        完成判定：产物布局完整 + 交付门禁 verdict ∈ {PASS, CONCERNS} + 流程收尾
+        （full 认 `pipeline_status=COMPLETED`，fast 认收尾步 `step-f1-fast-build` /
+        `step-f2-fast-optimize`）
+        + development 没有活跃 run。
+      parameters:
+        - $ref: '#/components/parameters/AgentIdPath'
+      responses:
+        '200':
+          description: 产物状态。`ready` 为 `true` 才允许进入预览 / 评估。
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgentProduction' }
+        '400':
+          description: agentId 形态非法。
+          content:
+            application/json:
+              schema: { $ref: './5.00-common-openapi.yaml#/components/schemas/Error' }
+        '404':
+          description: 智能体不存在。
+          content:
+            application/json:
+              schema: { $ref: './5.00-common-openapi.yaml#/components/schemas/Error' }
+        '502':
+          description: 框架工作区不可达，或工作区未绑定目录。
+          content:
+            application/json:
+              schema: { $ref: './5.00-common-openapi.yaml#/components/schemas/Error' }
+
+components:
+  parameters:
+    AgentIdPath:
+      name: agentId
+      in: path
+      required: true
+      description: 智能体 id（`agt_<uuid>` 或收养来的原目录名）。
+      schema: { type: string }
+
+  schemas:
+    AgentProduction:
+      type: object
+      required: [agentId, status, ready, lane, pipeline, delivery, product, reasons]
+      properties:
+        agentId: { type: string }
+        status:
+          type: string
+          enum: [not_started, building, blocked, failed, completed]
+          description: 派生状态；前端只看它和 `ready`。
+        ready:
+          type: boolean
+          description: 是否允许进入预览 / 评估（`status === 'completed'`）。
+        lane:
+          type: string
+          nullable: true
+          enum: [full, fast, null]
+          description: 技能车道；无法判断为 null。
+        pipeline:
+          allOf: [{ $ref: '#/components/schemas/PipelineProgress' }]
+          nullable: true
+        delivery:
+          allOf: [{ $ref: '#/components/schemas/DeliveryEvidence' }]
+          nullable: true
+        product:
+          allOf: [{ $ref: '#/components/schemas/ProductInfo' }]
+          nullable: true
+        reasons:
+          type: array
+          items: { type: string }
+          description: ready=false 时的用户语义原因，不含内部 gate / step 编号。
+
+    PipelineProgress:
+      type: object
+      required: [status, currentStep, completedSteps, lastUpdate, retryCount, retryBudget]
+      properties:
+        status:
+          type: string
+          nullable: true
+          description: 原始 pipeline_status（IN_PROGRESS / COMPLETED / BLOCKED / FAILED），排障用。
+        currentStep:
+          type: string
+          nullable: true
+          description: 原始 step id；用户面展示应转语义。
+        completedSteps:
+          type: integer
+          description: state.steps 去重后的 step 数。
+        lastUpdate: { type: string, format: date-time, nullable: true }
+        retryCount: { type: integer, nullable: true }
+        retryBudget: { type: integer, nullable: true }
+
+    DeliveryEvidence:
+      type: object
+      required: [verdict, source, concerns]
+      properties:
+        verdict:
+          type: string
+          nullable: true
+          enum: [PASS, CONCERNS, FAIL, null]
+        source:
+          type: string
+          nullable: true
+          description: 证据文件名，如 step-4-implementation.json；不含路径。
+        concerns:
+          type: array
+          items: { type: string }
+          description: 门禁 concerns，内部诊断信息，不建议原样展示。
+
+    ProductInfo:
+      type: object
+      required: [name, version, path, updatedAt]
+      properties:
+        name:
+          type: string
+          description: output/agents 下的唯一子目录名（AgentGenesis 的 {name}）。
+        version: { type: string, description: 最新 vN。 }
+        path:
+          type: string
+          description: 相对 development 目录的路径，不下发绝对路径。
+        updatedAt: { type: string, format: date-time }

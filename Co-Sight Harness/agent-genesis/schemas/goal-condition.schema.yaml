@@ -1,0 +1,37 @@
+# schemas/goal-condition.schema.yaml
+# P2: build-plan 机械派生的 goal-condition.yaml 的 schema
+# 由 build-planner 输出, executor 消费（决定终止条件 + 自修复范围）
+# (docs/plan/goal-mode-pipeline-acceleration.md §2.1)
+
+type: object
+properties:
+  termination:
+    type: object
+    required: [all_files_done, exit_gates, report_written]
+    properties:
+      all_files_done:
+        type: boolean
+        description: "build-plan.files 全部 progress.done（断点恢复契约不变）"
+      exit_gates:
+        type: array
+        items: {type: string, pattern: "^G[0-9]+"}
+        description: "收尾批量 gate 全 PASS（典型 [G028]）"
+      report_written:
+        type: string
+        pattern: "\\.md$"
+        description: "phase4-execution-report.md 路径（必填）"
+  self_fix:
+    type: object
+    required: [max_rounds, scope]
+    properties:
+      max_rounds:
+        type: integer
+        minimum: 1
+        maximum: 5
+        default: 3
+        description: "批内自修复循环上限（吸收原文件级 ≤2，参考 plan §2.2）"
+      scope:
+        type: string
+        enum: [gate-failures-only]
+        description: "只许修 gate 点名的问题，不许改设计（anti-scope-creep 条款）"
+required: [termination, self_fix]

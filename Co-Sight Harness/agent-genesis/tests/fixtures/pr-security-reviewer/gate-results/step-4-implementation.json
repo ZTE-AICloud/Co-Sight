@@ -1,0 +1,21 @@
+{
+  "step_id": "step-4-implementation",
+  "gate_id": "G005+G022+G023",
+  "verdict": "PASS",
+  "artifacts_count": 23,
+  "static_checks": {
+    "completeness": "PASS 23/23",
+    "placeholders": "PASS 0 (G005 定义文本不计)",
+    "json_legality": "PASS 3/3",
+    "schema_required": "PASS [dimension,severity,location,evidence,fix]",
+    "dangling_paths": "PASS 0 violations",
+    "content_contains": "PASS 5/5"
+  },
+  "executor_inlines": [
+    "8 deterministic copies (g025)",
+    "10 LLM generated (proposal-spec, CLAUDE, phase-1-security-scan, 3 subagents, schema, G003/G005, settings, pass-criteria)",
+    "1 pre-existing (gates.yaml from Step 3)",
+    "1 review-rule copy"
+  ],
+  "checked_at": "2026-10-05T03:58:00Z"
+}

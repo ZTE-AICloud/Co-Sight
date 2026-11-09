@@ -1,0 +1,51 @@
+# Phase Detection Patterns
+# Used by _detect_phase_from_output() to match CLI output to pipeline phases.
+# Each phase has a display_name, order (for priority), and signals (text patterns).
+
+phase_patterns:
+  PLAN_MODE:
+    display_name: "PLAN_MODE (输出中包含审批话术)"
+    order: 7
+    signals:
+      - "是否按此方案继续"
+      - "等待你的审批"
+      - "方案展示"
+      - "你看看架构是否满意"
+      - "是否满足你的需求"
+      - "默认"
+      - "Recommended"
+      - "审查维度"
+
+  CODE_GENERATED:
+    display_name: "CODE_GENERATED (代码生成+测试通过)"
+    order: 11
+    signals:
+      - "测试通过"
+      - "个测试"
+
+  CODE_GENERATED_PARTIAL:
+    display_name: "CODE_GENERATED (代码已生成)"
+    order: 10
+    signals:
+      - "已实现"
+      - "已创建"
+      - "已生成"
+    compound:
+      - signal: "生成"
+        also_requires: ["状态机", "审计日志", "写入", "代码"]
+
+  IH2_CLARIFY:
+    display_name: "IH2_CLARIFY (追问澄清)"
+    order: 3
+    signals:
+      - "你需要我"
+      - "你想让我"
+      - "请告诉"
+      - "具体描述一下你的需求"
+
+  EXECUTING:
+    display_name: "EXECUTING (开始执行)"
+    order: 2
+    signals:
+      - "我来"
+      - "正在"

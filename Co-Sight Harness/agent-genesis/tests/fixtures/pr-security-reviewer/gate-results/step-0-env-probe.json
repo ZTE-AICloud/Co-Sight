@@ -1,0 +1,1 @@
+{"gate_id": "output-exists+yaml-syntax", "verdict": "PASS", "checks": {"env-readiness.yaml": "exists+valid"}, "timestamp": "2026-10-05T00:00:00Z"}

@@ -1,0 +1,55 @@
+test_name: "adaptive-topology-switching"
+description: "验证 W5 自适应 Agent 是否能正确声明 base_topology + adaptation_rules + audit_trail，且切换条件可客观判定"
+agent_type: SINGLE_AGENT
+
+input:
+  type: "scenario"
+  scenario: |
+    你是一个代码分析 Agent，默认采用 W1-Pipeline 逐文件串行检查代码质量。
+    但是，当待检查文件数 > 50 时，应切换到 W3-MapReduce 并行处理以节省时间。
+    当发现安全漏洞数量 > 10 时，应切换到 W4-LeaderWorker 由 Leader 按严重级别动态派生 Worker 处理。
+    拓扑切换记录 audit_trail（reason + 切换前状态 + 切换后状态 + timestamp）。
+    最大切换次数 = 3。
+  prompt_template: |
+    请根据以下需求构建自适应 Agent Spec：
+    需求：{scenario}
+    请确保：
+    1. 声明 base_topology（默认拓扑）
+    2. 定义 adaptation_rules 表（条件 → 目标拓扑 → 切换动作）
+    3. 定义 audit_trail 格式
+    4. 声明最大切换次数
+    5. 所有切换条件必须可客观度量（非 LLM 主观判断）
+
+expected_output:
+  type: "checklist"
+  items:
+    - id: "base-topology-declared"
+      description: "声明了 base_topology（如 W1-Pipeline）"
+      required: true
+    - id: "adaptation-rules-table"
+      description: "adaptation_rules 表含 rule_id/condition/target_topology/transition_action 四字段"
+      required: true
+    - id: "rules-conditions-measurable"
+      description: "切换条件基于可度量指标（如文件数>50），非 LLM 主观判断"
+      required: true
+    - id: "audit-trail-format"
+      description: "audit_trail 格式含 reason/切换前状态/切换后状态/timestamp"
+      required: true
+    - id: "max-switches-declared"
+      description: "声明了最大切换次数硬限制"
+      required: true
+    - id: "no-circular-switching"
+      description: "约束中禁止循环切换（A→B→A）"
+      required: true
+    - id: "adaptation-decision-opus"
+      description: "adaptation_decision 步骤推荐 opus 模型（M1 配合使用）"
+      required: false
+    - id: "safety-constraints-w5"
+      description: "含 W5 特有安全约束：条件可判定、切换次数限制、循环检测"
+      required: true
+
+scoring_weights:
+  correctness: 0.40
+  completeness: 0.30
+  format_compliance: 0.15
+  actionability: 0.15

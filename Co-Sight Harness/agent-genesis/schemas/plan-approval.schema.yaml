@@ -1,0 +1,13 @@
+# plan-approval — Plan Mode 审批产出
+status:
+  type: string
+  enum: [approved, rejected, adjusted]
+  description: "approved=按方案继续 / rejected=打回Phase 1重设计 / adjusted=按反馈调整后继续"
+feedback:
+  type: string
+  description: "若rejected或adjusted，用户的具体反馈内容"
+approved_by:
+  type: string
+timestamp:
+  type: string
+  format: "ISO8601"

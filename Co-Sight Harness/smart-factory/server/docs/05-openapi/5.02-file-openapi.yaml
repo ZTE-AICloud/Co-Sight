@@ -1,0 +1,133 @@
+# 通用文件资源。2 个端点。
+#
+# **路径规则与 5.01 一致：资源身份一律进路径。**
+#   集合：  POST /files                （上传，建一个新文件）
+#   个体：  GET  /files/{fileId}       （按存储名读回原始字节）
+# fileId = 存储名 = `fil_<uuid>` + 可选消毒扩展名，上传响应给出，客户端原样回持即可。
+#
+# 机制（落盘位置、扩展名消毒、Content-Type 映射、安全边界、孤儿文件口径）
+# 见 ../03-architecture/09-file.md。
+#
+# 错误响应体统一引用 ./5.00-common-openapi.yaml#/components/schemas/Error
+# （error / message / messageKey / params）。examples 只展开 error 与 message，
+# 运行时同时返回 messageKey / params，降级规则见 4.02 §10.1。
+openapi: 3.0.3
+
+info:
+  title: Smart Factory 通用文件
+  version: 0.1.0
+  description: |
+    通用文件上传与读取，独立于智能体产物（artifacts 管的是工作区文件，这里管的是用户上传的静态资源）。
+    首个使用方：智能体封面图。上传后把返回的 `url` 写进 `Agent.icon`，展示逻辑不变（icon 本就是 URL 字符串）。
+    状态：**草案**。错误形状与通用口径沿用 ../04-api/4.02-通用规范.md。
+
+servers:
+  - url: http://localhost:4100/api/smart-factory/v1
+    description: |
+      本地服务，前缀与 REST/WS 共用。端口取自 PORT（缺省 4100）。
+      开发态前端经 vite 代理写相对路径，不要写绝对地址。
+
+security: []
+
+tags:
+  - name: files
+    description: 用户上传的静态文件。不进数据库：存储名即 id，元数据只有磁盘上的文件本身。
+
+paths:
+  /files:
+    post:
+      tags: [files]
+      summary: 上传一个文件
+      operationId: uploadFile
+      description: |
+        multipart/form-data，字段名固定 `file`，单文件上限 `FILES_MAX_FILE_BYTES`（缺省 10MB），不限类型。
+        服务端生成存储名（原文件名不保留，只消毒其扩展名），落盘 `{SMART_FACTORY_HOME}/files/`。
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: 待上传文件。字段名不是 file 时按 400 处理（LIMIT_UNEXPECTED_FILE）。
+      responses:
+        '200':
+          description: 成功。`url` 是相对路径（同源可用），客户端直接把它当字符串存（如 `Agent.icon`）。
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FileUploaded' }
+        '400':
+          description: |
+            缺 `file` 字段、字段名不对、或请求体不是合法 multipart。
+          content:
+            application/json:
+              schema: { $ref: './5.00-common-openapi.yaml#/components/schemas/Error' }
+        '413':
+          description: 单文件超过大小上限。
+          content:
+            application/json:
+              schema: { $ref: './5.00-common-openapi.yaml#/components/schemas/Error' }
+
+  /files/{fileId}:
+    get:
+      tags: [files]
+      summary: 按存储名读回文件原始字节
+      operationId: getFile
+      description: |
+        Content-Type 按存储名扩展名映射（不在表内为 application/octet-stream），恒带 `X-Content-Type-Options: nosniff`。
+        `<img src>`、`<a href>` 直接用上传响应里的 `url`。
+      parameters:
+        - $ref: '#/components/parameters/FileIdPath'
+      responses:
+        '200':
+          description: 文件字节。Content-Type 见上。
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+        '400':
+          description: 存储名形态非法（不匹配 `fil_<uuid>[.ext]`，含路径穿越形态）。
+          content:
+            application/json:
+              schema: { $ref: './5.00-common-openapi.yaml#/components/schemas/Error' }
+        '404':
+          description: 存储名形态合法但文件不存在。
+          content:
+            application/json:
+              schema: { $ref: './5.00-common-openapi.yaml#/components/schemas/Error' }
+
+components:
+  parameters:
+    FileIdPath:
+      name: fileId
+      in: path
+      required: true
+      description: 上传响应返回的存储名，原样回持。
+      schema: { $ref: '#/components/schemas/FileId' }
+
+  schemas:
+    FileId:
+      type: string
+      pattern: '^fil_[0-9a-f-]{36}(\.[a-z0-9]{1,10})?$'
+      description: |
+        存储名，同时是对外 id：`fil_<uuid>` + 可选消毒后的扩展名（去点、小写、只留字母数字、最长 10 段）。
+        形态校验是读取的安全边界：本 pattern 放行的字符集拼不出路径穿越。
+      example: fil_3c9d2b1a-6f5e-4c7d-8a90-1b2c3d4e5f60.png
+
+    FileUploaded:
+      type: object
+      required: [name, url, size]
+      properties:
+        name:
+          type: string
+          description: 存储名（含扩展名），即 FileId。
+        url:
+          type: string
+          description: 相对路径的访问 URL，`{name}` 的完整形态；前端直接当字符串用。
+          example: /api/smart-factory/v1/files/fil_3c9d2b1a-6f5e-4c7d-8a90-1b2c3d4e5f60.png
+        size:
+          type: integer
+          description: 字节数。

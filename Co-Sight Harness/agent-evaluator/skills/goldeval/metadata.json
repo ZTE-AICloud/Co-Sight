@@ -1,0 +1,31 @@
+{
+  "name": "goldeval",
+  "version": "2.0.0",
+  "description": "黄金数据集评测能力 — run/list/validate/--version 子命令，内置 f1_score 评估器，可注册扩展",
+  "license": "MIT",
+  "languages": ["zh", "en"],
+  "compatibility": {
+    "minCliVersion": "0.1.0",
+    "agents": ["claude-code"]
+  },
+  "entryPoint": "SKILL.md",
+  "triggers": [
+    "goldeval",
+    "golden evaluation",
+    "黄金评测",
+    "f1_score",
+    "评测数据集"
+  ],
+  "bundled": {
+    "scripts": [
+      "scripts/run.ts",
+      "scripts/list.ts",
+      "scripts/show.ts",
+      "scripts/validate.ts",
+      "scripts/version.ts",
+      "scripts/traceaudit.ts"
+    ],
+    "assets": [],
+    "templates": []
+  }
+}

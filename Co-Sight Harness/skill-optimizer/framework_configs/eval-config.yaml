@@ -1,0 +1,122 @@
+# framework_configs/eval-config.yaml  — framework 维护者管的文件
+# ─────────────────────────────────────────────────────────────────────
+# ⚠️ 业务方**不要修改**本文件！业务方唯一配置入口：config/user-config.yaml
+# 加载时 framework YAML 内的 {{ user.xxx }} 会被 user_config 渲染成具体值。
+#
+# 业务差异通过按需引用 score_extraction 的子字段注入到 extraction.task:
+#   {{ user.score_extraction.structure }}  — 产物结构(目录/文件/字段)
+#   {{ user.score_extraction.extraction }} — 正确处理步骤
+#   {{ user.score_extraction.handling }}   — 错误处理方式
+# 业务方在 user-config.yaml 写这 3 段自然语言。
+# ─────────────────────────────────────────────────────────────────────
+
+extraction:
+  # 子 Agent 类型,必须与 agents/ 下的 agent 文件名一致
+  agent: "ExtractionAgent"
+
+  # ── 核心:自然语言任务描述(业务差异都写在这里) ──
+  # 占位符 {data_dir} 由 orchestrator 注入为真实路径
+  # 框架不绑死任何业务字段/路径,LLM 用 Read/Bash/Grep 自由探索后自己决定怎么算分。
+  ## 业务方在 user-config.yaml 的 score_extraction 写具体业务描述
+  task: |
+    你的任务:用 Read/Bash/Grep 工具自由探查评测产物目录,自主决定如何提取分数。
+
+    ## 业务背景
+    - 评测产物目录: {data_dir}
+    - 子目录结构、JSON 字段名、case 标识符等具体形态由业务方定义,框架不感知
+    - 你应该先用 `ls {data_dir}` / `find {data_dir} -type f` 探查结构,再读关键文件理解 schema
+
+    ## 业务方声明的分数产物结构
+    {{ user.score_extraction.structure }}
+
+    ## 业务方声明的提取步骤
+    {{ user.score_extraction.extraction }}
+
+    ## 业务方声明的错误处理
+    {{ user.score_extraction.handling }}
+
+    ## 业务方声明的资源消耗指标(输入/输出 token + 时间消耗)
+    ### 产物结构
+    {{ user.metrics_extraction.structure }}
+
+    ### 提取步骤
+    {{ user.metrics_extraction.extraction }}
+
+    ### 错误处理
+    {{ user.metrics_extraction.handling }}
+
+    ## 🆕 2026-08-04:必读文件清单(LLM 必读,不读直接 0 分)
+    按以下顺序 Bash/Read 探查,**每个文件/路径是 score.json 必填字段的直接来源**:
+    1. `phase3-eval/{req_id}_*/results/{评估项名}_eval_data.json` (S7 主)
+       → 拿 `evaluation_items[0].f1` × 100 → `info.per_case_scores[req_id]` 和 `info.result_score_per_case[req_id]`
+       → 拿 `evaluation_items[0].diff_notes` → `info.diff_notes_per_case[req_id]`
+    2. `phase3-eval/{req_id}_*/inputs/gold/` 目录
+       → `ls` 真实文件名,用 `evidence_paths.gold_filename_glob` 过滤,**用 Bash realpath 拿绝对路径** → `info.gold_per_case[req_id]`
+    3. `phase3-eval/{req_id}_*/inputs/agent/` 目录
+       → `ls` 真实文件名,用 `evidence_paths.llm_output_filename_glob` 过滤,**用 Bash realpath 拿绝对路径** → `info.llm_output_per_case[req_id]`
+    4. `phase2-exec/{req_id}_*/trace/trace.jsonl`
+       → `ls -d ... | head -1` 拿真实文件,**用 Bash realpath 拿绝对路径** → `info.trace_paths_per_case[req_id]`
+    5. `phase3-eval/{req_id}_*/results/{req_id}_*_Agent性能指标报告.md`
+       → Read 找 "Token消耗" 表的"输入Token"和"输出Token" 行(单位 K→×1000,M→×1000_000)
+       → Read 找 "时间统计" 表的"总耗时" 行(单位 ms 整数)
+       → 填 `info.input_tokens_per_case[req_id]` / `output_tokens_per_case[req_id]` / `duration_ms_per_case[req_id]`
+
+    ## 🆕 2026-08-04:绝对路径铁律
+    - `info.gold_per_case[req_id]` / `llm_output_per_case[req_id]` / `trace_paths_per_case[req_id]` 的 value **必须**是 `/...` 开头的绝对路径
+    - **必须用 Bash `realpath` 或 `readlink -f` 拿**(`Bash tool` 调,不要凭印象写)
+    - framework 会按路径 Read 真文件,**禁止把文件内容塞进字典**(2026-07-31 bug)
+    - 任何一个 case 留空 → framework REWORK + 写 `info._auto_derived.warnings=["<case_id> <key> 留空"]`
+
+    ## 🆕 2026-08-04:result_score 由 framework 自动派生(LLM 不要算)
+    - 顶层 `result_score` 字段填 `0` 占位即可
+    - framework 落盘后会自动算:`derived = round(sum(clip(v, 0, 100) for v in info.per_case_scores.values()) / len(per_case_scores), 2)`
+    - 差 > 0.5 → 强制覆写 + 打 warn + 写 `info._auto_derived`
+    - 你的唯一职责:把 9 个 case 的 F1 × 100 准确填进 `info.per_case_scores` 字典,不要在上面叠加额外换算
+
+    ## 目标:计算 result_score(百分制 0~100,2 位小数)
+    1. 按业务方在「提取步骤」段声明的方式聚合分数(可能是算术平均/加权/最大值/最小值/自定义)
+    2. 必要时按业务方声明的归一化规则把分数压到 0~100 区间(百分制)
+    3. 按 case_id 聚合所有 case 的得分,得到整体 `result_score`(百分制 0~100)
+    4. 把每个 case 的得分(百分制 0~100)填入 `result_score_per_case`,key 用业务方在产物中实际看到的标识符
+    5. 业务方在「产物结构」段指明的核心字段之外的字段(如交叉验证字段)按其声明的用途处理,不要喧宾夺主
+    6. **所有分数必须以百分制 0~100 输出**(保留 2 位小数,如 29.09),框架不再二次换算,也不接受 0~1 区间
+
+    ## 可选约束
+    - 用户指定 case_ids 时: {case_ids}
+      - 只算这些 case,缺失的记 0
+      - 不传或为空 → 走全量(自己决定从哪些文件/字段算)
+    - 数据缺失时:在 score.json 的 zero_root_cause 字段说明原因
+
+    ## 关键约束
+    - result_score **必须是数字**(百分制 0~100,2 位小数),不能是文字描述
+    - result_score_per_case 的 key **直接用你在产物中看到的标识符**(业务方在「产物结构」段会约定 case_id 来源)
+    - 框架不重算,不要期待兜底,自己保证数据正确
+    - 把填好的内容放在 ```{lang} 围栏代码块里(框架只抽这个块)
+
+    ## 围栏独立成行铁律(违反 → 0 分陷阱)
+    - ```` ```json ```` **必须独占一行**,前面必须有换行/空行
+    - 围栏内**第一个字符**直接是模板字段(如 `{`、字母),不能是空格或 ```` {{ ````
+    - 结束 `` ``` `` **独占一行**,前后都有换行
+    - **反例**(0 分陷阱):`...结果 0.5。  ```json{...}` ← 紧跟前文,正则 `` ```json\s*\n `` 抽不到
+    - **正例**:先空一行,再 ```` ```json ````,再立即写模板内容,再 `` ``` `` 收尾
+    - 围栏外最多 1 行简短说明(如"已按要求填好模板"),**不要把围栏紧接其后**
+
+    ## 模板填空(必读)
+    - 模板是**合法 JSON**(已是 0/0.0/"\"/{} 等占位值),不是带 <...> 的非法 JSON
+    - **只替换占位值为实际数据**:result_score、info.*、round_num、candidate_id、run_index、timestamp
+    - **不要重写结构**:不要新增字段、不要删除字段、不要改字段名、不要保留任何 `<...>` 文本
+    - 如果不替换占位值直接落盘 → result_score = 0、任务失败、必须重试
+    - 替换后整个 JSON 必须是合法 JSON(`json.loads` 必须成功),顶层 result_score 必须是百分制 0~100 数字(2 位小数,如 29.09)
+    - 调试:完成后可用 `python3 -c "import json; json.loads(open('score.json').read())"` 自检
+
+# ════════════════════════════════════════════════════════════════════
+# 复合分数公式(由 LLM 在 result_score 中直接给出,框架不再二次计算)
+# ════════════════════════════════════════════════════════════════════
+composite_formula: result_score
+
+# ── 极简指标元信息:仅 weight / direction / unit ──
+metrics:
+  result_score:
+    weight: 1.0
+    direction: higher_is_better
+    unit: "pts"

@@ -1,0 +1,20 @@
+/* 二次确认框的内容区（外壳在 Dialog.module.css）。 */
+
+.body {
+  padding: 20px 24px 20px;
+}
+
+.message {
+  margin: 0 0 20px;
+  color: var(--text-body);
+  font-size: var(--fs-label);
+  line-height: 20px;
+  /* 长路径（工作区绑定的目录）必须能在任意位置断开，否则会撑破 420px 的弹窗。 */
+  overflow-wrap: anywhere;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}

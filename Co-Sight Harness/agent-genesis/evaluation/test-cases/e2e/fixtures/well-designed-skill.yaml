@@ -1,0 +1,47 @@
+# Test Fixture: Well-Designed Skill (已知良好Skill)
+# 用途: TC-SO-06 "优化已设计良好的Skill → 无问题场景"
+
+fixture_id: "E2E-F-004"
+test_case: TC-SO-06
+domain: "skill-optimization-no-issues"
+
+# 这个 Skill 是故意设计良好的, 用于验证 optimize-skill pipeline
+# 能够正确识别"无需优化"的情况并干净退出
+
+skill_description: |
+  # code-formatter
+
+  ## Description
+  Format source code files according to defined style rules for Python (PEP 8 via black),
+  JavaScript (Prettier), and YAML. Run formatting and report which files were modified.
+  This skill ONLY handles formatting; it does not perform linting, security checks,
+  or code quality analysis.
+
+  ## Operations (Q1-Q4 analysis)
+  - Operation type: Tool Orchestration (external formatter execution)
+  - Input: File paths (list of files to format)
+  - Output: List of modified files + diff summary
+  - Constraints: Never modify files outside the specified paths; never run sudo
+
+  ## Granularity Decision
+  - G1: Single-skill operations — this is one focused operation (format)
+  - No G2 upgrade needed
+
+  ## Constraints (auto-derived)
+  - Tool must exist on PATH before execution (black, prettier, yamllint)
+  - Only process files with recognized extensions (.py, .js, .ts, .jsx, .tsx, .yaml, .yml)
+  - Max file size: 10MB (avoid formatting huge generated files)
+  - Never format files in node_modules/, .git/, __pycache__/, venv/
+
+six_dimension_expected_results:
+  D1_structure: PASS
+  D2_content_quality: PASS
+  D3_tool_usage: PASS
+  D4_performance: PASS
+  D5_security: PASS
+  D6_maintainability: PASS
+
+expected_pipeline_behavior:
+  diagnosis_result: "All 6 dimensions PASS"
+  p3_triggered: false
+  final_state: DONE

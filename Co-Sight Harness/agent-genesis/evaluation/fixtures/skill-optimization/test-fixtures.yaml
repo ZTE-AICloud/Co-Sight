@@ -1,0 +1,271 @@
+# Skill 优化能力 — 测试 Fixture 定义
+
+> 覆盖: 6 诊断维度、11 优化模式、多 Skill 场景、边界判定
+
+## Fixture 1: 健康 Skill — 基线测试
+
+```yaml
+fixture_id: "F-SO-001"
+fixture_type: "healthy_baseline"
+skill_path: "F-SO-001-healthy/SKILL.md"
+description: "符合 Anthropic 规范的健康 Skill，应全部 PASS"
+expected:
+  all_dimensions_pass: true
+  diagnosis:
+    decomposition: PASS
+    information: PASS
+    state: PASS
+    verification: PASS
+    design_form: PASS
+    global_context: PASS
+  boundary_decision: SKILL_ONLY
+  selected_pattern_count: 0  # 无需优化
+```
+
+## Fixture 2: 单体过载 — Decomposition FAIL
+
+```yaml
+fixture_id: "F-SO-002"
+fixture_type: "decomposition_fail"
+skill_path: "F-SO-002-monolithic/SKILL.md"
+description: "12 步骤无 I/O 契约无模块隔离，应触发模式 1 (单体拆解)"
+expected:
+  diagnosis:
+    decomposition:
+      status: FAIL
+      severity: HIGH
+      signals: ["步骤数量 >= 8", "无 I/O 契约", "步骤间无模块隔离"]
+    information: PASS
+    state: FAIL  # 中间步骤产物不可追溯
+    verification: FAIL  # 无校验门禁
+    design_form: FAIL  # 缺少 references/ 分层
+    global_context: PASS
+  boundary_decision: SKILL_ONLY
+  selected_patterns_include: [1]  # 单体拆解
+  selected_patterns_exclude: [7]  # 不需要形态重构(问题在分解不在形态)
+```
+
+## Fixture 3: 知识全内联 — Information FAIL
+
+```yaml
+fixture_id: "F-SO-003"
+fixture_type: "information_fail"
+skill_path: "F-SO-003-no-references/SKILL.md"
+description: "12 类安全检查知识全部内联在 SKILL.md，无 references/ 提取，应触发模式 2 (文档系统)"
+expected:
+  diagnosis:
+    decomposition: PASS
+    information:
+      status: FAIL
+      severity: HIGH
+      signals: ["知识 >500 行内联", "无外部 references/ 引用", "缺少 K2/K3 知识源"]
+    state: PASS
+    verification: PASS
+    design_form: FAIL  # 无 references/ 也无 scripts/
+    global_context: PASS
+  boundary_decision: SKILL_ONLY
+  selected_patterns_include: [2, 7]  # 文档系统 + 形态重构
+```
+
+## Fixture 4: 无状态追踪 — State FAIL
+
+```yaml
+fixture_id: "F-SO-004"
+fixture_type: "state_fail"
+skill_path: "F-SO-004-no-checkpoint/SKILL.md"
+description: "6 步数据迁移无 checkpoint 无断点恢复机制，应触发模式 5 (状态追踪)"
+expected:
+  diagnosis:
+    decomposition: PASS
+    information: PASS
+    state:
+      status: FAIL
+      severity: MEDIUM
+      signals: ["无 checkpoint", "无状态文件", "中断后需从头执行"]
+    verification: PASS
+    design_form: PASS
+    global_context: PASS
+  boundary_decision: SKILL_ONLY
+  selected_patterns_include: [5]  # 状态追踪
+```
+
+## Fixture 5: 无校验门禁 — Verification FAIL
+
+```yaml
+fixture_id: "F-SO-005"
+fixture_type: "verification_fail"
+skill_path: "F-SO-005-no-g1/SKILL.md"
+description: "自审代替独立审查 + 输出到 /tmp/ + 无 Schema 约束，应触发模式 3+4+6+8"
+expected:
+  diagnosis:
+    decomposition: PASS
+    information: PASS
+    state: PASS
+    verification:
+      status: FAIL
+      severity: CRITICAL
+      signals: ["自审代替独立审查", "输出格式无 Schema"]
+    design_form: FAIL  # description 过于简单
+    global_context:
+      status: FAIL
+      severity: HIGH
+      signals: ["输出路径 /tmp/ 与 Agent work/ 约定不符", "自审绕过 Agent G1"]
+  boundary_decision: SKILL_ONLY  # 可在 Skill 内修正
+  selected_patterns_include: [4, 6, 8]  # Hook 门禁 + Review Agent + 全局对齐
+```
+
+## Fixture 6: 设计形态差 — Design Form FAIL
+
+```yaml
+fixture_id: "F-SO-006"
+fixture_type: "design_form_fail"
+skill_path: "F-SO-006-bad-form/SKILL.md"
+description: "名称宽泛(helper)、description 模糊、代码内联在 Markdown、无分层，应触发模式 7 (形态重构)"
+expected:
+  diagnosis:
+    decomposition: PASS
+    information: PASS
+    state: PASS
+    verification: PASS
+    design_form:
+      status: FAIL
+      severity: HIGH
+      signals:
+        - "名称过于宽泛 (helper)"
+        - "description 缺少触发条件"
+        - "代码示例内联在 SKILL.md"
+        - "无 references/ 目录"
+        - "无 scripts/ 目录"
+        - "无 templates/ 目录"
+        - "SKILL.md 中嵌入可执行 Python 代码"
+    global_context: PASS
+  boundary_decision: SKILL_ONLY
+  selected_patterns_include: [7]  # 形态重构
+  anthropic_violations:
+    - SF-1  # 目录结构
+    - SF-5  # 命名约定
+    - SF-6  # 描述公式
+    - SF-7  # 脚本独立
+```
+
+## Fixture 7: Agent 对齐偏离 — Global Context FAIL
+
+```yaml
+fixture_id: "F-SO-007"
+fixture_type: "global_context_fail"
+skill_path: "F-SO-007-agent-misaligned/SKILL.md"
+description: "Skill 修改源代码(违反S-01)、自审代替G1(违反S-02)、输出到/tmp/(违反work/约定)、修改任意文件(越权)"
+expected:
+  diagnosis:
+    decomposition: PASS
+    information: PASS
+    state: PASS
+    verification: FAIL  # 自审代替独立审查
+    design_form: FAIL    # description 模糊
+    global_context:
+      status: FAIL
+      severity: CRITICAL
+      signals:
+        - "GC-1 Role 不一致: 修改源代码 vs Agent 仅分析"
+        - "GC-2 Tool 权限: Edit 不在 Agent 白名单"
+        - "GC-3 I/O 路径: /tmp/ 与 work/ 约定不符"
+        - "GC-4 Safety: 违反 S-01 禁止修改源代码"
+        - "GC-7 Review: 自审绕过 G1 审查门禁"
+  boundary_decision: PARTIALLY_EXCEEDED  # Tool 权限需 Agent 级修改
+  agent_issues:
+    - "Tool 权限: 需要 Edit 工具，但 Agent 白名单不含"
+  selected_patterns_include: [8]  # 全局对齐
+```
+
+## Fixture 8: 巨型 Skill — 应拆分
+
+```yaml
+fixture_id: "F-SO-008"
+fixture_type: "mega_skill_split"
+skill_path: "F-SO-008-mega-skill/SKILL.md"
+description: ">800 行 CI/CD Skill，含 6 Phase 25+ 步骤，应触发模式 9 (Skill 拆分) + 调用流变更提示"
+expected:
+  diagnosis:
+    decomposition:
+      status: FAIL
+      severity: CRITICAL
+      signals: ["行数 >800", "6 个功能域", "步骤数量 >= 25"]
+    information: FAIL  # 大量知识内联
+    state: FAIL  # 无 checkpoint
+    verification: PASS
+    design_form: FAIL  # 无分层
+    global_context: PASS
+  boundary_decision: SKILL_ONLY
+  selected_patterns_include: [9, 2, 5]  # 拆分 + 文档系统 + 状态追踪
+  split_recommended: true
+  estimated_sub_skills: 6  # 按 Phase 拆分
+  call_flow_changes_required: true
+```
+
+## Fixture 9+10: 多 Skill 关联 — 重叠 + 依赖
+
+```yaml
+fixture_id: "F-SO-MULTI-001"
+fixture_type: "multi_skill_overlapping"
+skill_paths:
+  - "F-SO-008-mega-skill/SKILL.md"   # CI/CD 全流程 — 含依赖扫描和许可证检查
+  - "F-SO-009-overlapping/SKILL.md"  # 与 F-SO-008 Phase 1.5 重叠
+  - "F-SO-010-dependent/SKILL.md"    # 依赖 F-SO-009 输出
+description: "3 个 Skill 存在功能重叠和调用依赖"
+expected:
+  multi_skill_analysis:
+    dependency_matrix:
+      - {from: "F-SO-010", to: "F-SO-009", type: "data_dep"}  # 读取 F-SO-009 输出
+      - {from: "F-SO-010", to: "F-SO-008", type: "data_dep"}  # 读取检查报告
+    overlaps:
+      - {skill_a: "F-SO-008", skill_b: "F-SO-009", overlap: "许可证检查", severity: MEDIUM}
+    conflicts: []  # 无明显冲突
+    recommended_order: ["F-SO-008", "F-SO-009", "F-SO-010"]
+  selected_patterns_include: [10, 11]  # 跨 Skill 重组 + 批量优化
+```
+
+## Fixture 11: 边界测试 — 完全超出 Skill 范围
+
+```yaml
+fixture_id: "F-SO-EDGE-001"
+fixture_type: "escalation_fully_exceeded"
+description: "测试当问题完全在 Agent 级时的边界判定"
+scenario: "用户反馈: Agent 在同一会话中执行越久质量越差，新开会话后恢复"
+expected:
+  boundary_decision: FULLY_EXCEEDED
+  agent_issues_include: ["Memory 噪声积累"]
+  selected_patterns: []  # 不执行 Skill 优化
+  escalation_report_generated: true
+```
+
+## Fixture 12: 边界测试 — 单步 Agent 质量低
+
+```yaml
+fixture_id: "F-SO-EDGE-002"
+fixture_type: "escalation_single_step_quality"
+description: "测试单步非 Pipeline Agent 的质量问题"
+scenario: "用户反馈: 单体 Agent 执行代码审查质量差，但 SKILL.md 指令已足够清晰"
+expected:
+  boundary_decision: FULLY_EXCEEDED
+  agent_issues_include: ["单步任务质量低"]
+  selected_patterns: []
+```
+
+## Fixture 13: 空 Skill — 最小输入
+
+```yaml
+fixture_id: "F-SO-EDGE-003"
+fixture_type: "edge_minimal_input"
+skill_path: "F-SO-EDGE-003-minimal/SKILL.md"  # 仅含 name + description, 无其他内容
+description: "极简 Skill — 只有名称和描述，无步骤"
+expected:
+  diagnosis:
+    decomposition: PASS  # 无步骤 = 无分解问题
+    information: PASS    # 无知识需求
+    state: PASS          # 无执行 = 无状态问题
+    verification: PASS   # 无输出需要验证
+    design_form: FAIL    # 缺少分层内容
+    global_context: PASS
+  boundary_decision: SKILL_ONLY
+  selected_patterns_include: [7]  # 仅需补充结构
+```

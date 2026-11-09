@@ -1,0 +1,38 @@
+/**
+ * 专家头像（shared/components/AgentAvatar.tsx）。
+ *
+ * 只写「长什么样」，**不写尺寸**：边长、圆角、首字字号都由组件的 size prop 现算内联给 ——
+ * 三处调用点（卡片 44、创建页顶栏 34、弹窗 64）大小不同，写死在类里会变成三份。
+ */
+
+.agent-avatar {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+  /* 兜底底色：图加载出来的那一瞬间别闪白 */
+  background: #e8eef9;
+}
+
+/* 封面图：撑满、按短边裁中（object-fit 而不是拉伸，否则人脸会变形） */
+.agent-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* 没有封面（或图取不到）时的首字兜底。底色 / 字色 / 描边都是内联的（同一套色，
+   由 id 派生），这里只管字重 */
+.agent-avatar--letter {
+  font-weight: 700;
+}
+
+.agent-avatar__char {
+  line-height: 1;
+  /* 中文首字在方块里视觉偏下，往上抬一点点 */
+  transform: translateY(-1px);
+  user-select: none;
+}

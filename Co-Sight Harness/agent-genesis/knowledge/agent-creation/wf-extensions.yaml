@@ -1,0 +1,61 @@
+# wf-extensions.yaml — WF4-WF7 扩展模式（P4-4.4-A2 移出热路径）
+# 起源: 原 knowledge/agent-creation/pattern-matcher.yaml:53-109
+# 性质: 扩展参考（非 27 模式 catalog 内）— 仅作资产索引标签（INDEX / classic-cases），
+#       不可选为决策（选中即 G017 L2 FAIL）
+# 加载策略: priority=low, 仅在 INDEX 的 use_when 命中关键词时按需 Read
+
+  WF4:
+    # 扩展参考: 不在 pattern-catalog.yaml 的 27 模式内，仅作资产索引标签（INDEX/classic-cases），不可选为决策
+    name: "Multi-Agent-Debate（多Agent辩论式）"
+    solves: >
+      需要从多个视角对同一问题生成差异化方案，通过对比和辩论找到最优解。
+      适用于探索与定义型任务——问题空间开放，没有标准答案，需要多方视角碰撞。
+    typical_indicators: >
+      用户提到"多方案对比""从不同角度分析""辩论""A/B方案"等。
+      任务本身高模糊性，产出是"认知共识"而非确定性结果。
+      用户明确需要多个可选方案而非单一答案。
+    distinguishing_from:
+      W1: "Pipeline是固定步骤的单一执行路径；Debate是多个Agent并行产出不同方案后对比。"
+      W3: "Map-Reduce的子任务处理不同输入；Debate的Agent处理同一输入但用不同视角和方法。"
+    clarification_needed: >
+      用户说"给出最好的方案"但未说明评判标准 → 追问："什么算'最好'？从谁的视角评判？"
+
+  WF5:
+    name: "Contract-Lock（契约锁定式）"
+    solves: >
+      关键产出（接口契约、架构决策、数据库Schema）审批通过后必须锁定，
+      后续步骤只能消费、不可修改。变更必须走审批流程。
+    typical_indicators: >
+      用户提到"审批""锁定""冻结""不可修改""变更管理""变更委员会"等。
+      任务涉及跨团队协作的接口定义或架构决策。产出物一旦确定就不应随意修改。
+    distinguishing_from:
+      G1: "Reviewer-Gate是质量审查（过/不过）；Contract-Lock是权限控制（锁定/解锁）。"
+      CD2: "Safety-First是安全约束范围；Contract-Lock是产出物的读写权限管理。"
+    clarification_needed: >
+      用户说"这个接口定了就不要改了" → 追问："哪些步骤需要锁定？谁有权解锁？"
+
+  WF6:
+    name: "Circuit-Breaker（熔断式）"
+    solves: >
+      防止Agent陷入循环修正或成本失控。重试超过上限自动熔断，
+      Token消耗超过预算自动暂停，升级人类决策。
+    typical_indicators: >
+      用户提到"重试""熔断""成本控制""预算""自动停止""人工介入"等。
+      任务涉及循环修正（代码审查→打回→修正→再审）或大规模自动化执行。
+    distinguishing_from:
+      G1: "Reviewer-Gate是质量门禁；Circuit-Breaker是异常熔断——前者管质量，后者管失控。"
+    clarification_needed: >
+      用户说"失败了就重试几次" → 追问："最多重试几次？超过后怎么办？"
+
+  WF7:
+    name: "Knowledge-Reflux（知识回流式）"
+    solves: >
+      在里程碑完成时自动生成踩坑记录和学习总结。人类精炼后喂回知识库，
+      让Agent在后续迭代中越用越聪明。
+    typical_indicators: >
+      用户提到"经验积累""越用越好""记录下来下次用""踩坑""学习"等。
+      任务有明确的里程碑节点。长期运行的项目需要积累可复用的经验。
+    distinguishing_from:
+      K3: "KB-Backed是从知识库检索已有知识；Knowledge-Reflux是向知识库写入新知识。"
+    clarification_needed: >
+      用户说"希望Agent越用越好" → 追问："哪些产出物值得记录？谁来审核？"

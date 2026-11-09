@@ -1,0 +1,27 @@
+{
+  "id": "cosight-viewer",
+  "name": "Co-Sight Viewer",
+  "short_name": "Co-Sight Viewer",
+  "description": "Open-source agent observability: live sessions, runs, events, tool calls, and cost tracking.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "theme_color": "#6366f1",
+  "background_color": "#f7f8fc",
+  "orientation": "any",
+  "categories": ["developer-tools", "productivity"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}

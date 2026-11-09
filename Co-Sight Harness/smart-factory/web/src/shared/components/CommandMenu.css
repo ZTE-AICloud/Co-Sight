@@ -1,0 +1,56 @@
+/*
+ * `/` 命令候选浮层。
+ *
+ * 长相与发送框左侧 `+` 的菜单同族（白底、圆角、同一档投影），但这里是**两条信息的行**：
+ * 命令名（等宽）+ 说明（弱化），因为技能名本身就是一眼要认的标识。
+ *
+ * 定位（top / bottom / left / width / max-height）由组件按光标矩形算好，
+ * 写在内联 style 上 —— 这里只负责滚动与视觉。
+ */
+
+.command-menu {
+  position: fixed;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface);
+  box-shadow: 0 12px 32px rgba(24, 30, 40, 0.15);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.command-menu__item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 7px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.command-menu__item:hover,
+.command-menu__item--active {
+  background: var(--color-bg);
+}
+
+.command-menu__value {
+  overflow: hidden;
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* 说明只做补充：命令名已经说了「这是什么」 */
+.command-menu__desc {
+  overflow: hidden;
+  color: var(--color-text-weak);
+  font-size: 12px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}

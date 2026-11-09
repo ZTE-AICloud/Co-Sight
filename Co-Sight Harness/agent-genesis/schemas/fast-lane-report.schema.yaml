@@ -1,0 +1,84 @@
+# schemas/fast-lane-report.schema.yaml — fast lane builder self-report 契约
+# 唯一权威: docs/plan/fast-lane-implementation.md §4.0（F0 落盘）
+# 消费方: fast-lane-builder / fast-skill-builder（产出侧）; main agent fast 驱动节
+#   （消费侧——落 work/{name}/fast-lane/self-report.md, G024 outputs 清单成员）;
+#   revision-request.json 生成时引用 failures 对应关系
+# 硬约束: 所有 step 配 schema（HARD CONTRACT）——step-f1/sf1/sf2/f2 四 trigger 共用本 schema
+# 约定: builder 以 YAML frontmatter + 正文产出本契约字段; 机读段字段名与类型为契约,
+#   语义段（正文）不受限（C9-6 展示面豁免机读段）
+
+schema: fast-lane-report
+version: 1
+
+# === 身份段（必填）===
+mode:
+  type: string
+  enum: [create, optimize]
+  required: true
+  description: "车道操作模式——step-f1/sf1 为 create, sf2/f2 为 optimize"
+skill_or_agent_name:
+  type: string
+  required: true
+  description: "目标交付名（kebab-case, 与 output/{agents,skills}/{name}/v1/ 对应）"
+anchored_mode:
+  type: string
+  required: true
+  description: "lane-decision.yaml 锚定的主模式 id（task-mode-pattern-mapping.md）"
+
+# === summary 段（必填）===
+summary:
+  type: object
+  required: true
+  properties:
+    verdict:
+      type: string
+      enum: [PASS, FAIL]
+      description: "builder 自判（自 declare; 确定性裁决归 G028, 本字段供修复轮消费）"
+    deliverable_brief:
+      type: string
+      description: "一句话交付描述（人读, 供 fast 交付汇报引用）"
+
+# === 文件分类计数段（必填——生成/物化两类分账, 生成预算审计依据）===
+file_counts:
+  type: object
+  required: true
+  properties:
+    generated:
+      type: array
+      items: {path: string}
+      description: "builder 本轮生成的文件路径（仓库根或 output_root 相对）——FA 预算 ≤ criteria.yaml agent.generated_files_max"
+    copied_or_templated:
+      type: array
+      items: {path: string}
+      description: "声明交 g025 物化的 copy/template 条目路径（FA 线）或 builder 直拷件（FB 线）——不计生成预算"
+
+# === 修复轮段（必填）===
+revision_rounds:
+  type: integer
+  minimum: 0
+  required: true
+  description: "本报告对应的修复轮次（首建=0; 每轮修复读 revision-request.json 后递增）"
+
+# === optimize 附加段（可选——mode=optimize 时应填, create 省略）===
+delta:
+  type: object
+  required: false
+  description: "optimize 模式增量改动摘要（§4.0: 点名文件/改动类型/前后形态）; 与 check-delta-scope 的 allowlist 对应"
+  properties:
+    files:
+      type: array
+      items:
+        properties:
+          path:
+            type: string
+            description: "被改文件（仓库根或 output_root 相对; ⊆ 澄清段收敛的改动点名清单）"
+          change_type:
+            type: string
+            enum: [modify, add, delete]
+            description: "改动类型"
+          before:
+            type: string
+            description: "改动前形态摘要（一句/一段, 人读）"
+          after:
+            type: string
+            description: "改动后形态摘要"

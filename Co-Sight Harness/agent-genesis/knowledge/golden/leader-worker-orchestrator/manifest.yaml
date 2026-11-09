@@ -1,0 +1,31 @@
+# golden manifest — leader-worker-orchestrator（v1.2 批 2 外部集成实例包, 源自 claude-orchestrator 重塑）
+# 契约见 schemas/golden-manifest.schema.yaml（字段语义单点在该文件）
+
+task_tag: leader-worker-orchestrator
+line: agent
+mode_id: WF5-Contract-Lock              # 货架位（检索键）, 非身份声明（R9）
+patterns:                               # 如实完整模式维度集（现行词汇, 重映射后）
+  - WF5-Contract-Lock
+  - K4-Rule-Driven
+  - WF6-Circuit-Breaker
+  - DT1-Linear-Pass-Through
+anchor_fit: real                        # 责任链契约+判定协议+机械路由 = WF5 纯正实现
+standard_ref: knowledge/agent-creation/agent-output-standard.yaml
+shape_counts: {agent_entry: 1, prompt_files: 3, scripts: 0, templates: 0}
+acceptance:
+  - 五节链每节固定输入/输出产物名与下游读者, 产物名全局唯一且不可改
+  - 判定协议恰好五变体（pass/pass_with_notes/needs_rework/blocked/escalate）, 领导者只按判定机械路由不做语义重评
+  - 工作者自评必须用独立 fork 会话复核产物, 禁自评自产
+  - 协调后端为可替换外部件位（内存消息/分布式锁/用户自备）, 消息与判定 JSON 契约不随后端漂移
+anchors:
+  build_plan: anchors/build-plan.md
+  self_report: anchors/self-report.md
+  derived: true                         # 外部启发过程锚（REFLUX.md §3 第 5 步）
+known_concerns: []                      # G028 准入 PASS 零 concerns（2026-10-17 如实回填）
+provenance:
+  origin_repo: "adamancyzhang/claude-orchestrator-server（外部参照库 golden-examples 策展）"
+  license: "MIT"
+  snapshot_date: "2026-10-17"
+  reshaped: true
+source: "v1.2 批2 外部集成实例包（源 golden-examples 库, D-01 裁定对策=样例补足）"
+status: active

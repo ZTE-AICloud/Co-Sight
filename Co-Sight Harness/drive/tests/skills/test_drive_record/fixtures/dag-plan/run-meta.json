@@ -1,0 +1,11 @@
+{
+  "schema_version": "drive.runtime.run_meta.v1",
+  "plan_name": "dag-demo",
+  "plan_dir": "dag-plan",
+  "git_head": "abc1234",
+  "git_branch": "main",
+  "workflow_hash": "sha256:fake",
+  "input_digests": {},
+  "started_at": "2026-08-15T10:00:00Z",
+  "worktree": "/tmp/dag-demo"
+}

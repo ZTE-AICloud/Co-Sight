@@ -1,0 +1,21 @@
+<!-- 安全漏洞测试文件 — 含 XSS 漏洞 -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>User Profile</title>
+</head>
+<body>
+    <h1>Welcome, {{ username }}</h1>
+
+    <!-- CWE-79: Cross-Site Scripting (XSS) -->
+    <!-- 用户输入未转义直接嵌入 HTML -->
+    <div class="user-bio">
+        {{ user_bio }}
+    </div>
+
+    <!-- 安全的转义写法（参考） -->
+    <div class="user-name-safe">
+        <!-- escaped: {{ user_bio | escape }} -->
+    </div>
+</body>
+</html>

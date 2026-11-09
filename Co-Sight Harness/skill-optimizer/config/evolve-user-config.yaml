@@ -1,0 +1,568 @@
+# user-config.yaml — 业务方唯一配置入口
+# ─────────────────────────────────────────────────────────────────────
+# 业务方只编辑这一个文件，声明自己的：
+# 1. API 认证和模型配置
+# 2. 路径配置
+# 3. 评测过滤
+# 4. 产物结构（给 LLM 子 Agent 看的自然语言描述）
+#
+# ⚠️ 本文件包含敏感信息（API key），不要提交到 git！
+# 已在 .gitignore 中排除。
+# ─────────────────────────────────────────────────────────────────────
+
+# =============================================================================
+# 0. 评测模型（单点配置:模型变化只改这里,不波及代码）
+# =============================================================================
+# eval_model: 评测流水线(phase1-build / phase2-exec / phase3-eval / phase4-diagnosis)使用的模型。
+#   ⚠️ 评测是高频消耗场景,建议用本地学生模型(如 minimax2.7,本地 router 无 Token 配额限制);
+#   不要把教师模型(M3)配给评测 —— 评测 judge 会耗尽教师模型配额(429) → 评测失败/0分/极慢。
+#   优化环节(ProposalAgent / score-analyzer)用项目模型(cosight settings.json 的 M3),不受此配置影响。
+# 未配置 → 评测继承全局环境(可能继承 M3,有配额风险),建议显式配置。
+eval_model:
+  name: "minimax2.7"
+  base_url: "http://127.0.0.1:3456/v1/messages?beta=true"
+  # ccr 网关(127.0.0.1:3456)要求客户端携带它自己的 APIKEY;若缺失,评测 cosight 会继承
+  # 全局 ANTHROPIC_AUTH_TOKEN(教师模型 key),被 ccr 以 "Invalid API key"(401) 拒绝 → 评测全 0 分。
+  api_key: "REPLACE_WITH_YOUR_KEY"
+
+# 1. 演化策略（行为开关，优先级链:CLI > env SKILLX_* > 此 yaml > 默认值）
+# =============================================================================
+# 业务方按场景选择优化模式;改 yaml 即可换模式,framework 0 代码改动。
+# 字段全部可选,留空走 framework 默认值。
+evolution_strategy:
+  # 候选起点是否锚定原始 baseline
+  # True  → 每轮都从 baseline 拷贝出发,禁止继承上轮 best skill(强反过拟合)
+  # False → round > 1 时继承 eng.best_round 的 skill(默认链式 hill-climb)
+  # 默认 false(留空 = 当前行为,向后兼容)
+  # 2026-08-02 实测:True 导致每轮 from-scratch,前轮有效 mod 下轮不保留 → 分数随机游走;改 False 让改进累积
+  baseline_anchored: False
+
+# =============================================================================
+# 0. 核心抽取策略（写在最前面，每个 LLM 子 Agent 第一眼必看）
+
+# =============================================================================
+# ⚠️ 0. 核心抽取策略（写在最前面，每个 LLM 子 Agent 第一眼必看）
+# =============================================================================
+# 业务方评测产物**异构严重**，每个 case 子目录 results/ 下的文件**因管道版本/分支而异**。
+# 抽取原则：**先看有什么文件，再选 schema，不要预设单一 schema**。
+#
+# 【核心策略】分数来源：JSON 优先 → JSON 缺失回退 MD
+#   - **优先探查 JSON**:`eval_report.json` / `summary.json` / `eval_result.json` / 旧命名 json 任意一个
+#   - **JSON 完全缺失时回退 MD**:`eval_report.md` 表格里有「最终得分」/「F1得分」列
+#   - **不要**只看 MD(会漏掉 JSON 已有的精确分),**也不要**只看 JSON(会漏掉 S5 这类无 JSON 的 case)
+#
+# 【异构证据】实测 9 个 case 的产物文件集分布:
+#   - 3 个 case:`{req_id}-{活动}-{子活动}-{ts}.json` 旧扁平 JSON(S1)
+#   - 2 个 case:`eval_report.json` 新扁平 JSON(S2)
+#   - 1 个 case:`summary.json` table_flow JSON(S3,**单位混用**:f1 是 0~1,recall_score 是百分制)
+#   - 1 个 case:`eval_result.json` 极简 JSON(S4,**无 f1 字段,需算**)
+#   - 2 个 case:只有 `eval_report.md`,**无任何 JSON**(S5,必须从 md 表格抽)
+# =============================================================================
+
+# =============================================================================
+# 1. 模型配置（框架使用的教师模型，区别于测评模型）
+# =============================================================================
+# 默认走 minimaxi Anthropic 协议端点(MiniMax-M3),与 config/optimize-user-config.yaml 保持一致
+# api_key 用占位符 *** — 运行时通过 SKILLX_OPT_API_KEY 环境变量注入
+# model:
+#   name: MiniMax-M3
+#   base_url: https://api.minimaxi.com/anthropic
+#   api_key: "***"
+  # 其它可选 provider(按需启用,展开注释即可):
+  # name: minimax2.7
+  # base_url: http://localhost:3456
+  # api_key: ccr-secret-key
+  # name: qwen3.7-plus
+  # base_url: https://apitokenmarket.com
+  # api_key: "***"
+
+# =============================================================================
+# 2. 路径配置（统一根目录 + 拼接，避免重复写绝对路径）
+# =============================================================================
+# 路径变量由用户在 shell 里 export 注入,例如:
+#   export SKILLX_ROOT=/path/to/skillx-alpha-agents
+# 注意:路径变量不要放在 .claude/settings.local.json(那里只放模型配置)
+# ⚠️ 此处**不要**用 ${SKILLX_ROOT} 占位符写法(PyYAML 不会展开 env-var,会留下字面量被误当路径段)。
+#   留空表示交给代码按 SKILLX_ROOT env / 工程根 fallback 派生。
+paths:
+  # 统一根目录（由代码自动派生 SKILLX_WORKSPACE / SKILLX_SANDBOX_ROOT）
+  # 优先级链: shell env.SKILLX_ROOT > 框架默认(/media/vdb/skillx-alpha)
+  # ⚠️ 留空,不要填 ${SKILLX_ROOT}(PyYAML 不展开,会产生字面量目录)
+  # 2026-08-03:显式固定到 /media/vdb/skillx-alpha,确保 evolution_workspace 落到全局位置(/media/vdb/skillx-alpha/evolution_workspace)
+  root: /media/vdb/skillx-alpha
+
+  # 评测产物清理目录（每轮测试前/后会被清空）
+  # 多个目录用 YAML list 写法，按顺序全部清理
+  # SDD_EVAL_DIR 已直接指向 data 目录,无需再追加 /data
+  need_cleaned_dir:
+    - /media/vdb/skillx-alpha/cosight-agent-core-sdd/workspace/SDD评测Agent/data
+    - /media/vdb/skillx-alpha/cosight-agent-core-sdd/workspace/系统方案设计Agent/changes
+    - /media/vdb/skillx-alpha/cosight-agent-core-sdd/workspace/需求分析Agent/changes
+    - /media/vdb/skillx-alpha/cosight-agent-sdd/workspace/SDD评测Agent/data
+    - /media/vdb/skillx-alpha/cosight-agent-sdd/workspace/系统方案设计Agent/changes
+    - /media/vdb/skillx-alpha/cosight-agent-sdd/workspace/需求分析Agent/changes
+    - /media/vdb/skillx-alpha/cosight-agent-sdd/consume_lib/design/方法库/common/evaluate/SDD评测/suites/projects/5GNR/data
+    - /tmp/mock_pipeline/data
+
+# =============================================================================
+# 2.5 证据文件路径(evidence_paths)— 业务方声明 phase3-eval 下的子目录与文件名规则
+# =============================================================================
+# 通用化:skillx 框架不感知具体业务(gold/llm_output 文件名因业务而异),
+# 业务方在此声明自己的命名规则,ExtractionAgent 据此精确 Read 真文件,
+# 避免"凭章节名合理编造"的 bug(2026-07-30 教训)。
+#
+# 字段全部可选,留空走 framework 默认值;改 YAML 即可换业务,framework 0 改动。
+evidence_paths:
+  # phase3-eval 每个 case 子目录下的 3 个标准子目录(默认 inputs/gold, inputs/agent, results)
+  gold_subdir: "inputs/gold"
+  agent_subdir: "inputs/agent"
+  results_subdir: "results"
+
+  # gold 文件名匹配模式(glob 风格,默认 R_*.md 适配 SDD 命名 R_xxx.md)
+  # 例:SDD 业务 = "R_*.md",其他业务可改 "gold_*.md" / "expected_*.txt" 等
+  # ⚠️ 用 glob 通配,LLM 必须 Read 拿真实文件名,禁止用通配符路径跳过 Read
+  gold_filename_glob: ["R_*.md", "全量_*.md"]
+
+  # llm_output 文件名匹配模式(默认 C_*.md 适配 SDD 命名 C_xxx.md)
+  # 例:SDD 业务 = "C_*.md",其他业务可改 "agent_*.md" / "actual_*.txt" 等
+  llm_output_filename_glob: ["C_*.md", "全量_*.md"]
+
+  # diff_notes 提取字段路径(默认 evaluation_items[0].diff_notes 适配 S7 schema)
+  # 业务方按自己 schema 改,如 S1 改 "total_score.diff_notes"、S2 改 "diff_notes" 等
+  diff_notes_json_field: "evaluation_items[0].diff_notes"
+
+  # diff_notes 所在的 results/ 下文件名(默认 glob 匹配适配 S7)
+  # S7 标准是 {评估项名}_eval_data.json(如 用户需求分析_eval_data.json), 也兼容纯 eval_data.json
+  # 业务方可改 eval_report.json / summary.json / eval_result.json 或具体文件名
+  diff_notes_filename: "*_eval_data.json"
+
+  # 是否在 score.json 落盘时做字节校验(framework 端兜底)
+  # True 时 framework 会 Read 真文件 len() 与 LLM 报 file_bytes 对比,不一致标 mismatch
+  enable_byte_verification: true
+
+  # 字节偏差报警阈值(超过此比例视为 mismatch,默认 0.5 = 50%)
+  byte_mismatch_threshold: 0.5
+
+  # 评分规则(注入到 result_diff 报告开头,告诉 LLM 分数怎么算)
+  # 业务方在改 SKILL.md 时,要先看评分规则 → 知道改什么能提分
+  # 格式:每子活动(chapter)→ 维度(dimensions)→ 5 维评分法 + 阈值
+  # 注入位置:context_extractor 渲染 prompt 时,拼到"必读历史数据"段开头
+  # 留空=不注入
+  scoring_rule: |
+    需求分析活动 / 用户需求分析子活动 (weight=0.1, 满分 100):
+    - eval_type: table_flow
+    - table_format: | 用户 | 场景 | 解决的问题&期望达成的目标 |
+    - 2 个维度(各 100 分制):
+      · 召回率 = C∩R / R(C 输出场景与 R 语义匹配成功的个数 / R 所有场景个数)
+      · 精确率 = C∩R / C(C 输出场景与 R 语义匹配成功的个数 / C 所有场景个数)
+    - 语义匹配判定 — 5 维评分法(每对 C-R 场景条目):
+      · ① 主题一致性(20): 核心概念是否同功能/特征(同义缩写/修饰省略=高分;XR↔5QI=低分)
+      · ② 粒度对等性(20): 抽象级别一致(同层级详略=高分;语音业务↔语音寻呼=低分)
+      · ③ 主体/视角匹配(20): 主体或视角一致(UE↔终端=同主体;运维↔终端=低分)
+      · ④ 行为/状态一致性(20): 行为或状态对应(接收↔接收=高分;接收↔发送=低分)
+      · ⑤ 限定条件匹配(20): 限定/部署/用户群对等(同频小区↔小区重叠=中;Type6↔大包=低)
+    - 阈值:5 维得分相加 ≥60 → 匹配;<60 → 不匹配
+    - 争议处理:总分 55-59 倾向判不匹配
+    - 输出:「结论:匹配/不匹配 | 总分:XX | 分项:主题XX+粒度XX+主体XX+行为XX+限定XX | C:xxx | R:xxx」
+    - 同一对 C-R 条目:召回率和精确率结论必须一致(不得矛盾)
+    - 改 SKILL.md 时,优先修这 5 维里的 1-2 个高频失分维度 → 直接提分
+
+# =============================================================================
+# 3. 评测过滤（可选）
+# =============================================================================
+filter:
+  # case_id 过滤（YAML list，可选，留空则全量跑）
+  case_ids:
+   - RAN-3404224
+   - RAN-4988439
+   - RAN-6640009
+  #  - RAN-3774273
+  #  - RAN-6822598
+  #  - RAN-5775019
+  #  - RAN-5975156
+  #  - RAN-5741646
+  #  - RAN-3532502
+
+    # - RAN-3404224
+    # - RAN-3532502
+    # - RAN-3774273
+    # - RAN-4988439
+    # - RAN-5741646
+    # - RAN-5775019
+    # - RAN-5975156
+    # - RAN-6640009
+    # - RAN-6822598
+# filter:
+#   # case_id 过滤（YAML list，可选，留空则全量跑）
+#   # 2026-07-24 补全:从 标准评测集-BA维护/需求分析已完成 目录自动提取 50 个 ID
+#   case_ids:
+#     - RAN-1995001
+#     - RAN-3404224
+#     - RAN-3532502
+#     - RAN-3774273
+#     - RAN-4604573
+#     - RAN-4935210
+#     - RAN-4988439
+#     - RAN-5030325
+#     - RAN-5144730
+#     - RAN-5178900
+#     - RAN-5196930
+#     - RAN-5310403
+#     - RAN-5444422
+#     - RAN-5484463
+#     - RAN-5594907
+#     - RAN-5678762
+#     - RAN-5701407
+#     - RAN-5726826
+#     - RAN-5741646
+#     - RAN-5775019
+#     - RAN-5797311
+#     - RAN-5860993
+#     - RAN-5975156
+#     - RAN-6010398
+#     - RAN-6062146
+#     - RAN-6131212
+#     - RAN-6165989
+#     - RAN-6166005
+#     - RAN-6167604
+#     - RAN-6219349
+#     - RAN-6358885
+#     - RAN-6412296
+#     - RAN-6437004
+#     - RAN-6455665
+#     - RAN-6529119
+#     - RAN-6542122
+#     - RAN-6575770
+#     - RAN-6603305
+#     - RAN-6631354
+#     - RAN-6634329
+#     - RAN-6640009
+#     - RAN-6720019
+#     - RAN-6725886
+#     - RAN-6812055
+#     - RAN-6822598
+#     - RAN-6909310
+#     - RAN-7139132
+#     - RAN-7297327
+#     - RAN-7375463
+#     - RAN-7407840
+
+
+# =============================================================================
+# 4. 产物结构声明（给 LLM 子 Agent 看的自然语言描述）
+# =============================================================================
+# 业务方在这里用自己的语言描述评测产物的结构。
+# 框架不感知具体业务，只把这段描述传给子 Agent，让子 Agent 自主探查。
+
+# 4.1 执行轨迹 — 业务方声明轨迹产物的结构 + case_id 解析 + 读取方式
+execution_traces:
+  # 产物结构:目录位置 + 唯一分析文件
+  structure: |
+    扫描 data/phase2-exec/ 下以 case_id 命名的子目录(形如 data/phase2-exec/RAN-xxxx_*/),
+    子目录下的 trace.log 或 execution_log.json 是分析文件。
+
+    **🆕 必读失分证据(从历史 round 的 phase3-eval 找)**:
+    每轮跑完后,在 `data/phase3-eval/{case}_*/results/` 下有以下文件:
+    - `eval_data.json`(S7 schema,2026-07-22+ 标准产物,主)或 `*-需求分析-用户需求分析-*.json`(连字符格式同 schema)
+    - 关键字段:`evaluation_items[0].f1` (百分制 0~100,主分数)、`evaluation_items[0].diff_notes` (LLM-as-Judge 的失分点描述)
+    - 用法:**优化前必读** `evaluation_items[0].diff_notes` 知道上轮每个 case 具体失分在哪一列(用户/场景/问题),**优化后用 `f1` 对比**看是否提升。
+    - 字段路径详见 `score_extraction.structure` 段(S1-S7 7 种 schema 详细说明)。
+
+  # case_id 解析规则
+  parsing: |
+    子目录名通常是 {case_id}_{timestamp} 格式,取下划线前的部分作为 case_id。
+
+  # 读取方式:是否截断 / 是否分组
+  reading: |
+    完整读取日志文件,按时间顺序和工具调用分组整理为执行轨迹文本。
+
+    **🆕 必读 phase3-eval 失分证据**:优化前(round > 1)必须 Read `data/phase3-eval/{case}_*/results/eval_data.json`(S7 主,或 `*-需求分析-用户需求分析-*.json` 连字符格式),
+    提取 `evaluation_items[0].f1` 和 `evaluation_items[0].diff_notes`,作为本轮修复的**直接依据**。
+    - 写 mod 的 `risk_evidence` 字段时,直接引用 `phase3-eval/RAN-xxx/results/eval_data.json: evaluation_items[0].diff_notes=...` 内容,不要凭感觉编。
+    - 写完后用同字段验证本轮 `f1` 是否提升。
+
+
+# ============================================================================
+# 业务产物分数字段映射(实测 9 RAN 全部走 S7,本段仅描述 S7)
+#   - per-case 路径:data/phase3-eval/{req_id}_{activity}_{sub_activity}_{timestamp}/results/
+#   - case_id 来源:JSON 顶层 req_id 字段
+#   - S7 schema 是当前管道**唯一**产物格式,旧 schema (S1-S5) 历史已淘汰,不再描述
+# ============================================================================
+score_extraction:
+  structure: |
+    从 data/phase3-eval/ 目录提取分数(相对沙箱根 SKILLX_SANDBOX_ROOT)。
+    per-case 子目录:`{req_id}_{activity}_{sub_activity}_{timestamp}/`
+    per-case 子目录下必有 `results/`,本管道产物固定为 5 个文件:
+    - `用户需求分析_eval_data.json`(主,S7 schema)
+    - `RAN-xxx-需求分析-用户需求分析-{ts}.json`(同 schema,连字符命名兼容旧调用方)
+    - `RAN-xxx-需求分析-用户需求分析-{ts}.md`(旧版报告,参考)
+    - `RAN-xxx-...-{ts}_Agent性能指标报告.md`(M1 资源指标,见 metrics_extraction)
+    - `RAN-xxx-...-{ts}_评测性能指标报告.md`(评测框架耗时,参考)
+
+    ## S7 schema 字段(本管道唯一形态)
+    **主文件**:`{评估项名}_eval_data.json`(如 `用户需求分析_eval_data.json`)
+    **顶层 keys**:
+    - `req_id` / `activity` / `sub_activity` / `timestamp` / `status` / `status_message`
+    - `total_recall_score` / `total_precision_score`(百分制 0~100)
+    - `sub_activity_recall_score` / `sub_activity_precision_score` / `chapter_completeness_score`
+    - `evaluation_items[]`(**array**,每个含):
+      - `chapter` / `name` / `weight`
+      - `recall_numerator` / `recall_denominator` / `recall_score`(百分制)
+      - `precision_numerator` / `precision_denominator` / `precision_score`(百分制)
+      - **`f1`** — **0~1 区间小数**(实测:0.5、0.33、1.0),**不是百分制**;必须 ×100 转成 0~100 后再聚合
+      - `diff_notes`(LLM-as-Judge 失分描述,主诊断依据) / `na_type`
+
+    ⚠️ **关键单位陷阱**:
+    - `evaluation_items[0].f1` 是 **0~1 小数**(如 0.5),不是百分制 — 必须 `round(f1 * 100, 2)`
+    - `recall_score` / `precision_score` 已经是**百分制 0~100** — 直接用
+    - 用 `recall_score.score` / `precision_score.score`(即 dict.score 字段)代入 `2PR/(P+R)` 算 F1,**禁用** `recall_numerator/denominator`(会算出 0~1)
+
+  result_diff_report: 综合 diff 报告 — LLM 必读 natural language 描述
+    代替 LLM 自己 Read 多文件,每轮 proposal-agent 启动前由 orchestrator 自动生成。\
+    数据源 3 个(路径模板在下方字段,业务方可改):\
+    1) score.json 的 info.result_score_per_case(per-case f1)\
+    2) gold_path 模板指向的 gold 答案(标准答案)\
+    3) llm_output_path 模板指向的 LLM 实际 09 输出\
+    4) diff_notes_path 模板指向的 LLM-as-Judge 失分描述\
+    内容:每 case 的「实际 LLM 输出(09) vs gold 答案(R) vs 分数(f1) vs diff_notes 失分描述」3 段。\
+    路径:与上一轮 score.json 同目录(LLM 一次 Read 看全部信息)。\
+    触发:每轮 proposal-agent 启动前由 orchestrator 自动生成。\
+    占位符约定:由 orchestrator 运行时字符串替换,YAML literal block 不解析内部占位符\
+    字段路径(占位符由 orchestrator 运行时替换),gold 和 LLM 输出都在 phase3-eval 目录下:\
+    gold_path = "__DATA_ROOT__/__CASE_DIR__/{gold_subdir}/{gold_filename_glob 真实匹配文件名}"\
+    llm_output_path = "__DATA_ROOT__/__CASE_DIR__/{agent_subdir}/{llm_output_filename_glob 真实匹配文件名}"\
+    diff_notes_path = "__DATA_ROOT__/__CASE_DIR__/{results_subdir}/{diff_notes_filename}"\
+    (子目录名 / 文件名 glob / diff_notes 字段名全部由 `evidence_paths` 段配置,业务方可零代码改)\
+    **trace_paths**(trace-aware 诊断入口):\
+    trace_paths_per_case[req_id] = **list of 绝对路径**(写入 score.json `info.trace_paths_per_case[req_id]`):\
+    - 第 1 位:`{req_id}_*/trace/trace.log`(整体轨迹,简化版,**主推**;不再用 trace.jsonl 详细版)\
+    - 后续:`{req_id}_*/session/run/*/subagents/agent-*.jsonl`(各 skill 轨迹,含 skill 片段)\
+    ExtractorAgent 按 glob 取首个匹配目录拼接所有路径;\
+    framework 读此字段渲染 result_diff_report 第 5 段,低分 case(f1 < baseline)加 ⚠️ 必读标记,\
+    并对 subagents/*.jsonl 读同名 meta.json 标注 skill 名。\
+    输出格式:json(写入 score.json)+ markdown(写入 result_diff_report.md)\
+    字段(每 case):gold / llm_output / diff_notes / f1(4 段)
+
+  extraction: |
+    ## S7 抽取流程(本管道唯一 schema,LLM 自主探查)
+
+    1. **遍历** `data/phase3-eval/{req_id}_*/results/`,对每个 case 子目录 ls 找主文件
+       (默认 `{评估项名}_eval_data.json`,如 `用户需求分析_eval_data.json`)
+    2. **per-case f1 提取**(S7 路径,**百分制 0~100,2 位小数**):
+       - 优先: `evaluation_items[0].f1` × 100 → round(_, 2)
+         (实测 f1 是 0~1,不是百分制;例 0.5 → 50.00)
+       - 多 chapter: 对所有 `evaluation_items[i].f1` 求 macro-mean 后 × 100
+       - 回退: 用 `evaluation_items[0].recall_score.score` + `precision_score.score` 算 F1 = 2PR/(P+R)(已是百分制)
+       - 兜底: 顶层 `total_recall_score` + `total_precision_score` 算 F1 = 2PR/(P+R)
+       - ⚠️ **单位铁律**:`f1` ×100 后才能比较;`recall_score.score` / `precision_score.score` 不乘;**禁用** `recall_numerator/denominator` 直接算(会得 0~1)
+    3. **聚合(macro-F1)**:对所有 case 的 per_case_f1_pct 算术平均 → result_score(0~100,2 位小数)
+    4. `result_score_per_case`: key = `req_id`, value = 该 case 的 per_case_f1_pct
+    5. **case 级证据字典(必填,生成 result_diff_report.md 的输入)**:
+       - **🆕 2026-07-31 改造**:`gold_per_case[req_id]` / `llm_output_per_case[req_id]` / `trace_paths_per_case[req_id]`
+         三个字典的 value 都是**绝对路径字符串**(`/...` 开头,framework 端 Read 真文件原文)。
+         LLM 不要再 Read 文件内容填进字典 —— 框架渲染层按路径 Read 文件,杜绝 LLM 第二次调用
+         "凭印象生成"结构化字段(2026-07-31 bug:score.json 的 gold_per_case 被 LLM 编造成
+         "需求名/粒度/主体/行为/限定"格式,与 R_用户需求分析.md 真实表格无关)。
+       - `gold_per_case[req_id]` = **实际存在**的 gold 文件绝对路径。**先 ls 再填,glob 是匹配规则不是文件名**:
+         1) `ls phase3-eval/{case_dir}/inputs/gold/` 看目录里**真实有哪些文件**;
+         2) 依次用 `evidence_paths.gold_filename_glob`(默认 `["R_*.md", "全量_*.md"]`)glob,
+            取**第一个匹配到且 `ls` 确实看到**的文件,`realpath` 转绝对路径;
+         3) 若 `R_*.md` 一个都没匹配到(目录里只有 `全量_*.md` / `gold.md`),**必须改用 `全量_*.md`
+            匹配到的文件** —— **禁止**凭模式猜一个不存在的 `R_用户需求分析.md` 之类文件名
+            (星号必须真实展开,最终值不能含 `*` 通配符)。
+       - `llm_output_per_case[req_id]` = **实际存在**的 llm_output 文件绝对路径,**先 ls 再填**,
+         用 `evidence_paths.llm_output_filename_glob`(默认 `["C_*.md", "全量_*.md"]`)glob,
+         `C_*.md` 无匹配时**必须**改用 `全量_*.md` 匹配到的文件,禁止猜不存在的文件名。
+       - `diff_notes_per_case[req_id]` = `phase3-eval/{case_dir}/results/eval_data.json` 的
+         `evaluation_items[0].diff_notes` 字段全文(**保持原样**,不是文件路径,因为 diff_notes 是
+         LLM-as-Judge 输出的字符串,不是文件原文)
+       - 四个字典的 key 集合 = `result_score_per_case` 的 key 集合
+       - 文件缺失时该 case 对应 value 留空串,**不要**写 "(未找到)"
+       - 业务方可通过 `evidence_paths` 段覆盖默认(gold_subdir/agent_subdir/results_subdir/glob 字段)
+
+    5.1 **🛑 防编造铁律(2026-07-31 改造后,3 条)**:
+       - ❌ **禁止把文件内容塞进字典** —— gold_per_case / llm_output_per_case / trace_paths_per_case
+         只接受**绝对路径字符串**,不接受大段文本。LLM 第二次调用时如果看到字典里有 markdown 表格
+         或大段文字,说明上一次 LLM 编造了内容,framework 会按路径 Read 失败 → 该 case 渲染空。
+       - ❌ **禁止用相对路径** —— 必须 `/...` 开头的绝对路径(framework 不做相对路径拼接兜底,
+         路径不存在即留空,便于快速定位 sandbox 漂移问题)
+       - ❌ **禁止给 trace_paths_per_case 填非文件路径** —— value 必须是 **list of 绝对路径**:
+         `realpath {case_dir}/trace/trace.log`(整体轨迹,简化版,主推)+
+         `ls {case_dir}/session/run/*/subagents/agent-*.jsonl` 逐个 realpath(各 skill 轨迹),
+         只放 trace.log + subagents/*.jsonl,**不放 trace.jsonl**(详细版已弃用)
+       - ❌ **禁止只填 trace.log** —— trace_paths_per_case 必须同时含 trace.log + **全部**
+         subagents/*.jsonl(每个 skill 一份轨迹);漏填 subagents 视为提取不完整(框架兜底会补,但算不合格)
+       - ❌ **禁止挑选非 `gold_filename_glob` 匹配的文件(2026-08-01 加固)** ——
+         inputs/gold/ 下**可能并存多个文件**(如 `gold.md` 全量金标准 + `R_用户需求分析.md` 章节金标准),
+         **必须用 `evidence_paths.gold_filename_glob`(默认 `["R_*.md", "全量_*.md"]`)过滤**,
+         禁止挑看似"更权威"的 `gold.md` 或其他不匹配 glob 的文件。
+         同理 `llm_output_filename_glob` 用于 inputs/agent/。
+       - ✅ **唯一合法来源**:Bash `realpath` 或 `readlink -f` 拿绝对路径字符串(无需 Read 内容)
+
+    5.2 **绝对路径抽取(每 case 必走 5 步,不读文件内容)**:
+       ```
+       step 1:  ls phase3-eval/ | grep "^{req_id}_"            # 拿真实 case_dir
+       step 2:  ls phase3-eval/{case_dir}/inputs/gold/
+                # 必须用 `evidence_paths.gold_filename_glob` 过滤
+                #   例:`ls phase3-eval/.../inputs/gold/ | grep -E '^(R_.*\.md|全量_.*\.md)$'`
+                #   拿到 glob 匹配的第一个文件(优先级按 glob 列表顺序)
+                #   🆕 fallback:若 `R_*.md` 一个都没匹配到,必须取 `全量_*.md` 匹配的文件,
+                #      **禁止**猜一个不存在的 `R_用户需求分析.md` 文件名
+                #   ❌ 禁止直接 `ls` 后挑最大的/看着像金标准的文件(实测会挑错成 gold.md)
+       step 3:  realpath phase3-eval/{case_dir}/inputs/gold/{gold_real_name}  → gold_per_case[req_id] = 此绝对路径
+                # 校验:路径结尾必须是 step 2 里 `ls` 真实看到的、glob 匹配的文件名
+                #        (R_*.md 或 全量_*.md 匹配到的那个),不是 gold.md 等不带章节名的文件
+       step 4:  realpath phase3-eval/{case_dir}/inputs/agent/{llm_real_name} → llm_output_per_case[req_id] = 此绝对路径
+                # 同理:必须匹配 `llm_output_filename_glob`(默认 C_*.md)
+       step 5:  Read eval_data.json 抽 evaluation_items[0].diff_notes(diff_notes_per_case[req_id] 存的是字段字符串,不是路径)
+       ```
+       trace_paths_per_case 抽取(list of 绝对路径):
+       ```
+       step 1:  ls -d phase2-exec/{req_id}_*/ | head -1              # 取真实 case_dir(重跑多目录时取第一个)
+       step 2:  realpath {case_dir}/trace/trace.log                  # 整体轨迹(简化版,主推) → list[0]
+       step 3:  ls {case_dir}/session/run/*/subagents/agent-*.jsonl  # 各 skill 轨迹,逐个 realpath → append
+                # 只收集 .jsonl(同名 .meta.json 不加入 list,渲染层会自己读它标注 skill 名)
+                # ❌ 不放 trace.jsonl(详细版已弃用)
+       step 4:  自检完整性:`ls {case_dir}/session/run/*/subagents/agent-*.jsonl | wc -l` 得 N,
+                list 中 subagents 元素数必须 = N;list 长度 = 1(trace.log) + N ≥ 2
+                # 只填 trace.log = 漏填 subagents,不合格(框架兜底会补,但算提取不完整)
+       ```
+    5.3 **trace 路径抽取(trace-aware 诊断)**:
+       trace_paths_per_case[req_id] = **list of 绝对路径**:
+       1) `ls -d phase2-exec/{req_id}_*/ | head -1` 取 case_dir;
+       2) `realpath {case_dir}/trace/trace.log` → list[0](整体轨迹,简化版,主推;**不放 trace.jsonl**);
+       3) `ls {case_dir}/session/run/*/subagents/agent-*.jsonl` → 逐个 `realpath` **全部** append(各 skill 轨迹,含 skill 片段);
+       4) **自检**:list 长度 = 1(trace.log) + N(subagents),N 必须 = `ls .../subagents/*.jsonl | wc -l`;
+          只填 trace.log = 漏填 subagents,不合格(框架兜底会补,但算提取不完整);
+       key 集合 = result_score_per_case;文件缺失 → 空 list(框架渲染时跳过该 case 的 trace 段)。
+    5.4 **中间产物提取(middle_products_per_case,score-analyzer 归因用)**:
+       middle_products_per_case[req_id] = 中间产物诊断信息(score-analyzer 据此归因中间 skill):
+       1) `ls -d phase2-exec/{req_id}_*/output/middle_content/*/` 探查中间产物顶层目录(缺失 → 留空);
+       2) **用户需求分析活动(当前业务,主产物目录= `middle_content/用户需求分析/`)**:
+          - `ls -d phase2-exec/{req_id}_*/output/middle_content/用户需求分析/` 取中间产物目录;
+          - 提取 4 个 skill 对应产物**绝对路径**(Bash `realpath`,先 `ls` 确认存在):
+            - `02-触发原因分析.md`(根因分析 skill 产物)
+            - `04-场景要素分析.md`(场景要素分析 skill 产物)
+            - `06-标准场景名称识别.md`(标准场景识别 skill 产物)
+            - `09-用户需求分析.md`(用户需求分析汇总 skill 产物)
+       3) 写入 `info.middle_products_per_case[req_id]` = **list of 绝对路径**(02/04/06/09,
+          **只存路径**;渲染层按路径 Read 真文件贴内容,文件内容少可全贴);
+       4) 可选辅助:`06 命中率`(Bash 解析 06 表格:"标准场景名称"列非 NA/空 条目数 / 总条目数,
+          渲染层 Read 06 文件时算,不必 ExtractionAgent 存);
+       key 集合 = result_score_per_case;文件缺失 → 留空(渲染层跳过该 case 中间产物段)。
+       **换活动时只需改本步 2) 的目录名 + 产物清单**(其余结构不变)。
+    6. `result_score_source` 字段(必填):
+       "以 S7 evaluation_items[0].f1 × 100 转百分制(macro-F1 聚合,2 位小数)"
+    7. **必须用 json.load 读 JSON**
+
+  handling: |
+    ## S7 错误处理
+    - **per-case results/ 目录为空** → 该 case f1=0,zero_root_cause 标 "req_id results/ 目录为空"
+    - **`evaluation_items[0].f1` 缺失或非数值** → 走回退:用 `recall_score.score` + `precision_score.score` 算 F1
+    - **`recall_score.score` / `precision_score.score` 也缺失** → 走顶层 `total_recall_score` + `total_precision_score` 算 F1
+    - **所有字段都缺失** → 该 case f1=0,zero_root_cause 列实际看到的顶层 keys
+    - **gold/llm_output 文件不存在** → evidence 字段填空串,zero_root_cause 标"文件不存在",**不**算作 0 分
+    - **🆕 2026-07-31**:gold/llm_output/trace 字典的 value 不是绝对路径(不含 `/...` 前缀) →
+      framework 校验失败,evidence 字段填空串,zero_root_cause 标"路径非法(非绝对路径)"
+    - **baseline phase3-eval/ 目录完全缺失** → 走 zero_root_cause 严重警告分支:
+      * ls -la baseline/run_1/data/ 实际目录
+      * ls phase2-exec/{case}/output/ 是否为空(Skill 是否产出)
+      * tail trace.jsonl(看 phase 3 hook 是否触发)
+      * 提示排查:归档顺序 bug 或 phase 3 启动失败
+    - **不要静默吞错**:异常必须显式记入 zero_root_cause
+    - **不要发明 JSON 里没有的字段**,实测产物里没这些
+
+metrics_extraction:
+  # 产物结构
+  structure: |
+    从 data/phase3-eval/ 目录(与 score_extraction 同根)提取 Agent 资源消耗指标。
+    - 子目录形如 data/phase3-eval/{req_id}_{activity}_{sub_activity}_{timestamp}/
+    - 每个子目录下 results/ 里的产物**因评测管道版本/分支而异**,实测至少 **4 种时间/token 来源**,按优先级穷举:
+
+    ## M1 — Agent 性能指标 MD 报告(完整版,主路径)
+    **文件**:`{req_id}_{activity}_{sub_activity}_{timestamp}_Agent性能指标报告.md`(`_` 分隔)
+    **典型样本**:RAN-3532502, RAN-4935210, RAN-3404224, RAN-3774273, RAN-5178900
+    **特征字段**(4 段):
+    1. 「主Agent总览」 → 时间统计表 + Token消耗表
+       - 「时间统计」表:`总耗时 | 1769978ms（29m29s）` → 取前面 ms 数字(整数)
+       - 「Token消耗」表:`输入Token | 119.1K` + `输出Token | 76.6K` → 数字 × 1000 转实际 token
+    2. 「主Agent调用链路」 → 每环节耗时/Token(参考,不进聚合)
+    3. 「SubAgent详情」 → 子 Agent 耗时/Token(参考,不进聚合)
+    4. 「异常汇总」 → 异常数(参考)
+
+  # 提取步骤
+  extraction: |
+    ## M1 抽取流程(本管道唯一指标源)
+
+    1. **遍历** `data/phase3-eval/{req_id}_*/results/`,对每个 case 子目录 ls 找 `*Agent性能指标报告.md`
+    2. **per-case 提取**(3 个字段,单位 ms/token 整数):
+       - **duration_ms**:「主Agent总览」段 → 「时间统计」表 → `| 总耗时 |` 行
+         * 例:`总耗时 | 1769978ms（29m29s）` → 1769978
+         * 例外:括号前无 ms → 用正则 `(\d+)m(\d+)s` → `m*60000 + s*1000`
+       - **input_tokens**:「Token消耗」表 → `| 输入Token |` 行,正则 `(\d+\.?\d*)([KMG]?)`
+         * 例:`输入Token | 119.1K` → round(119.1 × 1000, 0) = 119100
+         * 单位:K → ×1000,M → ×1000_000,G → ×1000_000_000
+       - **output_tokens**:同上,行名 `| 输出Token |`
+    3. **聚合(macro-mean over cases,排除 token=0/duration_ms=0 的 case)**:
+       - `info.avg_input_tokens` / `avg_output_tokens` / `avg_duration_ms` = int(macro_mean)
+       - `info.avg_duration_seconds` = round(avg_duration_ms / 1000, 2)
+       - `info.input_tokens_per_case` / `output_tokens_per_case` / `duration_ms_per_case` = dict
+       - `info.valid_token_case_count` / `valid_duration_case_count` = int(>0 的 case 数)
+       - **向后兼容**(保留 sum 字段,不进聚合,只供老脚本读):
+         * `info.input_tokens` / `output_tokens` / `duration_ms` = sum
+         * `info.duration_seconds` = round(duration_ms_total / 1000, 2)
+
+  handling: |
+    - **M1 表格行格式不符**(如没有 ms 单位、没有 K 单位) → 该字段记 0,在 zero_root_cause 列出实际看到的行格式
+    - **M1「主Agent总览」段缺失** → 该 case 记 0,但**不**影响 result_score
+    - **单位不是 K 而是 M/G** → 按 1M=1000K,1G=1000_000K 换算后 ×1000,记在 result_score_source
+    - **零分场景下**(result_score=0)也要尽量提取资源消耗(便于归因"是不是 token 用完了"或"耗时过长")
+    - **不要从 trace.jsonl/trace_summary.json 里取**(那些字段 timeout 时为 0,不可信)
+    - **不要读「评测性能指标报告.md」**(那是评测框架的性能,不是 Agent 的)
+
+# =============================================================================
+# 4.3 anti-overfitting 硬校验 - 业务术语(可选)
+# =============================================================================
+# Stage 3 modifications 硬校验禁止引用的业务术语(框架 R1 规则使用)
+# 留空 = 不启用 R1 业务术语检查(其余 R2-R8 仍生效)
+overfit:
+  business_terms: []
+
+# =============================================================================
+# 5. failure_layer 关键词兜底(可选,仅当 LLM 把 gap 归到 unknown 时启用)
+# =============================================================================
+# 业务方按自己评测管道的真实特征填充,框架按子串匹配分类。
+# 匹配顺序:pipeline_artifact → pipeline_unit → pipeline_input → pipeline_eval → skill
+# pipeline_* 先匹配(避免被通用 skill 兜底关键词抢占)。
+# LLM 已填具体 layer 的 gap 不被本段覆盖。
+# failure_layer_keywords:
+#   pipeline_artifact:
+#     - "phase3-eval 缺失"
+#     - "results 不存在"
+#   pipeline_unit:
+#     - "百分制"
+#     - "1-分制"
+#   pipeline_input:
+#     - "0 字节"
+#     - "空文件"
+#   pipeline_eval:
+#     - "iSpace 权重接口返回空"
+#     - "外部依赖返回空 dict"
+#   skill:
+#     - "Skill 章节缺失"
+#     - "指导冲突"
+
+# =============================================================================
+# 6. /skill_optimize 静态模式配置已独立到 config/optimize-user-config.yaml
+# =============================================================================
+# 静态模式（无 eval-cmd）使用独立的 config/optimize-user-config.yaml，
+# 不与 eval 模式的 evolve-user-config.yaml 共享字段，业务方维护互不干扰。
+# 两个文件的字段命名空间完全分离。
+
+# =============================================================================
+# 7. proposal-agent prompt 路径占位符(可选,业务方可自定义)
+# =============================================================================
+# 设计原则:proposal-agent.md 不写死任何业务路径,用 {{占位符}} 引用
+# orchestrator 读此段 + 渲染占位符后注入到 prompt,业务方改 yaml 即可
+# 占位符:context_extractor 注入 prompt 顶部时,会按 path 模板替换运行时变量
+# (实际无字段,由 orchestrator 在 extract_prompt 时生成 result_diff_report.md,LLM 一次 Read 看全部信息)

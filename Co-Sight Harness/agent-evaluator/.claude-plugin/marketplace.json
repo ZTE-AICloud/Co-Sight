@@ -1,0 +1,22 @@
+{
+  "name": "goldeval",
+  "description": "Goldeval marketplace（cosight-harness 托管）：Agent 评估能力 —— 黄金数据集评测、端到端用例生成/执行/评分、执行轨迹审计。",
+  "owner": {
+    "name": "QiDian"
+  },
+  "plugins": [
+    {
+      "name": "goldeval",
+      "source": ".",
+      "version": "1.0.0",
+      "description": "Agent 评估插件：goldeval（黄金数据集评测）、traceaudit（轨迹审计）、e2e-test-generator / runner / evaluator（用例生成·执行·评分）。",
+      "keywords": [
+        "agent-eval",
+        "evaluation",
+        "golden-dataset",
+        "e2e-test",
+        "trace-audit"
+      ]
+    }
+  ]
+}

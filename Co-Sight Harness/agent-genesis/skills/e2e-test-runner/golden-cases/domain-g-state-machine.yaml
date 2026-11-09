@@ -1,0 +1,8 @@
+domain: "G-状态机"
+description: "测试状态机相关代码生成和 Pipeline 状态转换正确性"
+test_cases:
+  - id: "TC-SM-01"
+    input: "定义一个状态机，包含IDLE、PROCESSING、REVIEW、DONE四个状态，状态转换需要记录审计日志"
+    expected: "生成状态机代码+审计日志"
+    expected_phase: "CODE_GENERATED"
+    timeout: 120

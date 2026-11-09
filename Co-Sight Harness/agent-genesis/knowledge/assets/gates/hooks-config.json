@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node scripts/hooks/guard-dangerous-commands.js",
+            "description": "危险命令门禁：rm -rf / 强制推送 / 权限放宽需用户在本轮显式确认"
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const i=JSON.parse(d);const c=i.tool_input?.content||'';const lines=c.split('\\n').length;if(lines>800){console.error('[hook] BLOCKED: file exceeds 800 lines ('+lines+')');process.exit(2)}console.log(d)})\"",
+            "description": "文件大小门禁：单文件 ≤800 行，超限阻断并提示拆分模块"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node scripts/hooks/format-and-lint.js \"$FILE_PATH\"",
+            "description": "格式化 + lint（项目已有 formatter 入口，缺失则跳过不阻断）"
+          },
+          {
+            "type": "command",
+            "command": "timeout 60 node scripts/hooks/typecheck.js --incremental",
+            "description": "类型检查（增量 + 60s 超时防进程堆积；无类型系统则跳过）"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node scripts/hooks/final-verify.js",
+            "description": "会话结束前最终验证：构建/测试快速门禁，失败在报告中标注"
+          }
+        ]
+      }
+    ]
+  }
+}

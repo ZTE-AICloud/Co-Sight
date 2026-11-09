@@ -1,0 +1,191 @@
+# ============================================================
+# drive workspace .gitignore
+# 适用于 drive plugin 仓库根目录
+# ============================================================
+
+# ------------------------------------------------------------
+# Python
+# ------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.drive/
+
+# Distribution / packaging
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+*.egg
+MANIFEST
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+.ENV/
+.python-version
+
+# Test / coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+.cache/
+
+# Type / lint caches
+.mypy_cache/
+.ruff_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# ------------------------------------------------------------
+# Node (examples 可能会引入 JS 工具)
+# ------------------------------------------------------------
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+
+# ------------------------------------------------------------
+# 框架（framework/server · framework/shared · framework/web）构建与测试产物
+# ------------------------------------------------------------
+dist/
+build/
+*.tsbuildinfo
+.vite/
+.vitest/
+coverage/
+.oxlintcache/
+
+# Playwright
+playwright-report/
+playwright/.cache/
+test-results/
+
+# 框架本地运行数据。
+# 正式数据落在 $COSIGHT_HOME（默认 ~/.cosight-harness/），不在仓库内；
+# 这两条是防止有人用 COSIGHT_HOME=./data 调试后误提交。
+.data/
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
+.credentials.yaml
+# 模块面令牌：本机其他模块进程用它读模型配置（含明文密钥）。
+# 它和 .credentials.yaml 一样是"凭证"，只是用途不同——同一条理由：不进版本控制。
+.module-token
+
+# ------------------------------------------------------------
+# IDE / Editor（per-user，不入库）
+# ------------------------------------------------------------
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+.history/
+
+# ------------------------------------------------------------
+# OS junk
+# ------------------------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ------------------------------------------------------------
+# Secrets / env
+# ------------------------------------------------------------
+.env
+.env.*
+!.env.example
+# 装配态/本地启动用的配置文件；里面常放真实凭据（模板见
+# framework/scripts/artifact/cosight.env.example）
+cosight.env
+*.pem
+*.key
+
+# ------------------------------------------------------------
+# Runtime / 临时产物
+# ------------------------------------------------------------
+*.log
+*.tmp
+*.bak
+*.swp
+*.orig
+*.rej
+.tmp/
+
+# 模块的本地运行产物（PID / 日志 / 隔离出来的 home 与数据目录）。
+# 无前导斜杠 ⇒ 任意深度生效，框架脚本在模块目录下建的那些 .run/ 一并覆盖，
+# 不必去改各模块自己的 .gitignore。
+.run/
+
+# ------------------------------------------------------------
+# Claude Code / drive 运行时产物
+# （本仓库通常不会跑 drive，但保留规则以防有人 in-place 运行）
+# ------------------------------------------------------------
+.planning/
+.planning/.pause
+continue-here.md
+run-log.jsonl
+.claude/settings.local.json
+.claude/.playwright-mcp/
+
+# ------------------------------------------------------------
+# Visualization（archify 类工具生成的临时文件）
+# ------------------------------------------------------------
+*.tmp.html
+*.tmp.json
+
+# ------------------------------------------------------------
+# 打包产物
+# ------------------------------------------------------------
+# framework/scripts/package.mjs 的全部输出都落在这里：staging（pnpm deploy 的服务端
+# 运行时依赖树）、构建出的归档、以及条目清单。全是生成物，不入库。
+.package/
+
+# 归档文件本身（万一被挪到别处生成）
+*.tar.gz
+*.zip
+*.tgz
+
+# ------------------------------------------------------------
+# 任务进度记录（changes/<slug>/progress.md，仅本地跨会话续接用）
+# ------------------------------------------------------------
+changes/
+# ------------------------------------------------------------
+# Local runtime data (open-source export)
+# ------------------------------------------------------------
+.smart-factory/
+.claude/worktrees/
+*.pptx

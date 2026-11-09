@@ -1,0 +1,31 @@
+# golden manifest — mcp-bridge-router（v1.2 批 2 外部集成实例包, 源自 oh-my-claudecode 重塑）
+# 契约见 schemas/golden-manifest.schema.yaml（字段语义单点在该文件）
+
+task_tag: mcp-bridge-router
+line: agent
+mode_id: W2-Router                      # 货架位（检索键）, 非身份声明（R9）
+patterns:                               # 如实完整模式维度集（现行词汇, §3.5②重映射后）
+  - W2-Router
+  - MN-Deterministic
+  - K4-Rule-Driven
+  - DT1-Linear-Pass-Through
+anchor_fit: real                        # 源仓为编排超集; 本包只蒸馏其路由分发+工具桥切片, 切片本身为 W2 纯正实现
+standard_ref: knowledge/agent-creation/agent-output-standard.yaml
+shape_counts: {agent_entry: 1, prompt_files: 2, scripts: 0, templates: 0}
+acceptance:
+  - 关键词路由表触发词为用户原话词汇, 新增流程=路由表登记一行+指令文件, 不动既有件
+  - 路由器不含业务逻辑, 全部执行内容在独立指令文件中
+  - 外部工具（MCP/凭据）为用户自备接口位, 包内不绑定任何具体外部服务
+  - 声明完成前必须经独立核验通道（核验与执行分离, 不自我批准）
+anchors:
+  build_plan: anchors/build-plan.md
+  self_report: anchors/self-report.md
+  derived: true                         # 外部启发过程锚（§3.5⑤）
+known_concerns: []                      # G028 准入后如实回填
+provenance:
+  origin_repo: "oh-my-claudecode（外部参照库 golden-examples 策展, sources/ 原始层）"
+  license: "MIT（Copyright (c) 2025 Yeachan Heo）"
+  snapshot_date: "2026-10-17"
+  reshaped: true
+source: "v1.2 批 2 外部集成实例包（fast-lane-criteria-reflux-plan §6 D-01 已裁定: 外部集成不设判据, 对策=样例补足）"
+status: active

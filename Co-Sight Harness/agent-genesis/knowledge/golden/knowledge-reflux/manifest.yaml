@@ -1,0 +1,40 @@
+# golden manifest — knowledge-reflux（G2 批, 源自 everything-claude-code 改造）
+# 契约见 schemas/golden-manifest.schema.yaml（字段语义单点在该文件）
+
+task_tag: knowledge-reflux
+line: agent
+mode_id: WF7-Knowledge-Reflux      # 货架位（检索键）, 非身份声明（R9）
+patterns:                               # 如实完整模式维度集（现行词汇, §3.5②重映射后;
+                                        # 只收与 mode_id 语义直接相关维度, 源项目全局
+                                        # 架构的其他维度（M1/W2/W3）不收入本包）
+  - WF7-Knowledge-Reflux
+  - MN-Hybrid
+  - W4-Leaderworker
+  - DT2-Shared-State
+  - K1-LLM-Native
+  - K4-Rule-Driven
+  - IT1-Enforced
+  - CD1-Input-Gating
+  - CD3-Knowledge-Boundary
+  - E2-Controlled-Evolution
+anchor_fit: real                        # 源 session→pattern→skill 进化管道即 WF7 纯正实现
+standard_ref: knowledge/agent-creation/agent-output-standard.yaml
+shape_counts: {agent_entry: 1, scripts: 0, templates: 0, references: 0}
+acceptance:
+  - 四级进化管道完整（观察→原子模式→聚类→升级）, 升级末跳非全自动
+  - 原子模式五属性纪律各一条（原子/置信度/领域标签/证据链/作用域）
+  - 置信度处置表四档, 每档有明确处置
+  - 项目作用域与全局分离, 提升阈值为跨项目 ≥2 复现
+  - curated 与 generated 目录分离纪律一条
+anchors:
+  build_plan: anchors/build-plan.md
+  self_report: anchors/self-report.md
+  derived: true                         # 外部启发过程锚（§3.5⑤）
+known_concerns: []                      # G2 准入跑 G028 后如实回填
+provenance:
+  origin_repo: "anthropics/everything-claude-code（外部参照库 golden-examples 策展）"
+  license: MIT
+  snapshot_date: "2026-10-16"
+  reshaped: true
+source: "G2 批量抽取批次（docs/plan/golden-asset-pool-plan.md §4 G2 步骤 4, 只取相关子集不搬全量）"
+status: active

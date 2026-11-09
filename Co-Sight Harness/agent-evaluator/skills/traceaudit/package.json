@@ -1,0 +1,14 @@
+{
+  "name": "traceaudit-skill",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "description": "Trajectory audit evaluator: evaluates a completed Agent execution from Claude JSONL traces.",
+  "scripts": {
+    "test": "node --test",
+    "eval": "node scripts/traceaudit.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,30 @@
+# Bundle patch for drive-compat — referenced by package.json `dsh.bundle.patch`.
+# Installed with `dsh plugin --profile <name> add <path>` it becomes a PERMANENT
+# profile layer (no --patch at launch).
+#
+# RECOMMENDED: do not install manually — run the artifact installer instead:
+#
+#   bash drive-compat/install.sh [--profile <name>] [--drive-root <path>]
+#
+#   `install.sh` is idempotent: it adds the bundle, manages this plugin's
+#   config block in your profile's cordis.patch.yml (injecting driveRoot),
+#   verifies the composed tree, and prints the restart step. Run with
+#   --dry-run to preview, --uninstall to remove.
+#
+# Manual notes (kept for reference):
+# - `dsh plugin add` COPIES this package into the profile's node_modules, so the
+#   plugin can no longer infer the drive repo root from its own location; set
+#   driveRoot or export DRIVE_COMPAT_DRIVE_ROOT, else the plugin fails loud and
+#   disables the guards/skills layers.
+# - Development mode (`dsh web --patch ./drive-compat/cordis.patch.yml`) does NOT
+#   need driveRoot: the patch overlay loads from the repo and infers it.
+
+- insert:
+    - id: drive-compat
+      name: ./src/index.mjs
+      config:
+        # driveRoot: /absolute/path/to/drive   # <-- managed by install.sh in deployment mode
+        hooks: true
+        hitl: true
+        skills: true
+        shims: true

@@ -1,0 +1,42 @@
+# Co-Sight Harness 框架工作区
+#
+# 设计说明见 framework/server/docs/architecture.md。
+#
+# 关于 allowBuilds：pnpm 11 默认拒绝执行依赖的安装脚本（供应链防护）。
+# 只有在此显式放行的依赖才会跑 postinstall。新增需编译或下载二进制的依赖时，
+# 必须在此追加，否则会在运行期以 ERR_DLOPEN_FAILED / 找不到二进制 的形式失败。
+#
+# 框架的前后端收在一个模块目录里（与 smart-factory 同构：模块根没有 package.json，
+# 工作区根仍是本目录）。匹配的是**目录**，没有 package.json 的子目录会被自动跳过。
+packages:
+  - 'framework/*'
+
+allowBuilds:
+  esbuild: true
+
+# pnpm 11 的供应链策略：依赖必须"发布满一定天数"才允许安装。
+# 下列是 pnpm 自动追加的放行名单（首次安装时写入），**不要手工维护本段**：
+# 增删依赖后 pnpm 会自行更新。想改成每次弹窗确认，设 minimumReleaseAgeStrict: true。
+minimumReleaseAgeExclude:
+  - '@oxlint/binding-android-arm-eabi@1.88.0'
+  - '@oxlint/binding-android-arm64@1.88.0'
+  - '@oxlint/binding-darwin-arm64@1.88.0'
+  - '@oxlint/binding-darwin-x64@1.88.0'
+  - '@oxlint/binding-freebsd-x64@1.88.0'
+  - '@oxlint/binding-linux-arm-gnueabihf@1.88.0'
+  - '@oxlint/binding-linux-arm-musleabihf@1.88.0'
+  - '@oxlint/binding-linux-arm64-gnu@1.88.0'
+  - '@oxlint/binding-linux-arm64-musl@1.88.0'
+  - '@oxlint/binding-linux-ppc64-gnu@1.88.0'
+  - '@oxlint/binding-linux-riscv64-gnu@1.88.0'
+  - '@oxlint/binding-linux-riscv64-musl@1.88.0'
+  - '@oxlint/binding-linux-s390x-gnu@1.88.0'
+  - '@oxlint/binding-linux-x64-gnu@1.88.0'
+  - '@oxlint/binding-linux-x64-musl@1.88.0'
+  - '@oxlint/binding-openharmony-arm64@1.88.0'
+  - '@oxlint/binding-win32-arm64-msvc@1.88.0'
+  - '@oxlint/binding-win32-ia32-msvc@1.88.0'
+  - '@oxlint/binding-win32-x64-msvc@1.88.0'
+  - oxlint@1.88.0
+  - zod@4.6.7
+  - fastify@5.12.7

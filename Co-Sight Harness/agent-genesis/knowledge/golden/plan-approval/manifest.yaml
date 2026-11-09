@@ -1,0 +1,36 @@
+# golden manifest — plan-approval（G2 批, 源自 clnode 改造）
+# 契约见 schemas/golden-manifest.schema.yaml（字段语义单点在该文件）
+
+task_tag: plan-approval
+line: agent
+mode_id: IH3-Plan-Approval        # 货架位（检索键）, 非身份声明（R9）
+patterns:                               # 如实完整模式维度集（现行词汇, §3.5②重映射后）
+  - IH3-Plan-Approval
+  - MN-Deterministic
+  - DT1-Linear-Pass-Through
+  - DT2-Shared-State
+  - G1-Review-Gate
+  - K4-Rule-Driven
+  - IT1-Enforced
+  - CD1-Input-Gating
+anchor_fit: real                        # Review Loop Protocol + 计划人审即 IH3 纯正实现
+standard_ref: knowledge/agent-creation/agent-output-standard.yaml
+shape_counts: {agent_entry: 1, agent_defs: 2, rules: 1, scripts: 0, templates: 0}
+acceptance:
+  - 两处人审（计划批准 + 重审确认）均为显式 AskUserQuestion, 非静默默认
+  - Review Loop Protocol 写明修复后不自动重审, 用户显式确认才重跑
+  - 实现者单次任务 5-7 文件规模约束, 超界回报拆分不硬扛
+  - 上下文精简三级纪律（实现者/审查者/Leader 各一条禁项）
+anchors:
+  build_plan: anchors/build-plan.md
+  self_report: anchors/self-report.md
+  derived: true                         # 外部启发过程锚（§3.5⑤）
+known_concerns:                         # G2 准入跑 G028 后如实回填
+  - 'G028 准入机检 concern 原文: {"module": "g014", "type": "rule_missing_extends", "file": ".claude/rules/team-workflow.md"}——池内规则件不声明 common 层继承（包内无 common 层可继承; 裁决: 如实留档不修补, 资产修补后应清空并注明）'
+provenance:
+  origin_repo: "SierraDevsec/clnode（外部参照库 golden-examples 策展）"
+  license: "Source Available License（非商业用途; 池内资产为重塑后自有表述, 仅机制语义受启发）"
+  snapshot_date: "2026-10-16"
+  reshaped: true
+source: "G2 批量抽取批次（docs/plan/golden-asset-pool-plan.md §4 G2 步骤 3）"
+status: active

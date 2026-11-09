@@ -1,0 +1,316 @@
+meta:
+  version: '1.0'
+  total_cases: 5
+  purpose: 为 Skill 提供每个任务模式的完整产出示例，作为匹配和生产的参考模板
+cases:
+- task_mode: exploration_definition
+  name: 清算对账平台需求分析 Agent
+  selected_patterns:
+  - WF4
+  - K2
+  - DT1
+  - IH2
+  - CD3
+  automation_level: L1
+  description: 面向支付公司财务团队的清算对账平台需求分析。通过多Agent辩论生成差异化方案，RAG检索企业知识库，输出结构化需求定义。
+  file_production:
+  - target: CLAUDE.md
+    source: template
+    variables:
+      project_id: clearing-reconciliation
+      project_name: 清算对账平台需求分析
+      automation_level: L1
+  - target: phase/02-workflows/phase-1-exploration.md
+    source: generate
+    task_mode: exploration_definition
+  - target: phase/gates/G001-input-check.md
+    source: generate
+    gate_type: condition_check
+  - target: phase/review/debate-quality.md
+    source: generate
+    review_type: multi_solution_debate
+  - target: .claude/rules/
+    source: generic_copy
+  asset_matches:
+  - from: assets/agent-definitions/architect.md
+    to: .claude/skills/architect/SKILL.md
+    source: asset_adapt
+    adaptations:
+      customize:
+      - field: 面试问题
+        adapt_to: 财务对账领域
+      replace:
+      - field: 示例行业
+        from: 通用
+        to: 支付金融
+  - from: assets/agent-definitions/orchestration.md
+    to: .claude/rules/orchestration-guide.md
+    source: asset_adapt
+  workflow_steps:
+  - name: 输入扫描
+    skill_ref: null
+    gate_refs:
+    - G001
+    失败回退: 步骤输入扫描（自查修正，≤3轮）
+  - name: 知识检索
+    skill_ref: null
+    description: 强制RAG检索企业术语表和历史决策
+  - name: 多Agent辩论
+    skill_ref: null
+    parallelism: parallel
+    review_refs:
+    - debate-quality
+  - name: 结构化输出
+    skill_ref: null
+  - name: 人类裁决
+    human_approval:
+      dc_id: DC-001
+      required: true
+      approval_type: content_review
+- task_mode: implementation_construction
+  name: 对账引擎开发 Agent
+  selected_patterns:
+  - W1
+  - G1
+  - WF5
+  - K4
+  - DF1
+  - IH3
+  - CD2
+  automation_level: L3
+  description: 对账引擎核心开发。契约先行锁定接口，4模块蜂群并行编码，评审Agent打分≥85才通过，人类仅做意图审查。
+  file_production:
+  - target: CLAUDE.md
+    source: template
+    variables:
+      automation_level: L3
+      human_time_budget_daily: 30m
+  - target: phase/02-workflows/phase-2-implementation.md
+    source: generate
+    task_mode: implementation_construction
+  - target: phase/gates/G002-review-score.md
+    source: generate
+    gate_type: condition_check
+    condition: review_score >= 85
+  - target: phase/gates/G003-readiness-score.md
+    source: generate
+  - target: phase/gates/G005-no-placeholders.md
+    source: generate
+  - target: phase/review/intent-alignment.md
+    source: generate
+    review_type: human_intent
+  - target: schemas/api-contract.schema.yaml
+    source: conditional
+    condition: DF1
+  - target: .claude/rules/
+    source: generic_copy
+  asset_matches:
+  - from: assets/agent-definitions/code-reviewer.md
+    to: .claude/skills/code-reviewer/SKILL.md
+    source: asset_adapt
+    adaptations:
+      customize:
+      - field: 审查维度
+        add:
+        - 金额精度
+        - 对账三要素
+        - 差异分级规则
+      extend:
+      - field: 安全规则
+        add: PCI-DSS合规
+      replace:
+      - field: 代码语言
+        to: Java 17
+  - from: assets/agent-definitions/orchestration.md
+    to: .claude/skills/orchestrator/SKILL.md
+    source: asset_adapt
+  workflow_steps:
+  - name: 加载约束
+    skill_ref: null
+    gate_refs:
+    - G002
+    contract_lock: true
+    失败回退: 步骤加载约束（自查修正，≤3轮）
+  - name: 契约设计
+    skill_ref: null
+    human_approval:
+      dc_id: DC-001
+      required: true
+      approval_type: contract_signoff
+  - name: 蜂群编码
+    skill_ref: null
+    parallelism: parallel
+    subtasks:
+    - name: 清算文件解析
+    - name: 内部流水查询
+    - name: 匹配引擎
+    - name: 差异输出
+  - name: 评审裁决
+    skill_ref: null
+    gate_refs:
+    - G002
+    circuit_breaker:
+      max_retries: 3
+    失败回退: 步骤评审裁决（自查修正，≤3轮）
+  - name: 意图审查
+    skill_ref: null
+    review_refs:
+    - intent-alignment
+    human_approval:
+      required: true
+- task_mode: verification_validation
+  name: 对账系统验收 Agent
+  selected_patterns:
+  - G1
+  - WF6
+  - DF1
+  - CD1
+  automation_level: L2
+  description: 对账系统质量验收。三道死闸（冒烟/系统/UAT），四维并行测试（正向/混沌/变异/日志审计），双Agent背靠背仲裁。
+  file_production:
+  - target: CLAUDE.md
+    source: template
+    variables:
+      automation_level: L2
+  - target: phase/02-workflows/phase-3-verification.md
+    source: generate
+    task_mode: verification_validation
+  - target: phase/gates/G004-smoke-100.md
+    source: generate
+    gate_type: condition_check
+    condition: smoke_pass_rate == 1.0
+  - target: phase/gates/G003-readiness-score.md
+    source: generate
+  - target: .claude/rules/
+    source: generic_copy
+  asset_matches:
+  - from: assets/agent-definitions/critic.md
+    to: .claude/skills/reviewer/SKILL.md
+    source: asset_adapt
+  - from: assets/skills/check-verifier.md
+    to: .claude/skills/verifier/SKILL.md
+    source: generic_copy
+  workflow_steps:
+  - name: 左移设计
+    skill_ref: null
+  - name: 冒烟测试
+    gate_refs:
+    - G004
+    circuit_breaker:
+      max_retries: 0
+    失败回退: 步骤冒烟测试（自查修正，≤3轮）
+  - name: 系统测试
+    gate_refs:
+    - G003
+    失败回退: 步骤系统测试（自查修正，≤3轮）
+  - name: 多维测试
+    parallelism: parallel
+    subtasks:
+    - name: 正向验证
+    - name: 混沌测试
+    - name: 变异测试
+    - name: 日志审计
+    circuit_breaker:
+      max_retries: 3
+    失败回退: 步骤多维测试（自查修正，≤3轮）
+  - name: 争议仲裁
+    human_approval:
+      required: true
+      approval_type: risk_arbitration
+  - name: 逃逸分析
+    human_approval:
+      required: true
+- task_mode: efficiency_infrastructure
+  name: 自动化回归测试维护 Agent
+  selected_patterns:
+  - W1
+  - WF6
+  - WF7
+  - K4
+  - CD1
+  automation_level: L2
+  provenance: 自研虚构示例（AgentGenesis 原创场景，非真实项目案例）
+  description: 自动化测试资产维护。三七法则选型（接口70%/UI30%），脚本自愈≤3次熔断，ROI监控驱动决策，知识回流积累经验。
+  file_production:
+  - target: CLAUDE.md
+    source: template
+    variables:
+      automation_level: L2
+  - target: phase/02-workflows/phase-4-infra.md
+    source: generate
+    task_mode: efficiency_infrastructure
+  - target: phase/gates/G010-budget-breaker.md
+    source: generate
+    gate_type: budget_circuit_breaker
+  - target: .claude/rules/
+    source: generic_copy
+  asset_matches:
+  - from: assets/rules/durable-context.md
+    to: .claude/rules/durable-context.md
+    source: generic_copy
+  workflow_steps:
+  - name: 自动化选型
+    skill_ref: null
+    description: '三七法则: 接口自动化≥70%, UI≤30%'
+  - name: 脚本自愈
+    circuit_breaker:
+      max_retries: 3
+      escalate_to: human
+    失败回退: 步骤脚本自愈（自查修正，≤3轮）
+  - name: ROI监控
+    human_approval:
+      required: true
+      approval_type: budget_decision
+  - name: 流水线门禁
+    gate_refs:
+    - G003
+    失败回退: 步骤流水线门禁（自查修正，≤3轮）
+  - name: 环境监控
+    learnings_checkpoint: true
+- task_mode: monitoring_response
+  name: 系统健康巡检 Agent
+  selected_patterns:
+  - W1
+  - G1
+  - CD1
+  - IV1
+  automation_level: L2
+  provenance: 自研虚构示例（AgentGenesis 原创场景，非真实项目案例）
+  description: 7×24系统健康巡检。定时拉取指标，P0/P1/P2分级告警，P0立即推送+P1生成诊断报告+P2静默记录。
+  file_production:
+  - target: CLAUDE.md
+    source: template
+    variables:
+      automation_level: L2
+  - target: phase/02-workflows/phase-1-monitoring.md
+    source: generate
+    task_mode: monitoring_response
+  - target: phase/gates/G001-alert-threshold.md
+    source: generate
+    gate_type: condition_check
+  - target: .claude/rules/
+    source: generic_copy
+  asset_matches:
+  - from: assets/skills/health-checker.md
+    to: .claude/skills/health-checker/SKILL.md
+    source: generic_copy
+  - from: assets/rules/anti-patterns.md
+    to: .claude/rules/anti-patterns.md
+    source: generic_copy
+  - from: assets/rules/skill-routing.md
+    to: .claude/rules/skill-routing.md
+    source: generic_copy
+  workflow_steps:
+  - name: 加载配置
+    skill_ref: null
+  - name: 持续巡检
+    task_category: simple_atomic
+  - name: 分级告警
+    gate_refs:
+    - G001
+    失败回退: 步骤分级告警（自查修正，≤3轮）
+  - name: 推送静默
+    description: P0立即推送, P1生成报告, P2静默记录
+  - name: 质量报告
+    review_refs:
+    - matching-decision-review

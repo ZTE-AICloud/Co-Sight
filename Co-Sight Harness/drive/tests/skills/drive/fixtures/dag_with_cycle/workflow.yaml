@@ -1,0 +1,13 @@
+# DAG 模式 fixture —— 含环（用于测 cycle detection）
+mode: dag
+
+agents:
+  - id: a
+    agent: drive:analyzer
+    depends_on: [c]
+  - id: b
+    agent: drive:planner
+    depends_on: [a]
+  - id: c
+    agent: drive:executor
+    depends_on: [b]

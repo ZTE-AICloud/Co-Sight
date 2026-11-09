@@ -1,0 +1,16 @@
+{
+  "name": "cosightbot",
+  "description": "CoSightBot marketplace（cosight-harness 托管）：个人知识管理（PKM：本地资料预处理、向量化、章节树检索问答）与标书应答（SOC：知识库构建、需求提取、批量应答、复核回填）能力。",
+  "owner": {
+    "name": "CoSightBot Team"
+  },
+  "plugins": [
+    {
+      "name": "cosightbot",
+      "source": ".",
+      "version": "0.1.0",
+      "description": "CoSightBot 企业知识助手：pkm / retrieve / soc / soc-pipeline 四个命令，配套 11 个技能。",
+      "keywords": ["knowledge-retrieval", "pkm", "knowledge-management", "tender", "soc", "rag"]
+    }
+  ]
+}

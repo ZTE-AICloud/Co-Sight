@@ -1,0 +1,67 @@
+/*
+ * 应用外壳：左侧栏 + 主面板。
+ *
+ * [稿] 主面板是 1640×1080 的圆角面板（只圆左边，`--r-panel`），贴满画板右侧。
+ * [推] 真实浏览器里贴满视口会显得很挤，故四周留 --panel-inset，高度自适应。
+ */
+
+.shell {
+  display: flex;
+  width: 100%;
+  /* 用 dvh 而不是 vh：移动端浏览器地址栏收起/展开时 vh 不变，会导致底部被裁掉。 */
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--color-canvas);
+}
+
+.main {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  /*
+   * 三边留白、左边贴住侧栏：面板靠侧栏的一侧不画边框也不留缝，
+   * 否则侧栏与面板之间会出现一条 8px 的空隙加两条线。
+   */
+  margin: var(--panel-inset) var(--panel-inset) var(--panel-inset) 0;
+  /*
+   * `position: relative` + `overflow: hidden`：把内容区（含跨源 iframe）收进主面板的
+   * 圆角里。工作区文件面板已经移进 cosight-viewer 自己渲染，外壳不再往这里挂浮层。
+   */
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--border-panel);
+  border-radius: var(--r-panel);
+  background: var(--color-panel);
+}
+
+/* main 被 tabIndex={-1} 聚焦时不该有焦点环：它只是跳转目标，不是可交互控件。 */
+.main:focus {
+  outline: none;
+}
+
+/* ===================== 跳转链接 ===================== */
+
+/*
+ * [增] 键盘用户的第一个 Tab 停靠点：按回车直接跳过 280px 的导航到内容区。
+ * 平时视觉隐藏，获得焦点时才显形——不显形的跳转链接等于没有。
+ */
+.skipLink {
+  position: absolute;
+  top: var(--panel-inset);
+  left: var(--panel-inset);
+  z-index: var(--z-toast);
+  padding: 8px 16px;
+  border-radius: var(--r-sm);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-input);
+  color: var(--text-heading);
+  font-size: var(--fs-label);
+  text-decoration: none;
+  /* 用 clip-path 而不是 display:none：display:none 的元素无法获得焦点。 */
+  clip-path: inset(50%);
+}
+
+.skipLink:focus-visible {
+  clip-path: none;
+}

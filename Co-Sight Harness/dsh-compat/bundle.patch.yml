@@ -1,0 +1,35 @@
+# Bundle patch for cosight-plugin-compat — referenced by package.json
+# `dsh.bundle.patch`.
+#
+# Installed with `dsh plugin --profile <name> add <path>` it becomes a
+# PERMANENT profile layer (no --patch needed at launch).
+#
+# PREFERRED: do not install by hand — run the repository installer:
+#
+#   bash install-dsh.sh [--profile <name>] [--plugins-root <path>]
+#
+#   `install-dsh.sh` installs drive-compat + this package together, is
+#   idempotent, manages both config blocks in the profile's cordis.patch.yml,
+#   verifies the composed tree, and prints the restart step. Preview with
+#   --dry-run, remove with --uninstall.
+#
+# Manual notes (kept for reference):
+# - `dsh plugin add` COPIES this package into the profile's node_modules, so it
+#   can no longer infer the plugin repo root from its own location; set
+#   pluginsRoot (absolute) or export COSIGHT_COMPAT_PLUGINS_ROOT. Without
+#   either, the packaged plugin-assets/ (written by pack.sh) is used, and if
+#   that is absent too the plugin fails loud and disables every layer.
+# - Development mode (`dsh web --patch ./dsh-compat/cordis.patch.yml`) does NOT
+#   need pluginsRoot: the dev layout resolves to the repo root automatically.
+# - Later layers REPLACE config wholesale (no deep merge), so an override block
+#   in the profile must repeat every key it wants to keep.
+
+- insert:
+    - id: cosight-plugin-compat
+      name: ./src/index.mjs
+      config:
+        # pluginsRoot: /absolute/path/to/plugin/repo   # <-- managed by install-dsh.sh
+        # plugins: [agent-genesis, agent-evaluator, skill-optimizer, cosight-bot]
+        hooks: true
+        skills: true
+        shims: true

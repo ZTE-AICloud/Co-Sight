@@ -1,0 +1,55 @@
+# clarified-agent-requirements.yaml — agent 模式需求澄清产出（Skill 私有 schema）
+# 唯一权威: workflow-agent.md 阶段 4
+# 来源: 原 schemas/clarified-requirements.schema.yaml (v0.18 迁移至本 Skill 目录)
+# 引用方: pattern-matcher / build-planner / agent-executor (P10.5 agent 字段名)
+
+task_mode:
+  type: string
+  enum: [exploration_definition, implementation_construction, verification_validation, efficiency_infrastructure, consensus_communication, monitoring_response, fault_diagnosis_recovery, change_execution, information_processing, scheduling_coordination, retrieval_integration, hybrid]
+  description: "判定的任务模式"
+why:
+  user_role: "string"
+  business_scenario: "string"
+  core_pain_points: ["string"]
+  expected_value: "string"
+  success_metrics: ["string"]
+what:
+  core_flow: "string"
+  scope_boundaries: "string"
+  priority: "must | should | could | wont"
+how:
+  normal_flow: "string"
+  exception_flow: "string"
+  business_rules: ["string"]
+quality:
+  performance: "string"
+  security: "string"
+  availability: "string"
+acceptance_criteria:
+  type: array
+  items:
+    given: "string"
+    when: "string"
+    then: "string"
+open_questions:
+  type: array
+  items:
+    question: "string"
+    recommendation: "string"
+    status: "resolved | pending | blocked"
+knowledge_sources:
+  type: array
+  items:
+    type: "K1 | K2 | K3 | K4"
+    location: "string"
+    trust_level: "权威 | 参考 | 待确认"
+confidence:
+  type: integer
+  minimum: 0
+  maximum: 100
+build_mode:
+  type: string
+  enum: [greenfield, incremental]
+dc010_channel:
+  type: string
+  enum: [fast, full]

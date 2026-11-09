@@ -1,0 +1,236 @@
+/**
+ * 「装配到智能体」弹层。类名统一 as- 前缀，与 sl- / al- 同一约定。
+ *
+ * 弹层只做一次复制：选智能体 → 预判同名 / 就绪 → 复制进产物。
+ * 按钮沿用 agent-list.css 的 `.al-btn`（同一页已加载），这里只写弹层自己的版式。
+ */
+
+.as-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(17, 24, 39, 0.42);
+}
+
+.as-dialog {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 520px;
+  max-height: calc(100vh - 48px);
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--color-surface);
+  box-shadow: 0 32px 80px -24px rgba(17, 24, 39, 0.45);
+}
+
+.as-head {
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid #f2f3f5;
+}
+
+.as-head h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 650;
+}
+
+.as-sub {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 8px 0 0;
+  color: var(--color-text-weak);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.as-sub strong {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.as-version {
+  padding: 1px 7px;
+  border-radius: 4px;
+  background: #f2f3f5;
+  color: #4e5969;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.as-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 14px 20px 18px;
+}
+
+.as-label {
+  margin: 0 0 8px;
+  color: var(--color-text-weak);
+  font-size: 11.5px;
+}
+
+.as-hint {
+  margin: 0 0 14px;
+  color: var(--color-text-weak);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.as-hint--bad {
+  color: #b3261e;
+}
+
+.as-agents {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.as-agent {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 11px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.as-agent:hover {
+  border-color: #c9cdd4;
+  background: #fafbfc;
+}
+
+.as-agent--on {
+  border-color: var(--color-primary);
+  background: #f7faff;
+  box-shadow: 0 0 0 1px var(--color-primary) inset;
+}
+
+.as-agent-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.as-agent-name {
+  overflow: hidden;
+  color: var(--color-text);
+  font-size: 13px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.as-agent-meta {
+  overflow: hidden;
+  color: var(--color-text-weak);
+  font-size: 11.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.as-radio {
+  flex-shrink: 0;
+  width: 15px;
+  height: 15px;
+  margin-left: auto;
+  border: 1px solid #c9cdd4;
+  border-radius: 50%;
+}
+
+.as-agent--on .as-radio {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  box-shadow: inset 0 0 0 3px #fff;
+}
+
+.as-checks {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #f7f8fa;
+}
+
+.as-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin: 0;
+  color: #4e5969;
+  font-size: 11.5px;
+  line-height: 1.7;
+}
+
+.as-check + .as-check {
+  margin-top: 4px;
+}
+
+.as-check--bad {
+  color: #b3261e;
+}
+
+.as-dot {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  margin-top: 6px;
+  border-radius: 50%;
+}
+
+.as-dot--ok {
+  background: var(--color-ok);
+}
+
+.as-dot--bad {
+  background: var(--color-danger);
+}
+
+.as-failure {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 12px 0 0;
+  padding: 8px 10px;
+  border-radius: 7px;
+  background: #fff2f1;
+  color: #b3261e;
+  font-size: 11.5px;
+  line-height: 1.6;
+}
+
+.as-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px 16px;
+  border-top: 1px solid #f2f3f5;
+}
+
+.as-note {
+  margin-right: auto;
+  overflow: hidden;
+  color: var(--color-text-weak);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 560px) {
+  .as-note {
+    display: none;
+  }
+}

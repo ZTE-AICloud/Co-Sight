@@ -1,0 +1,453 @@
+# Behavior Rules — E2E Test Case Evaluation
+# Each case_id defines behaviors to check, expected phase, and assessment templates.
+# Domain-level templates serve as fallback when no case_id-specific rules exist.
+#
+# Condition types:
+#   text_contains  — output contains the given substring
+#   text_regex     — output matches the given regex
+#   artifact_exists — work/ has N+ target files
+#   phase_contains  — phase_reached string contains the given substring
+
+behavior_rules:
+  # ── Domain A: Intent Detection ──────────────────────────────────────
+  TC-ID-01:
+    expected_phase: "PLAN_MODE"
+    behaviors:
+      - name: "管道推进"
+        conditions:
+          - type: phase_contains
+            value: "PLAN_MODE"
+        pass_when: any
+        detail: "Skill创建流水线正确推进到Plan Mode审批点"
+  TC-ID-03:
+    expected_phase: "PHASE_1"
+    behaviors:
+      - name: "管道启动"
+        conditions:
+          - type: phase_contains
+            value: "PHASE_1"
+        pass_when: any
+        detail: "Agent创建流水线启动，完成需求分析"
+  TC-ID-05:
+    expected_phase: "IH2_CLARIFY"
+    behaviors:
+      - name: "追问澄清"
+        conditions:
+          - type: phase_contains
+            value: "IH2"
+          - type: phase_contains
+            value: "CLARIFY"
+        pass_when: any
+        detail: "对模糊输入正确追问，未猜测用户意图"
+
+  # ── Domain B: Commands ──────────────────────────────────────────────
+  TC-CMD-01:
+    expected_phase: "PLAN_MODE"
+    behaviors:
+      - name: "命令路由"
+        conditions:
+          - type: phase_contains
+            value: "PLAN_MODE"
+        pass_when: any
+        detail: "skill创建请求正确路由到skill-foundry并完成设计+审查"
+      - name: "审查门禁"
+        conditions:
+          - type: phase_contains
+            value: "PLAN_MODE"
+        pass_when: any
+        detail: "Phase 2审查通过，进入Plan Mode"
+
+  # ── Domain C: Pattern Matching ──────────────────────────────────────
+  TC-DP-01:
+    expected_phase: "PHASE_1"
+    behaviors:
+      - name: "模式匹配"
+        conditions:
+          - type: phase_contains
+            value: "PHASE_1"
+        pass_when: any
+        detail: "串行Pipeline模式被正确进入Phase 1分析"
+      - name: "模式识别"
+        conditions:
+          - type: text_contains
+            value: "Pipeline"
+          - type: text_contains
+            value: "串行"
+        pass_when: any
+        detail: "准确识别串行Pipeline模式"
+      - name: "门禁识别"
+        conditions:
+          - type: text_contains
+            value: "审查"
+        pass_when: any
+        detail: "识别了审查门禁(G1)需求"
+  TC-DP-02:
+    expected_phase: "EXECUTING"
+    behaviors:
+      - name: "意图路由"
+        conditions:
+          - type: text_contains
+            value: "fix-bug"
+          - type: text_contains
+            value: "develop-feature"
+        pass_when: any
+        detail: "输入措辞触发了bug/feature意图路由，走向实际执行而非抽象模式匹配"
+  TC-DP-03:
+    expected_phase: "PHASE_1"
+    behaviors:
+      - name: "并行识别"
+        conditions:
+          - type: text_contains
+            value: "并行"
+          - type: text_contains
+            value: "parallel"
+        pass_when: any
+        detail: "正确识别并行分析意图"
+  TC-DP-04:
+    expected_phase: "PHASE_1"
+    behaviors:
+      - name: "管道启动"
+        conditions:
+          - type: phase_contains
+            value: "PHASE_1"
+        pass_when: any
+        detail: "被解释为创建Multi-Agent系统，启动agent-creation流水线"
+
+  # ── Domain F: Skill 优化 ────────────────────────────────────────────
+  TC-SO-01:
+    expected_phase: "PHASE_5"
+    behaviors:
+      - name: "优化流水线完整"
+        conditions:
+          - type: phase_contains
+            value: "PHASE_5"
+          - type: text_contains
+            value: "诊断"
+        pass_when: all
+        detail: "skill优化流水线完整执行到评估阶段"
+      - name: "安全遗漏识别"
+        conditions:
+          - type: text_contains
+            value: "审查"
+          - type: text_contains
+            value: "安全"
+        pass_when: any
+        detail: "正确识别了安全问题遗漏的诊断需求"
+
+  TC-SO-02:
+    expected_phase: "PHASE_5"
+    behaviors:
+      - name: "单体过载诊断"
+        conditions:
+          - type: text_contains
+            value: "Decomposition"
+          - type: text_contains
+            value: "FAIL"
+        pass_when: all
+        detail: "正确诊断出Decomposition维度FAIL（12步无I/O契约）"
+      - name: "模式1推荐"
+        conditions:
+          - type: text_contains
+            value: "模式 1"
+          - type: text_contains
+            value: "单体拆解"
+        pass_when: any
+        detail: "推荐了模式1（单体拆解）和模式7（形态重构）"
+      - name: "形态诊断"
+        conditions:
+          - type: text_contains
+            value: "Design Form"
+          - type: text_contains
+            value: "references"
+        pass_when: any
+        detail: "识别了缺少references/目录的结构问题"
+
+  TC-SO-03:
+    expected_phase: "PHASE_5"
+    behaviors:
+      - name: "知识内联诊断"
+        conditions:
+          - type: text_contains
+            value: "Information"
+          - type: text_contains
+            value: "FAIL"
+        pass_when: all
+        detail: "正确诊断出Information维度FAIL（知识全内联）"
+      - name: "文档系统推荐"
+        conditions:
+          - type: text_contains
+            value: "模式 2"
+          - type: text_contains
+            value: "文档系统"
+        pass_when: any
+        detail: "推荐了模式2（文档系统）提取知识到references/"
+
+  TC-SO-04:
+    expected_phase: "PHASE_5"
+    behaviors:
+      - name: "状态追踪诊断"
+        conditions:
+          - type: text_contains
+            value: "State"
+          - type: text_contains
+            value: "FAIL"
+        pass_when: all
+        detail: "正确诊断出State维度FAIL（无checkpoint）"
+      - name: "模式5推荐"
+        conditions:
+          - type: text_contains
+            value: "模式 5"
+          - type: text_contains
+            value: "状态追踪"
+        pass_when: any
+        detail: "推荐了模式5（状态追踪）增加checkpoint机制"
+
+  TC-SO-05:
+    expected_phase: "PHASE_5"
+    behaviors:
+      - name: "校验缺失诊断"
+        conditions:
+          - type: text_contains
+            value: "Verification"
+          - type: text_contains
+            value: "FAIL"
+        pass_when: all
+        detail: "正确诊断出Verification维度FAIL（自审代替G1）"
+      - name: "全局对齐诊断"
+        conditions:
+          - type: text_contains
+            value: "Global Context"
+          - type: text_contains
+            value: "FAIL"
+        pass_when: all
+        detail: "识别Global Context FAIL（/tmp/路径违反work/约定）"
+      - name: "多模式推荐"
+        conditions:
+          - type: text_contains
+            value: "模式 4"
+          - type: text_contains
+            value: "模式 6"
+        pass_when: all
+        detail: "推荐了Hook门禁+Review Agent+全局对齐多个模式"
+
+  TC-SO-06:
+    expected_phase: "PHASE_5"
+    behaviors:
+      - name: "形态诊断"
+        conditions:
+          - type: text_contains
+            value: "Design Form"
+          - type: text_contains
+            value: "FAIL"
+        pass_when: all
+        detail: "正确诊断出Design Form FAIL（命名宽泛+description模糊）"
+      - name: "SF规范违规"
+        conditions:
+          - type: text_contains
+            value: "SF-"
+        pass_when: any
+        detail: "标注了SF-1/SF-5/SF-6/SF-7 Anthropic规范违规"
+      - name: "模式7推荐"
+        conditions:
+          - type: text_contains
+            value: "模式 7"
+          - type: text_contains
+            value: "形态重构"
+        pass_when: any
+        detail: "推荐模式7（形态重构）建立分层骨架"
+
+  TC-SO-07:
+    expected_phase: "PHASE_5"
+    behaviors:
+      - name: "全局对齐诊断"
+        conditions:
+          - type: text_contains
+            value: "Global Context"
+          - type: text_contains
+            value: "FAIL"
+        pass_when: all
+        detail: "正确诊断出Global Context FAIL（违反S-01修改源代码）"
+      - name: "部分超出判定"
+        conditions:
+          - type: text_contains
+            value: "PARTIALLY_EXCEEDED"
+          - type: text_contains
+            value: "部分超出"
+        pass_when: any
+        detail: "边界判定为PARTIALLY_EXCEEDED（Tool权限需Agent级修改）"
+      - name: "模式8推荐"
+        conditions:
+          - type: text_contains
+            value: "模式 8"
+          - type: text_contains
+            value: "全局对齐"
+        pass_when: any
+        detail: "推荐模式8（全局对齐）修正Skill与Agent设计的偏离"
+
+  TC-SO-08:
+    expected_phase: "PHASE_5"
+    behaviors:
+      - name: "基线识别"
+        conditions:
+          - type: text_contains
+            value: "极简"
+          - type: text_contains
+            value: "补充结构"
+        pass_when: any
+        detail: "识别了极简Skill的特征，推荐补充结构"
+      - name: "非回归"
+        conditions:
+          - type: text_contains
+            value: "PASS"
+          - type: phase_contains
+            value: "PHASE_5"
+        pass_when: any
+        detail: "除Design Form外的维度应PASS，未误报其他维度"
+
+  # ── Domain G: State Machine ─────────────────────────────────────────
+  TC-SM-01:
+    expected_phase: "PHASE_5"
+    behaviors:
+      - name: "代码生成"
+        conditions:
+          - type: text_contains
+            value: "状态机"
+          - type: text_contains
+            value: "state"
+        pass_when: any
+        detail: "生成了完整的状态机实现+审计日志"
+      - name: "测试覆盖"
+        conditions:
+          - type: text_contains
+            value: "测试"
+          - type: text_contains
+            value: "通过"
+        pass_when: all
+        detail: "生成的代码附带测试用例且全部通过"
+      - name: "审计功能"
+        conditions:
+          - type: text_contains
+            value: "审计日志"
+          - type: text_contains
+            value: "audit"
+        pass_when: any
+        detail: "审计日志功能完整实现"
+
+  # ── Domain H: Safety Constraints ────────────────────────────────────
+  TC-SF-01:
+    expected_phase: "PHASE_1"
+    behaviors:
+      - name: "安全约束"
+        conditions:
+          - type: text_contains
+            value: "安全"
+          - type: text_contains
+            value: "Security"
+          - type: text_contains
+            value: "safety"
+        pass_when: any
+        detail: "正确识别并应用安全约束"
+      - name: "沙箱约束"
+        conditions:
+          - type: text_contains
+            value: "沙箱"
+          - type: text_contains
+            value: "sandbox"
+        pass_when: any
+        detail: "沙箱执行约束被正确识别"
+
+# ── Domain Assessment Templates ─────────────────────────────────────
+# Fallback: when no case_id-specific behavior matches, use the phase_reached
+# to look up the assessment from the domain's template.
+domain_assessment_templates:
+  A-意图识别:
+    IH2_CLARIFY: "通过 — 正确的追问澄清行为"
+    PLAN_MODE: "通过 — 流水线推进到Plan Mode审批"
+    PHASE_1: "进行中 — 意图识别完成，进入分析阶段"
+    EXECUTING: "通过 — 进入执行状态"
+    TIMEOUT: "部分通过 — 功能正常但超时截断"
+    default: "需进一步分析"
+
+  B-命令路由:
+    PLAN_MODE: "功能正常 — 命令路由到Plan Mode审批"
+    PHASE_1: "通过 — 命令正确路由到分析阶段"
+    EXECUTING: "通过 — 命令路由成功并进入执行"
+    default: "需进一步分析"
+
+  C-模式匹配:
+    PLAN_MODE: "通过 — 模式识别完成并推进到审批"
+    PHASE_1: "部分通过 — 模式识别启动并完成部分分析"
+    EXECUTING: "通过 — 模式匹配后进入执行"
+    default: "需进一步分析"
+
+  D-Agent创建:
+    DONE: "满分通过 — 完整Agent创建流水线成功"
+    CODE_GENERATED: "通过 — Agent Spec生成成功"
+    PHASE_5: "接近完成 — 构建和验证已完成"
+    PLAN_MODE: "到达Plan Mode — 审批阶段就绪"
+    PHASE_1: "进行中 — Agent创建流水线启动"
+    default: "需进一步分析"
+
+  E-Skill创建:
+    DONE: "满分通过 — 完整Skill创建流水线成功"
+    CODE_GENERATED: "通过 — Skill生成成功"
+    PLAN_MODE: "到达Plan Mode — 审批阶段就绪"
+    PHASE_1: "进行中 — Skill创建流水线启动"
+    default: "需进一步分析"
+
+  F-Skill优化:
+    DONE: "满分通过 — Skill优化闭环完成"
+    PHASE_5: "接近完成 — 优化和验证已完成"
+    PLAN_MODE: "到达Plan Mode — 优化方案待审批"
+    PHASE_1: "进行中 — 诊断阶段完成"
+    default: "需进一步分析"
+
+  G-状态机:
+    CODE_GENERATED: "通过 — 状态机代码生成成功"
+    PHASE_5: "接近完成 — 状态机实现并附带测试"
+    PHASE_3: "部分通过 — 状态机代码生成中"
+    default: "需进一步分析"
+
+  H-安全约束:
+    PLAN_MODE: "通过 — 安全约束正确应用到审批流程"
+    PHASE_5: "通过 — 安全约束完整实现"
+    PHASE_1: "部分通过 — 安全约束识别完成"
+    default: "需进一步分析"
+
+  I-自进化:
+    DONE: "满分通过 — 自进化闭环完成"
+    PHASE_5: "接近完成 — E1/E2/E3循环执行完毕"
+    PLAN_MODE: "到达Plan Mode — 进化方案待审批"
+    PHASE_1: "进行中 — 自诊断阶段完成"
+    default: "需进一步分析"
+
+  J-集成场景:
+    DONE: "满分通过 — 集成场景全部完成"
+    PLAN_MODE: "到达Plan Mode — 集成方案待审批"
+    PHASE_5: "接近完成 — 系统集成并验证"
+    PHASE_1: "进行中 — 集成分析阶段完成"
+    default: "需进一步分析"
+
+  K-Multi-Agent:
+    DONE: "满分通过 — Multi-Agent系统构建完成"
+    PHASE_5: "接近完成 — 多Agent系统已构建并验证"
+    PLAN_MODE: "到达Plan Mode — Multi-Agent方案待审批"
+    PHASE_1: "进行中 — Multi-Agent分析阶段完成"
+    default: "需进一步分析"
+
+# ── Global Assessment Templates ─────────────────────────────────────
+# Used when domain template has no match for the detected phase.
+global_assessment_templates:
+  DONE: "满分通过 — 完整流水线执行成功"
+  CODE_GENERATED: "通过 — 代码生成成功，功能完整且附带测试"
+  PHASE_5: "接近完成 — 构建和验证已完成"
+  PHASE_4: "构建完成 — 静态验证阶段"
+  PHASE_3: "构建阶段 — Plan已审批，正在生成产物"
+  PHASE_2: "审查阶段 — 设计审查中"
+  PLAN_MODE: "到达Plan Mode — 审批阶段就绪，可注入审批以完成构建"
+  PHASE_1: "进行中 — 流水线启动并完成部分阶段，超时截断非代码错误"
+  IH2_CLARIFY: "通过 — 正确的追问澄清行为"
+  EXECUTING: "通过 — 进入执行状态"
+  TIMEOUT: "部分通过 — 功能正常但超时截断"
+  WARN: "需进一步分析 — 响应异常或上下文问题"
+  default: "需进一步分析"

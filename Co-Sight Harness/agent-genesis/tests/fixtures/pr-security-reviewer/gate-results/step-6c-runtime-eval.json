@@ -1,0 +1,8 @@
+{
+  "step_id": "step-6c-runtime-eval",
+  "gate_id": "G007+e2e",
+  "verdict": "DEFERRED",
+  "rationale": "Same as Step 5 — product-tester + runtime-evaluator SubAgents not invocable in current environment. P0 baseline focuses on LLM agent framework ceremony, not on agent correctness scoring. Planted fixtures defined in evaluation/pass-criteria.md, ready for next run with SubAgents enabled.",
+  "fixtures_ready": ["fixture-secret", "fixture-injection", "fixture-clean"],
+  "checked_at": "2026-10-05T03:58:35Z"
+}

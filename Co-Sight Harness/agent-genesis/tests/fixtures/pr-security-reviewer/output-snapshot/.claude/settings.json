@@ -1,0 +1,18 @@
+{
+  "permissionMode": "default",
+  "permissions": {
+    "allow": [
+      "Read",
+      "Grep",
+      "Glob",
+      "Write:./security-report/**",
+      "Write:./secret-findings.json",
+      "Write:./injection-findings.json",
+      "Write:./reviewed-findings.json"
+    ],
+    "deny": [
+      "Bash:.*",
+      "Write:*"
+    ]
+  }
+}

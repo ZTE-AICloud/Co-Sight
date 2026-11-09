@@ -1,0 +1,66 @@
+# g026-batch-gates.sh 输入契约（C8: 机读 verdict / input_error / 缺键拒绝静默空转）
+#
+# 传入方式（二选一）:
+#   1. argv（executor 白名单模式）:
+#      bash scripts/gates/g026-batch-gates.sh --input '{"gates":[...],...}'
+#   2. stdin（main agent 等非白名单调用方）:
+#      echo '<json>' | bash scripts/gates/g026-batch-gates.sh
+#
+# 校验规则:
+#   - 非 JSON / gates 缺失或空数组 → verdict=FAIL, failures[].type=input_error, exit 3
+#   - 本文件缺失 → input_error(schema_missing), exit 3（fail-closed，拒绝无契约运行）
+#   - 所请求 gate 在 gate_required_keys 中声明的键缺失/为空 → input_error（逐 gate 列明），exit 3
+#
+# 未列入门控的键（如 files）为可选上下文，原样透传给各 gate 的 stdin。
+
+version: "1.0"
+
+input:
+  type: object
+  required: [gates]
+  properties:
+    gates:            {type: array, minItems: 1, items: {type: string},
+                       description: "gate 名列表；支持带 trigger 后缀（如 G017-pattern-constraints），g026 按 G[0-9]{3} 前缀截断解析"}
+    files:            {type: array, items: {type: string}}
+    target:           {type: string, description: "G028（g005/g021 内部模块）校验目标目录"}
+    output_dir:       {type: string, description: "产物目录（通用）"}
+    work_dir:         {type: string, description: "gate.report.valid 直调与 G028 agent-exit 档消费（phase4-execution-report/progress.json 所在）"}
+    skills_dir:       {type: string, description: "G028（g014 内部模块）消费"}
+    rules_dir:        {type: string, description: "G028（g014 内部模块）消费"}
+    build_plan:       {type: string, description: "G023 批量/cross 协议 + G028 agent-exit 档必填"}
+    profile:          {type: string, description: "G028 消费（agent-exit/skill-build/skill-verify 三档）"}
+    e2e_results_dir:  {type: string}
+    step_id:          {type: string, description: "G024 消费"}
+    name:             {type: string, description: "G024 消费（产物名）"}
+    root:             {type: string, description: "G024/G027 消费（仓库根，显式传 $PWD）"}
+    mode:             {type: string, description: "G027 消费（create/optimize/diagnose）"}
+    report_path:      {type: string, description: "G027 消费"}
+    matching_decision: {type: string, description: "G017 消费"}
+    manifest:         {type: string, description: "G029 消费（injected-assets.yaml 路径）"}
+    excluded_paths:   {type: array, items: {type: string},
+                       description: "G028 内部模块 g005 消费: 占位符扫描豁免的相对路径（如预置的 .claude/skills/rag-knowledge-search）"}
+
+# 每个 gate 经 g026 批跑时必需的输入键（缺键 → input_error）
+# legacy sunset（2026-10-15）: 键随 g026 单读一并语义键化——canon = 请求的语义键
+# （原 G0xx 数字键作废; gates[] 传编号 → unknown fail-closed）
+# G005/G014/G021 已归并为 G028 内部模块（提速方案 OPT-8b）, g022 已随 executor v2 裁撤;
+# profile 条件必填键（agent-exit: work_dir/skills_dir/rules_dir/build_plan 等）由
+# G028 脚本内 fail-closed 校验补位（本 schema 格式不支持按 profile 条件必填）
+gate_required_keys:
+  runner.exit:
+    all_of: [profile]
+    any_of: [target, output_dir]
+  gate.match.contract:
+    all_of: [matching_decision]
+  gate.build.invariants:
+    all_of: [build_plan, output_dir]
+  gate.step.outputs:
+    all_of: [step_id]
+  gate.plan.sanity:
+    all_of: [mode, report_path]
+  gate.knowledge.injection:
+    all_of: [manifest]
+    any_of: [target, output_dir]
+  # build_plan 可选: 缺省时按 output_dir/dsh 是否存在推断平台（见 g030 头注释）
+  gate.dsh.output:
+    any_of: [target, output_dir]

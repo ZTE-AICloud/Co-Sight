@@ -1,0 +1,19 @@
+# Patch overlay for loading drive-compat into a dsh profile.
+#
+# Fully relocatable: paths below are relative to THIS file's directory,
+# and driveRoot is inferred by the plugin from its own location
+# (drive-compat is expected to sit inside the drive repo, i.e.
+#   <anything>/drive/drive-compat/src/index.mjs  ->  driveRoot = <anything>/drive ).
+# Override with config.driveRoot or env DRIVE_COMPAT_DRIVE_ROOT if your layout differs.
+#
+# Usage:  dsh --profile <name> --patch ./drive-compat/cordis.patch.yml
+#   or    `- insert:` block (adjust path) into ~/.dsh/profiles/<profile>/cordis.patch.yml
+
+- insert:
+    - id: drive-compat
+      name: ./src/index.mjs
+      config:
+        hooks: true
+        hitl: true
+        skills: true
+        shims: true

@@ -1,0 +1,8 @@
+domain: "I-自进化"
+description: "测试 Agent 自进化能力 — E1自评→E2决策→E3 Delta修改闭环"
+test_cases:
+  - id: "TC-SE-01"
+    input: "启动自进化，评估当前Agent的代码审查能力，如果正确率低于80%则自动优化审查规则"
+    expected: "E1自评→发现问题→E2决策→E3 Delta修改→重评通过"
+    expected_phase: "DONE"
+    timeout: 600

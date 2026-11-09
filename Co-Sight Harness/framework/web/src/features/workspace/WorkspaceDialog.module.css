@@ -1,0 +1,48 @@
+/*
+ * 工作区弹窗的内容区（外壳在 Dialog.module.css，配置行在 ui/ConfigList.module.css）。
+ *
+ * 取值与设置弹窗一致：内容区自己滚动，弹窗高度由外壳给死（见 .panelMd）。
+ */
+
+.body {
+  flex: 1;
+  min-height: 0;
+  padding: 20px 24px;
+  overflow-y: auto;
+}
+
+.listHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.sectionTitle {
+  margin: 0;
+  color: var(--text-heading);
+  font-family: var(--font-medium);
+  font-weight: var(--fw-medium);
+  font-size: var(--fs-label);
+  line-height: var(--lh-label);
+}
+
+.loadingList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/*
+ * 上一次操作失败的提示。用危险色是**有意的克制用法**：它不是装饰，是"刚才那件事
+ * 没成功"，与表单里字段级的校验错误（ui/form 的 .error）用同一个语义。
+ */
+.actionError {
+  margin: 0 0 12px;
+  color: var(--color-danger);
+  font-size: var(--fs-label);
+  line-height: var(--lh-label);
+  /* 失败原因里常有 URL / 路径，必须能在任意位置断开。 */
+  overflow-wrap: anywhere;
+}

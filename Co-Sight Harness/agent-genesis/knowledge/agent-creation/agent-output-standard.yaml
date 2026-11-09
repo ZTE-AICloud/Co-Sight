@@ -1,0 +1,131 @@
+# Agent 产出物建模标准 — Skill 运行时知识
+# build-planner SubAgent 直接 Read 此文件
+
+meta:
+  version: "1.2"
+  total_required: 8            # claude-code 平台口径；dsh 额外要求见 platforms.dsh
+  total_conditional: 2
+
+# ------------------------------------------------------------
+# 平台轴（v1.2 新增）
+# - claude-code: 现有全部行为，不变
+# - dsh: 额外产出 dsh/ bundle；.claude/settings.json 与 .claude/hooks/hooks.json 不生成
+# - both: 两套都产，共用 CLAUDE.md / phase/ / evaluation/
+# 映射细节唯一权威 = knowledge/agent-creation/platforms/dsh.yaml
+# ------------------------------------------------------------
+platforms:
+  default: claude-code
+  allowed: [claude-code, dsh, both]
+  resolution:
+    - "用户 --platform 显式指定优先"
+    - "否则读 .agent-genesis/work/{name}/agent-creation/platform.yaml"
+    - "均缺失 → claude-code（存量行为不变）"
+  shared_artifacts:
+    - "proposal-spec.md"
+    - "CLAUDE.md"
+    - "phase/02-workflows/"
+    - "phase/gates/"
+    - "phase/review/"
+    - "evaluation/pass-criteria.md"
+  dsh:
+    fact_source: "knowledge/agent-creation/platforms/dsh.yaml"
+    output_root: "dsh/"
+    required_extra:
+      - "dsh/package.json（dsh.bundle.patch -> ./cordis.patch.yml）"
+      - "dsh/cordis.patch.yml（插入 preset 行）"
+      - "dsh/README.md（安装/使用/能力差异）"
+    conditional_extra:
+      - "dsh/skills/{skill}/SKILL.md（技能或知识注入时）"
+      - "dsh/install.sh（默认生成）"
+    forbidden_artifacts:
+      - ".claude/settings.json"
+      - ".claude/hooks/hooks.json"
+      - ".claude/agents/{role}.md"
+      - ".claude/skills/{skill}/SKILL.md"
+    gate: "G030-dsh-output"
+
+# 必填文件清单（按生产顺序排列）
+required_files:
+  - target: "proposal-spec.md"
+    source: generate
+    description: "用户可读构建方案 — DC-001 审批展示（借鉴做法的自然语言描述，不含 pattern ID）"
+
+  - target: "CLAUDE.md"
+    source: template
+    description: "[Project].md — 轻量总览"
+    template_variables: [project_id, project_name, version, automation_level, human_time_budget_daily, token_budget, tags]
+
+  - target: "phase/02-workflows/"
+    source: generate
+    description: "按 task_mode 选步骤骨架，每个 Phase 一个文件"
+
+  - target: "phase/gates/"
+    source: template
+    description: "至少 2 个: G003-readiness-score + G005-no-placeholders——runner.assets 模板物化（g025，零 LLM）：build-plan 条目标 generation: template + source 指 assets/templates/gates/ 模板，不经 LLM 生成循环。gate.retry_count 控制回退循环上限，与 workflow 步骤的 失败回退 字段协同"
+    template_assets:
+      - {file: "assets/templates/gates/G003-readiness-score.md", variables: [readiness_threshold]}
+      - {file: "assets/templates/gates/G005-no-placeholders.md", variables: []}
+    defaults:
+      - {id: G003, type: condition_check, condition: "readiness_score >= 58", blocking: true, retry_count: 3}
+      - {id: G005, type: condition_check, condition: "placeholder_count == 0", blocking: true, retry_count: 3}
+    failure_note: "gate.retry_count 限次 → workflow.失败回退 跳转目标步骤 → circuit_breaker.escalate_to 超限处理"
+
+  - target: "phase/review/"
+    source: generic_copy
+    description: "至少 1 个审查规则"
+    default: "matching-decision-review"
+
+  - target: ".claude/skills/"
+    source: asset_adapt
+    description: >-
+      从 assets 匹配+适配，至少 1 个。若 Step 1b 已注入 .claude/skills/rag-knowledge-search/，
+      该预置 skill 计入"至少 1 个"；build-plan 中相关条目必须标 generation: pre_staged
+      （executor 不重写、g025 只查存在、G029 审计内容），不得再声明 generate 条目。
+      platform ∈ {dsh, both} 时该条目的 DSH 落点是 dsh/skills/{skill}/（见 platforms.dsh），
+      不再写 .claude/skills/。
+
+  - target: ".claude/rules/"
+    source: generic_copy
+    description: "7 个通用规则文件"
+    files:
+      - {from: "assets/rules/anti-patterns.md", to: ".claude/rules/anti-patterns.md"}
+      - {from: "assets/rules/durable-context.md", to: ".claude/rules/durable-context.md"}
+      - {from: "assets/rules/skill-routing.md", to: ".claude/rules/skill-routing.md"}
+      - {from: "assets/rules/coding-style.md", to: ".claude/rules/coding-style.md"}
+      - {from: "assets/rules/security.md", to: ".claude/rules/security.md"}
+      - {from: "assets/rules/testing.md", to: ".claude/rules/testing.md"}
+      - {from: "assets/gates/hooks-config.json", to: ".claude/hooks/hooks.json"}
+
+  - target: ".claude/settings.json"
+    source: template
+    description: "runner.assets 模板物化（g025，零 LLM）：build-plan 条目标 generation: template + source: assets/templates/settings/settings.json.template；变量 {{write_scope_dir}}（写范围目录）须落入 build-plan frontmatter template_variables"
+
+  - target: "evaluation/pass-criteria.md"
+    source: template
+
+  - target: "phase/gates/gates.yaml"
+    source: generate
+    description: "产物门禁配置（声明性文档，产物 harness 无自动执行引擎）。按产出文件类型生成 trigger 映射，插件内置 gate 不写入此文件。"
+
+# 条件文件（触发时生成）
+conditional_files:
+  - {target: ".claude/agents/{role}.md", condition: "Q4 triggered", source: generate}
+  - {target: "{host}/schema/{entity}.schema.json | .claude/schemas/{entity}.schema.json",
+    condition: "DF1 in selected_patterns", source: generate,
+    note: "哪里用放哪里: 单一消费者→宿主目录(skill 内或 agents 旁); 多消费者→.claude/schemas/; 废止根级 schemas/ 平铺"}
+  - {target: ".claude/agents/{role}.md", condition: "build_type_decision.subagents 非空(Q4/S1-S4)", source: generate}
+
+# 12 类任务模式的 workflow 步骤骨架
+workflow_skeletons:
+  exploration_definition: [输入扫描, 知识检索, 多Agent辩论, 结构化输出, 人类裁决]
+  implementation_construction: [加载约束, 契约设计, 蜂群编码, 评审裁决, 意图审查]
+  verification_validation: [左移设计, 冒烟测试, 系统测试, 多维测试, 争议仲裁, 逃逸分析]
+  efficiency_infrastructure: [自动化选型, 脚本自愈, ROI监控, 流水线门禁, 环境监控]
+  consensus_communication: [数据汇总, 差异化摘要, 人类裁切, 压力彩排, 现场演示]
+  routing_distribution: [输入解析, 路由查表, 目标分发, 结果汇聚, 兜底处理]
+  monitoring_response: [加载配置, 持续巡检, 分级告警, 推送静默, 质量报告]
+  fault_diagnosis_recovery: [告警接收, 上下文收集, 逐层定位, 根因假设, 分级恢复, 验证关闭]
+  change_execution: [工单验证, 备份快照, 分步执行, 逐步验证, 异常回滚, 变更报告]
+  information_processing: [信息拉取, 聚类分组, 优先级分类, 内容摘要, 草稿生成, 每日简报]
+  scheduling_coordination: [需求解析, 可用性分析, 冲突解决, 发起邀请, 持续协调]
+  retrieval_integration: [需求解析, 多源检索, 交叉验证, 整合输出]

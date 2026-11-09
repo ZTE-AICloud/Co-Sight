@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/favicon.svg" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#6366f1" />
+    <title>Co-Sight Viewer · 观测</title>
+    <meta
+      name="description"
+      content="Open-source agent observability for Claude Code: live sessions, runs, events, tool calls, cost tracking, and WebSocket updates."
+    />
+    <meta
+      name="keywords"
+      content="Co-Sight Viewer, agent observability, Claude Code, AI agent monitoring, real-time dashboard, session tracking, activity feed, analytics, cost tracking, token usage, WebSocket"
+    />
+    <meta name="author" content="Co-Sight Viewer contributors" />
+    <meta name="robots" content="index, follow" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Co-Sight Viewer" />
+    <meta property="og:title" content="Co-Sight Viewer — Agent Observability" />
+    <meta
+      property="og:description"
+      content="Open-source agent observability for Claude Code: live sessions, runs, events, tool calls, cost tracking, and WebSocket updates."
+    />
+    <meta property="og:image" content="/og-image.svg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:type" content="image/svg+xml" />
+    <meta property="og:image:alt" content="Co-Sight Viewer — agent observability dashboard" />
+
+    <!-- Twitter / X Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Co-Sight Viewer — Agent Observability" />
+    <meta
+      name="twitter:description"
+      content="Open-source agent observability for Claude Code: live sessions, runs, events, tool calls, cost tracking, and WebSocket updates."
+    />
+    <meta name="twitter:image" content="/og-image.svg" />
+    <meta name="twitter:image:alt" content="Co-Sight Viewer — agent observability dashboard" />
+
+    <!-- JSON-LD structured data -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Co-Sight Viewer",
+        "description": "Open-source agent observability for Claude Code. Tracks sessions, runs, tool events, token usage, cost tracking, and browser notifications with live WebSocket push.",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "Windows, macOS, Linux",
+        "softwareVersion": "1.0.0",
+        "license": "https://www.apache.org/licenses/LICENSE-2.0",
+        "featureList": "Live sessions, Run timeline, Agent activity feed, Tool call events, Token usage analytics, Cost tracking, Browser notifications, WebSocket live updates, CLI statusline"
+      }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Geist Sans + Geist Mono：Linear / Vercel 招牌字体，几何无衬线，字怀极开阔 -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=Geist+Mono:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <!-- 亮色模式初始化：个人版固定使用亮色主题，避免闪烁 -->
+    <script>
+      (function() {
+        // cosight-session-viewer 个人版：始终使用亮色主题
+        // 确保不添加 dark class，即使 localStorage 中有旧的暗色偏好
+        try {
+          document.documentElement.classList.remove('dark');
+        } catch (e) {
+          // 出错时不做任何处理，保持亮色
+        }
+      })();
+    </script>
+  </head>
+  <body class="bg-surface-0 text-primary antialiased">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

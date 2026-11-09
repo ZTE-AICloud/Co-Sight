@@ -1,0 +1,72 @@
+# adapted-assets.yaml — pr-security-reviewer
+# 3b 逐资产五维分析（保留/定制/扩展/替换/删除）
+adapted_at: "2026-10-05T03:50:00Z"
+
+assets:
+  # ── 自定义扫描器（无现成资产，custom_build）──
+  - target: .claude/agents/secret-scanner.md
+    base_asset: null
+    build: custom_build
+    patterns: [S1]
+    adaptations:
+      保留: "标准 subagent frontmatter 契约（name/description/tools/forbidden_inputs/maxTurns）"
+      定制: "职责限定密钥硬编码维度（API key/token/密码/私钥模式）；critical-only 判定"
+      扩展: "新增密钥模式清单（aws_access_key_id、slack token、pem 私钥头、连接串口令）"
+      替换: null
+      删除: null
+    rationale: "S1 独立维度，资产库无密钥专项扫描器，按 subagent 工序模板新建"
+
+  - target: .claude/agents/injection-scanner.md
+    base_asset: null
+    build: custom_build
+    patterns: [S1]
+    adaptations:
+      保留: "标准 subagent frontmatter 契约"
+      定制: "职责限定注入维度（SQL/命令/模板注入）；critical-only 判定"
+      扩展: "新增注入特征清单（字符串拼接 SQL、exec/eval/system 调用、用户输入直插命令）"
+      替换: null
+      删除: null
+    rationale: "S1 独立维度，资产库无注入专项扫描器，按 subagent 工序模板新建"
+
+  # ── security-reviewer：asset_adapt from critic.md ──
+  - target: .claude/agents/security-reviewer.md
+    base_asset: knowledge/assets/agent-definitions/critic.md
+    build: asset_adapt
+    patterns: [G1, S2]
+    adaptations:
+      保留: "对抗审查 + 上下文隔离 + 回压重试的 G1 骨架；forbidden_inputs 隔离声明"
+      定制: "审查对象从通用产出改为三维扫描器的 findings；复核 critical 判定与误报（干净 diff 不得报 critical）"
+      扩展: "新增 DF1 校验职责：发现条目必须符合 security-findings.schema.json 四必填字段"
+      替换: "审查维度表替换为安全维度（密钥/注入/危险配置）"
+      删除: "删除与构建/编码相关的通用检查项（本 agent 只审安全）"
+    rationale: "G1 机制候选「独立 Reviewer SubAgent + 回压协议」的落地；critic.md 是最贴近的基线资产"
+
+  # ── CD2 语义参考 code-reviewer.md（不直接产出文件）──
+  - target: "(语义参考) CLAUDE.md CD2 安全约束节"
+    base_asset: knowledge/assets/agent-definitions/code-reviewer.md
+    build: reference_only
+    patterns: [CD2]
+    adaptations:
+      保留: "只读审查 + 不修改被审对象的隔离语义"
+      定制: "落到本 agent：禁止执行被审代码、禁止写被审仓库、仅写报告文件"
+    rationale: "CD2 物化到 CLAUDE.md 安全约束节，不生成独立资产文件"
+
+  # ── manifest 通用规则（generic_copy，无适配）──
+  - target: .claude/rules/ + .claude/hooks/hooks.json
+    base_asset: knowledge/assets/rules/*.md + knowledge/assets/gates/hooks-config.json
+    build: generic_copy
+    patterns: [K1, DF1, IT1]
+    adaptations: {保留: 全部, 定制: null, 扩展: null, 替换: null, 删除: null}
+    rationale: "通用规则与 hook 配置原样拷贝（g025 确定性直拷，跳过 G014）"
+
+  - target: phase/review/matching-decision-review.md
+    base_asset: phase/review/matching-decision-review.md
+    build: generic_copy
+    patterns: []
+    adaptations: {保留: 全部, 定制: null, 扩展: null, 替换: null, 删除: null}
+    rationale: "agent-output-standard 默认审查规则，REPO_ROOT 内模板直拷"
+
+hooks_integrity_check:
+  asset: knowledge/assets/gates/hooks-config.json
+  command_refs: []
+  verdict: "无 command 外部脚本引用，整包=单文件，无缺包风险"

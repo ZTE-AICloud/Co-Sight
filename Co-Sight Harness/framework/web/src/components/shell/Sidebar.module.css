@@ -1,0 +1,208 @@
+/*
+ * 侧栏。[稿] 宽 280、导航项 248×40（左右各留 16）。
+ *
+ * 底色用 --color-canvas（浅蓝白）而不是白：
+ * 1) 稿中侧栏区没有背景矩形，颜色取自画板画布，所以这本来就是"画布色"；
+ * 2) 选中导航项是白胶囊 + --shadow-item，白底侧栏上白胶囊根本看不出来。
+ */
+
+.sidebar {
+  /* 拖拽手柄的定位基准（.handle 用 right: -4px 骑在侧栏右缘上）。 */
+  position: relative;
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  /*
+   * **宽度不在这里**：展开宽度可以在 264–420 之间拖拽、折叠时是 56，三种情况都由
+   * 组件写成内联样式（见 src/lib/sidebarWidth.ts 与 Sidebar.tsx）。
+   * 留一个固定宽度在这里只会变成第二个真相，而且改的时候很容易忘了改那个。
+   */
+  height: 100%;
+  padding: 0 16px;
+  background: var(--color-canvas);
+  transition: width var(--duration-normal) var(--ease-out);
+}
+
+/*
+ * 拖拽过程中关掉宽度过渡。
+ * 过渡是给"折叠/展开"这种一次性变化用的；拖拽时宽度每帧都在变，再过渡一次
+ * 就是让侧栏慢慢追赶鼠标——手感会变成"拖不动"。
+ */
+.resizing {
+  transition: none;
+}
+
+.collapsed {
+  padding: 0 8px;
+}
+
+/* ===================== 字标 ===================== */
+
+.brand {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 4px;
+  padding-top: 20px;
+  padding-bottom: 16px;
+}
+
+.brandText {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  /* 与折叠按钮的图标光学对齐：图标中心比文字基线略高一点。 */
+  padding-top: 2px;
+}
+
+.wordmark {
+  color: var(--text-wordmark);
+  font-family: var(--font-brand);
+  font-size: var(--fs-wordmark);
+  font-weight: var(--fw-bold);
+  line-height: 1.2;
+}
+
+.subtitle {
+  margin-top: 2px;
+  color: var(--text-secondary);
+  font-size: var(--fs-sidebar-sub);
+  line-height: var(--lh-sidebar-sub);
+}
+
+.collapsedBrand {
+  justify-content: center;
+}
+
+/* ===================== 导航 ===================== */
+
+.scroll {
+  /* 导航 + 历史共用一个滚动区，否则历史项多起来时会把导航挤出去。 */
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--nav-item-gap);
+}
+
+/* ===================== 底部：工作区入口 + 设置入口 ===================== */
+
+.footer {
+  flex: none;
+  border-top: 1px solid var(--border-sidebar);
+  padding: 12px 0;
+}
+
+/*
+ * 工作区入口与设置入口共用一套骨架（宽度、高度、圆角、悬停底色）——
+ * 它们都是"底部的一行全局上下文"，长得不一样只会让人觉得其中一个坏了。
+ * 设置入口此前是「本地用户」行（头像 + 用户名 + 齿轮），v1 无登录、那一行上
+ * 没有真信息，换成了直接的「设置」。
+ */
+.settingsRow,
+.workspaceRow,
+.guideRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  /* 跟随侧栏内容区（侧栏宽可拖拽）。 */
+  width: 100%;
+  height: var(--history-item-h);
+  padding: 0 8px;
+  border: none;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--text-heading);
+  font-family: var(--font-regular);
+  font-size: var(--fs-label);
+  line-height: var(--lh-label);
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color var(--duration-fast) var(--ease-out);
+}
+
+.settingsRow:hover,
+.workspaceRow:hover,
+.guideRow:hover {
+  background: var(--color-hover);
+}
+
+/*
+ * 「使用说明」是链接而不是按钮：它换的是主面板里的页面，不是弹窗。
+ * 当前停在这一页时给一个和导航项同色的浅底，用户能确认"我已经在说明页里"。
+ */
+.guideRow[aria-current='page'] {
+  background: var(--color-selected-soft);
+  color: var(--color-primary-text);
+}
+
+/* 与下面的设置入口分开一点点：相邻但没有关系的两件事。 */
+.guideRow {
+  margin-bottom: 4px;
+}
+
+/* 与下面的「使用说明」分开一点点：相邻但没有关系的两件事。 */
+.workspaceRow {
+  margin-bottom: 4px;
+}
+
+.workspaceName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* 还没有工作区时显示「未选择工作区」——次要色，因为这是"待选择"而不是错误。 */
+.workspaceNameEmpty {
+  color: var(--text-secondary);
+}
+
+/* 文件夹图标常驻：折叠态下它是这一行唯一的表意符号。 */
+.workspaceIcon {
+  flex: none;
+  color: var(--text-secondary);
+}
+
+/*
+ * 右侧的下拉箭头表示"点了可以从一列里挑一个"。这与设置入口**刻意不同**：
+ * 那里用齿轮，因为它的动作是"打开设置"而不是"展开一列候选"。
+ */
+.workspaceChevron {
+  flex: none;
+  color: var(--text-secondary);
+}
+
+/*
+ * 齿轮是这一行唯一的表意符号，所以它不吃次要色以外的差别——收起态下整行只剩它。
+ * 稿里这里是下拉箭头，换成齿轮是因为动作是"打开设置"，箭头会让人以为要展开菜单。
+ */
+.settingsIcon,
+.guideIcon {
+  flex: none;
+  color: var(--text-secondary);
+}
+
+.settingsLabel,
+.guideLabel {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.collapsedSettingsRow,
+.collapsedWorkspaceRow,
+.collapsedGuideRow {
+  width: var(--nav-item-h);
+  justify-content: center;
+  padding: 0;
+}

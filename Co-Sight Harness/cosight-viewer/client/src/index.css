@@ -1,0 +1,2816 @@
+/**
+ * @file index.css
+ * @description Global styles and Tailwind CSS configuration for the application.
+ * Supports both light (default) and dark themes via CSS variables.
+ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---- Theme: Light (default) ---- */
+:root {
+  --bg-base: 250, 251, 252;       /* #fafbfc */
+  --surface-0: 241, 245, 249;     /* #f1f5f9 */
+  --surface-1: 255, 255, 255;     /* #ffffff */
+  --surface-2: 248, 250, 252;     /* #f8fafc */
+  --surface-3: 241, 245, 249;     /* #f1f5f9 */
+  --surface-4: 226, 232, 240;     /* #e2e8f0 */
+  --surface-5: 203, 213, 225;     /* #cbd5e1 */
+  --border: 203, 213, 225;        /* #cbd5e1 (slate-300) */
+  --border-light: 226, 232, 240;  /* #e2e8f0 (slate-200) */
+  --accent: 99, 102, 241;         /* #6366f1 */
+  --accent-hover: 129, 140, 248;  /* #818cf8 */
+  --text-primary: 15, 23, 42;     /* #0f172a (slate-900) */
+  --text-secondary: 30, 41, 59;   /* #1e293b (slate-800) */
+  --text-tertiary: 51, 65, 85;    /* #334155 (slate-700) */
+  --text-muted: 71, 85, 105;      /* #475569 (slate-600) */
+  --text-faint: 100, 116, 139;    /* #64748b (slate-500) */
+  --wf-line-default: 203, 213, 225; /* slate-300 */
+  --wf-subflow-border: 226, 232, 240; /* slate-200 */
+  --wf-subflow-bg: 248, 250, 252;    /* slate-50 */
+  --scrollbar-thumb: 148, 163, 184;
+  --scrollbar-track: 241, 245, 249;
+  --selection-bg: 99, 102, 241;
+  --selection-text: 248, 250, 252;
+}
+
+/* ============================================================
+   Theme: Dark — "Awwwards-Tier Ethereal Glass" v2
+   灵感：Linear / Vercel Dashboard / Arc Browser / Cursor
+   设计语言：OLED 深邃底 + 4 层环境辉光 + 浮岛玻璃 Nav
+          + Double-Bezel 卡片 + 紫光霓虹徽章 + 胶片噪点
+   ============================================================ */
+.dark {
+  /* ==== 底色层（OLED + 渐进 5-6% 亮度差） ==== */
+  --bg-base: 8, 9, 14;                /* #08090e - 主背景（最深） */
+  --bg-deep: 4, 5, 10;                /* #04050a - 滚动下方透出的"深渊" */
+  --surface-0: 13, 15, 22;            /* #0d0f16 - 分割区/分隔 */
+  --surface-1: 19, 22, 31;            /* #13161f - 卡片默认 */
+  --surface-2: 26, 30, 41;            /* #1a1e29 - 输入框/次级卡片 */
+  --surface-3: 34, 38, 51;            /* #222633 - 悬停态 */
+  --surface-4: 43, 48, 63;            /* #2b303f - 活跃态 */
+  --surface-5: 54, 60, 78;            /* #363c4e - 最高层 */
+
+  /* ==== 边框（极淡 hairline） ==== */
+  --border: 35, 39, 52;               /* #232734 - 默认描边 */
+  --border-light: 55, 60, 78;         /* #373c4e - 悬停描边 */
+  --border-glow: 168, 162, 255;       /* 紫色描边（focus） */
+
+  /* ==== 文字（暖白渐变） ==== */
+  --text-primary: 247, 248, 252;      /* #f7f8fc - 主文字 */
+  --text-secondary: 215, 219, 230;    /* #d7dbe6 - 次要（提亮） */
+  --text-tertiary: 190, 195, 210;     /* #bec3d2 - 辅助（大幅提亮） */
+  --text-muted: 170, 175, 190;        /* #aaafbe - 弱化（大幅提亮） */
+  --text-faint: 155, 160, 175;        /* #9ba0af - 最淡（大幅提亮，保证暗色可读） */
+
+  /* ==== 工作流组件（暗色适配） ==== */
+  --wf-line-default: 55, 60, 78;     /* #373c4e - 暗色连线 */
+  --wf-subflow-border: 55, 60, 78;   /* #373c4e - 子流程边框 */
+  --wf-subflow-bg: 15, 18, 26;       /* #0f121a - 子流程背景（略深于 surface-0） */
+
+  /* ==== 强调色（薰衣草紫 - Linear 招牌色） ==== */
+  --accent: 168, 162, 255;            /* #a8a2ff - 主紫（亮、贵气） */
+  --accent-hover: 188, 182, 255;      /* #bcb6ff - 悬停紫 */
+  --accent-soft: 120, 119, 198;       /* #7877c6 - 柔化版 */
+  --accent-deep: 88, 78, 200;         /* #584ec8 - 深紫（pressed） */
+  --accent-glow: 168, 162, 255;
+
+  /* ==== 状态色（克制、不刺眼） ==== */
+  --success: 80, 220, 158;            /* #50dc9e - 翠绿（不刺眼） */
+  --warning: 240, 184, 102;           /* #f0b866 - 琥珀 */
+  --danger: 240, 113, 138;            /* #f0718a - 玫红 */
+  --info: 130, 175, 240;              /* #82aff0 - 天蓝 */
+
+  /* ==== 滚动条 ==== */
+  --scrollbar-thumb: 56, 62, 80;
+  --scrollbar-track: 13, 15, 22;
+
+  /* ==== 选区 ==== */
+  --selection-bg: 168, 162, 255;
+  --selection-text: 8, 9, 14;
+
+  /* ==== 全局动效曲线（统一的高级弹簧感） ==== */
+  --ease-fluid: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-magnetic: cubic-bezier(0.5, 0, 0, 1);
+  --ease-soft: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ============================================================
+   Body —— 暗色灵魂：纯色底 + 文字基色
+   网格/辉光/噪点全部在 ::before 伪元素上（v3 升级）
+   ============================================================ */
+.dark body {
+  background-color: rgb(var(--bg-base)) !important;
+  color: rgb(var(--text-primary)) !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* ============================================================
+   全面接管 surface 调色板（让所有 bg-surface-N 类都生效）
+   ============================================================ */
+/* ============================================================
+   v7 暗色下所有 surface 都加紫色顶部微光（融入背景，不再悬浮）
+   ============================================================ */
+.dark .bg-surface-0 {
+  background:
+    linear-gradient(180deg,
+      rgba(168, 162, 255, 0.04) 0%,
+      transparent 25%),
+    rgb(var(--surface-0)) !important;
+}
+.dark .bg-surface-1 {
+  background:
+    linear-gradient(180deg,
+      rgba(168, 162, 255, 0.035) 0%,
+      transparent 30%),
+    rgb(var(--surface-1)) !important;
+}
+.dark .bg-surface-2 {
+  background:
+    linear-gradient(180deg,
+      rgba(168, 162, 255, 0.025) 0%,
+      transparent 35%),
+    rgb(var(--surface-2)) !important;
+}
+.dark .bg-surface-3 {
+  background:
+    linear-gradient(180deg,
+      rgba(168, 162, 255, 0.02) 0%,
+      transparent 40%),
+    rgb(var(--surface-3)) !important;
+}
+.dark .bg-surface-4 { background-color: rgb(var(--surface-4)) !important; }
+.dark .bg-surface-5 { background-color: rgb(var(--surface-5)) !important; }
+
+/* 半透明 surface（用于嵌套卡片 / 浮岛） */
+.dark .bg-surface-1\/60 { background-color: rgba(var(--surface-1), 0.6) !important; }
+.dark .bg-surface-1\/80 { background-color: rgba(var(--surface-1), 0.8) !important; }
+.dark .bg-surface-2\/50 { background-color: rgba(var(--surface-2), 0.5) !important; }
+.dark .bg-surface-2\/40 { background-color: rgba(var(--surface-2), 0.4) !important; }
+.dark .bg-surface-2\/60 { background-color: rgba(var(--surface-2), 0.6) !important; }
+.dark .bg-surface-2\/80 { background-color: rgba(var(--surface-2), 0.8) !important; }
+.dark .bg-surface-3\/30 { background-color: rgba(var(--surface-3), 0.3) !important; }
+.dark .bg-surface-3\/50 { background-color: rgba(var(--surface-3), 0.5) !important; }
+
+/* 接管 border 系列 */
+.dark .border-border { border-color: rgba(var(--border), 0.5) !important; }
+.dark .border-border\/40 { border-color: rgba(var(--border), 0.4) !important; }
+.dark .border-border\/50 { border-color: rgba(var(--border), 0.5) !important; }
+.dark .border-border\/60 { border-color: rgba(var(--border), 0.6) !important; }
+.dark .border-border\/70 { border-color: rgba(var(--border-light), 0.7) !important; }
+.dark .hover\:border-border\/70:hover { border-color: rgba(var(--border-light), 0.7) !important; }
+.dark .hover\:bg-surface-4:hover { background-color: rgb(var(--surface-4)) !important; }
+.dark .hover\:bg-surface-1:hover { background-color: rgb(var(--surface-1)) !important; }
+
+/* 接管文字色（用 text-* Tailwind 类的地方） */
+.dark .text-white { color: #ffffff !important; }
+.dark .text-primary { color: rgb(var(--text-primary)) !important; }
+.dark .text-secondary { color: rgb(var(--text-secondary)) !important; }
+.dark .text-tertiary { color: rgb(var(--text-tertiary)) !important; }
+.dark .text-muted { color: rgb(var(--text-muted)) !important; }
+.dark .text-faint { color: rgb(var(--text-faint)) !important; }
+.dark .text-gray-400 { color: rgb(var(--text-tertiary)) !important; }
+.dark .text-gray-200 { color: rgb(var(--text-secondary)) !important; }
+
+/* 接管 placeholder */
+.dark .placeholder-muted::placeholder { color: rgb(var(--text-faint)) !important; }
+
+/* ============================================================
+   顶部 Nav 改造：Floating Island Glass（Skill Section 5A）
+   ============================================================ */
+/* Header 暗色下 100% 不透明 + 紫色底部光晕 */
+.dark header.sticky {
+  background: rgb(var(--surface-1)) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.04) inset,
+    0 8px 32px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Header 亮色下 100% 不透明 */
+header.sticky {
+  background: rgb(var(--surface-1)) !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
+}
+
+/* ============================================================
+   卡片：Double-Bezel 强化版
+   1) inset 顶部 1px 白 → 金属边缘反光
+   2) 0 1px 2px 黑 → 接触阴影
+   3) 0 16px 48px → 大范围投影
+   4) 0 0 0 1px 微亮描边 → hairline 强化
+   ============================================================ */
+.dark .card {
+  background-color: rgb(var(--surface-1)) !important;
+  border-color: rgba(var(--border), 0.4) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.15),
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    0 16px 48px rgba(0, 0, 0, 0.35) !important;
+  backdrop-filter: blur(12px) saturate(150%);
+  -webkit-backdrop-filter: blur(12px) saturate(150%);
+  transition: transform 0.5s var(--ease-fluid),
+              box-shadow 0.5s var(--ease-fluid),
+              background-color 0.3s var(--ease-fluid),
+              border-color 0.3s var(--ease-fluid);
+  position: relative;
+}
+
+.dark .card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(180deg,
+    rgba(255, 255, 255, 0.06) 0%,
+    rgba(255, 255, 255, 0) 50%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  pointer-events: none;
+}
+
+.dark .card-hover {
+  cursor: pointer;
+}
+
+.dark .card-hover:hover {
+  background-color: rgb(var(--surface-2)) !important;
+  border-color: rgba(var(--border-light), 0.6) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.15),
+    0 2px 4px rgba(0, 0, 0, 0.4),
+    0 24px 64px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(168, 162, 255, 0.08) !important;
+  transform: translateY(-2px);
+}
+
+.dark .card-hover:active {
+  transform: translateY(0) scale(0.998);
+  transition-duration: 0.1s;
+}
+
+/* ============================================================
+   主按钮：紫光 + 多层辉光（按进玻璃的物理感）
+   ============================================================ */
+.dark .btn-primary {
+  background: linear-gradient(180deg,
+    rgba(190, 184, 255, 1) 0%,
+    rgba(168, 162, 255, 1) 100%) !important;
+  color: rgb(var(--bg-deep)) !important;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.12),
+    0 0 0 1px rgba(168, 162, 255, 0.4),
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    0 8px 24px rgba(168, 162, 255, 0.3) !important;
+  transition: all 0.4s var(--ease-fluid) !important;
+}
+
+.dark .btn-primary:hover {
+  background: linear-gradient(180deg,
+    rgba(210, 204, 255, 1) 0%,
+    rgba(188, 182, 255, 1) 100%) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.12),
+    0 0 0 1px rgba(200, 195, 255, 0.6),
+    0 2px 4px rgba(0, 0, 0, 0.4),
+    0 12px 36px rgba(168, 162, 255, 0.45) !important;
+  transform: translateY(-1px);
+}
+
+.dark .btn-primary:active {
+  background: linear-gradient(180deg,
+    rgba(160, 154, 245, 1) 0%,
+    rgba(140, 134, 230, 1) 100%) !important;
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.25),
+    0 0 0 1px rgba(140, 134, 230, 0.5),
+    0 4px 12px rgba(120, 119, 198, 0.3) !important;
+  transform: translateY(0) scale(0.98);
+  transition-duration: 0.1s !important;
+}
+
+/* Ghost 按钮 */
+.dark .btn-ghost {
+  transition: all 0.3s var(--ease-fluid) !important;
+}
+
+.dark .btn-ghost:hover {
+  background-color: rgb(var(--surface-3)) !important;
+  color: rgb(var(--text-primary)) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+/* ============================================================
+   输入框：凹陷 + 紫色外晕（focus）
+   ============================================================ */
+.dark .input {
+  background-color: rgb(var(--surface-2)) !important;
+  border-color: rgba(var(--border), 0.5) !important;
+  box-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.35),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.02) !important;
+  transition: all 0.3s var(--ease-fluid) !important;
+}
+
+.dark .input:hover {
+  border-color: rgba(var(--border-light), 0.7) !important;
+}
+
+.dark .input:focus {
+  border-color: rgba(var(--accent), 0.6) !important;
+  background-color: rgb(var(--surface-1)) !important;
+  box-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.3),
+    0 0 0 4px rgba(168, 162, 255, 0.1),
+    0 0 0 1px rgba(168, 162, 255, 0.4) !important;
+  outline: none;
+}
+
+/* ============================================================
+   Badge：紫光霓虹边（Skill Section 4C 招牌）
+   ============================================================ */
+.dark .badge {
+  background-color: rgba(var(--surface-3), 0.6) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 0 0 0.5px rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* 状态徽章：active/working - blue */
+.dark .badge:has(> span.bg-blue-400),
+.dark .badge:has(> span.bg-blue-500) {
+  background-color: rgba(var(--info), 0.15) !important;
+  border-color: rgba(var(--info), 0.35) !important;
+}
+
+/* 状态徽章：completed/成功 - emerald */
+.dark .badge:has(> span.bg-emerald-400),
+.dark .badge:has(> span.bg-emerald-500) {
+  background-color: rgba(var(--success), 0.15) !important;
+  border-color: rgba(var(--success), 0.35) !important;
+}
+
+/* 状态徽章：waiting - yellow/amber */
+.dark .badge:has(> span.bg-yellow-400),
+.dark .badge:has(> span.bg-yellow-500),
+.dark .badge:has(> span.bg-amber-400),
+.dark .badge:has(> span.bg-amber-500) {
+  background-color: rgba(245, 158, 11, 0.15) !important;
+  border-color: rgba(245, 158, 11, 0.35) !important;
+}
+
+/* 状态徽章：completed - violet（保留，防止其他地方引用） */
+.dark .badge:has(> span.bg-violet-400),
+.dark .badge:has(> span.bg-violet-500) {
+  background-color: rgba(139, 92, 246, 0.15) !important;
+  border-color: rgba(139, 92, 246, 0.35) !important;
+}
+
+/* 状态徽章：error - red */
+.dark .badge:has(> span.bg-red-400),
+.dark .badge:has(> span.bg-red-500) {
+  background-color: rgba(var(--danger), 0.15) !important;
+  border-color: rgba(var(--danger), 0.35) !important;
+}
+
+/* 状态徽章：abandoned - slate */
+.dark .badge:has(> span.bg-slate-400),
+.dark .badge:has(> span.bg-slate-500) {
+  background-color: rgba(100, 116, 139, 0.15) !important;
+  border-color: rgba(100, 116, 139, 0.35) !important;
+}
+
+/* 强调色横线（active 导航） */
+.dark .border-accent { border-color: rgb(var(--accent)) !important; }
+.dark .text-accent { color: rgb(var(--accent)) !important; }
+.dark .bg-accent { background-color: rgb(var(--accent)) !important; }
+.dark .bg-accent\/15 { background-color: rgba(var(--accent), 0.15) !important; }
+.dark .bg-accent\/70 { background-color: rgba(var(--accent), 0.7) !important; }
+.dark .border-accent\/25 { border-color: rgba(var(--accent), 0.25) !important; }
+.dark .border-accent\/40 { border-color: rgba(var(--accent), 0.4) !important; }
+.dark .text-accent { color: rgb(var(--accent)) !important; }
+.dark .text-emerald-400 { color: rgb(var(--success)) !important; }
+.dark .text-indigo-600 { color: rgb(var(--accent-hover)) !important; }
+.dark .hover\:text-indigo-600:hover { color: rgb(var(--accent-hover)) !important; }
+.dark .hover\:bg-indigo-50:hover { background-color: rgba(var(--accent), 0.1) !important; }
+.dark .hover\:border-indigo-200:hover { border-color: rgba(var(--accent), 0.3) !important; }
+.dark .bg-indigo-100 { background-color: rgba(var(--accent), 0.15) !important; }
+.dark .text-indigo-700 { color: rgb(var(--accent-hover)) !important; }
+
+/* ============================================================
+   滚动条：极细胶囊 + 悬停变紫
+   ============================================================ */
+.dark *::-webkit-scrollbar-track {
+  background: rgb(var(--scrollbar-track));
+}
+
+.dark *::-webkit-scrollbar-thumb {
+  background: rgba(var(--scrollbar-thumb), 0.5);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  transition: background 0.2s var(--ease-fluid);
+}
+
+.dark *::-webkit-scrollbar-thumb:hover {
+  background: rgba(var(--accent), 0.5);
+  background-clip: padding-box;
+}
+
+/* 选区 */
+.dark ::selection {
+  background: rgba(var(--selection-bg), 0.35);
+  color: rgb(var(--selection-text));
+}
+
+.dark ::-moz-selection {
+  background: rgba(var(--selection-bg), 0.35);
+  color: rgb(var(--selection-text));
+}
+
+/* ============================================================
+   全局过渡（所有元素颜色/边框/阴影平滑过渡）
+   ============================================================ */
+.dark * {
+  transition-property: color, background-color, border-color, fill, stroke, opacity, box-shadow;
+  transition-duration: 200ms;
+  transition-timing-function: var(--ease-soft);
+}
+
+/* 但禁用在动画/过渡进行中的元素上的 transition（避免抖动） */
+.dark [class*="animate-"],
+.dark [class*="transition-"] {
+  transition-property: transform, opacity;
+  transition-duration: 0ms;
+}
+
+/* ============================================================
+   顶部主品牌色（紫渐变 Logo）增强
+   ============================================================ */
+.dark svg defs linearGradient stop:first-child { stop-color: rgb(168, 162, 255) !important; }
+.dark svg defs linearGradient stop:last-child { stop-color: rgb(188, 182, 255) !important; }
+
+/* ============================================================
+   暗色下：覆盖所有 Tailwind 调色板类（把亮色浅调映射为暗色调）
+   策略：浅色 50-200（背景）→ 暗色 950/900 + 低 alpha
+        中色 400-500（边框/文字）→ 暗色 300-400 调（更柔和）
+   ============================================================ */
+
+/* 红色（危险/警告）—— 玫红化 */
+.dark .bg-red-50   { background-color: rgba(240, 113, 138, 0.12) !important; }
+.dark .bg-red-100  { background-color: rgba(240, 113, 138, 0.15) !important; }
+.dark .bg-red-200  { background-color: rgba(240, 113, 138, 0.2)  !important; }
+.dark .bg-red-500  { background-color: rgb(240, 113, 138) !important; }
+.dark .bg-red-950  { background-color: rgba(240, 113, 138, 0.12) !important; }
+.dark .text-red-500   { color: rgb(240, 130, 152) !important; }
+.dark .text-red-600   { color: rgb(240, 130, 152) !important; }
+.dark .text-red-700   { color: rgb(240, 130, 152) !important; }
+.dark .text-red-400   { color: rgb(245, 145, 165) !important; }
+.dark .text-red-300   { color: rgb(248, 165, 180) !important; }
+.dark .border-red-200 { border-color: rgba(240, 113, 138, 0.3) !important; }
+.dark .border-red-500 { border-color: rgba(240, 113, 138, 0.5) !important; }
+.dark .border-red-500\/30 { border-color: rgba(240, 113, 138, 0.3) !important; }
+
+/* 绿色 / 翠绿（成功/在线） */
+.dark .bg-green-50  { background-color: rgba(80, 220, 158, 0.12) !important; }
+.dark .bg-green-500 { background-color: rgb(80, 220, 158) !important; }
+.dark .bg-emerald-50   { background-color: rgba(80, 220, 158, 0.12) !important; }
+.dark .bg-emerald-100  { background-color: rgba(80, 220, 158, 0.15) !important; }
+.dark .bg-emerald-200  { background-color: rgba(80, 220, 158, 0.2)  !important; }
+.dark .bg-emerald-500  { background-color: rgb(80, 220, 158) !important; }
+.dark .bg-emerald-500\/10 { background-color: rgba(80, 220, 158, 0.1) !important; }
+.dark .bg-emerald-500\/12 { background-color: rgba(80, 220, 158, 0.12) !important; }
+.dark .bg-emerald-500\/20 { background-color: rgba(80, 220, 158, 0.2) !important; }
+.dark .text-emerald-400 { color: rgb(100, 230, 175) !important; }
+.dark .text-emerald-300 { color: rgb(120, 235, 185) !important; }
+.dark .text-emerald-500 { color: rgb(80, 220, 158) !important; }
+.dark .text-emerald-600 { color: rgb(80, 220, 158) !important; }
+.dark .text-emerald-700 { color: rgb(80, 220, 158) !important; }
+.dark .border-emerald-200 { border-color: rgba(80, 220, 158, 0.3) !important; }
+.dark .border-emerald-500 { border-color: rgba(80, 220, 158, 0.4) !important; }
+.dark .border-emerald-500\/30 { border-color: rgba(80, 220, 158, 0.3) !important; }
+.dark .ring-emerald-500 { --tw-ring-color: rgba(80, 220, 158, 0.5) !important; }
+
+/* 蓝色（信息/链接）—— 静谧天蓝化 */
+.dark .bg-blue-50   { background-color: rgba(130, 175, 240, 0.12) !important; }
+.dark .bg-blue-100  { background-color: rgba(130, 175, 240, 0.15) !important; }
+.dark .bg-blue-200  { background-color: rgba(130, 175, 240, 0.2)  !important; }
+.dark .bg-blue-500  { background-color: rgb(130, 175, 240) !important; }
+.dark .bg-blue-600  { background-color: rgb(110, 160, 230) !important; }
+.dark .bg-blue-900  { background-color: rgba(130, 175, 240, 0.15) !important; }
+.dark .bg-blue-950  { background-color: rgba(130, 175, 240, 0.1)  !important; }
+.dark .text-blue-400 { color: rgb(140, 185, 245) !important; }
+.dark .text-blue-500 { color: rgb(130, 175, 240) !important; }
+.dark .text-blue-600 { color: rgb(130, 175, 240) !important; }
+.dark .text-blue-700 { color: rgb(140, 185, 245) !important; }
+.dark .text-blue-300 { color: rgb(165, 200, 250) !important; }
+.dark .border-blue-200 { border-color: rgba(130, 175, 240, 0.3) !important; }
+.dark .border-blue-500\/30 { border-color: rgba(130, 175, 240, 0.3) !important; }
+
+/* 紫色（accent）—— 用我们的薰衣草紫 */
+.dark .bg-indigo-50   { background-color: rgba(168, 162, 255, 0.12) !important; }
+.dark .bg-indigo-100  { background-color: rgba(168, 162, 255, 0.15) !important; }
+.dark .bg-indigo-500  { background-color: rgb(168, 162, 255) !important; }
+.dark .bg-indigo-600  { background-color: rgb(150, 145, 240) !important; }
+.dark .text-indigo-600 { color: rgb(168, 162, 255) !important; }
+.dark .text-indigo-700 { color: rgb(168, 162, 255) !important; }
+.dark .text-indigo-400 { color: rgb(180, 175, 255) !important; }
+.dark .text-indigo-300 { color: rgb(195, 190, 255) !important; }
+.dark .border-indigo-200 { border-color: rgba(168, 162, 255, 0.3) !important; }
+.dark .border-indigo-100 { border-color: rgba(168, 162, 255, 0.15) !important; }
+.dark .border-indigo-500\/30 { border-color: rgba(168, 162, 255, 0.3) !important; }
+
+/* 灰色（背景/边框/文字）—— 暗色 surface 化 */
+.dark .bg-gray-50   { background-color: rgb(var(--surface-2)) !important; }
+.dark .bg-gray-100  { background-color: rgb(var(--surface-3)) !important; }
+.dark .bg-gray-200  { background-color: rgb(var(--surface-4)) !important; }
+.dark .bg-gray-400  { background-color: rgb(var(--surface-5)) !important; }
+.dark .bg-gray-900  { background-color: rgb(var(--surface-0)) !important; }
+.dark .text-gray-200 { color: rgb(var(--text-secondary)) !important; }
+.dark .text-gray-300 { color: rgb(var(--text-secondary)) !important; }
+.dark .text-gray-400 { color: rgb(var(--text-tertiary)) !important; }
+.dark .text-gray-500 { color: rgb(var(--text-muted)) !important; }
+.dark .text-gray-600 { color: rgb(var(--text-muted)) !important; }
+.dark .text-gray-700 { color: rgb(var(--text-tertiary)) !important; }
+.dark .text-gray-900 { color: rgb(var(--text-primary)) !important; }
+.dark .border-gray-200 { border-color: rgba(var(--border), 0.4) !important; }
+.dark .border-gray-300 { border-color: rgba(var(--border), 0.5) !important; }
+.dark .border-gray-700 { border-color: rgba(var(--border-light), 0.5) !important; }
+.dark .hover\:bg-gray-50:hover { background-color: rgb(var(--surface-2)) !important; }
+.dark .hover\:bg-gray-100:hover { background-color: rgb(var(--surface-3)) !important; }
+.dark .hover\:bg-gray-200:hover { background-color: rgb(var(--surface-4)) !important; }
+.dark .hover\:text-gray-200:hover { color: rgb(var(--text-secondary)) !important; }
+.dark .hover\:text-gray-300:hover { color: rgb(var(--text-secondary)) !important; }
+.dark .hover\:text-gray-900:hover { color: rgb(var(--text-primary)) !important; }
+
+/* Slate 系列 */
+.dark .bg-slate-50 { background-color: rgb(var(--surface-2)) !important; }
+.dark .bg-slate-100 { background-color: rgb(var(--surface-3)) !important; }
+.dark .bg-slate-200 { background-color: rgb(var(--surface-4)) !important; }
+.dark .text-slate-400 { color: rgb(var(--text-tertiary)) !important; }
+.dark .text-slate-500 { color: rgb(var(--text-muted)) !important; }
+.dark .text-slate-600 { color: rgb(var(--text-muted)) !important; }
+.dark .text-slate-700 { color: rgb(var(--text-tertiary)) !important; }
+.dark .text-slate-900 { color: rgb(var(--text-primary)) !important; }
+.dark .border-slate-200 { border-color: rgba(var(--border), 0.4) !important; }
+.dark .border-slate-300 { border-color: rgba(var(--border), 0.5) !important; }
+
+/* Indigo hover 状态 */
+.dark .hover\:bg-indigo-50:hover { background-color: rgba(168, 162, 255, 0.1) !important; }
+.dark .hover\:border-indigo-200:hover { border-color: rgba(168, 162, 255, 0.3) !important; }
+.dark .hover\:text-indigo-600:hover { color: rgb(168, 162, 255) !important; }
+
+/* ============================================================
+   v5 全局暗色审计修复 —— 系统性消除"暗色反模式"
+   ============================================================ */
+
+/* ── 琥珀色（amber）- 警告/等待 ── */
+.dark .bg-amber-50   { background-color: rgba(240, 184, 102, 0.12) !important; }
+.dark .bg-amber-100  { background-color: rgba(240, 184, 102, 0.15) !important; }
+.dark .bg-amber-200  { background-color: rgba(240, 184, 102, 0.2)  !important; }
+.dark .bg-amber-500  { background-color: rgb(240, 184, 102) !important; }
+.dark .bg-amber-400  { background-color: rgb(245, 195, 125) !important; }
+.dark .bg-amber-400\/10 { background-color: rgba(240, 184, 102, 0.1) !important; }
+.dark .text-amber-400 { color: rgb(245, 195, 125) !important; }
+.dark .text-amber-500 { color: rgb(240, 184, 102) !important; }
+.dark .text-amber-600 { color: rgb(240, 184, 102) !important; }
+.dark .text-amber-700 { color: rgb(240, 184, 102) !important; }
+.dark .border-amber-200 { border-color: rgba(240, 184, 102, 0.3) !important; }
+.dark .border-amber-400 { border-color: rgba(240, 184, 102, 0.5) !important; }
+.dark .border-l-amber-400 { border-left-color: rgb(240, 184, 102) !important; }
+/* hover 状态：比默认 amber-100 更柔和，避免刺眼 */
+.dark .hover\:bg-amber-100:hover { background-color: rgba(240, 184, 102, 0.18) !important; }
+.dark .text-amber-800 { color: rgb(210, 170, 110) !important; }
+.dark .text-amber-900 { color: rgb(210, 170, 110) !important; }
+
+/* ── 紫色（violet / purple）- 信息/装饰 ── */
+.dark .bg-violet-50   { background-color: rgba(180, 160, 240, 0.12) !important; }
+.dark .bg-violet-100  { background-color: rgba(180, 160, 240, 0.15) !important; }
+.dark .bg-violet-500  { background-color: rgb(180, 160, 240) !important; }
+.dark .text-violet-400 { color: rgb(190, 175, 245) !important; }
+.dark .text-violet-500 { color: rgb(180, 160, 240) !important; }
+.dark .text-violet-600 { color: rgb(180, 160, 240) !important; }
+.dark .border-violet-200 { border-color: rgba(180, 160, 240, 0.3) !important; }
+.dark .border-violet-500\/30 { border-color: rgba(180, 160, 240, 0.3) !important; }
+.dark .border-violet-500\/50 { border-color: rgba(180, 160, 240, 0.5) !important; }
+.dark .focus\:border-violet-500\/50:focus { border-color: rgba(180, 160, 240, 0.5) !important; }
+
+.dark .bg-purple-50   { background-color: rgba(190, 150, 230, 0.12) !important; }
+.dark .bg-purple-100  { background-color: rgba(190, 150, 230, 0.15) !important; }
+.dark .bg-purple-200  { background-color: rgba(190, 150, 230, 0.2)  !important; }
+.dark .bg-purple-500  { background-color: rgb(190, 150, 230) !important; }
+.dark .bg-purple-900  { background-color: rgba(190, 150, 230, 0.15) !important; }
+.dark .text-purple-400 { color: rgb(200, 165, 235) !important; }
+.dark .text-purple-500 { color: rgb(190, 150, 230) !important; }
+.dark .text-purple-600 { color: rgb(200, 170, 240) !important; }
+.dark .text-purple-700 { color: rgb(210, 180, 245) !important; }
+.dark .text-purple-800 { color: rgb(210, 180, 245) !important; }
+.dark .border-purple-100 { border-color: rgba(190, 150, 230, 0.2) !important; }
+.dark .border-purple-200 { border-color: rgba(190, 150, 230, 0.3) !important; }
+.dark .focus\:border-purple-500\/50:focus { border-color: rgba(190, 150, 230, 0.5) !important; }
+
+/* ── 橙色（orange）- 中等警告 ── */
+.dark .bg-orange-50   { background-color: rgba(245, 165, 100, 0.12) !important; }
+.dark .bg-orange-100  { background-color: rgba(245, 165, 100, 0.15) !important; }
+.dark .bg-orange-200  { background-color: rgba(245, 165, 100, 0.2)  !important; }
+.dark .bg-orange-400  { background-color: rgb(245, 165, 100) !important; }
+.dark .bg-orange-500  { background-color: rgb(240, 155, 90) !important; }
+.dark .bg-orange-900  { background-color: rgba(245, 165, 100, 0.15) !important; }
+.dark .text-orange-400 { color: rgb(248, 180, 120) !important; }
+.dark .text-orange-500 { color: rgb(245, 165, 100) !important; }
+.dark .text-orange-600 { color: rgb(245, 165, 100) !important; }
+.dark .border-orange-200 { border-color: rgba(245, 165, 100, 0.3) !important; }
+
+/* ── 粉色（pink）- 装饰/次要 ── */
+.dark .bg-pink-50   { background-color: rgba(240, 130, 170, 0.12) !important; }
+.dark .bg-pink-100  { background-color: rgba(240, 130, 170, 0.15) !important; }
+.dark .bg-pink-500  { background-color: rgb(240, 130, 170) !important; }
+.dark .text-pink-400 { color: rgb(245, 150, 185) !important; }
+.dark .text-pink-500 { color: rgb(240, 130, 170) !important; }
+.dark .text-pink-600 { color: rgb(240, 130, 170) !important; }
+.dark .border-pink-200 { border-color: rgba(240, 130, 170, 0.3) !important; }
+
+/* ── 黄色（yellow）- 弱警告 ── */
+.dark .bg-yellow-50   { background-color: rgba(230, 195, 80, 0.12) !important; }
+.dark .bg-yellow-100  { background-color: rgba(230, 195, 80, 0.15) !important; }
+.dark .bg-yellow-400  { background-color: rgb(230, 195, 80) !important; }
+.dark .bg-yellow-500  { background-color: rgb(225, 190, 70) !important; }
+.dark .text-yellow-400 { color: rgb(235, 205, 100) !important; }
+.dark .text-yellow-500 { color: rgb(230, 195, 80) !important; }
+.dark .text-yellow-600 { color: rgb(230, 195, 80) !important; }
+.dark .border-yellow-200 { border-color: rgba(230, 195, 80, 0.3) !important; }
+
+/* ── Stone / Zinc / Neutral（中性灰）── */
+.dark .bg-stone-50 { background-color: rgb(var(--surface-2)) !important; }
+.dark .bg-stone-100 { background-color: rgb(var(--surface-3)) !important; }
+.dark .bg-stone-200 { background-color: rgb(var(--surface-4)) !important; }
+.dark .text-stone-500 { color: rgb(var(--text-muted)) !important; }
+.dark .text-stone-600 { color: rgb(var(--text-muted)) !important; }
+.dark .text-stone-700 { color: rgb(var(--text-tertiary)) !important; }
+
+.dark .bg-zinc-50 { background-color: rgb(var(--surface-2)) !important; }
+.dark .bg-zinc-100 { background-color: rgb(var(--surface-3)) !important; }
+.dark .bg-zinc-200 { background-color: rgb(var(--surface-4)) !important; }
+.dark .bg-zinc-800 { background-color: rgb(var(--surface-0)) !important; }
+.dark .bg-zinc-900 { background-color: rgb(var(--surface-0)) !important; }
+.dark .text-zinc-400 { color: rgb(var(--text-tertiary)) !important; }
+.dark .text-zinc-500 { color: rgb(var(--text-muted)) !important; }
+.dark .text-zinc-600 { color: rgb(var(--text-muted)) !important; }
+.dark .text-zinc-700 { color: rgb(var(--text-tertiary)) !important; }
+.dark .border-zinc-200 { border-color: rgba(var(--border), 0.4) !important; }
+
+.dark .bg-neutral-50 { background-color: rgb(var(--surface-2)) !important; }
+.dark .bg-neutral-100 { background-color: rgb(var(--surface-3)) !important; }
+.dark .bg-neutral-800 { background-color: rgb(var(--surface-0)) !important; }
+.dark .bg-neutral-900 { background-color: rgb(var(--surface-0)) !important; }
+.dark .text-neutral-400 { color: rgb(var(--text-tertiary)) !important; }
+.dark .text-neutral-500 { color: rgb(var(--text-muted)) !important; }
+.dark .text-neutral-600 { color: rgb(var(--text-muted)) !important; }
+.dark .text-neutral-700 { color: rgb(var(--text-tertiary)) !important; }
+
+/* ── 灰色 / 暗灰系（gray-600/700/800/900）── */
+.dark .bg-gray-600 { background-color: rgb(var(--surface-5)) !important; }
+.dark .bg-gray-700 { background-color: rgb(var(--surface-4)) !important; }
+.dark .bg-gray-800 { background-color: rgb(var(--surface-2)) !important; }
+.dark .text-gray-800 { color: rgb(var(--text-primary)) !important; }
+.dark .text-gray-100 { color: rgb(var(--text-primary)) !important; }
+.dark .border-gray-100 { border-color: rgba(var(--border), 0.4) !important; }
+.dark .border-gray-400 { border-color: rgba(var(--border-light), 0.5) !important; }
+.dark .border-gray-500 { border-color: rgba(var(--border-light), 0.5) !important; }
+.dark .border-gray-600 { border-color: rgba(var(--border-light), 0.6) !important; }
+.dark .border-gray-800 { border-color: rgba(255, 255, 255, 0.06) !important; }
+.dark .placeholder\:text-gray-500::placeholder { color: rgb(var(--text-faint)) !important; }
+
+/* ── 白色（bg-white / border-white / text-white）── */
+.dark .bg-white     { background-color: rgb(var(--surface-1)) !important; }
+.dark .bg-white\/60 { background-color: rgba(var(--surface-1), 0.6) !important; }
+.dark .bg-white\/80 { background-color: rgba(var(--surface-1), 0.8) !important; }
+.dark .border-white { border-color: rgba(255, 255, 255, 0.06) !important; }
+.dark .border-white\/10 { border-color: rgba(255, 255, 255, 0.1) !important; }
+.dark .border-white\/20 { border-color: rgba(255, 255, 255, 0.08) !important; }
+.dark .border-white\/40 { border-color: rgba(255, 255, 255, 0.06) !important; }
+.dark .border-white\/50 { border-color: rgba(255, 255, 255, 0.08) !important; }
+.dark .border-white\/60 { border-color: rgba(255, 255, 255, 0.08) !important; }
+.dark .text-white   { color: rgb(var(--text-primary)) !important; }
+.dark .ring-white   { --tw-ring-color: rgba(255, 255, 255, 0.1) !important; }
+.dark .divide-white > * + * { border-color: rgba(255, 255, 255, 0.06) !important; }
+
+
+/* ── Indigo 额外覆盖 ── */
+.dark .bg-indigo-500\/10 { background-color: rgba(168, 162, 255, 0.1) !important; }
+.dark .bg-indigo-500\/20 { background-color: rgba(168, 162, 255, 0.2) !important; }
+.dark .bg-indigo-500\/30 { background-color: rgba(168, 162, 255, 0.3) !important; }
+.dark .bg-indigo-900\/30 { background-color: rgba(168, 162, 255, 0.15) !important; }
+.dark .border-indigo-500\/20 { border-color: rgba(168, 162, 255, 0.2) !important; }
+.dark .border-indigo-500\/30 { border-color: rgba(168, 162, 255, 0.3) !important; }
+.dark .border-indigo-500\/50 { border-color: rgba(168, 162, 255, 0.5) !important; }
+
+/* ── 蓝色 900/950 暗化 ── */
+.dark .bg-blue-900 { background-color: rgba(130, 175, 240, 0.15) !important; }
+.dark .bg-blue-950 { background-color: rgba(130, 175, 240, 0.1)  !important; }
+.dark .bg-blue-900\/30 { background-color: rgba(130, 175, 240, 0.15) !important; }
+.dark .border-blue-900\/50 { border-color: rgba(130, 175, 240, 0.4) !important; }
+
+/* ── Slate 900/950 ── */
+.dark .bg-slate-900 { background-color: rgb(var(--surface-0)) !important; }
+.dark .bg-slate-950 { background-color: rgb(var(--surface-0)) !important; }
+
+/* ── 文字色 -blue-300 (浅蓝文字) ── */
+.dark .text-blue-300 { color: rgb(165, 200, 250) !important; }
+
+/* ── 红色 950 ── */
+.dark .bg-red-950 { background-color: rgba(240, 113, 138, 0.1) !important; }
+.dark .border-red-950 { border-color: rgba(240, 113, 138, 0.4) !important; }
+
+/* ── emerald 950 ── */
+.dark .bg-emerald-950 { background-color: rgba(80, 220, 158, 0.1) !important; }
+.dark .border-emerald-950 { border-color: rgba(80, 220, 158, 0.4) !important; }
+
+/* ── 反白文字（在紫蓝绿背景上的白色文字）── */
+.dark .text-white\/90 { color: rgb(var(--text-primary)) !important; }
+.dark .text-white\/70 { color: rgb(var(--text-secondary)) !important; }
+
+/* ── 移除所有暗色下纯白/亮白硬边 ── */
+.dark [class*="ring-1"]:not([class*="ring-accent"]):not([class*="ring-blue"]):not([class*="ring-emerald"]):not([class*="ring-red"]) {
+  --tw-ring-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* ── 边框统一暗色化：所有 Tailwind border-color 在 .dark 下默认走低 alpha ── */
+.dark .border { border-color: rgba(var(--border), 0.5) !important; }
+.dark .border-2 { border-color: rgba(var(--border), 0.5) !important; }
+
+/* ============================================================
+   修复"用户特别提到的具体问题"
+   ============================================================ */
+
+/* Settings 项目设置区：所有"白色像素线"暗色下变成发丝 */
+.dark .border-border\/30,
+.dark .border-border\/40,
+.dark .border-border\/50 {
+  border-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.dark .border-border\/60 {
+  border-color: rgba(255, 255, 255, 0.07) !important;
+}
+
+.dark .border-border\/70 {
+  border-color: rgba(255, 255, 255, 0.09) !important;
+}
+
+.dark .divide-border\/40 > * + * {
+  border-color: rgba(255, 255, 255, 0.04) !important;
+}
+
+.dark .divide-border\/30 > * + * {
+  border-color: rgba(255, 255, 255, 0.04) !important;
+}
+
+/* bg-surface-3/80 在暗色下产生"漂浮灰雾" - 改为更不透明 */
+.dark .bg-surface-3\/80 {
+  background-color: rgba(var(--surface-3), 0.92) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* AgentCard 等"任务概况"卡片 - 暗色下增加层次 */
+.dark .bg-surface-3\/40,
+.dark .bg-surface-3\/50 {
+  background-color: rgba(var(--surface-2), 0.6) !important;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+/* 任务卡片头部"蓝色 50/白色"渐变 - 暗色下统一化为暗紫调 */
+.dark .bg-gradient-to-r.from-blue-50\/60,
+.dark .from-blue-50\/60 {
+  --tw-gradient-from: rgba(168, 162, 255, 0.08) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+.dark .via-white,
+.dark .to-white {
+  --tw-gradient-to: rgba(var(--surface-1), 0) !important;
+}
+.dark .via-purple-50\/40,
+.dark .to-purple-50\/40 {
+  --tw-gradient-stops: var(--tw-gradient-from), rgba(190, 150, 230, 0.05), var(--tw-gradient-to) !important;
+}
+
+/* 蓝色左边竖条 → 暗色下用紫色霓虹 */
+.dark .border-l-blue-400,
+.dark .border-l-blue-500 {
+  border-left-color: rgb(168, 162, 255) !important;
+  box-shadow: -1px 0 8px rgba(168, 162, 255, 0.2);
+}
+
+/* bg-blue-50/50（高亮卡片背景）暗色下变成淡紫调 */
+.dark .bg-blue-50\/50 {
+  background-color: rgba(168, 162, 255, 0.08) !important;
+}
+
+/* text-blue-700（蓝色文字标题）暗色下变成淡紫 */
+.dark .text-blue-700,
+.dark .text-blue-800 {
+  color: rgb(190, 184, 255) !important;
+}
+
+/* bg-blue-50 边框（border-blue-100/200）暗色下变紫光 */
+.dark .border-blue-100,
+.dark .border-blue-200 {
+  border-color: rgba(168, 162, 255, 0.15) !important;
+}
+
+/* from/to 蓝色渐变 → 暗色下用紫色 */
+.dark .from-blue-50 {
+  --tw-gradient-from: rgba(168, 162, 255, 0.08) !important;
+}
+.dark .to-blue-50 {
+  --tw-gradient-to: rgba(168, 162, 255, 0.03) !important;
+}
+
+/* 加载 spinner（border-blue-200 + border-t-blue-500）暗色下变紫 */
+.dark .border-blue-200 {
+  border-color: rgba(168, 162, 255, 0.2) !important;
+}
+.dark .border-t-blue-500 {
+  border-top-color: rgb(168, 162, 255) !important;
+}
+
+/* ============================================================
+   v8 精确修复：带 alpha 的亮色背景 + to-white 渐变
+   ============================================================ */
+
+/* 带 alpha 的 bg-blue-50/50/60/70/80/90 等全部暗色化 */
+.dark .bg-blue-50\/50 { background-color: rgba(168, 162, 255, 0.08) !important; }
+.dark .bg-blue-50\/60 { background-color: rgba(168, 162, 255, 0.1) !important; }
+.dark .bg-blue-50\/70 { background-color: rgba(168, 162, 255, 0.12) !important; }
+.dark .bg-blue-50\/80 { background-color: rgba(168, 162, 255, 0.15) !important; }
+.dark .bg-blue-50\/90 { background-color: rgba(168, 162, 255, 0.18) !important; }
+
+.dark .bg-emerald-50\/50 { background-color: rgba(80, 220, 158, 0.08) !important; }
+.dark .bg-emerald-50\/60 { background-color: rgba(80, 220, 158, 0.1) !important; }
+.dark .bg-emerald-50\/70 { background-color: rgba(80, 220, 158, 0.12) !important; }
+.dark .bg-emerald-50\/80 { background-color: rgba(80, 220, 158, 0.15) !important; }
+
+.dark .bg-purple-50\/50 { background-color: rgba(190, 150, 230, 0.08) !important; }
+.dark .bg-purple-50\/60 { background-color: rgba(190, 150, 230, 0.1) !important; }
+.dark .bg-purple-50\/70 { background-color: rgba(190, 150, 230, 0.12) !important; }
+.dark .bg-purple-50\/80 { background-color: rgba(190, 150, 230, 0.15) !important; }
+
+.dark .bg-red-50\/50 { background-color: rgba(240, 113, 138, 0.08) !important; }
+.dark .bg-red-50\/60 { background-color: rgba(240, 113, 138, 0.1) !important; }
+.dark .bg-red-50\/70 { background-color: rgba(240, 113, 138, 0.12) !important; }
+.dark .bg-red-50\/80 { background-color: rgba(240, 113, 138, 0.15) !important; }
+
+.dark .bg-amber-50\/50 { background-color: rgba(240, 184, 102, 0.08) !important; }
+.dark .bg-amber-50\/60 { background-color: rgba(240, 184, 102, 0.1) !important; }
+.dark .bg-amber-50\/70 { background-color: rgba(240, 184, 102, 0.12) !important; }
+.dark .bg-amber-50\/80 { background-color: rgba(240, 184, 102, 0.15) !important; }
+
+/* 渐变终点 to-white / via-white → 暗色下变成透明（保留 from- 颜色）*/
+.dark .to-white {
+  --tw-gradient-to: rgba(var(--surface-1), 0) !important;
+}
+.dark .via-white {
+  --tw-gradient-via: rgba(var(--surface-1), 0) !important;
+}
+
+/* 渐变起点 from-{color}-50/{alpha} → 暗色下映射到暗色调 */
+.dark .from-blue-50\/60 {
+  --tw-gradient-from: rgba(168, 162, 255, 0.12) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+.dark .from-indigo-50\/60 {
+  --tw-gradient-from: rgba(168, 162, 255, 0.12) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+.dark .from-emerald-50\/60 {
+  --tw-gradient-from: rgba(80, 220, 158, 0.12) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+.dark .from-purple-50\/60 {
+  --tw-gradient-from: rgba(190, 150, 230, 0.12) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+.dark .from-amber-50\/60 {
+  --tw-gradient-from: rgba(240, 184, 102, 0.12) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+
+/* 渐变起点通用规则：所有 from-{color}-50 不带 alpha 的也覆盖 */
+.dark .from-blue-50 {
+  --tw-gradient-from: rgba(168, 162, 255, 0.12) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+.dark .from-emerald-50 {
+  --tw-gradient-from: rgba(80, 220, 158, 0.12) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+.dark .from-purple-50 {
+  --tw-gradient-from: rgba(190, 150, 230, 0.12) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+.dark .from-amber-50 {
+  --tw-gradient-from: rgba(240, 184, 102, 0.12) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+
+/* 渐变中点 via-{color}-50 */
+.dark .via-emerald-50 {
+  --tw-gradient-via: rgba(80, 220, 158, 0.05) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-via), var(--tw-gradient-to) !important;
+}
+.dark .via-purple-50 {
+  --tw-gradient-via: rgba(190, 150, 230, 0.05) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-via), var(--tw-gradient-to) !important;
+}
+
+/* to-purple-50 / to-blue-50 终点也调整（防止 to-blue-50 残留亮色）*/
+.dark .to-blue-50\/60 {
+  --tw-gradient-to: rgba(168, 162, 255, 0.05) !important;
+}
+.dark .to-purple-50\/40 {
+  --tw-gradient-to: rgba(190, 150, 230, 0.05) !important;
+}
+.dark .to-emerald-50\/60 {
+  --tw-gradient-to: rgba(80, 220, 158, 0.05) !important;
+}
+
+/* bg-surface-3/80 这种"半透明灰雾" - 暗色下用更深的 surface */
+.dark .bg-surface-3\/80 {
+  background-color: rgba(var(--surface-0), 1) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.dark .bg-surface-3\/20 {
+  background-color: rgba(var(--surface-3), 0.2) !important;
+}
+
+/* 带 alpha 的浅蓝色（背景）: /20 /30 /40 等 */
+.dark .bg-blue-50\/20 { background-color: rgba(168, 162, 255, 0.04) !important; }
+.dark .bg-blue-50\/30 { background-color: rgba(168, 162, 255, 0.05) !important; }
+.dark .bg-blue-50\/40 { background-color: rgba(168, 162, 255, 0.07) !important; }
+.dark .bg-blue-50\/100 { background-color: rgba(168, 162, 255, 0.2) !important; }
+.dark .bg-indigo-50\/20 { background-color: rgba(168, 162, 255, 0.04) !important; }
+.dark .bg-indigo-50\/30 { background-color: rgba(168, 162, 255, 0.05) !important; }
+.dark .bg-indigo-50\/40 { background-color: rgba(168, 162, 255, 0.07) !important; }
+.dark .bg-indigo-50\/60 { background-color: rgba(168, 162, 255, 0.1) !important; }
+.dark .bg-emerald-50\/20 { background-color: rgba(80, 220, 158, 0.04) !important; }
+.dark .bg-emerald-50\/30 { background-color: rgba(80, 220, 158, 0.05) !important; }
+.dark .bg-emerald-50\/40 { background-color: rgba(80, 220, 158, 0.07) !important; }
+.dark .bg-purple-50\/20 { background-color: rgba(190, 150, 230, 0.04) !important; }
+.dark .bg-purple-50\/30 { background-color: rgba(190, 150, 230, 0.05) !important; }
+.dark .bg-purple-50\/40 { background-color: rgba(190, 150, 230, 0.07) !important; }
+
+/* 暗色下任务概览 section 容器：彻底融合背景 */
+.dark .bg-surface-1.rounded-lg {
+  background:
+    linear-gradient(180deg,
+      rgba(168, 162, 255, 0.04) 0%,
+      transparent 50%),
+    rgb(var(--surface-1)) !important;
+  border-color: rgba(255, 255, 255, 0.06) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+/* 文本紫调（text-accent 在暗色下已暗，但需要更亮一点）*/
+.dark .text-accent {
+  color: rgb(188, 182, 255) !important;
+}
+
+/* 链接下划线 / 激活态颜色统一 */
+.dark .border-blue-500 {
+  border-color: rgb(168, 162, 255) !important;
+}
+.dark .bg-blue-500\/20 {
+  background-color: rgba(168, 162, 255, 0.15) !important;
+}
+
+/* 暗色下的 focus 蓝色 ring → 紫色 */
+.dark .focus\:border-blue-300:focus {
+  border-color: rgba(168, 162, 255, 0.5) !important;
+}
+
+/* ============================================================
+   v5 重点修复：用户提到的具体问题
+   ============================================================ */
+
+/* 修复 #1: 设置页项目设置区"白色像素线刺眼"问题
+   原因：组件用 border-border/40 = rgba(203,213,225,0.4) 浅灰，
+         暗色下这变成"飘起来的白线"在深背景上极其突兀
+   修复：所有 border-border/* 在暗色下走低 alpha 发丝 */
+.dark .border { border-color: rgba(255, 255, 255, 0.06) !important; }
+.dark .border-l { border-left-color: rgba(255, 255, 255, 0.06) !important; }
+.dark .border-r { border-right-color: rgba(255, 255, 255, 0.06) !important; }
+.dark .border-t { border-top-color: rgba(255, 255, 255, 0.06) !important; }
+.dark .border-b { border-bottom-color: rgba(255, 255, 255, 0.06) !important; }
+
+/* 修复 #2: 任务概况"灰色不顺眼"问题
+   原因：AgentCard 等用 bg-surface-1 + border-border/50，
+         暗色下灰色卡片在 OLED 黑色背景上显得"悬浮的灰雾"
+   修复：卡片暗色下加紫色顶部光晕，背景微调为更暖的 surface */
+.dark .card {
+  background:
+    linear-gradient(180deg,
+      rgba(168, 162, 255, 0.03) 0%,
+      transparent 35%),
+    rgb(var(--surface-1)) !important;
+  border-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.dark .card-hover:hover {
+  background:
+    linear-gradient(180deg,
+      rgba(168, 162, 255, 0.05) 0%,
+      transparent 40%),
+    rgb(var(--surface-2)) !important;
+}
+
+/* 修复 #3: 灰色硬背景（Settings 中 bg-gray-50/100 等）→ 暗色 surface */
+.dark .bg-gray-50\/50,
+.dark .bg-gray-100\/50 {
+  background-color: rgba(var(--surface-2), 0.5) !important;
+}
+
+/* 暗色下的 indigo 500 实色背景 → 紫色 */
+.dark .bg-indigo-500 {
+  background-color: rgb(168, 162, 255) !important;
+  color: rgb(8, 9, 14) !important;
+}
+.dark .hover\:bg-indigo-600:hover {
+  background-color: rgb(188, 182, 255) !important;
+}
+
+/* dark: 前缀的 Tailwind 类（页面里用 dark:xxx 直接写的）*/
+.dark .dark\:bg-blue-900\/30 {
+  background-color: rgba(168, 162, 255, 0.15) !important;
+}
+.dark .dark\:text-blue-300 {
+  color: rgb(190, 184, 255) !important;
+}
+.dark .dark\:text-faint {
+  color: rgb(var(--text-faint)) !important;
+}
+.dark .dark\:hover\:bg-surface-4:hover {
+  background-color: rgb(var(--surface-4)) !important;
+}
+.dark .dark\:bg-surface-2 {
+  background-color: rgb(var(--surface-2)) !important;
+}
+
+@layer base {
+  body {
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--scrollbar-thumb)) rgb(var(--scrollbar-track));
+  }
+
+  *::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: rgb(var(--scrollbar-track));
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: rgb(var(--scrollbar-thumb));
+    border-radius: 3px;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background: rgb(var(--border-light));
+  }
+
+  ::selection {
+    background: rgba(var(--selection-bg), 0.3);
+    color: rgb(var(--selection-text));
+  }
+
+  ::-webkit-calendar-picker-indicator {
+    filter: invert(1) brightness(0.8);
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+  }
+
+  ::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+  }
+
+  .time-input-custom::-webkit-calendar-picker-indicator {
+    display: none;
+    -webkit-appearance: none;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-surface-3 border border-border/50 rounded-xl;
+    /* 裁掉 ::after 光带加宽到 152%~168% 后的横向溢出；clip 不产生滚动容器 */
+    overflow-x: clip;
+  }
+
+  .card-hover {
+    @apply card transition-all duration-200 hover:border-border/70 hover:bg-surface-4;
+  }
+
+  /*
+   * `/chat` 的输入框。浅色按设计稿给定值;深色回落到主题色,
+   * 否则暗色主题下会突兀地出现一块白底。
+   */
+  .chat-composer {
+    background: #ffffff;
+    border: 1px solid #d9d9d9;
+    box-shadow: 0 1px 8px 0 rgba(13, 139, 211, 0.15);
+    border-radius: 20px;
+  }
+
+  /* 这里不能用 @apply:本文件的 `.dark .bg-*` 覆写会让它形成循环依赖。
+     同理 `rgb(var(--border) / .6)` 也是非法语法(逗号分隔的变量不能配 `/ alpha`),
+     必须写成 rgba(var(--border), .6)。 */
+  .dark .chat-composer {
+    background: rgb(var(--surface-3));
+    border-color: rgba(var(--border), 0.6);
+    box-shadow: 0 1px 8px 0 rgba(13, 139, 211, 0.2);
+  }
+
+  /* 输入框里选中的斜杠命令/技能：蓝字 + 淡蓝底，深浅主题各一套 */
+  .slash-command-chip {
+    display: inline-block;
+    max-width: 100%;
+    margin: 0 2px;
+    padding: 0 6px;
+    border-radius: 6px;
+    background: #e8f0fe;
+    color: #1d4ed8;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.92em;
+    line-height: 1.5;
+    /*
+     * 这里**不能**用 overflow: hidden / text-overflow：inline-block 一旦
+     * 不是 visible，基线会变成盒子的下边缘，命令后面的正文就会整体下移
+     * （截图里的“错位”）。超长命令允许内部换行，而不是裁掉。
+     */
+    white-space: normal;
+    overflow-wrap: anywhere;
+    vertical-align: baseline;
+    user-select: none;
+    cursor: default;
+  }
+
+  .dark .slash-command-chip {
+    background: rgba(96, 165, 250, 0.18);
+    color: #93c5fd;
+  }
+
+  /*
+   * 交互问答的选项控件。
+   *
+   * 直接用原生 radio/checkbox 画圆形/方形，而不是「视觉隐藏的原生控件 + 自绘标记」：
+   * 后者需要 position: absolute，聚焦时浏览器会把绝对定位控件所在的包含块滚进视口，
+   * 表现为点一下选项整页跳动。这里控件本身就在正常流里，聚焦不会滚走。
+   */
+  .wait-option-input {
+    flex-shrink: 0;
+    width: 14px;
+    height: 14px;
+    margin-top: 2px;
+    appearance: none;
+    -webkit-appearance: none;
+    border: 1.5px solid rgb(var(--border));
+    border-radius: 9999px;
+    background-color: rgb(var(--surface-2));
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+  }
+
+  .wait-option-input[data-multi="true"] {
+    border-radius: 4px;
+  }
+
+  .wait-option-input:checked {
+    border-color: #2563eb;
+    background-color: #2563eb;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 8.5l3 3 7-7'/%3E%3C/svg%3E");
+    background-size: 10px 10px;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+
+  .dark .wait-option-input:checked {
+    border-color: #60a5fa;
+    background-color: #3b82f6;
+  }
+
+  .wait-option-input:focus-visible {
+    outline: 2px solid rgba(96, 165, 250, 0.6);
+    outline-offset: 1px;
+  }
+
+  /*
+   * 首页输入框右上角的机器人小图(设计稿:整个露在框体上沿之上,下沿与框体顶边齐平)。
+   *
+   * 注意它是**压在框体之上**,不是"站在框体后面":设计稿里机器人的下沿正好落在框体
+   * 顶边上,框体那条 1px 上边框**不得横穿**图形 —— 第一版把图纵向居中于边框线(上下
+   * 各露一半),看起来就是"卡在线上",已改。`z-index: 1` 是为将来把 `top` 调成与框体
+   * 重叠时,图能盖住那条边框线。
+   *
+   * `right` 已按原图的**右侧透明留白**抵消过:原图 152×60,内容(alpha>200)只到 x=135,
+   * 右边白 16px;显示高度 48px 时缩放 0.8 → 白边 12.8px。圆角半径 20px,圆弧从"距框
+   * 右缘 20px"处起,于是:头右缘**正好**压在圆弧起始处 = `right: 20 − 12.8 ≈ 7px`;
+   * 现在取 4px,让头右缘再往右越出圆弧起始约 3px(按观感微调)。**别按 20 写**,那会让
+   * 头右缘落在距框右缘 33px 处、明显偏左。(图片上下无留白,所以下沿齐平不用补。)
+   * `pointer-events: none` 免得它妨碍点击/选中输入框。
+   *
+   * **不加镜像**:原图(以及本项目参考图)都是"头在右、左下一道斜带"的朝向,一旦加
+   * `transform: scaleX(-1)`,头会跑到左边、斜带跑到右边,看上去就跟原图不是同一张了。
+   * 若确实要镜像,把 `transform: scaleX(-1);` 加回本规则即可,其余定位不用动。
+   */
+  .chat-composer-mascot {
+    position: absolute;
+    top: -48px;
+    right: 4px;
+    height: 48px;
+    width: auto;
+    z-index: 1;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  /* 发送按钮:浅色近黑圆底;深色用主题强调色。禁用态显式给浅灰底 + 灰箭头。 */
+  .chat-send {
+    background: #333333;
+    color: #ffffff;
+    border-radius: 20px;
+  }
+
+  .chat-send:hover:enabled {
+    background: #1f1f1f;
+  }
+
+  .chat-send:disabled {
+    background: #e5e5e5;
+    color: #a3a3a3;
+  }
+
+  .dark .chat-send {
+    background: rgb(var(--accent));
+    color: #ffffff;
+  }
+
+  .dark .chat-send:hover:enabled {
+    background: rgb(var(--accent-hover));
+  }
+
+  .dark .chat-send:disabled {
+    background: rgb(var(--surface-4));
+    color: rgb(var(--text-faint));
+  }
+
+  /*
+   * 中止本轮按钮:形状对齐发送按钮。
+   *
+   * 配色**必须与 `.chat-send:disabled` 拉开**:禁用态发送是浅灰(#e5e5e5 / --surface-4),
+   * 而取消按钮只在 `isLoading` 时渲染、**没有 disabled 态**,出现即可点。它曾经也写成同一个
+   * 浅灰,于是"灰圆 = 发送不可点"和"灰圆 = 可以点取消"撞在一起,看不出当前能点哪个。
+   * 现在浅色用发送按钮同款近黑、深色用同款主题强调色 —— 统一表达"实心即代表可点"。
+   */
+  .chat-stop {
+    background: #333333;
+    color: #ffffff;
+    border-radius: 20px;
+  }
+
+  .chat-stop:hover:enabled {
+    background: #1f1f1f;
+  }
+
+  .dark .chat-stop {
+    background: rgb(var(--accent));
+    color: #ffffff;
+  }
+
+  .dark .chat-stop:hover:enabled {
+    background: rgb(var(--accent-hover));
+  }
+
+  /* 消息气泡:必须用 rgb(var(--x)) 旧语法,理由同上 */
+  .chat-bubble-user {
+    background: rgb(var(--accent));
+    color: #ffffff;
+  }
+
+  .chat-bubble-assistant {
+    background: rgb(var(--surface-2));
+    color: rgb(var(--text-primary));
+    border: 1px solid rgba(var(--border), 0.5);
+  }
+
+  .dark .chat-bubble-assistant {
+    background: rgb(var(--surface-2));
+    border-color: rgba(var(--border), 0.4);
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center gap-2 px-4 py-2 bg-accent hover:bg-accent-hover text-white text-sm font-medium rounded-lg transition-colors duration-150;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center gap-2 px-3 py-1.5 text-sm text-muted hover:text-primary hover:bg-surface-4 rounded-lg transition-colors duration-150;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full border border-border/40 whitespace-nowrap shrink-0 min-w-[72px] justify-center;
+  }
+
+  .input {
+    @apply bg-surface-2 border border-border/60 rounded-lg px-3 py-2 text-sm text-primary placeholder-muted focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition-colors;
+  }
+}
+
+/* ============================================================
+   v3 大厂级页面视觉 —— 仅作用于 .dark
+   手法：几何网格 + Aurora 极光带 + 滚动揭示 + 顶部光弧 + Shimmer
+   ============================================================ */
+
+/* ============================================================
+   1. 几何网格背景 —— Linear / Cursor / Vercel 招牌细节
+   在 body 上叠加一层 56px 网格，暗色下极低对比
+   ============================================================ */
+.dark body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(168, 162, 255, 0.08), transparent 65%),
+    radial-gradient(ellipse 50% 40% at 0% 30%, rgba(130, 175, 240, 0.035), transparent 60%),
+    radial-gradient(ellipse 60% 50% at 100% 100%, rgba(168, 162, 255, 0.045), transparent 65%),
+    radial-gradient(ellipse 70% 30% at 50% 100%, rgba(99, 102, 241, 0.04), transparent 70%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.5'/></svg>");
+  background-size:
+    56px 56px,
+    56px 56px,
+    100% 100%,
+    100% 100%,
+    100% 100%,
+    100% 100%,
+    240px 240px;
+  /* background-attachment: fixed 已移除：元素本身是 position:fixed，背景已锚定视口，
+     去掉后避免 Chrome 对 fixed 背景层每帧重栅格化（CPU 开销），视觉不变 */
+  mask-image: radial-gradient(ellipse 100% 80% at 50% 30%, black 0%, black 50%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 100% 80% at 50% 30%, black 0%, black 50%, transparent 100%);
+}
+
+/* 让主内容在网格之上 —— 但 header/modal 不能被压（保留它们自己的 z-index）*/
+.dark main,
+.dark nav,
+.dark aside {
+  position: relative;
+  z-index: 1;
+}
+
+/* ============================================================
+   v4 全站暗色对齐：所有页面共用大厂级视觉
+   ============================================================ */
+
+/* 全站文字色彩平滑过渡 */
+.dark * {
+  transition-property: color, background-color, border-color, fill, stroke, opacity, box-shadow, transform;
+  transition-duration: 220ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 移除动画/过渡元素的全局 transition（避免抖动） */
+.dark [class*="animate-"],
+.dark [class*="transition-"] {
+  transition-property: transform, opacity;
+  transition-duration: 0ms;
+}
+
+/* 全站页面标题 h1/h2/h3 紧致化 + tracking-tight */
+/* TopNav brand h1 用 text-[13px]，不要被全局 h1 覆盖 */
+.dark h1:not(header h1) { letter-spacing: -0.025em; font-weight: 600; }
+.dark h2 { letter-spacing: -0.022em; font-weight: 600; }
+.dark h3 { letter-spacing: -0.02em; font-weight: 600; }
+
+/* 全局滚动条（暗色下整体接管） */
+.dark * {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(168, 162, 255, 0.35) transparent;
+}
+
+.dark *::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dark *::-webkit-scrollbar-thumb {
+  background: rgba(168, 162, 255, 0.25);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  transition: background 0.3s var(--ease-fluid);
+}
+
+.dark *::-webkit-scrollbar-thumb:hover {
+  background: rgba(168, 162, 255, 0.55);
+  background-clip: padding-box;
+}
+
+/* 全站模态/对话框：暗色下玻璃质感 */
+.dark [role="dialog"] {
+  background: rgba(var(--surface-0), 0.85) !important;
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 24px 64px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(168, 162, 255, 0.06) !important;
+}
+
+/* 全站分割线 */
+.dark .divide-border > * + *,
+.dark [class*="divide-y"] > * + * {
+  border-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* 全站 hover 链接/按钮的反馈一致性 */
+.dark button:not(:disabled):active {
+  transform: scale(0.98);
+  transition-duration: 0.08s !important;
+}
+
+.dark button:not(:disabled):not(.no-press):active::after {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* 全站小图标颜色统一为次要文字 */
+.dark svg.text-faint,
+.dark svg.text-muted,
+.dark .lucide {
+  color: rgb(var(--text-tertiary));
+  transition: color 0.2s var(--ease-fluid);
+}
+
+.dark a:hover svg,
+.dark button:hover svg {
+  color: rgb(var(--text-secondary));
+}
+
+/* 全站 placeholder */
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: rgb(var(--text-faint)) !important;
+  font-weight: 400;
+}
+
+/* 强制暗色下使用 Geist 字体（防止 @layer base 里 body font 走 Inter） */
+.dark body,
+.dark button,
+.dark input,
+.dark select,
+.dark textarea {
+  font-family: "Geist", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+}
+
+.dark code,
+.dark pre,
+.dark .font-mono,
+.dark kbd {
+  font-family: "Geist Mono", "JetBrains Mono", ui-monospace, Consolas, monospace !important;
+}
+
+/* Dark mode select option dropdown fix */
+.dark select option,
+.dark select optgroup {
+  background-color: rgb(var(--surface-3)) !important;
+  color: rgb(var(--text-secondary)) !important;
+}
+.dark select option:hover,
+.dark select option:checked {
+  background-color: rgb(var(--surface-4)) !important;
+  color: rgb(var(--text-primary)) !important;
+}
+
+/* 全站滚动揭示动画（不仅 main 直接子元素） */
+.dark .card,
+.dark main > div > *,
+.dark main > div > div > * {
+  animation: reveal-up 0.55s var(--ease-spring) both;
+}
+
+/* .card 元素的错位延迟 */
+.dark .card:nth-child(1) { animation-delay: 0.04s; }
+.dark .card:nth-child(2) { animation-delay: 0.10s; }
+.dark .card:nth-child(3) { animation-delay: 0.16s; }
+.dark .card:nth-child(4) { animation-delay: 0.22s; }
+.dark .card:nth-child(5) { animation-delay: 0.28s; }
+.dark .card:nth-child(6) { animation-delay: 0.34s; }
+.dark .card:nth-child(7) { animation-delay: 0.40s; }
+.dark .card:nth-child(8) { animation-delay: 0.46s; }
+
+.dark .card {
+  animation: reveal-up 0.5s var(--ease-spring) both;
+  animation-delay: 0.1s;
+}
+
+/* 二级卡片更晚出现 */
+.dark main .card:nth-of-type(1) { animation-delay: 0.05s; }
+.dark main .card:nth-of-type(2) { animation-delay: 0.12s; }
+.dark main .card:nth-of-type(3) { animation-delay: 0.19s; }
+.dark main .card:nth-of-type(4) { animation-delay: 0.26s; }
+.dark main .card:nth-of-type(5) { animation-delay: 0.33s; }
+
+/* ============================================================
+   2. Aurora 极光带 —— 顶部 Nav 下方持续流动的彩色光带
+   用 5s 缓慢动画，营造"活的"高端感
+   ============================================================ */
+.dark main {
+  position: relative;
+  z-index: 1;
+  /* 裁掉加宽到 200% 的 ::before 光带，避免产生横向滚动；clip 不产生滚动容器、不破坏 sticky */
+  overflow-x: clip;
+}
+
+.dark main::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 200%;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(168, 162, 255, 0.5) 25%,
+    rgba(130, 175, 240, 0.5) 50%,
+    rgba(168, 162, 255, 0.5) 75%,
+    transparent 100%);
+  /* 200% 宽 + background-size:50% + transform 平移：扫光动效走合成器(GPU)，
+     不再每帧主线程重绘 background-position。多余部分由 main 的 overflow-x:clip 裁掉 */
+  background-size: 50% 100%;
+  animation: aurora-sweep 6s linear infinite;
+  pointer-events: none;
+  z-index: 2;
+}
+
+@keyframes aurora-sweep {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* ============================================================
+   3. 滚动揭示动画 —— 进入视口时淡入上滑 + 模糊消失
+   使用 CSS 动画 + 通用选择器：所有 card / 主要容器
+   ============================================================ */
+@keyframes reveal-up {
+  0% {
+    opacity: 0;
+    transform: translateY(16px) scale(0.99);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* 卡片入场后保留卡片本身动画 */
+.dark .card {
+  animation: reveal-up 0.5s var(--ease-spring) both;
+  animation-delay: 0.1s;
+}
+
+/* ============================================================
+   4. 卡片顶部光弧 —— 在每张卡片上方加一道流动的渐变亮线
+   用 ::after 伪元素 + 动画模拟 Linear / Vercel 卡片"会呼吸"
+   ============================================================ */
+.dark .card::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 8%;
+  width: 168%;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(168, 162, 255, 0.4) 30%,
+    rgba(130, 175, 240, 0.4) 50%,
+    rgba(168, 162, 255, 0.4) 70%,
+    transparent 100%);
+  /* 同 main::before：transform 走合成器；多余部分由 .card 的 overflow-x:clip 裁掉 */
+  background-size: 50% 100%;
+  animation: aurora-sweep 4s linear infinite;
+  opacity: 0.6;
+  border-radius: 0 0 999px 999px;
+  pointer-events: none;
+}
+
+/* ============================================================
+   5. Shimmer（流光）—— 骨架屏/加载占位专用
+   任何用 .shimmer 类的元素获得"金属表面流光"效果
+   ============================================================ */
+@keyframes shimmer-sweep {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.dark .shimmer {
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.04) 50%,
+    transparent 100%);
+  background-size: 200% 100%;
+  animation: shimmer-sweep 2.4s linear infinite;
+  pointer-events: none;
+}
+
+/* ============================================================
+   6. 状态点 pulse 升级 —— 现有 .animate-pulse-dot
+   仅做 opacity 动画(合成器友好)。原先的 box-shadow 外光圈是
+   不可见效果,却触发每帧主线程 Paint 重绘(CPU 高占用),已移除。
+   ============================================================ */
+@keyframes pulse-dot-glow {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+.dark .animate-pulse-dot {
+  /* 无限脉冲动画在软件渲染下每帧 alpha 混合,持续占 CPU(实测约 6% 单核)。
+     改为加载时呼吸 3 次后静止,保留提示又不耗 CPU */
+  animation: pulse-dot-glow 2s var(--ease-soft) 3;
+  border-radius: 9999px;
+}
+
+/* ============================================================
+   ping 有限次 —— Tailwind animate-ping 的降级替代
+   animate-ping 是无限 scale+fade,软件渲染下持续占 CPU(与 pulse-dot
+   同源,实测约 6% 单核/个)。改为呼吸 3 次后静止:保留"活跃"提示,
+   进入页面数秒后不再持续重绘。自包含 keyframes,不依赖 Tailwind 的
+   ping(其 keyframes 仅在 animate-ping 仍被使用时才注入产物)。
+   用于连接状态点 / 活跃 Agent 横幅等原 .animate-ping 处。
+   ============================================================ */
+@keyframes ping-finite {
+  75%, 100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+.animate-ping-finite {
+  animation: ping-finite 1s cubic-bezier(0, 0, 0.2, 1) 3;
+}
+
+/* ============================================================
+   7. 数字徽章发光（KPI 数字 + 计数）
+   任何 font-mono + font-semibold 的大字号数字加紫色光晕
+   ============================================================ */
+.dark .text-primary.font-mono.font-semibold,
+.dark .text-base.font-mono.font-semibold,
+.dark .text-lg.font-mono.font-semibold {
+  text-shadow: 0 0 24px rgba(168, 162, 255, 0.25);
+  letter-spacing: -0.02em;
+}
+
+/* ============================================================
+   8. 滚动条增强：滚动时出现，进度感
+   ============================================================ */
+.dark {
+  scrollbar-color: rgba(168, 162, 255, 0.4) transparent;
+}
+
+/* ============================================================
+   9. 链接 / 导航项微动效：hover 时下划线从中心扩散
+   ============================================================ */
+.dark a:not(.btn-primary):not(.no-underline) {
+  position: relative;
+  transition: color 0.3s var(--ease-fluid);
+}
+
+.dark a.text-accent::after,
+.dark a.border-accent::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  width: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, currentColor, transparent);
+  transition: width 0.4s var(--ease-fluid), left 0.4s var(--ease-fluid);
+}
+
+.dark a.text-accent:hover::after,
+.dark a.border-accent:hover::after {
+  width: 100%;
+  left: 0;
+}
+
+/* ============================================================
+   10. 微光分隔线 —— 替代硬 1px 边框的渐变线
+   任何 divider 类获得"中心高光"效果
+   ============================================================ */
+.dark .divider-glow {
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.12) 50%,
+    transparent 100%);
+  border: 0;
+}
+
+/* ============================================================
+   11. KPI 玻璃面板 —— 给 grid-cols-3 数字卡升级质感
+   ============================================================ */
+.dark .rounded-lg.border.bg-surface-2 {
+  background: linear-gradient(180deg,
+    rgba(var(--surface-2), 0.7) 0%,
+    rgba(var(--surface-3), 0.5) 100%) !important;
+  backdrop-filter: blur(12px) saturate(150%);
+  -webkit-backdrop-filter: blur(12px) saturate(150%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 1px 2px rgba(0, 0, 0, 0.3) !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.dark .rounded-lg.border.bg-surface-2::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(180deg,
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(255, 255, 255, 0) 50%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ============================================================
+   12. 文字渐变（gradient text）支持
+   ============================================================ */
+.dark .text-gradient {
+  background: linear-gradient(135deg,
+    #f5f6fa 0%,
+    #a8a2ff 50%,
+    #f5f6fa 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* ============================================================
+   13. Section 标题的装饰线（h1/h2 左侧 eyebrow mark）
+   ============================================================ */
+.dark h1:not(header h1), .dark h2, .dark h3 {
+  letter-spacing: -0.025em;
+  font-weight: 600;
+}
+
+.dark h1:not(header h1) {
+  font-size: 1.625rem;
+  line-height: 1.2;
+}
+
+.dark h2 {
+  font-size: 1.125rem;
+  line-height: 1.3;
+}
+
+/* ============================================================
+   14. 滚动平滑
+   ============================================================ */
+.dark html {
+  scroll-behavior: smooth;
+}
+
+/* ============================================================
+   15. 文本选中（Text Selection）精致化
+   ============================================================ */
+.dark ::selection {
+  background: linear-gradient(90deg,
+    rgba(168, 162, 255, 0.35),
+    rgba(130, 175, 240, 0.35));
+  color: rgb(var(--text-primary));
+  text-shadow: none;
+}
+
+.dark ::-moz-selection {
+  background: linear-gradient(90deg,
+    rgba(168, 162, 255, 0.35),
+    rgba(130, 175, 240, 0.35));
+  color: rgb(var(--text-primary));
+}
+
+/* ============================================================
+   16. Hover 卡片光泽扫过（高级商店感）
+   ============================================================ */
+@keyframes shine-sweep {
+  0% { transform: translateX(-100%) skewX(-20deg); }
+  100% { transform: translateX(200%) skewX(-20deg); }
+}
+
+.dark .card-hover {
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.dark .card-hover::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.04) 50%,
+    transparent 100%);
+  transform: translateX(-100%) skewX(-20deg);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.dark .card-hover:hover::after {
+  animation: shine-sweep 0.9s var(--ease-fluid);
+}
+
+/* ============================================================
+   Dark theme component overrides —— 比 @apply 层级更高
+   用 `.dark .xxx` 让亮色 Tailwind 样式完全失效
+   ============================================================ */
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+.animate-pulse-dot {
+  /* 同暗色:无限脉冲改 3 次,加载时提示、稳态静止,避免持续 CPU */
+  animation: pulse-dot 2s cubic-bezier(0.4, 0, 0.6, 1) 3;
+}
+
+/* ── Workflow Diagram: connecting lines ── */
+
+.workflow-line {
+  width: 2px;
+  height: 24px;
+  background-color: rgba(var(--wf-line-default));
+  position: relative;
+  border-radius: 1px;
+}
+
+.workflow-line::before {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 7px solid rgba(var(--wf-line-default));
+}
+
+/* Status-based line colors */
+.workflow-line--completed {
+  background-color: #10b981; /* emerald-500 */
+}
+.workflow-line--completed::before {
+  border-top-color: #10b981;
+}
+
+.workflow-line--in-progress {
+  background-color: #3b82f6; /* blue-500 */
+  background-image: repeating-linear-gradient(
+    0deg,
+    #3b82f6 0px,
+    #3b82f6 4px,
+    transparent 4px,
+    transparent 8px
+  );
+  animation: workflow-line-flow 0.8s linear infinite;
+}
+.workflow-line--in-progress::before {
+  border-top-color: #3b82f6;
+}
+
+.workflow-line--failed {
+  background-color: #ef4444; /* red-500 */
+}
+.workflow-line--failed::before {
+  border-top-color: #ef4444;
+}
+
+.workflow-line--pending::before {
+  border-top-color: rgba(var(--wf-line-default));
+}
+
+/* Dashed group-to-group connector */
+.workflow-line--dashed {
+  width: 2px;
+  height: 32px;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(var(--wf-line-default)) 0px,
+    rgba(var(--wf-line-default)) 4px,
+    transparent 4px,
+    transparent 8px
+  );
+}
+.workflow-line--dashed::before {
+  border-top-color: rgba(var(--wf-line-default));
+}
+
+@keyframes workflow-line-flow {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 0 -8px;
+  }
+}
+
+/* ── Workflow Diagram: node cards ── */
+
+.workflow-node {
+  cursor: pointer;
+  justify-content: center;
+}
+
+.workflow-node--active {
+  /* border-color 无限动画会造成逐帧 Paint 重绘,且 #3b82f6↔#818cf8
+     两色本身已在渐变背景中,肉眼几乎无差别,已移除动画改用静态边框 */
+  border-color: #3b82f6;
+  background: linear-gradient(135deg, #3b82f6, #818cf8);
+}
+
+/* ── Workflow Diagram: sub-flow container ── */
+
+.workflow-subflow {
+  border: 1px dashed rgba(var(--wf-subflow-border));
+  background-color: rgba(var(--wf-subflow-bg));
+}
+
+/* ── Workflow Diagram: group spacing ── */
+
+.workflow-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.workflow-group + .workflow-group {
+  margin-top: 24px;
+}
+
+/* ── Slide-in animation ── */
+
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ============================================================
+   暗色模式下 CodeMirror 编辑器样式
+   覆盖 basicSetup 默认的浅色主题，让行号、gutter、光标、选区等
+   全部使用暗色模式的 CSS 变量，保持视觉一致性。
+   ============================================================ */
+
+/* 编辑器主体 & 内容区 */
+.dark .cm-editor {
+  background-color: rgb(var(--surface-1));
+  color: rgb(var(--text-primary));
+}
+.dark .cm-editor.cm-focused {
+  outline: none;
+}
+.dark .cm-content {
+  caret-color: rgb(var(--accent));
+}
+.dark .cm-cursor,
+.dark .cm-dropCursor {
+  border-left-color: rgb(var(--accent));
+}
+
+/* 选区 */
+.dark .cm-selectionBackground,
+.dark .cm-editor.cm-focused .cm-selectionBackground {
+  background-color: rgba(var(--selection-bg), 0.3) !important;
+}
+
+/* 行号 gutter */
+.dark .cm-gutters {
+  background-color: rgb(var(--surface-2));
+  color: rgb(var(--text-faint));
+  border-right: 1px solid rgba(var(--border), 0.3);
+}
+.dark .cm-activeLineGutter {
+  background-color: rgb(var(--surface-3));
+  color: rgb(var(--text-muted));
+}
+.dark .cm-activeLine {
+  background-color: rgba(var(--surface-3), 0.5);
+}
+
+/* JSON 语法高亮 —— 暗色 */
+.dark .cm-json .cm-property { color: #93c5fd; }        /* key: 天蓝 */
+.dark .cm-json .cm-string { color: #86efac; }          /* "value": 翠绿 */
+.dark .cm-json .cm-number { color: #fbbf24; }          /* 数字: 琥珀 */
+.dark .cm-json .cm-atom { color: #c4b5fd; }            /* true/false/null: 淡紫 */
+.dark .cm-punctuation { color: rgb(var(--text-muted)); } /* {} [] , : */
+
+/* 搜索匹配 */
+.dark .cm-searchMatch {
+  background-color: rgba(var(--accent), 0.25);
+}
+.dark .cm-searchMatch.cm-searchMatch-selected {
+  background-color: rgba(var(--accent), 0.5);
+}
+
+/* Tooltip / 自动补全弹窗 */
+.dark .cm-tooltip {
+  background-color: rgb(var(--surface-2));
+  border-color: rgba(var(--border), 0.5);
+  color: rgb(var(--text-primary));
+}
+.dark .cm-tooltip-autocomplete ul li[aria-selected] {
+  background-color: rgba(var(--accent), 0.2);
+  color: rgb(var(--text-primary));
+}
+
+/* 诊断 / lint 下划线 */
+.dark .cm-lint-range-error {
+  text-decoration-color: rgb(var(--danger));
+}
+
+/* 亮色模式下也对行号/gutter做微调，确保视觉统一 */
+.cm-gutters {
+  background-color: #f8fafc;
+  color: #94a3b8;
+}
+.cm-activeLineGutter {
+  background-color: #f1f5f9;
+}
+
+/* ============================================================
+   Light Theme — "Apple-Inspired Premium Glass"
+   灵感：Apple.com / Stripe Dashboard / Notion / Linear Light
+   设计语言：精致阴影 + 微渐变 + 蓝色调 + 呼吸光效
+
+   所有规则使用 html:not(.dark) 前缀，
+   确保只影响亮色模式，完全不影响暗色页面。
+   ============================================================ */
+
+/* ──── 亮色：body 增强 ──── */
+html:not(.dark) body {
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%) !important;
+  color: rgb(var(--text-primary)) !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-family: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+}
+
+/* ──── 亮色：surface 微妙渐变 ──── */
+html:not(.dark) .bg-surface-0 {
+  background: linear-gradient(180deg, rgba(99, 102, 241, 0.015) 0%, transparent 40%), rgb(var(--surface-0)) !important;
+}
+html:not(.dark) .bg-surface-1 {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.6) 0%, rgba(248, 250, 252, 0.4) 100%), rgb(var(--surface-1)) !important;
+}
+html:not(.dark) .bg-surface-2 {
+  background: linear-gradient(180deg, rgba(99, 102, 241, 0.01) 0%, transparent 30%), rgb(var(--surface-2)) !important;
+}
+html:not(.dark) .bg-surface-3 {
+  background: rgb(var(--surface-3)) !important;
+}
+
+/* ──── 亮色:补齐背景色工具类 ────
+   Tailwind 生成的是 `rgb(var(--x) / <alpha>)`,而变量是**逗号分隔**的
+   (`--surface-2: 248, 250, 252`),展开即 `rgb(248, 250, 252 / 1)` —— 逗号与 `/` 混用
+   属非法 CSS,整条声明被丢弃,背景变透明。深色侧靠上面的手写覆写兜住了,
+   亮色侧原先只补了少数几个;下面按本仓库代码里实际用到、且亮色缺失的类补全
+   (共 23 个,含 hover 与 /alpha 变体)。 */
+html:not(.dark) .hover\:bg-surface-2:hover {
+  background-color: rgb(var(--surface-2)) !important;
+}
+html:not(.dark) .hover\:bg-surface-3:hover {
+  background-color: rgb(var(--surface-3)) !important;
+}
+html:not(.dark) .hover\:bg-surface-4:hover {
+  background-color: rgb(var(--surface-4)) !important;
+}
+html:not(.dark) .bg-surface-4 {
+  background-color: rgb(var(--surface-4)) !important;
+}
+html:not(.dark) .bg-surface-2\/60 {
+  background-color: rgba(var(--surface-2), 0.6) !important;
+}
+html:not(.dark) .bg-surface-1\/40 {
+  background-color: rgba(var(--surface-1), 0.4) !important;
+}
+html:not(.dark) .hover\:bg-surface-1:hover {
+  background-color: rgb(var(--surface-1)) !important;
+}
+html:not(.dark) .bg-accent\/15 {
+  background-color: rgba(var(--accent), 0.15) !important;
+}
+html:not(.dark) .bg-accent\/8 {
+  background-color: rgba(var(--accent), 0.08) !important;
+}
+html:not(.dark) .bg-surface-1\/60 {
+  background-color: rgba(var(--surface-1), 0.6) !important;
+}
+html:not(.dark) .bg-surface-2\/40 {
+  background-color: rgba(var(--surface-2), 0.4) !important;
+}
+html:not(.dark) .bg-surface-3\/70 {
+  background-color: rgba(var(--surface-3), 0.7) !important;
+}
+html:not(.dark) .bg-surface-4\/40 {
+  background-color: rgba(var(--surface-4), 0.4) !important;
+}
+html:not(.dark) .bg-surface-3\/60 {
+  background-color: rgba(var(--surface-3), 0.6) !important;
+}
+html:not(.dark) .hover\:bg-surface-2\/30:hover {
+  background-color: rgba(var(--surface-2), 0.3) !important;
+}
+html:not(.dark) .bg-surface-1\/80 {
+  background-color: rgba(var(--surface-1), 0.8) !important;
+}
+html:not(.dark) .hover\:bg-accent\/25:hover {
+  background-color: rgba(var(--accent), 0.25) !important;
+}
+html:not(.dark) .bg-accent\/10 {
+  background-color: rgba(var(--accent), 0.1) !important;
+}
+html:not(.dark) .bg-accent\/70 {
+  background-color: rgba(var(--accent), 0.7) !important;
+}
+html:not(.dark) .bg-accent {
+  background-color: rgb(var(--accent)) !important;
+}
+html:not(.dark) .hover\:bg-surface-3\/30:hover {
+  background-color: rgba(var(--surface-3), 0.3) !important;
+}
+html:not(.dark) .hover\:bg-surface-3\/40:hover {
+  background-color: rgba(var(--surface-3), 0.4) !important;
+}
+html:not(.dark) .bg-accent\/20 {
+  background-color: rgba(var(--accent), 0.2) !important;
+}
+
+/* ──── 亮色：Header 毛玻璃 ──── */
+html:not(.dark) header.sticky {
+  background: rgba(255, 255, 255, 0.88) !important;
+  backdrop-filter: blur(16px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.02) !important;
+}
+
+/* ──── 亮色：卡片精致阴影 + 微光 ──── */
+html:not(.dark) .card {
+  background-color: rgb(var(--surface-1)) !important;
+  border-color: rgba(0, 0, 0, 0.06) !important;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.04),
+    0 4px 16px rgba(0, 0, 0, 0.03),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+  transition: all 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+  position: relative;
+}
+
+html:not(.dark) .card-hover {
+  cursor: pointer;
+}
+
+html:not(.dark) .card-hover:hover {
+  background-color: rgb(var(--surface-1)) !important;
+  border-color: rgba(99, 102, 241, 0.15) !important;
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.04),
+    0 8px 24px rgba(99, 102, 241, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+  transform: translateY(-1px);
+}
+
+html:not(.dark) .card-hover:active {
+  transform: translateY(0) scale(0.998);
+  transition-duration: 0.1s;
+}
+
+/* ──── 亮色：主按钮（渐变蓝紫 + 柔和阴影） ──── */
+html:not(.dark) .btn-primary {
+  background: linear-gradient(180deg,
+    rgba(129, 140, 248, 1) 0%,
+    rgba(99, 102, 241, 1) 100%) !important;
+  color: white !important;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.08),
+    0 1px 2px rgba(0, 0, 0, 0.08),
+    0 4px 12px rgba(99, 102, 241, 0.2) !important;
+  transition: all 0.3s cubic-bezier(0.32, 0.72, 0, 1) !important;
+}
+
+html:not(.dark) .btn-primary:hover {
+  background: linear-gradient(180deg,
+    rgba(165, 170, 252, 1) 0%,
+    rgba(129, 140, 248, 1) 100%) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.08),
+    0 2px 4px rgba(0, 0, 0, 0.08),
+    0 8px 20px rgba(99, 102, 241, 0.25) !important;
+  transform: translateY(-1px);
+}
+
+html:not(.dark) .btn-primary:active {
+  background: linear-gradient(180deg,
+    rgba(79, 70, 229, 1) 0%,
+    rgba(67, 56, 202, 1) 100%) !important;
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.15),
+    0 1px 2px rgba(0, 0, 0, 0.08) !important;
+  transform: translateY(0) scale(0.98);
+  transition-duration: 0.1s !important;
+}
+
+/* ──── 亮色：Ghost 按钮 ──── */
+html:not(.dark) .btn-ghost {
+  transition: all 0.3s cubic-bezier(0.32, 0.72, 0, 1) !important;
+}
+
+html:not(.dark) .btn-ghost:hover {
+  background-color: rgb(var(--surface-2)) !important;
+  color: rgb(var(--text-primary)) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+/* ──── 亮色：输入框 ──── */
+html:not(.dark) .input {
+  background-color: rgb(var(--surface-1)) !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+  box-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.04),
+    0 1px 0 rgba(255, 255, 255, 0.8) !important;
+  transition: all 0.3s cubic-bezier(0.32, 0.72, 0, 1) !important;
+}
+
+html:not(.dark) .input:hover {
+  border-color: rgba(0, 0, 0, 0.15) !important;
+}
+
+html:not(.dark) .input:focus {
+  border-color: rgba(99, 102, 241, 0.45) !important;
+  background-color: rgb(var(--surface-1)) !important;
+  box-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.04),
+    0 0 0 3px rgba(99, 102, 241, 0.08),
+    0 0 0 1px rgba(99, 102, 241, 0.25) !important;
+  outline: none;
+}
+
+/* ──── 亮色：Badge ──── */
+html:not(.dark) .badge {
+  background-color: rgb(var(--surface-2)) !important;
+  border-color: rgba(0, 0, 0, 0.06) !important;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.03),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+}
+
+/* ──── 亮色：几何网格背景（极淡） ──── */
+html:not(.dark) body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(99, 102, 241, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(99, 102, 241, 0.025) 1px, transparent 1px),
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(99, 102, 241, 0.03), transparent 65%),
+    radial-gradient(ellipse 50% 40% at 0% 30%, rgba(59, 130, 246, 0.02), transparent 60%);
+  background-size:
+    56px 56px,
+    56px 56px,
+    100% 100%,
+    100% 100%;
+  /* background-attachment: fixed 已移除：元素本身 position:fixed，背景已锚定视口，视觉不变 */
+  mask-image: radial-gradient(ellipse 100% 80% at 50% 30%, black 0%, black 50%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 100% 80% at 50% 30%, black 0%, black 50%, transparent 100%);
+}
+
+/* 亮色主内容在网格之上 */
+html:not(.dark) main,
+html:not(.dark) nav,
+html:not(.dark) aside {
+  position: relative;
+  z-index: 1;
+}
+
+/* ──── 亮色：Aurora 极光带（顶部靛蓝光带） ──── */
+html:not(.dark) main {
+  position: relative;
+  z-index: 1;
+  /* 同暗色：裁掉 200% 宽 ::before 光带，避免横向滚动 */
+  overflow-x: clip;
+}
+
+html:not(.dark) main::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 200%;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(99, 102, 241, 0.35) 25%,
+    rgba(59, 130, 246, 0.35) 50%,
+    rgba(99, 102, 241, 0.35) 75%,
+    transparent 100%);
+  background-size: 50% 100%;
+  animation: aurora-sweep 6s linear infinite;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0.7;
+}
+
+/* ──── 亮色：卡片顶部光弧 ──── */
+html:not(.dark) .card::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 12%;
+  width: 152%;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(99, 102, 241, 0.15) 30%,
+    rgba(59, 130, 246, 0.15) 50%,
+    rgba(99, 102, 241, 0.15) 70%,
+    transparent 100%);
+  background-size: 50% 100%;
+  animation: aurora-sweep 5s linear infinite;
+  opacity: 0.5;
+  border-radius: 0 0 999px 999px;
+  pointer-events: none;
+}
+
+/* ──── 亮色：滚动揭示动画 ──── */
+html:not(.dark) .card,
+html:not(.dark) main > div > *,
+html:not(.dark) main > div > div > * {
+  animation: reveal-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+html:not(.dark) .card:nth-child(1) { animation-delay: 0.04s; }
+html:not(.dark) .card:nth-child(2) { animation-delay: 0.10s; }
+html:not(.dark) .card:nth-child(3) { animation-delay: 0.16s; }
+html:not(.dark) .card:nth-child(4) { animation-delay: 0.22s; }
+html:not(.dark) .card:nth-child(5) { animation-delay: 0.28s; }
+html:not(.dark) .card:nth-child(6) { animation-delay: 0.34s; }
+
+/* ──── 亮色：滚动条精致化 ──── */
+html:not(.dark) *::-webkit-scrollbar-track {
+  background: rgb(var(--surface-1));
+}
+
+html:not(.dark) *::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.5);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  transition: background 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+html:not(.dark) *::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.45);
+  background-clip: padding-box;
+}
+
+/* ──── 亮色：选区蓝色高亮 ──── */
+html:not(.dark) ::selection {
+  background: rgba(99, 102, 241, 0.18);
+  color: rgb(var(--text-primary));
+}
+
+html:not(.dark) ::-moz-selection {
+  background: rgba(99, 102, 241, 0.18);
+  color: rgb(var(--text-primary));
+}
+
+/* ──── 亮色：全局字体 ──── */
+html:not(.dark) body,
+html:not(.dark) button,
+html:not(.dark) input,
+html:not(.dark) select,
+html:not(.dark) textarea {
+  font-family: "Geist", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+}
+
+html:not(.dark) code,
+html:not(.dark) pre,
+html:not(.dark) .font-mono,
+html:not(.dark) kbd {
+  font-family: "Geist Mono", "JetBrains Mono", ui-monospace, Consolas, monospace !important;
+}
+
+/* ──── 亮色：页面标题增强 ──── */
+html:not(.dark) h1:not(header h1) { letter-spacing: -0.025em; font-weight: 600; }
+html:not(.dark) h2 { letter-spacing: -0.022em; font-weight: 600; }
+html:not(.dark) h3 { letter-spacing: -0.02em; font-weight: 600; }
+
+/* ──── 亮色：placeholder ──── */
+html:not(.dark) input::placeholder,
+html:not(.dark) textarea::placeholder {
+  color: rgb(var(--text-faint)) !important;
+  font-weight: 400;
+}
+
+/* ──── 亮色：按钮按压效果 ──── */
+html:not(.dark) button:not(:disabled):active {
+  transform: scale(0.98);
+  transition-duration: 0.08s !important;
+}
+
+/* ──── 亮色：分割线柔和化 ──── */
+html:not(.dark) .divide-border > * + *,
+html:not(.dark) [class*="divide-y"] > * + * {
+  border-color: rgba(0, 0, 0, 0.04) !important;
+}
+
+/* ──── 亮色：KPI 玻璃面板 ──── */
+html:not(.dark) .rounded-lg.border.bg-surface-2 {
+  background: linear-gradient(180deg,
+    rgba(255, 255, 255, 1) 0%,
+    rgba(248, 250, 252, 0.95) 100%) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    0 1px 3px rgba(0, 0, 0, 0.05),
+    0 0 0 1px rgba(0, 0, 0, 0.02) !important;
+}
+
+/* ──── 亮色：全局过渡 ──── */
+html:not(.dark) * {
+  transition-property: color, background-color, border-color, fill, stroke, opacity, box-shadow, transform;
+  transition-duration: 200ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+html:not(.dark) [class*="animate-"],
+html:not(.dark) [class*="transition-"] {
+  transition-property: transform, opacity;
+  transition-duration: 0ms;
+}
+
+/* ============================================================
+   亮色：覆盖硬编码深色边框/背景（解决黑线黑框问题）
+   核心策略：与暗色对齐 — 暗色用白色低 alpha，亮色用黑色低 alpha
+   ============================================================ */
+
+/* ──── 核心：border-border/* 在亮色下全部提高可见度 ──── */
+html:not(.dark) .border-border { border-color: rgba(0, 0, 0, 0.10) !important; }
+html:not(.dark) .border-border\/10 { border-color: rgba(0, 0, 0, 0.06) !important; }
+html:not(.dark) .border-border\/15 { border-color: rgba(0, 0, 0, 0.08) !important; }
+html:not(.dark) .border-border\/20 { border-color: rgba(0, 0, 0, 0.10) !important; }
+html:not(.dark) .border-border\/30 { border-color: rgba(0, 0, 0, 0.14) !important; }
+html:not(.dark) .border-border\/40 { border-color: rgba(0, 0, 0, 0.16) !important; }
+html:not(.dark) .border-border\/50 { border-color: rgba(0, 0, 0, 0.18) !important; }
+html:not(.dark) .border-border\/60 { border-color: rgba(0, 0, 0, 0.20) !important; }
+html:not(.dark) .border-border\/70 { border-color: rgba(0, 0, 0, 0.22) !important; }
+html:not(.dark) .hover\:border-border\/70:hover { border-color: rgba(0, 0, 0, 0.22) !important; }
+html:not(.dark) .hover\:border-border\/60:hover { border-color: rgba(0, 0, 0, 0.20) !important; }
+
+/* ──── 亮色：补齐主题文字色工具类 ────
+   与上面的背景类同因:Tailwind 生成 `rgb(var(--x) / <alpha>)`,而变量是逗号分隔的,
+   展开即非法 CSS,`color` 声明整条被丢弃 → 落到继承色。深色侧有 `.dark .text-*` 兜底,
+   亮色侧此前没有,于是气泡里的浅色元素(例如用户消息里的附件 chip)会继承气泡的白色,
+   在白底 chip 上彻底看不见。这里补齐亮色的半透明与基色两套。 */
+html:not(.dark) .text-primary { color: rgb(var(--text-primary)) !important; }
+html:not(.dark) .text-secondary { color: rgb(var(--text-secondary)) !important; }
+html:not(.dark) .text-tertiary { color: rgb(var(--text-tertiary)) !important; }
+html:not(.dark) .text-muted { color: rgb(var(--text-muted)) !important; }
+html:not(.dark) .text-faint { color: rgb(var(--text-faint)) !important; }
+html:not(.dark) .text-accent { color: rgb(var(--accent)) !important; }
+html:not(.dark) .text-faint\/70 { color: rgba(var(--text-faint), 0.7) !important; }
+html:not(.dark) .text-faint\/80 { color: rgba(var(--text-faint), 0.8) !important; }
+html:not(.dark) .text-faint\/60 { color: rgba(var(--text-faint), 0.6) !important; }
+
+/* ──── ring-border/* 在亮色下提高可见度 ──── */
+html:not(.dark) [class*="ring-border"] {
+  --tw-ring-color: rgba(0, 0, 0, 0.12) !important;
+}
+html:not(.dark) .ring-border\/10 {
+  --tw-ring-color: rgba(0, 0, 0, 0.08) !important;
+}
+html:not(.dark) .ring-border\/20 {
+  --tw-ring-color: rgba(0, 0, 0, 0.12) !important;
+}
+html:not(.dark) .ring-border\/30 {
+  --tw-ring-color: rgba(0, 0, 0, 0.16) !important;
+}
+html:not(.dark) .ring-border\/40 {
+  --tw-ring-color: rgba(0, 0, 0, 0.18) !important;
+}
+
+/* ──── 深色边框 → 亮色柔和灰线 ──── */
+html:not(.dark) .border-gray-700 { border-color: rgba(0, 0, 0, 0.08) !important; }
+html:not(.dark) .border-gray-800 { border-color: rgba(0, 0, 0, 0.06) !important; }
+html:not(.dark) .border-gray-900 { border-color: rgba(0, 0, 0, 0.06) !important; }
+html:not(.dark) .border-slate-700 { border-color: rgba(0, 0, 0, 0.08) !important; }
+html:not(.dark) .border-slate-800 { border-color: rgba(0, 0, 0, 0.06) !important; }
+html:not(.dark) .border-slate-900 { border-color: rgba(0, 0, 0, 0.06) !important; }
+html:not(.dark) .border-zinc-700 { border-color: rgba(0, 0, 0, 0.08) !important; }
+html:not(.dark) .border-zinc-800 { border-color: rgba(0, 0, 0, 0.06) !important; }
+html:not(.dark) .border-zinc-900 { border-color: rgba(0, 0, 0, 0.06) !important; }
+html:not(.dark) .border-neutral-700 { border-color: rgba(0, 0, 0, 0.08) !important; }
+html:not(.dark) .border-neutral-800 { border-color: rgba(0, 0, 0, 0.06) !important; }
+html:not(.dark) .border-neutral-900 { border-color: rgba(0, 0, 0, 0.06) !important; }
+html:not(.dark) .border-stone-700 { border-color: rgba(0, 0, 0, 0.08) !important; }
+html:not(.dark) .border-stone-800 { border-color: rgba(0, 0, 0, 0.06) !important; }
+html:not(.dark) .border-stone-900 { border-color: rgba(0, 0, 0, 0.06) !important; }
+html:not(.dark) .border-black { border-color: rgba(0, 0, 0, 0.06) !important; }
+
+/* ──── 深色 ring ──── */
+html:not(.dark) .ring-gray-700,
+html:not(.dark) .ring-gray-800,
+html:not(.dark) .ring-gray-900,
+html:not(.dark) .ring-black {
+  --tw-ring-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+/* ──── 深色背景 → 亮色用 surface 色替代 ──── */
+html:not(.dark) .bg-gray-800 { background-color: rgb(var(--surface-3)) !important; }
+html:not(.dark) .bg-gray-900 { background-color: rgb(var(--surface-1)) !important; color: rgb(var(--text-primary)) !important; }
+html:not(.dark) .bg-slate-800 { background-color: rgb(var(--surface-3)) !important; }
+html:not(.dark) .bg-slate-900 { background-color: rgb(var(--surface-1)) !important; color: rgb(var(--text-primary)) !important; }
+html:not(.dark) .bg-zinc-800 { background-color: rgb(var(--surface-3)) !important; }
+html:not(.dark) .bg-zinc-900 { background-color: rgb(var(--surface-1)) !important; color: rgb(var(--text-primary)) !important; }
+html:not(.dark) .bg-neutral-800 { background-color: rgb(var(--surface-3)) !important; }
+html:not(.dark) .bg-neutral-900 { background-color: rgb(var(--surface-1)) !important; color: rgb(var(--text-primary)) !important; }
+
+/* ──── 深色 hover ──── */
+html:not(.dark) .hover\:bg-gray-800:hover { background-color: rgb(var(--surface-4)) !important; }
+html:not(.dark) .hover\:bg-gray-900:hover { background-color: rgb(var(--surface-3)) !important; }
+html:not(.dark) .hover\:bg-slate-800:hover { background-color: rgb(var(--surface-4)) !important; }
+html:not(.dark) .hover\:bg-slate-900:hover { background-color: rgb(var(--surface-3)) !important; }
+
+/* ──── 深色 divide ──── */
+html:not(.dark) .divide-gray-700 > * + *,
+html:not(.dark) .divide-gray-800 > * + *,
+html:not(.dark) .divide-gray-900 > * + *,
+html:not(.dark) .divide-slate-700 > * + *,
+html:not(.dark) .divide-slate-800 > * + *,
+html:not(.dark) .divide-slate-900 > * + * {
+  border-color: rgba(0, 0, 0, 0.06) !important;
+}
+
+/* ──── 深色文字在亮色下的调整 ──── */
+html:not(.dark) .text-gray-100 { color: rgb(var(--text-primary)) !important; }
+html:not(.dark) .text-gray-200 { color: rgb(var(--text-secondary)) !important; }
+html:not(.dark) .text-gray-300 { color: rgb(var(--text-tertiary)) !important; }
+html:not(.dark) .text-gray-400 { color: rgb(var(--text-muted)) !important; }
+html:not(.dark) .text-gray-500 { color: rgb(var(--text-faint)) !important; }
+html:not(.dark) .text-gray-600 { color: rgb(var(--text-muted)) !important; }
+html:not(.dark) .text-gray-700 { color: rgb(var(--text-tertiary)) !important; }
+html:not(.dark) .text-gray-800 { color: rgb(var(--text-secondary)) !important; }
+html:not(.dark) .text-gray-900 { color: rgb(var(--text-primary)) !important; }
+
+/* ──── hover 文字在亮色下增强 ──── */
+html:not(.dark) .hover\:text-gray-200:hover { color: rgb(var(--text-primary)) !important; }
+html:not(.dark) .hover\:text-gray-300:hover { color: rgb(var(--text-tertiary)) !important; }
+html:not(.dark) .hover\:text-gray-400:hover { color: rgb(var(--text-secondary)) !important; }
+html:not(.dark) .hover\:text-gray-500:hover { color: rgb(var(--text-muted)) !important; }
+html:not(.dark) .hover\:text-white:hover { color: rgb(var(--text-primary)) !important; }
+
+/* ──── placeholder 在亮色下增强 ──── */
+html:not(.dark) .placeholder-gray-400::placeholder { color: rgb(var(--text-muted)) !important; }
+html:not(.dark) .placeholder-gray-500::placeholder { color: rgb(var(--text-faint)) !important; }
+html:not(.dark) .placeholder\:text-gray-400::placeholder { color: rgb(var(--text-muted)) !important; }
+html:not(.dark) .placeholder\:text-gray-500::placeholder { color: rgb(var(--text-faint)) !important; }
+
+/* ============================================================
+   亮色：白底上白色元素不可见修复
+   ============================================================ */
+
+/* ──── ring-white 在白底上隐形 → 改为黑色低 alpha ──── */
+html:not(.dark) .ring-white\/5,
+html:not(.dark) .ring-white\/10 {
+  --tw-ring-color: rgba(0, 0, 0, 0.08) !important;
+}
+html:not(.dark) .ring-white\/20 {
+  --tw-ring-color: rgba(0, 0, 0, 0.10) !important;
+}
+
+/* ──── border-white 在白底上隐形 → 改为黑色低 alpha ──── */
+html:not(.dark) .border-white\/10,
+html:not(.dark) .border-white\/20 {
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+html:not(.dark) .border-white {
+  border-color: rgba(0, 0, 0, 0.10) !important;
+}
+
+/* ──── bg-white/80 白圆点/指示器在白底隐形 → 改为深色 surface ──── */
+html:not(.dark) .bg-white\/80 {
+  background-color: rgb(var(--surface-4)) !important;
+}
+html:not(.dark) .bg-white\/60 {
+  background-color: rgb(var(--surface-3)) !important;
+}
+
+/* ──── via-white 渐变中间段在白底消失 → 改为 surface-3 ──── */
+html:not(.dark) .via-white {
+  --tw-gradient-via: rgb(var(--surface-3)) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-via), var(--tw-gradient-to) !important;
+}
+
+/* ──── to-white 渐变终点在白底消失 → 改为柔和灰 ──── */
+html:not(.dark) .to-white {
+  --tw-gradient-to: rgb(var(--surface-2)) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-via, var(--tw-gradient-from)), var(--tw-gradient-to) !important;
+}
+
+/* ============================================================
+   亮色：浅色文字在白底上对比度不足修复
+   text-*-400 在白底上对比度 ~2.5:1，不满足 WCAG AA
+   策略：亮色用 -600 加深版，暗色保持 -400
+   ============================================================ */
+
+/* ──── 翠绿色文字 ──── */
+html:not(.dark) .text-emerald-300 { color: rgb(16, 185, 129) !important; }
+html:not(.dark) .text-emerald-400 { color: rgb(5, 150, 105) !important; }
+html:not(.dark) .text-emerald-500 { color: rgb(5, 150, 105) !important; }
+
+/* ──── 红色文字 ──── */
+html:not(.dark) .text-red-300 { color: rgb(220, 38, 38) !important; }
+html:not(.dark) .text-red-400 { color: rgb(220, 38, 38) !important; }
+
+/* ──── 蓝色文字 ──── */
+html:not(.dark) .text-blue-200 { color: rgb(30, 64, 175) !important; }
+html:not(.dark) .text-blue-300 { color: rgb(37, 99, 235) !important; }
+html:not(.dark) .text-blue-400 { color: rgb(37, 99, 235) !important; }
+
+/* ──── 琥珀色/黄色文字 ──── */
+html:not(.dark) .text-amber-300 { color: rgb(180, 83, 9) !important; }
+html:not(.dark) .text-amber-400 { color: rgb(180, 83, 9) !important; }
+html:not(.dark) .text-yellow-300 { color: rgb(161, 98, 7) !important; }
+html:not(.dark) .text-yellow-400 { color: rgb(161, 98, 7) !important; }
+
+/* ──── 紫色/violet 文字 ──── */
+html:not(.dark) .text-violet-300 { color: rgb(109, 40, 217) !important; }
+html:not(.dark) .text-violet-400 { color: rgb(109, 40, 217) !important; }
+html:not(.dark) .text-purple-300 { color: rgb(126, 34, 206) !important; }
+html:not(.dark) .text-purple-400 { color: rgb(126, 34, 206) !important; }
+html:not(.dark) .text-indigo-300 { color: rgb(67, 56, 202) !important; }
+html:not(.dark) .text-indigo-400 { color: rgb(67, 56, 202) !important; }
+
+/* ──── 粉色文字 ──── */
+html:not(.dark) .text-pink-300 { color: rgb(190, 24, 93) !important; }
+html:not(.dark) .text-pink-400 { color: rgb(190, 24, 93) !important; }
+
+/* ──── 低 alpha 彩色背景增强 ──── */
+html:not(.dark) .bg-indigo-500\/20 { background-color: rgba(99, 102, 241, 0.12) !important; }
+html:not(.dark) .bg-purple-500\/20 { background-color: rgba(168, 85, 247, 0.12) !important; }
+html:not(.dark) .bg-emerald-500\/20 { background-color: rgba(16, 185, 129, 0.12) !important; }
+html:not(.dark) .bg-amber-500\/20 { background-color: rgba(245, 158, 11, 0.12) !important; }
+html:not(.dark) .bg-red-500\/20 { background-color: rgba(239, 68, 68, 0.12) !important; }
+html:not(.dark) .bg-blue-500\/20 { background-color: rgba(59, 130, 246, 0.12) !important; }
+
+/* ──── 亮色阴影增强 ──── */
+html:not(.dark) .shadow-sm {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+}
+html:not(.dark) .shadow {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+}
+html:not(.dark) .shadow-md {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.06), 0 2px 4px -1px rgba(0, 0, 0, 0.04) !important;
+}
+html:not(.dark) .shadow-lg {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.06), 0 4px 6px -2px rgba(0, 0, 0, 0.04) !important;
+}
+html:not(.dark) .shadow-xl {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.06), 0 10px 10px -5px rgba(0, 0, 0, 0.03) !important;
+}
+
+/* ──── 亮色：select 下拉框 ──── */
+html:not(.dark) select option,
+html:not(.dark) select optgroup {
+  background-color: rgb(var(--surface-1)) !important;
+  color: rgb(var(--text-primary)) !important;
+}
+html:not(.dark) select option:hover,
+html:not(.dark) select option:checked {
+  background-color: rgb(var(--surface-3)) !important;
+  color: rgb(var(--text-primary)) !important;
+}
+
+/* ──── 亮色：滚动平滑 ──── */
+html:not(.dark) {
+  scroll-behavior: smooth;
+}
+
+/* ============================================================
+   亮色：任务卡片/统计卡片增强
+   解决：渐变色在白底上淡到看不见、浅色边框在白底上不可见
+   ============================================================ */
+
+/* ──── 会话页统计数字：渐变文字在亮色下不可见 ──── */
+html:not(.dark) .bg-clip-text.text-transparent {
+  -webkit-text-fill-color: rgb(var(--text-primary)) !important;
+  background-image: none !important;
+}
+
+/* ──── 任务卡片头部渐变：to-white 在白底上看不见 → 改为柔和灰 ──── */
+html:not(.dark) .bg-gradient-to-r.from-blue-50\/60,
+html:not(.dark) .bg-gradient-to-r.from-emerald-50\/60,
+html:not(.dark) .bg-gradient-to-r.from-indigo-50\/60,
+html:not(.dark) .bg-gradient-to-r.from-amber-50\/60,
+html:not(.dark) .bg-gradient-to-r.from-red-50\/60 {
+  --tw-gradient-to: rgba(248, 250, 252, 0.8) !important;
+}
+
+/* ──── 浅色边框增强：border-*-100 在白底上几乎不可见 ──── */
+html:not(.dark) .border-blue-100 { border-color: rgba(59, 130, 246, 0.25) !important; }
+html:not(.dark) .border-emerald-100 { border-color: rgba(16, 185, 129, 0.25) !important; }
+html:not(.dark) .border-indigo-100 { border-color: rgba(99, 102, 241, 0.25) !important; }
+html:not(.dark) .border-amber-100 { border-color: rgba(245, 158, 11, 0.25) !important; }
+html:not(.dark) .border-red-100 { border-color: rgba(239, 68, 68, 0.25) !important; }
+html:not(.dark) .border-purple-100 { border-color: rgba(168, 85, 247, 0.25) !important; }
+html:not(.dark) .border-blue-200 { border-color: rgba(59, 130, 246, 0.30) !important; }
+html:not(.dark) .border-emerald-200 { border-color: rgba(16, 185, 129, 0.30) !important; }
+html:not(.dark) .border-indigo-200 { border-color: rgba(99, 102, 241, 0.30) !important; }
+
+/* ──── 浅色背景增强：bg-*-50/20 在白底上太淡 ──── */
+html:not(.dark) .bg-blue-50\/20 { background-color: rgba(59, 130, 246, 0.06) !important; }
+html:not(.dark) .bg-blue-50\/30 { background-color: rgba(59, 130, 246, 0.08) !important; }
+html:not(.dark) .bg-emerald-50\/20 { background-color: rgba(16, 185, 129, 0.06) !important; }
+html:not(.dark) .bg-emerald-50\/30 { background-color: rgba(16, 185, 129, 0.08) !important; }
+html:not(.dark) .bg-indigo-50\/20 { background-color: rgba(99, 102, 241, 0.06) !important; }
+html:not(.dark) .bg-indigo-50\/30 { background-color: rgba(99, 102, 241, 0.08) !important; }
+html:not(.dark) .bg-amber-50\/20 { background-color: rgba(245, 158, 11, 0.06) !important; }
+html:not(.dark) .bg-red-50\/20 { background-color: rgba(239, 68, 68, 0.06) !important; }
+
+/* ──── 统计卡片外层：半透明白底在亮色下增加可见度 ──── */
+html:not(.dark) .bg-surface-2\/50 {
+  background-color: rgba(248, 250, 252, 0.85) !important;
+}
+html:not(.dark) .bg-surface-2\/70 {
+  background-color: rgba(248, 250, 252, 0.92) !important;
+}
+html:not(.dark) .bg-surface-3\/50 {
+  background-color: rgba(241, 245, 249, 0.85) !important;
+}
+html:not(.dark) .bg-surface-3\/80 {
+  background-color: rgba(241, 245, 249, 0.95) !important;
+}

@@ -1,0 +1,125 @@
+// Smart Factory 数据模型（四表）。权威定义见 server/docs/03-architecture/02-data-model.md §1、§2。
+// 零外键：relationMode = "prisma"，关联靠字符串字段 + 应用层校验，删除由应用层显式完成。
+//
+// 建库只认本文件 + bootstrap.sql：`node scripts/db.mjs sync`（prisma db push + bootstrap.sql）。
+// 本库没有迁移史，**不要跑 `prisma migrate dev`** —— 它生成的 migrations 没有任何程序会读，
+// 而且从中间开始的断档迁移史（首个迁移只有 agents 表）照它 deploy 出来的是缺表的坏库。
+
+generator client {
+  provider = "prisma-client-js"
+  // 产物是一份同时覆盖 linux-x64 与 win32-x64 的包（见
+  // framework/docs/modules/smart-factory.artifact.json 的 platforms），所以两个
+  // 平台的查询引擎都要生成：`native` 给打包机自己那份（Windows 上是
+  // query_engine-windows.dll.node），另外两个显式列出来，缺哪个都会在打包期断言里
+  // 被拦下——但那时已经白跑一遍打包。改平台列表时这里要一起改。
+  binaryTargets = ["native", "debian-openssl-1.0.x", "windows"]
+}
+
+datasource db {
+  provider     = "sqlite"
+  url          = env("DATABASE_URL") // 由 config 在 boot 时从 COSIGHT_HOME 推导
+  relationMode = "prisma" // 数据库层不用外键，关联靠字符串字段 + 应用层校验
+}
+
+/// 一个智能体 = 一行元数据 + 一个产物目录。id 同时是目录名（<workspace.directory>/.smart-factory/agents/{id}/），不是外键。
+/// 权威定义见 server/docs/03-architecture/08-agent.md；接口形状见 05-openapi/5.01-agent-openapi.yaml。
+model Agent {
+  id          String   @id
+  workspaceId String?  @map("workspace_id") // 框架工作区 id（uuid 字符串），建后不可改；内置智能体恒为 null
+  source      String   @default("user") @map("source") // user | builtin；来源是事实，只读 / 仅 runtime / 无工作区都由它派生（builtin 行：目录即专家 {COSIGHT_HOME}/smart-factory/builtin-agents/{id}/，boot seed 登记）
+  name        String // 展示名，同一工作区内唯一（字节精确比较）；重名一律 409，不自动加后缀
+  description String   @default("")
+  initialInput String  @default("") @map("initial_input") // 创建时 init.input 的原文；空串 = 没带 init 或没写第一句；建后不可改
+  initialAttachments String @default("[]") @map("initial_attachments") // 创建时 init.attachments 的路径数组，JSON 串（同 tags 的存法）；空数组 = 没带附件
+  knowledgeWorkflowId String? @map("knowledge_workflow_id") // 当前绑定的知识检索工作流 id（RAG_Workflow_xxx）；空串 = 明确没有 / 已取消；NULL = 本列引入前的存量行（读取时按 initial_input 现推，不回填）
+  tags        String   @default("[]") // 标签，JSON 数组串（同 messages.content 的存法）；空数组 = 没有标签
+  icon        String   @default("") // 封面图的 HTTP(S) 地址；空串 = 没有封面（前端落到名称首字的兜底头像）
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at") // 同时是列表的排序键
+
+  @@unique([workspaceId, name])
+  @@index([updatedAt])
+  @@map("agents")
+}
+
+/// 一个智能体在一个阶段的存在。agentId 是目录名，不是外键。
+model Instance {
+  // 两种形态：智能体实例（agentId 非空、cwd 为 null）与目录实例（agentId 为 null、cwd 非空）。
+  // cwd 只存在目录实例上；智能体实例的 cwd 每次 send 前重新推导 / 物化，存下来会过期。
+  id        String   @id
+  agentId   String?  @map("agent_id") // 目录实例为 null
+  stage     String // development | preview | runtime | evaluation；目录实例（agentId 为 null）同样是这四种，工坊用 development
+  cwd       String? // 目录实例非空，创建时给定的绝对路径
+  engine    String // 引擎适配器注册表 key，创建时由 config 写入
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([agentId, stage]) // SQLite 里 NULL 互不相等，目录实例不受此约束
+  @@map("instances")
+}
+
+/// 一段对话。业务字段一律不放这里。
+model Session {
+  id              String   @id
+  instanceId      String   @map("instance_id")
+  name            String   @default("")
+  status          String   @default("not_started") // not_started | in_progress | completed
+  modelId         String   @map("model_id") // 会话级框架模型 uuid，必填非空；没有自动解析 / 回退，不支持清空
+  resumeSessionId String? // provider 相关:当前生效 SDK 返回的 resume 标识,用于引擎多轮 resume;仅对最后写入的 provider 有效
+  mode            String   @default("workspace_write") // read_only | workspace_write | full_access；会话级审批模式，DTO 字段名为 approvalMode
+  approvedAll     Boolean  @default(false) @map("approved_all") // 会话级「允许所有」；用户选 approved_all 时置真，审批模式降级时复位
+  effort          String   @default("high") // low | medium | high | xhigh | max；会话级推理强度
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@index([instanceId, createdAt])
+  @@index([resumeSessionId])
+  @@map("sessions")
+}
+
+/// 一次执行。一条用户消息起一个顶层 run；子 agent 的每次委派各起一个子 run（parentRunId 非空）。
+/// 活跃顶层 run 的并发边界：任何 stage 同 session 至多一个；非 runtime stage 同 instance 至多一个，
+/// runtime 允许同 instance 的不同 session 并行。
+/// instanceId 与 stage 分别从 session / instance 抄来（两者均不可变，无漂移机会），
+/// 唯一用途是让上述两条部分唯一索引可写（见 bootstrap.sql）。
+model Run {
+  id              String    @id
+  sessionId       String    @map("session_id")
+  instanceId      String    @map("instance_id") // 冗余自 session；instance 级索引对 runtime 放行，其余 stage 仍互斥
+  stage           String                        // 冗余自 instance.stage；唯一用途是让「非 runtime 的实例级部分唯一索引」可写
+  parentRunId     String?   @map("parent_run_id") // 父 run；null = 顶层 run
+  parentToolUseId String?   @map("parent_tool_use_id") // 触发本次委派的父工具调用 id
+  subagentType    String?   @map("subagent_type") // 子 agent 类型；顶层 run 为 null
+  delegationDepth Int       @default(0) @map("delegation_depth") // 委派深度；顶层为 0
+  taskId          String?   @map("task_id") // 引擎任务 id，与 task_started 的 task_id 对应
+  status          String    @default("pending") // pending | running | succeeded | failed | aborted
+  error           String?
+  startedAt       DateTime? @map("started_at")
+  finishedAt      DateTime? @map("finished_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  @@index([sessionId, createdAt])
+  @@index([parentRunId])
+  // 手写部分唯一索引不在本 schema 内，由 server/prisma/bootstrap.sql 提供，db push 后执行（见 server/scripts/db.mjs）：
+  // uq_runs_one_active_top_per_session - 任何 stage 同 session 至多一个活跃顶层 run；
+  // uq_runs_one_active_top_per_instance_non_runtime - 非 runtime stage 同 instance 至多一个活跃顶层 run。
+  // 子 run 以 parent_run_id 非空区分，不受约束。
+  @@map("runs")
+}
+
+/// 对话里的每条产出。审批与交互也是 message，这是本设计的核心简化。
+model Message {
+  id        String   @id
+  sessionId String   @map("session_id")
+  runId     String?  @map("run_id")
+  seq       Int // 会话内单调递增，排序权威键
+  role      String // user | assistant | system
+  type      String   @default("text") // 见接口契约 §0.1
+  status    String? // 仅 approval / tool_interactive，其余恒为 null
+  content   String   @default("") // JSON 字符串，形状见接口契约 §0.2
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([sessionId, seq]) // 同时承担 (sessionId, seq) 的查询索引
+  @@index([sessionId, type, status]) // 支撑 status=pending 过滤
+  @@map("messages")
+}

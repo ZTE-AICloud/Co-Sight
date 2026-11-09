@@ -1,0 +1,30 @@
+# golden manifest — vector-kb-skill（v1.2 批2 外部集成实例包, 源 milvus-rag-skill 蒸馏重塑）
+# 契约见 schemas/golden-manifest.schema.yaml（字段语义单点在该文件）
+
+task_tag: vector-kb-skill
+line: skill
+mode_id: K3-KB-Backed                  # 货架位（检索键）, 非身份声明（R9）
+patterns:                               # 如实完整模式维度集（现行词汇, 重映射后）
+  - K3-KB-Backed
+  - CD1-Protocol-Driven
+  - IH1-Request-Response
+anchor_fit: real                        # 技能职责 = 知识库支撑全链路（创建/入库/检索）, K3 纯正实现
+standard_ref: knowledge/skill/skill-design-guide.md
+shape_counts: {SKILL_md: 1, scripts: 3, references: 1, templates: 0}
+acceptance:
+  - 用户凭据接口位显式声明三件套（向量库 URI/token + Embedding 密钥）, 全包禁硬编码
+  - 环境检测 fail-closed（逐项 PASS/FAIL 打印, 任一失败非零退出不静默跳过）
+  - 预设场景表固定 text_search / rag 两种, 字段与相似度配置写明
+  - 检索引用三字段契约（原文逐字 / 相似度得分 / 来源标记）缺一不可
+anchors:
+  build_plan: anchors/build-plan.md
+  self_report: anchors/self-report.md
+  derived: true                         # 外部启发锚
+known_concerns: []                        # G028 准入后如实回填
+provenance:
+  origin_repo: "golden-examples 库 sources/milvus-rag-skill（源 manifest repo_url 为空, 未随源声明 license）"
+  license: "未随源声明（按外部启发使用, 蒸馏重塑后为本仓库模板资产）"
+  snapshot_date: "2026-10-17"
+  reshaped: true                         # 外部件复制后按本仓库规则重塑（1432 行实现蒸馏为骨架）
+source: "v1.2 批2 外部集成实例包（源 golden-examples 库, D-01 裁定对策=样例补足）"
+status: active

@@ -1,0 +1,43 @@
+# AgentGenesis 运行时反馈映射
+#
+# 用途: 运行时评分失败 → 模式决策诊断的映射表
+# 加载者: evaluator-agent (Phase 5)
+# 触发条件: 任一评分维度 < 3.0
+
+correctness_low:
+  - probable_cause: "IT1-Enforced 缺失或强度不足 — Agent 自行判断了本应由工具检测的问题"
+    suggest: "将 tool_strategy 从 Optional 升级为 Enforced，指定强制使用的外部工具"
+    affected_patterns: [IT1-Enforced, CD3]
+  - probable_cause: "CD3 知识边界不清晰 — Agent 跨边界使用了不可靠的 K1 知识进行精确判断"
+    suggest: "在 CD3 中明确声明：哪些判断必须来自权威工具/K2/K3，不可由 LLM 自行推断"
+    affected_patterns: [CD3, K2, K3]
+  - probable_cause: "K4 规则文件内容错误或不完整 — Agent 遵循了错误的规则导致误判"
+    suggest: "审计 L2 规则文件内容：检查检测规则是否与领域标准一致，是否有过时条目"
+    affected_patterns: [K4]
+
+completeness_low:
+  - probable_cause: "W1 Pipeline 步骤粒度不足 — 某些检查类别被合并或跳过"
+    suggest: "拆分 Execution Workflow，为每个检查类别增加独立步骤和中间验证点"
+    affected_patterns: [W1]
+  - probable_cause: "DT1 流转中信息丢失 — 上游产出未完整传递到下游消费者"
+    suggest: "检查数据实体 producer/consumer 定义，在流转边界添加 Schema 校验"
+    affected_patterns: [DT1, DF1]
+  - probable_cause: "IH1 单次交互限制了深度 — 缺少追问机制导致覆盖不全"
+    suggest: "将交互模式从 IH1 改为 IH2，允许 Agent 在看到代码后追问澄清需求"
+    affected_patterns: [IH1, IH2]
+
+format_compliance_low:
+  - probable_cause: "DF1 Schema 未声明或定义过粗 — Agent 不知道输出应该长什么样"
+    suggest: "添加 DF1 Schema-Enforced，定义具体输出字段名、类型、必填项、嵌套结构"
+    affected_patterns: [DF1]
+  - probable_cause: "I/O Contract 中的输出模板缺失或 Agent 未被告知必须遵循"
+    suggest: "在 CLAUDE.md I/O Contract 中明确引用报告模板路径，并在 Execution Workflow 中添加格式校验步骤"
+    affected_patterns: [DT1, CD1]
+
+actionability_low:
+  - probable_cause: "K2/K3 领域知识不足 — Agent 只能给泛泛的建议而无法给出具体修复方案"
+    suggest: "增加 K2 权威文档或 K3 结构化知识库，为 Agent 提供可引用的修复模式和代码示例"
+    affected_patterns: [K2, K3]
+  - probable_cause: "输出设计未面向消费者 — 格式正确但内容没有面向'谁会用这份输出'优化"
+    suggest: "在 I/O Contract 中明确输出消费者画像和行动触发条件（如'开发者可直接复制修复代码'）"
+    affected_patterns: [IH1]

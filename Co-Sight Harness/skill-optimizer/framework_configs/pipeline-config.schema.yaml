@@ -1,0 +1,73 @@
+# 管道配置 Schema
+# ===============
+# skillx-alpha-agents 业务方配置文件的字段定义和约束。
+# 所有业务方适配器必须遵循此 Schema。
+
+# ── 必填字段 ──────────────────────────────────
+# name: string          适配器名称（唯一标识）
+# version: string       语义化版本号
+# pipeline: object      评测管道定义
+
+# ── pipeline 字段 ─────────────────────────────
+# pipeline.base_dir: string          评测根目录（支持 ${ENV} 变量）
+# pipeline.sandbox_name: string      沙箱名称
+# pipeline.steps: list               执行步骤列表
+# pipeline.parallel: int             并行度（默认 3）
+# pipeline.timeout: int              总超时秒数（默认 7200，0=不限制）
+
+# ── step 字段（steps 数组内每个元素） ─────────
+# step.name: string          步骤名称（唯一标识）
+# step.script: string        脚本路径（相对 base_dir 或绝对路径）
+# step.args: list            脚本参数列表
+# step.timeout: int          步骤超时秒数
+# step.run_once: bool        全局只执行一次（默认 false）
+# step.round1_only: bool     仅首轮执行（默认 false）
+# step.optional: bool        可选步骤，失败不阻断流程（默认 false）
+
+# ── data_layout 字段 ──────────────────────────
+# data_layout.root: string           数据根目录
+# data_layout.phases.build: string   Build 阶段子目录
+# data_layout.phases.execution: string  执行阶段子目录
+# data_layout.phases.evaluation: string 评测阶段子目录
+# data_layout.phases.diagnosis: string   诊断阶段子目录
+# data_layout.trace_dir: string      轨迹文件目录
+# data_layout.trace_pattern: string  轨迹文件名模式
+# data_layout.sub_activity_sets: string 子活动集目录
+
+# ── result_extraction 字段 ────────────────────
+# result_extraction.score_dir: string    分数文件目录
+# result_extraction.score_pattern: string 分数文件 glob 模式
+# result_extraction.json_fields: object  JSON 分数字段路径映射
+# result_extraction.aggregation: string  聚合方式（固定 "mean"）
+
+# ── trace 字段 ───────────────────────────────
+# trace.enabled: bool              是否启用轨迹分析
+# trace.format: string             轨迹文件格式（jsonl / json）
+# trace.path_template: string      轨迹文件路径模板（支持 {case_id} 占位符）
+
+# ── diagnosis 字段 ───────────────────────────
+# diagnosis.enabled: bool          是否启用诊断
+# diagnosis.path_template: string  诊断文件路径模板
+# diagnosis.format: string         诊断文件格式
+
+# ── case_ids 字段 ────────────────────────────
+# case_ids.source: string          CASE ID 来源（"env" | "config" | "cli"）
+# case_ids.env_var: string         环境变量名
+# case_ids.delimiter: string       分隔符
+# case_ids.prefix: string          CASE ID 前缀
+# case_ids.pattern: string         glob 匹配模式
+# case_ids.base_dir: string        CASE 基础目录（可选）
+
+# ── activities 字段 ──────────────────────────
+# activities.default: string       默认活动名
+# activities.mapping: object       内部名到展示名的映射表
+
+# ── 占位符支持 ───────────────────────────────
+# 配置中所有 ${VAR_NAME} 占位符在运行时从环境变量解析。
+# 支持默认值语法：${VAR_NAME:default_value}
+# 支持的内置占位符：
+#   ${CASE_IDS}         当前案例 ID 列表（逗号分隔）
+#   ${CASE_IDS_LIST}    当前案例 ID 列表（空格分隔）
+#   ${ACTIVITY}         当前评测活动名
+#   ${SKILL_PATH}       当前 Skill 路径
+#   ${ROUND_NUM}        当前轮次号

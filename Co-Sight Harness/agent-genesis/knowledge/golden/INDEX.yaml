@@ -1,0 +1,35 @@
+# Golden 资产池 INDEX — 检索规则声明 + 池目录（唯一注册点）
+# 追加样例 = 本文件 pool: 加一行 + 落盘包目录（零代码, R1）
+# 消费方: scripts/golden-lookup.sh（G1 落盘）, few-shot 注入（G1 接线）, 人工策展（§3.4）
+
+lookup:
+  primary_key: mode_id            # = lane-decision.anchored_mode（mapping 核心模式全 id）
+  key_domain:                     # 11 核心全 id; 拓扑模式（W1/W4/DT2 等）不是检索键
+    - WF4-Multi-Agent-Debate
+    - WF5-Contract-Lock
+    - WF6-Circuit-Breaker
+    - WF7-Knowledge-Reflux
+    - IH3-Plan-Approval
+    - IV1-Progress-Streaming
+    - K3-KB-Backed
+    - W3-MapReduce
+    - IH2-Interactive-Clarify
+    - DP1-Traceable-Lineage
+    - W2-Router
+  multi_hit_rule: acceptance_items_max   # 多命中 → manifest.acceptance 要点条数多者优先
+  miss_behavior: NONE_fail_closed        # 未命中/异常 → NONE, 不阻塞构建（R2）
+
+pool:
+  # task_tag: {mode_id, line} — 形态见 schemas/golden-manifest.schema.yaml
+  skill-router: {mode_id: W2-Router, line: skill}       # G0 试抽包（源自 waza 重塑）
+  command-router: {mode_id: W2-Router, line: agent}     # G2 批（源自 gacui-claude 重塑）
+  verify-loop: {mode_id: WF6-Circuit-Breaker, line: agent}   # G2 批（源自 dexter 重塑）
+  plan-approval: {mode_id: IH3-Plan-Approval, line: agent}   # G2 批（源自 clnode 重塑）
+  knowledge-reflux: {mode_id: WF7-Knowledge-Reflux, line: agent}  # G2 批（源自 everything-claude-code 重塑）
+  skill-gate-report: {mode_id: IV1-Progress-Streaming, line: skill}  # G3 追加（自有产物 gate-suite-report, 非 derived）
+  parallel-scan-audit: {mode_id: W3-MapReduce, line: agent}    # v1.2 批 2 档 1 实例（自有产物 code-style-auditor, fast 例外条款）
+  mcp-bridge-router: {mode_id: W2-Router, line: agent}         # v1.2 批 2（源自 oh-my-claudecode 重塑）
+  leader-worker-orchestrator: {mode_id: WF5-Contract-Lock, line: agent}  # v1.2 批 2（源自 claude-orchestrator 重塑）
+  browser-automation-suite: {mode_id: W3-MapReduce, line: skill}  # v1.2 批 2（源自 browserbase-skills 重塑）
+  vector-kb-skill: {mode_id: K3-KB-Backed, line: skill}        # v1.2 批 2（源自 milvus-rag-skill 重塑）
+  lineage-context-skill: {mode_id: DP1-Traceable-Lineage, line: skill}  # v1.2 批 2（源自 zilliztech-claude-context 重塑）

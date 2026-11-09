@@ -1,0 +1,112 @@
+# 19×5 交叉验证矩阵 — readiness-verifier SubAgent 运行时知识
+# 来源: design/AgentGenesis-6月/任务模式与Harness建模交叉验证-含示例.md
+# 用途: verifier 逐维度检查每个 task_mode 的覆盖率
+
+meta:
+  version: "1.0"
+  dimensions: 19
+  task_type_groups: 5
+  pass_threshold: "全部 PASS"
+
+groups:
+  proposal:
+    target: "proposal-spec.md"
+    dimensions:
+      - id: proposal_why
+        name: "概述完整性（用户/痛点/价值可辨）"
+        required_fields: [概述]
+        max_score: 15
+      - id: proposal_what
+        name: "核心能力完整性"
+        required_fields: [核心能力]
+      - id: proposal_how
+        name: "交付计划完整性"
+        required_fields: [交付计划, 文件清单]
+      - id: proposal_quality
+        name: "风险声明完整性（≥2 条已知风险）"
+        required_fields: [风险]
+      - id: proposal_acceptance
+        name: "审批要点完整性（spot-check ≥3 + yes_no 决策项）"
+        required_fields: [spot_check, yes_no]
+
+  workflow:
+    dimensions:
+      - id: workflow_existence
+        name: "Workflow 文件存在"
+        check: "phase/02-workflows/ 至少 1 个文件"
+        max_score: 8
+      - id: workflow_step_io
+        name: "每步 I/O 完整"
+        check: "每步有 输入 + 产出 + depends_on（如有依赖）"
+      - id: workflow_parallelism
+        name: "并行度标注"
+        check: "parallelism=parallel 时无写冲突"
+      - id: workflow_contract_lock
+        name: "契约锁"
+        check: "contract_lock=true 的步骤产出被后续只读引用"
+      - id: workflow_circuit_breaker
+        name: "熔断配置"
+        check: "circuit_breaker 标注的步骤 ≤3 max_retries"
+      - id: workflow_human_approval
+        name: "人类审批配置"
+        check: "human_approval.required=true 的步骤 dc_id 唯一"
+
+  skills:
+    dimensions:
+      - id: skills_count
+        name: "Skill 存在"
+        check: ".claude/skills/ ≥1"
+        max_score: 12
+
+  rules:
+    dimensions:
+      - id: rules_count
+        name: "Rule 存在"
+        check: ".claude/rules/ ≥1"
+        max_score: 10
+
+  gates:
+    dimensions:
+      - id: gates_count
+        name: "Gate 存在"
+        check: "phase/gates/ ≥1，类型合法"
+        max_score: 10
+      - id: gates_type_valid
+        name: "Gate 类型合法"
+        check: "gate_type ∈ {condition_check, circuit_breaker, budget_circuit_breaker}"
+
+  reference_closure:
+    dimensions:
+      - id: reference_closure
+        name: "引用闭合"
+        check: "workflow 中引用的 gate/review/skill 在对应目录中存在"
+        max_score: 12
+
+  io_closure:
+    dimensions:
+      - id: io_closure
+        name: "I/O 闭合"
+        check: "每步输入有来源，输出有消费者"
+        max_score: 12
+
+  constraint_consistency:
+    dimensions:
+      - id: constraint_consistency
+        name: "约束自洽"
+        check: "Rules↔Gates不矛盾，CD3↔K来源一致"
+        max_score: 5
+
+  no_placeholders:
+    dimensions:
+      - id: no_placeholders
+        name: "无占位符"
+        check: "无 {{}} / TODO / TBD / FIXME 残留"
+        max_score: 6
+
+scoring:
+  max_total: 100
+  levels:
+    L0: {min: 0, max: 37, description: "未就绪，需补充基本输入"}
+    L1: {min: 38, max: 57, description: "报告模式，所有产出需人工审核"}
+    L2: {min: 58, max: 77, description: "协助模式，低风险task自动执行"}
+    L3: {min: 78, max: 100, description: "无人值守，全自动"}

@@ -1,0 +1,21 @@
+/*
+ * 被嵌页面的铺满布局。
+ *
+ * 两个使用方：`ModuleHost`（嵌模块清单里的前端）与 `KnowledgePage`（嵌用户配置的
+ * 知识库地址）。两者都是"主面板里一个 iframe"，样式没有理由各写一份、再各自漂移。
+ */
+
+.host {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  /* 面板自身已经有圆角与外边距，这里不再重复裁剪。 */
+}
+
+.frame {
+  width: 100%;
+  height: 100%;
+  border: none;
+  /* iframe 默认是 inline，会产生几像素的基线间隙。 */
+  display: block;
+}

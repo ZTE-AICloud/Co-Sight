@@ -1,0 +1,61 @@
+# execution-report.schema.yaml
+# Step 4 (agent-executor) 产出的 phase4-execution-report.md 结构 schema
+type: map
+required: true
+mapping:
+  overall:
+    type: str
+    required: true
+    enum: [COMPLETED, BLOCKED, IN_PROGRESS]
+  per_file_status:
+    type: seq
+    required: true
+    sequence:
+      - type: map
+        mapping:
+          path:
+            type: str
+            required: true
+          status:
+            type: str
+            required: true
+            enum: [done, failed, skipped]
+          lines:
+            type: int
+            required: false
+          gates_passed:
+            type: seq
+            required: false
+            sequence:
+              - type: str
+          retry_count:
+            type: int
+            required: true
+            range: {min: 0, max: 3}
+          finished_at:
+            type: str
+            required: false
+  blockers:
+    type: seq
+    required: true
+    sequence:
+      - type: map
+        mapping:
+          path:
+            type: str
+            required: true
+          error:
+            type: str
+            required: true
+          retry_count:
+            type: int
+            required: true
+  total_files:
+    type: int
+    required: false
+  completed_files:
+    type: int
+    required: false
+  failed_files:
+    type: int
+    required: false

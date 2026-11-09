@@ -1,0 +1,281 @@
+/*
+ * 配置面板（模型设置 / Agent 代理配置）共用的样式：小节标题行、失败提示、
+ * 表单分组、密钥行、模块私有配置的只读展示。
+ *
+ * 与 `components/ui/ConfigList.module.css` 是同一条边界的两半：那边管**行**的骨架，
+ * 这边管**面板**的骨架。两个面板的状态分支（加载中/失败/空/有内容）各自写在
+ * 组件里，但标题与内容的间距、失败提示的长相这类会漂的细节收到这里一份。
+ */
+
+/* ===================== 面板骨架 ===================== */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* 小节标题行：左边标题、右边主操作（「新增模型」）。 */
+.sectionHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+/*
+ * 一行里的操作按钮组。
+ *
+ * 加这一层是为了给这组按钮一个**可访问名**（"对「X」的操作"）。`ConfigRow` 的
+ * `.actions` 只负责把内容靠右摆好、不能承载 aria-label，所以这里自己再包一层；
+ * 它必须重新声明 flex 与 gap——不声明的话内层按钮会竖着堆起来，因为它们不再是
+ * `.actions` 的直接子元素。用嵌套 flex 而不是 `display: contents`：后者会把
+ * 这个带 role 的元素从可访问性树里摘掉，那正好是这里唯一想要的东西。
+ */
+.rowActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 数值与设置弹窗里的 `.sectionTitle` 保持一致（--fs-label / --text-secondary）。 */
+.sectionTitle {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--fs-label);
+  line-height: var(--lh-label);
+}
+
+/*
+ * 写操作（保存/删除/激活）失败时的那一行。
+ *
+ * 灰底而不是红底：这里说的是"刚才那一下没成功"，内容本身还在、还能重试；
+ * 红底会让它看起来像数据坏了。真正的红色留给字段级的校验错误。
+ */
+.alert {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: var(--r-sm);
+  background: var(--color-disabled-bg);
+  color: var(--text-body);
+  font-size: var(--fs-label);
+  line-height: var(--lh-label);
+}
+
+/* ===================== 表单 ===================== */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/*
+ * 表单里的分组（「推理参数」「运行与额度」「能力开关」）。
+ *
+ * 用 `<fieldset>/<legend>` 而不是一个带 `<h4>` 的 div：读屏软件在字段之间跳转时会
+ * 念出所属分组，而屏幕上多一行的标题并不会。原生控件在"这块字段是一组"这件事上
+ * 本来就是对的。
+ */
+.group {
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.groupTitle {
+  padding: 0;
+  color: var(--text-heading);
+  font-family: var(--font-medium);
+  font-weight: var(--fw-medium);
+  font-size: var(--fs-label);
+  line-height: var(--lh-label);
+}
+
+/* ===================== 密钥行 ===================== */
+
+.secret {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.secretAction {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* ===================== 模块私有配置（只读） ===================== */
+
+.extra {
+  padding-top: 12px;
+  border-top: 1px solid var(--border-sidebar);
+}
+
+.extraTitle {
+  margin: 0;
+  color: var(--text-heading);
+  font-family: var(--font-medium);
+  font-weight: var(--fw-medium);
+  font-size: var(--fs-label);
+  line-height: var(--lh-label);
+}
+
+.extraHint {
+  margin: 2px 0 0;
+  color: var(--text-secondary);
+  font-size: var(--fs-sidebar-sub);
+  line-height: var(--lh-sidebar-sub);
+}
+
+/*
+ * 键值对用 `<dl>`：这是一组"术语 → 值"，不是列表也不是表格。
+ * 两列栅格让术语列按最长的一项对齐，值列吃掉剩下的宽度。
+ */
+.extraList {
+  display: grid;
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+  gap: 4px 16px;
+  margin: 8px 0 0;
+}
+
+.extraTerm {
+  color: var(--text-secondary);
+  font-size: var(--fs-sidebar-sub);
+  line-height: var(--lh-sidebar-sub);
+}
+
+.extraValue {
+  /* dd 的默认 margin-inline-start 是 40px，不清掉第二列会被整体推走。 */
+  margin: 0;
+  color: var(--text-body);
+  font-size: var(--fs-sidebar-sub);
+  line-height: var(--lh-sidebar-sub);
+  /* 值可能是模块塞进来的任意字符串，长标识符必须能断开，否则会撑破面板。 */
+  overflow-wrap: anywhere;
+}
+
+/* ===================== 只读详情（模型详情） ===================== */
+
+/*
+ * 复用上面的 `.extraList` / `.extraTerm` / `.extraValue`：模型详情与"模块私有配置"
+ * 是同一种结构（一组术语 → 值），分成两套样式只会让行距在两处慢慢漂开。
+ * 这里补的只是详情特有的标题行与底部操作。
+ */
+.detail {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.detailHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/*
+ * 详情标题是列表行标题（`--fs-label` / 12px）**升一档**到 14px。
+ * 两处用同一个尺寸的话，"点进了详情"与"还在列表里"在标题上看不出区别，
+ * 而详情页没有列表那种行框可以依赖。
+ */
+.detailTitle {
+  overflow: hidden;
+  color: var(--text-heading);
+  font-family: var(--font-medium);
+  font-weight: var(--fw-medium);
+  font-size: var(--fs-nav);
+  line-height: var(--lh-nav);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.detailActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+/* ===================== 折叠区（模块接入卡、模型的「推理参数」） ===================== */
+
+/*
+ * 用原生 `<details>` 而不是自己做一个展开/收起：键盘操作、焦点、`aria-expanded`
+ * 都由浏览器负责，不值得为这两处各引入一份状态与分支测试。
+ *
+ * 两处的差别只在**默认状态**，不在样式：接入卡是次要信息，展开与否都行；
+ * 「推理参数」是"默认值够用、少数人才改"的一整组字段，所以默认收起
+ * （`<details>` 不带 `open`），并由 `ModelConfigForm` 在提交失败时临时撑开。
+ */
+.disclosure {
+  padding-top: 12px;
+  border-top: 1px solid var(--border-sidebar);
+}
+
+.disclosureSummary {
+  color: var(--text-heading);
+  font-family: var(--font-medium);
+  font-weight: var(--fw-medium);
+  font-size: var(--fs-label);
+  line-height: var(--lh-label);
+  cursor: pointer;
+}
+
+/*
+ * 跟在 `<summary>` 标题后面的那句说明（"默认值适用于大多数场景…"）。
+ *
+ * 只重置字体，**不动 `display`**：`summary` 一旦不是 `list-item`，浏览器就不画那个
+ * 展开三角了，收起状态会变得看不出来。所以它保持行内流，靠自然换行。
+ */
+.disclosureHint {
+  margin-left: 8px;
+  color: var(--text-secondary);
+  font-family: var(--font-regular);
+  font-weight: var(--fw-regular);
+  font-size: var(--fs-sidebar-sub);
+  line-height: var(--lh-sidebar-sub);
+}
+
+.copyRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.code {
+  flex: 1;
+  min-width: 0;
+  padding: 2px 6px;
+  overflow: hidden;
+  border-radius: var(--r-sm);
+  background: var(--color-disabled-bg);
+  color: var(--text-body);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sidebar-sub);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* 注意事项：无序列表 + 自定义标记，避免默认圆点把两行文案挤成三行。 */
+.notes {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  color: var(--text-secondary);
+  font-size: var(--fs-sidebar-sub);
+  line-height: var(--lh-sidebar-sub);
+}
+
+.pre {
+  margin: 4px 0 0;
+  padding: 8px 10px;
+  overflow-x: auto;
+  border-radius: var(--r-sm);
+  background: var(--color-disabled-bg);
+  color: var(--text-body);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sidebar-sub);
+  line-height: var(--lh-sidebar-sub);
+  /* 命令里的长 URL 不该被折行（折了复制出去就是断的），改由横向滚动承载。 */
+  white-space: pre;
+}

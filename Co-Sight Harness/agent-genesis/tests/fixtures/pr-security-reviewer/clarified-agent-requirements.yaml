@@ -1,0 +1,46 @@
+task_mode: verification_validation
+build_mode: greenfield
+why:
+  user_role: "研发团队负责人 / PR 审查者"
+  business_scenario: "每次 PR 提交后需要安全审查，人工审查既慢又容易遗漏密钥硬编码、注入类问题"
+  core_pain_points:
+    - "人工逐行看 diff 找安全问题，单 PR 20-40 分钟"
+    - "低级安全问题（密钥硬编码、SQL 拼接）反复漏检流入主干"
+  expected_value: "每个 PR 自动过一遍安全审查，critical 问题即刻暴露"
+  success_metrics:
+    - "planted 漏洞检出率 ≥ 90%"
+    - "单 PR 审查时间 < 3 分钟"
+what:
+  core_flow: "接收 PR git diff → 安全维度扫描 → 仅 critical 级问题快报"
+  scope_boundaries: "只审安全问题；不报风格/性能/可维护性；只报 critical 级，major/minor 不进入快报"
+  priority: must
+how:
+  normal_flow: "读取 diff → 按安全维度（密钥硬编码/注入/XSS/危险配置）检查 → critical 问题附位置+修复建议输出"
+  exception_flow: "diff 过大或格式无法解析 → 明确报错并退出，不产出部分报告"
+  business_rules:
+    - "没有 critical 问题时输出明确的「无 critical 问题」结论，不输出空壳报告"
+    - "每条发现必须含：维度/位置/证据片段/修复建议"
+quality:
+  performance: "单 PR 审查 < 3 分钟"
+  security: "审查 Agent 自身不执行被审代码，只做静态文本分析"
+  availability: "审查失败时退出码非零并说明原因"
+acceptance_criteria:
+  - given: "一个含硬编码 API 密钥的 diff"
+    when: "运行审查"
+    then: "报出密钥硬编码 critical 问题，含位置与修复建议"
+  - given: "一个含 SQL 字符串拼接的 diff"
+    when: "运行审查"
+    then: "报出注入风险 critical 问题"
+  - given: "一个干净的 diff"
+    when: "运行审查"
+    then: "输出「无 critical 问题」，不误报"
+open_questions:
+  - question: "是否需要对接 CI（GitHub Actions 等）触发方式？"
+    recommendation: "本轮不做，先出 CLI 可用版本"
+    status: pending
+knowledge_sources:
+  - type: K1
+    location: ""
+    trust_level: 参考
+confidence: 82
+dc010_channel: fast

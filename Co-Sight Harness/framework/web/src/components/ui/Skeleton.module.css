@@ -1,0 +1,46 @@
+/*
+ * 骨架屏（D18 = A：无限滚动 + 骨架）。
+ *
+ * 稿中没有加载态。骨架块用稿中已有的 Gray-3 做底、白色做扫光，
+ * 不引入新的灰度值。
+ */
+
+.skeleton {
+  display: block;
+  border-radius: var(--r-xs);
+  background: var(--color-tag-bg);
+  /* 扫光用 transform 位移的伪元素实现，只动合成层属性。 */
+  position: relative;
+  overflow: hidden;
+}
+
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 70%), transparent);
+  animation: sweep 1.4s var(--ease-out) infinite;
+}
+
+@keyframes sweep {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+/*
+ * 减少动态效果时保留骨架的"占位"意义、去掉扫光。
+ * 全局的 prefers-reduced-motion 规则（global.css）已经压掉了动画时长，
+ * 这里再显式隐藏伪元素，是因为压时长会让它变成一块静止的白色方块，
+ * 看起来更像渲染错误而不是加载中。
+ */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after {
+    display: none;
+  }
+}
+
+.circle {
+  border-radius: var(--r-full);
+}

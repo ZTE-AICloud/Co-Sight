@@ -1,0 +1,93 @@
+# build-plan — Step 3 产出 / Step 4 输入 / Phase 2 G023 校验对象
+# 格式: Markdown 文档, frontmatter + ```yaml 块(materialization / 每 file 一块)
+# 本 schema 描述 frontmatter 与 yaml 块内字段结构
+plan_id:   {type: string}
+plan_version: {type: string, enum: ["2.0"]}
+mode:      {type: string, enum: [greenfield, incremental]}
+platforms:
+  type: array
+  description: "产物平台（v1.2）。缺省按 claude-code 处理，存量 build-plan 不受影响。dsh/both 时额外要求 dsh/ bundle 条目，映射见 knowledge/agent-creation/platforms/dsh.yaml"
+  items: {type: string, enum: [claude-code, dsh, both]}
+  default: [claude-code]
+batches:
+  type: array
+  description: "goal-loop 生成批次（提速方案 OPT-2）：deps 拓扑分层，批内不得有相互依赖边，copy 条目不入批。缺省时 executor 按文件序自行分批（兼容存量）。M8 校验闭合性"
+  items:
+    type: array
+    items: {type: string}
+generated_at: {type: string, format: "ISO8601"}
+basis:
+  type: array
+  items:
+    type: object
+    required: [path, verdict]
+    properties:
+      path: {type: string}
+      verdict: {type: string, enum: [pass, concerns]}
+selected_patterns:
+  type: array
+  items: {type: string, pattern: "^[A-Z]+[0-9]+$"}
+
+materialization:
+  type: array
+  minItems: 1
+  description: "```yaml 块: 决策物化增量表（|pattern_id|target_files| 两列）。唯一增量是路径绑定 target_files；mechanism/verify 单源在 matching-decision「决策物化」表，向本表转写即 step-3 边界对账 FAIL（MAT_transcription_duplicate）"
+  items:
+    type: object
+    required: [pattern_id, target_files]
+    properties:
+      pattern_id: {type: string, pattern: "^[A-Z]+[0-9]+$"}
+      target_files: {type: array, minItems: 1, items: {type: string}}
+
+template_variables:
+  type: object
+  description: "frontmatter 模板变量映射（步 1.4 runner.assets 物化唯一变量源）。存在 generation: template 条目时必填：模板内 {{var}} 逐一对应本映射键，缺键即 g025 input_error。加变量只改此处数据，不改脚本"
+
+files:
+  type: array
+  minItems: 1
+  description: "文件清单, 每文件一个 ```yaml 块。generation: copy 条目为确定性直拷（g025），必填 source（插件内路径，相对 REPO_ROOT）；generation: template 条目为模板物化（g025 渲染 assets/templates/ 模板），必填 source，变量取 frontmatter template_variables——两者均不涉 LLM 生成循环，G023 照查。generation: pre_staged 条目由 Step 1b 注入（injected-assets.yaml 驱动），g025 只查存在、G023 只跑 py_compile/file_reference_exists、内容由 G029 审计"
+  items:
+    type: object
+    required: [path, type, deps, read_first, materializes, brief, invariants, acceptance, anti_patterns]
+    properties:
+      path: {type: string}
+      type: {type: string, enum: [claude_md, workflow_md, rule, schema, subagent,
+             skill, script, fixture, test, settings, gates_yaml, other,
+             dsh_bundle, dsh_preset, dsh_skill, dsh_subagent, dsh_readme, dsh_install]}
+      generation: {type: string, enum: [generate, copy, template, pre_staged], default: generate,
+        description: "generate=LLM 生成循环；copy=逐字直拷；template=模板物化（零 LLM）；pre_staged=Step 1b 已注入（executor 不生成、g025 只查存在、G029 审计内容）"}
+      source:     {type: string, description: "generation: copy/template 时必填（copy=源文件路径；template=assets/templates/ 模板路径，均相对 REPO_ROOT）；pre_staged 时填已注入路径（相对 output_dir），仅供审计追溯"}
+      deps:        {type: array, items: {type: string}}
+      read_first:  {type: array, items: {type: string}}
+      materializes: {type: array, items: {type: string, pattern: "^[A-Z]+[0-9]+$"}}
+      brief:       {type: string, minLength: 50}
+      invariants:
+        type: array
+        items:
+          type: object
+          required: [type]
+          properties:
+            type: {type: string, enum: [frontmatter_field_nonempty,
+                   frontmatter_field_absent, file_reference_exists,
+                   content_contains, py_compile, json_schema_valid],
+              description: "选型矩阵见 agents/build-planner.md 验收转化两条硬规则: json_schema_valid 仅适用带 $schema 的 JSON（无 $schema 的 settings/hooks 配了必 FAIL）; py_compile 仅 .py"}
+            field:   {type: string}
+            pattern: {type: string, description: "正则表达式; 意图匹配字面文本时元字符必须转义"}
+            derived_from: {type: string, pattern: "^acceptance_criteria\\[[0-9]+\\]$"}
+      acceptance:  {type: array, items: {type: string}}
+      anti_patterns:
+        type: array
+        items:
+          type: object
+          required: [ref, apply]
+          properties:
+            ref: {type: string, pattern: "^rejected\\[[A-Z]+[0-9]+\\]$"}
+            apply: {type: string}
+
+cross_checks:
+  type: object
+  description: "Phase 2 G023 全局检查开关（默认全开）"
+  properties:
+    reference_closure: {type: boolean, default: true}
+    isolation_bidirectional: {type: boolean, default: true}

@@ -1,0 +1,68 @@
+# AgentGenesis 知识来源清单
+# 此文件声明 AgentGenesis 自身依赖的所有知识来源
+# 用于 Knowledge Contract (K2/K3/K4) 的初始化校验
+
+version: "0.1.0"
+generated_by: "AgentGenesis Phase 0 Self-Spec"
+date: "2026-04-29"
+
+knowledge_sources:
+  k2_design_docs:
+    description: "AgentGenesis 自身的设计文档"
+    files:
+      - path: "design/AgentGenesis/AgentGenesis建设方案.md"
+        description: "AgentGenesis 整体建设方案 V4.2"
+        required: true
+      - path: "design/AgentGenesis/AgentGenesis分阶段实施方案.md"
+        description: "6阶段定义、验收条件、产出清单"
+        required: true
+      - path: "design/AgentGenesis/phase0-pattern-library.md"
+        description: "Phase 0 设计模式库详细设计"
+        required: true
+      - path: "design/AgentGenesis/AgentGenesis验收用例.md"
+        description: "13个测试用例 TC-0.1 至 TC-0.13"
+        required: true
+    retrieval_strategy: "按需Read，不全量加载。匹配阶段读验收用例，拼装阶段读分阶段方案"
+
+  k3_pattern_db:
+    description: "设计模式知识库"
+    files:
+      - path: ".claude/knowledge/shared/pattern-catalog.yaml"
+        description: "27个模式的定义、约束、关系、模板路径"
+        required: true
+      - path: ".claude/knowledge/agent-creation/pattern-matcher.yaml"
+        description: "需求→模式匹配指南，含solves/indicators/distinguishing_from"
+        required: true
+      - path: ".claude/knowledge/agent-creation/spec-assembler.yaml"
+        description: "模式→Spec的11步拼装顺序和去重指南"
+        required: true
+      - path: ".claude/knowledge/shared/problem-diagnoser.yaml"
+        description: "7个诊断维度、causal_chains、repair_targets"
+        required: true
+      - path: ".claude/skills/agent-design-patterns/patterns/"
+        description: "27个 .template.md 可填充模板"
+        required: true
+        file_count: 27
+    retrieval_strategy: "匹配阶段读matcher，拼装阶段读assembler+catalog+templates，诊断阶段读diagnoser"
+
+  k4_rules:
+    description: "编码规范和规则文件"
+    paths:
+      - "~/.claude/rules/"
+      - ".claude/rules/"
+    required: false
+    retrieval_strategy: "审查阶段按需读取，用于审查Agent Spec"
+
+  paradigm_presets:
+    description: "5个范式预设 (来自 pattern-catalog.yaml)"
+    presets:
+      - name: "pipeline"
+        formula: "W1+G1+DT1+IH1"
+      - name: "agent_pool"
+        formula: "W4+DT2+IH3+IV1"
+      - name: "swarm"
+        formula: "W4+SM1+DT2+IH2+IV1"
+      - name: "analysis"
+        formula: "W1+K1+DT1+IH1+CD2"
+      - name: "fsm"
+        formula: "SM1+DT2+IH2+IV1"

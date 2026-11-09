@@ -1,0 +1,44 @@
+test_name: "security-vulnerability-detection"
+description: "验证 Multi-Agent 安全审查 Pipeline 是否能正确检测常见安全漏洞并生成综合报告"
+agent_type: MULTI_AGENT_PIPELINE
+
+input:
+  type: "directory"
+  path: "fixtures/security_vulnerabilities/"
+  prompt_template: |
+    请对以下代码目录执行完整的安全审查 Pipeline：
+
+    1. 安全检查（OWASP Top 10 / CWE 漏洞检测）
+    2. 性能分析（算法复杂度、热点路径）
+    3. 代码质量审查（风格、设计模式、可维护性）
+    4. 汇总生成综合审查报告
+
+    目录路径: {input_path}
+
+expected_output:
+  type: "checklist"
+  items:
+    - id: "sql-injection-detected"
+      description: "检测到 SQL 注入漏洞（字符串拼接查询），含 CWE 编号"
+      required: true
+    - id: "hardcoded-key-detected"
+      description: "检测到硬编码 API 密钥/凭据，含风险等级"
+      required: true
+    - id: "xss-detected"
+      description: "检测到 XSS 漏洞（未转义用户输入），含修复方案"
+      required: true
+    - id: "severity-ranked"
+      description: "报告按严重级别排序（Critical > High > Medium > Low）"
+      required: true
+    - id: "fix-recommendations"
+      description: "每个漏洞有具体修复建议（非泛泛'请修复'）"
+      required: true
+    - id: "consolidated-report"
+      description: "输出为单一综合报告而非 4 份独立报告"
+      required: true
+
+scoring_weights:
+  correctness: 0.40
+  completeness: 0.25
+  coordination: 0.20
+  report_quality: 0.15

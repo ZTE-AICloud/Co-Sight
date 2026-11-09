@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "id": "cosight-viewer",
+  "moduleRoot": "cosight-viewer",
+  "priority": 20,
+  "build": {
+    "cwd": "client",
+    "command": ["npm", "run", "build"],
+    "inputs": [
+      "src",
+      "public",
+      "index.html",
+      "vite.config.ts",
+      "tailwind.config.js",
+      "postcss.config.js",
+      "tsconfig.json",
+      "package.json",
+      "package-lock.json"
+    ],
+    "outputs": ["dist/index.html"],
+    "timeoutMs": 300000
+  },
+  "services": [
+    {
+      "name": "server",
+      "cwd": ".",
+      "command": ["node", "server/index.js"],
+      "port": 4830,
+      "readyPath": "/health",
+      "readyTimeoutMs": 30000,
+      "stripEnvPrefixes": ["npm_"]
+    }
+  ],
+  "env": {
+    "CO_SIGHT_MODE": "claude",
+    "CO_SIGHT_PORT": "4830"
+  },
+  "isolatedEnv": {
+    "DASHBOARD_DATA_DIR": ".run/data"
+  },
+  "notes": "产物的真相：server 在 CO_SIGHT_MODE=claude 下是**生产模式**，静态托管 client/dist，而 client/dist 是 gitignore 的——git pull 不会更新它。所以这里声明了 build：启动前若 src 等输入比 dist/index.html 新就重跑一次 client 的 npm run build。dist 只声明 index.html 一个文件当「新鲜度标记」（vite 最后写它），不是漏写别的产物文件。默认重建判据见 framework/docs/dev-all.md。默认隔离启动。CO_SIGHT_MODE 一旦设置，server 启动时会 installHooks(true) 写全局 ~/.claude/settings.json；不设 CO_SIGHT_MODE 则没有数据库、并会在 60s 后自检重启。所以这里显式给 mode。COSIGHT_HOME 刻意不设置：让 claude-home.js 默认使用 ~/.claude，这样会话文件从 ~/.claude/projects/ 读取，与 Claude CLI 写入的位置一致。DASHBOARD_DATA_DIR 仍隔离在 .run/data，避免数据库写进产物目录。--live 会去掉 isolatedEnv，此时所有路径都用真实用户目录。另：本脚本绝不执行 npm install —— 它的 prepare 会在本仓 .git/config 写 core.hooksPath=.husky，静默关掉 Gerrit 的 commit-msg 钩子。stripEnvPrefixes 里的 npm_ 来自模块自己的 start 脚本（它同样要清掉，否则 detached 子进程会被 npm 生命周期变量干扰）。"
+}

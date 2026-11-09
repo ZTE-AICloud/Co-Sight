@@ -1,0 +1,238 @@
+/**
+ * 设计页「产物技能」弹层。类名统一 ps- 前缀。
+ *
+ * 列表是产物 `.claude/skills` 的镜像：不记来源，只给「优化 / 删除」两个动作。
+ * 按钮复用 `.al-btn` / `.al-card-action`（全局样式），这里只写弹层版式。
+ */
+
+.ps-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(17, 24, 39, 0.42);
+}
+
+.ps-dialog {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 560px;
+  max-height: calc(100vh - 48px);
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--color-surface);
+  box-shadow: 0 32px 80px -24px rgba(17, 24, 39, 0.45);
+}
+
+.ps-head {
+  position: relative;
+  padding: 18px 48px 14px 20px;
+  border-bottom: 1px solid #f2f3f5;
+}
+
+.ps-head-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ps-head h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 650;
+}
+
+.ps-count {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #f2f3f5;
+  color: #4e5969;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.ps-sub {
+  margin: 8px 0 0;
+  color: var(--color-text-weak);
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.ps-product {
+  margin: 6px 0 0;
+  color: var(--color-text-weak);
+  font-size: 11.5px;
+}
+
+.ps-product code {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: #f7f8fa;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.ps-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--color-text-weak);
+  cursor: pointer;
+}
+
+.ps-close:hover {
+  background: #f2f3f5;
+  color: var(--color-text);
+}
+
+.ps-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 10px 12px 14px;
+}
+
+.ps-hint {
+  margin: 8px;
+  color: var(--color-text-weak);
+  font-size: 12px;
+}
+
+.ps-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 6px 8px 10px;
+  padding: 8px 10px;
+  border-radius: 7px;
+  background: #fff2f1;
+  color: #b3261e;
+  font-size: 11.5px;
+  line-height: 1.6;
+}
+
+.ps-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 36px 20px;
+  color: var(--color-text-weak);
+  text-align: center;
+}
+
+.ps-empty p {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.7;
+}
+
+.ps-empty-hint {
+  font-size: 11.5px !important;
+  color: #9aa1ab;
+}
+
+.ps-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ps-row {
+  padding: 10px 10px 12px;
+  border-radius: 8px;
+}
+
+.ps-row:hover {
+  background: #fafbfc;
+}
+
+.ps-row + .ps-row {
+  border-top: 1px solid #f2f3f5;
+}
+
+.ps-row-main {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.ps-row-name {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-text);
+  font-size: 13px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ps-version {
+  flex-shrink: 0;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #f2f3f5;
+  color: #4e5969;
+  font-size: 10.5px;
+  font-weight: 500;
+}
+
+.ps-actions {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.ps-row-desc {
+  display: -webkit-box;
+  margin: 5px 0 0;
+  overflow: hidden;
+  color: var(--color-text-weak);
+  font-size: 11.5px;
+  line-height: 1.6;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.ps-confirm {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: 7px;
+  background: #fff7f6;
+  color: #b3261e;
+  font-size: 11.5px;
+  line-height: 1.6;
+}
+
+.ps-confirm span {
+  flex: 1;
+  min-width: 180px;
+}
+
+.ps-foot {
+  display: flex;
+  justify-content: flex-end;
+  padding: 10px 16px 14px;
+  border-top: 1px solid #f2f3f5;
+}

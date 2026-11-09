@@ -1,0 +1,521 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>drive × DeepSeek Harness 兼容性评估报告</title>
+<style>
+  :root {
+    --bg: #fafafa;
+    --ink: #0f172a;
+    --muted: #475569;
+    --rule: #e2e8f0;
+    --accent: #0ea5e9;
+    --crit: #b91c1c;   --crit-bg: #fef2f2;   --crit-rule: #fecaca;
+    --high: #b45309;   --high-bg: #fffbeb;   --high-rule: #fde68a;
+    --mid:  #0369a1;   --mid-bg:  #f0f9ff;   --mid-rule:  #bae6fd;
+    --ok:   #15803d;   --ok-bg:   #f0fdf4;   --ok-rule:   #bbf7d0;
+    --mute: #64748b;   --mute-bg: #f8fafc;   --mute-rule: #e2e8f0;
+  }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink);
+               font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                            "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+                            Roboto, sans-serif; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 40px 28px 80px; }
+  h1 { font-size: 27px; margin: 0 0 6px; letter-spacing: -0.015em; line-height: 1.3; }
+  h2 { font-size: 19px; margin: 44px 0 10px; border-left: 4px solid var(--accent); padding-left: 11px; line-height: 1.4; }
+  h3 { font-size: 15px; margin: 22px 0 7px; color: #1e293b; }
+  h4 { font-size: 13.5px; margin: 16px 0 5px; color: #334155; }
+  p { line-height: 1.72; margin: 9px 0; }
+  ul, ol { line-height: 1.72; margin: 9px 0; padding-left: 22px; }
+  li { margin: 3px 0; }
+  .lede { color: var(--muted); margin: 0 0 20px; font-size: 14.5px; line-height: 1.7; }
+  .meta { display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: 12.5px; color: var(--muted); padding: 12px 0 18px; border-bottom: 1px solid var(--rule); margin-bottom: 6px; }
+  .meta b { color: var(--ink); font-weight: 600; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; background: white; margin: 12px 0; }
+  th, td { border: 1px solid var(--rule); padding: 7px 11px; text-align: left; vertical-align: top; line-height: 1.6; }
+  th { background: #f1f5f9; font-weight: 600; }
+  td.num { text-align: center; white-space: nowrap; }
+  code, kbd, .mono { font-family: "JetBrains Mono", "SF Mono", Consolas, "Liberation Mono", monospace; font-size: 12.3px; background: #f8fafc; padding: 1px 5px; border-radius: 3px; border: 1px solid #e2e8f0; }
+  pre { background: #0f172a; color: #e2e8f0; padding: 12px 15px; border-radius: 7px; overflow-x: auto; font-size: 12.3px; line-height: 1.62; margin: 11px 0; }
+  pre code { background: none; border: none; padding: 0; color: inherit; font-size: inherit; white-space: pre; }
+  .ev { color: var(--muted); font-size: 12px; font-family: "JetBrains Mono", "SF Mono", Consolas, monospace; }
+  .quote { color: var(--muted); font-size: 13.5px; padding-left: 12px; border-left: 3px solid var(--rule); margin: 10px 0; }
+  .b { display: inline-block; padding: 1px 8px; border-radius: 4px; font-size: 11.5px; font-weight: 600; white-space: nowrap; border: 1px solid; }
+  .b-ok   { color: var(--ok);   background: var(--ok-bg);   border-color: var(--ok-rule); }
+  .b-crit { color: var(--crit); background: var(--crit-bg); border-color: var(--crit-rule); }
+  .b-high { color: var(--high); background: var(--high-bg); border-color: var(--high-rule); }
+  .b-mid  { color: var(--mid);  background: var(--mid-bg);  border-color: var(--mid-rule); }
+  .b-mute { color: var(--mute); background: var(--mute-bg); border-color: var(--mute-rule); }
+  .verdict { border-radius: 9px; padding: 16px 20px; margin: 16px 0; border: 1px solid; border-left-width: 5px; }
+  .verdict h3 { margin: 0 0 7px; font-size: 15px; }
+  .verdict p { margin: 6px 0; }
+  .v-crit { background: var(--crit-bg); border-color: var(--crit-rule); border-left-color: var(--crit); }
+  .v-high { background: var(--high-bg); border-color: var(--high-rule); border-left-color: var(--high); }
+  .v-ok   { background: var(--ok-bg);   border-color: var(--ok-rule);   border-left-color: var(--ok); }
+  .v-mid  { background: var(--mid-bg);  border-color: var(--mid-rule);  border-left-color: var(--mid); }
+  .gap { border: 1px solid var(--rule); border-radius: 9px; padding: 14px 18px; margin: 14px 0; background: white; }
+  .gap-h { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+  .gap-h .id { font-family: "JetBrains Mono", Consolas, monospace; font-weight: 700; font-size: 13px; color: var(--ink); }
+  .gap-h .ti { font-size: 14.5px; font-weight: 600; color: var(--ink); }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .card { background: white; border: 1px solid var(--rule); border-radius: 9px; padding: 14px 16px; }
+  .card h4 { margin-top: 0; }
+  .card p:last-child { margin-bottom: 0; }
+  details { background: white; border: 1px solid var(--rule); border-radius: 7px; padding: 9px 15px; margin: 9px 0; }
+  details > summary { cursor: pointer; font-weight: 600; color: #1e293b; font-size: 13.5px; }
+  details[open] > summary { margin-bottom: 9px; }
+  .toc { background: white; border: 1px solid var(--rule); border-radius: 9px; padding: 14px 20px; margin: 18px 0 6px; }
+  .toc ol { margin: 6px 0 0; font-size: 13.5px; }
+  .toc a { color: var(--mid); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  hr.sep { border: none; border-top: 1px solid var(--rule); margin: 34px 0 0; }
+  footer { margin-top: 34px; padding-top: 14px; border-top: 1px solid var(--rule); color: var(--muted); font-size: 12px; }
+  @media (max-width: 900px) { .grid2 { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>drive × DeepSeek Harness 兼容性评估报告</h1>
+<p class="lede">本报告评估 <strong>drive</strong> 工作流编排插件在 <strong>DeepSeek Harness（dsh）</strong> 上的可运行性。结论基于对 dsh 源码 <code>dsh-v0.2.1-rc.2</code> 与 drive <code>v2.3.4</code> 的逐项源码核查，<strong>不使用二手资料或社区对照表</strong>。文中每条判断均附源码位置与置信度标注。</p>
+
+<div class="meta">
+  <span>报告日期 <b>2026-10-22</b></span>
+  <span>dsh 基线 <b>dsh-v0.2.1-rc.2</b>（HEAD <code>687f282e86</code>）</span>
+  <span>drive 基线 <b>v2.3.4</b></span>
+  <span>验证方式 <b>源码核查 + 外部检索交叉验证</b></span>
+  <span>结论置信度 <b>高</b>（阻断项均由源码确证）</span>
+</div>
+
+<div class="toc">
+  <strong>目录</strong>
+  <ol>
+    <li><a href="#s0">结论摘要</a></li>
+    <li><a href="#s1">dsh 对 Claude Code 生态的支持情况</a></li>
+    <li><a href="#s2">drive 现状</a></li>
+    <li><a href="#s3">Gap 分析</a></li>
+    <li><a href="#s4">改造方案：drive 做成 dsh 插件</a></li>
+    <li><a href="#s5">附录：证据索引与未决问题</a></li>
+  </ol>
+</div>
+
+<h2 id="s0">0. 结论摘要</h2>
+
+<div class="verdict v-crit">
+  <h3>核心结论：不能无缝运行。业务逻辑层可移植，强制层结构性不可移植。</h3>
+  <p>drive 的编排循环（状态机、DAG、wave 调度、46 个 Python 脚本）在 dsh 上<strong>可以原样跑通</strong>，零改造。但 drive 的核心价值——由 harness 层强制执行的状态机不变量与 HITL 门禁——在 dsh 上<strong>有两处结构性缺失</strong>，不是配置能弥补的：<code>allowed-tools</code> 差分权限机制不存在，且三条 <code>PreToolUse</code> matcher 全部静默失效。</p>
+  <p>估算：约 <strong>70% 的代码可直接使用</strong>，约 <strong>30%（强制层）需要重新设计</strong>。且失败模式是<strong>静默的</strong>——不报错、不告警，workflow 照常产出结果，但零强制。</p>
+</div>
+
+<h3>按使用场景的可行性</h3>
+<table>
+  <thead><tr><th style="width:26%">使用场景</th><th style="width:14%">可行性</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td>纯 auto 编排<br><span class="ev">只要产出，不要强制</span></td><td class="num"><span class="b b-ok">可跑通</span></td><td>drive 的 <code>auto_mode=true</code> 是贯穿 harness 与 CLI 两层的完整旁路，无需任何确认脚本。46 个 Python 脚本零 Claude 依赖，原样可用。</td></tr>
+    <tr><td>auto + 需要状态机不变量</td><td class="num"><span class="b b-high">可跑但无强制</span></td><td>守卫是唯一执行层，dsh 上全部不触发。CLI 层那道门兜底，但其 docstring 自陈「可能被绕过」。</td></tr>
+    <tr><td>HITL 模式<br><span class="ev">默认 <code>auto_mode=false</code></span></td><td class="num"><span class="b b-crit">不可用</span></td><td>确认门禁依赖「权限弹窗即人工确认」机制，dsh 无差分权限能力，门禁无处安放。</td></tr>
+  </tbody>
+</table>
+
+<div class="verdict v-ok">
+  <h3>一个反直觉的有利结论</h3>
+  <p><code>auto_mode=true</code> 的存在<strong>使最难的那个 gap 自动消失</strong>。dsh 缺失的「差分权限」恰好是 HITL 模式才需要的能力；在 auto 模式下 drive 根本不需要确认脚本，因此该缺失不构成障碍。这显著降低了纯自动编排场景的迁移成本。</p>
+</div>
+
+<h2 id="s1">1. dsh 对 Claude Code 生态的支持情况</h2>
+
+<h3>1.1 dsh 是什么</h3>
+<p>DeepSeek Harness（<code>dsh</code>）是 DeepSeek AI 于 2026-08-13 开源的 agent harness，MIT 协议，采用<strong>一切皆插件</strong>架构，底座为自研的 Cordis 框架。模型适配器、工具注册表、session log 乃至 agent loop 本身均为可热插拔插件。架构文档原话：<em>「There is no privileged core to patch」</em>。</p>
+<p>当前最新版本 <code>dsh-v0.2.1-rc.2</code>（2026-10-17），<strong>至今所有 release 仍为 pre-release，无稳定版</strong>。仓库 256.9k star / 31k fork。形态涵盖 Web UI、CLI、桌面应用（macOS/Windows）、Python SDK。</p>
+
+<table>
+  <thead><tr><th style="width:16%">日期</th><th style="width:22%">版本 / 事件</th><th>要点</th></tr></thead>
+  <tbody>
+    <tr><td>2026-08-13</td><td>仓库创建</td><td>v0.1 developer preview，MIT 开源</td></tr>
+    <tr><td>2026-08-19</td><td>v0.1.0-rc.8</td><td>Claude Code / Codex 成为可选 Profile Bundle</td></tr>
+    <tr><td>2026-08-26</td><td>Cordis 论文</td><td>arXiv 2608.25512《A Programming Paradigm for Spatiotemporal Composability》</td></tr>
+    <tr><td>2026-09-28</td><td>v0.2.0-rc.1</td><td>首个 0.2 候选版</td></tr>
+    <tr><td>2026-09-29</td><td>v0.2.0-rc.2</td><td><code>dsh</code> 命令随 macOS/Windows 桌面包分发</td></tr>
+    <tr><td>2026-10-02</td><td>桌面版发布</td><td>macOS / Windows 打包应用</td></tr>
+    <tr><td>2026-10-03</td><td>v0.2.1-alpha.1</td><td><strong>实验性 Claude Code Mods 兼容层</strong></td></tr>
+    <tr><td>2026-10-17</td><td>v0.2.1-rc.1 / rc.2</td><td>DeepSeek-V4.1-Flash-1017、Search + Fetch API</td></tr>
+  </tbody>
+</table>
+
+<h3>1.2 配置资产兼容矩阵</h3>
+<p>这是判断「dsh 能否兼容 Claude Code 生态」的核心。下表为本次源码核查结论，<strong>与社区流传的 <code>dsh-movein</code> 对照表有出入</strong>（该表写于 2026-08 对 rc.6，已落后两个 minor 世代）。</p>
+
+<table>
+  <thead><tr><th style="width:22%">Claude Code 资产</th><th style="width:13%">兼容度</th><th>源码事实</th></tr></thead>
+  <tbody>
+    <tr><td>项目 <code>CLAUDE.md</code></td><td class="num"><span class="b b-ok">原生</span></td><td><code>instructionFileCandidates</code> 默认含 <code>AGENTS.md</code> 与 <code>CLAUDE.md</code>，从 project root 逐级发现至 cwd，以 <code>&lt;system-reminder&gt;</code> 包裹注入。<br><span class="ev">agent-instructions/src/config.ts:12 · files.ts:359 · render.ts:315</span></td></tr>
+    <tr><td><code>.local</code> 指令变体</td><td class="num"><span class="b b-ok">原生</span></td><td>在<strong>独立配置项</strong> <code>localInstructionFileCandidates</code>，与 base 两轮遍历，非同一数组。<br><span class="ev">agent-instructions/src/config.ts:13,42</span></td></tr>
+    <tr><td>全局指令文件</td><td class="num"><span class="b b-mid">需适配</span></td><td>文件名硬编码为 <code>AGENTS.md</code>，<strong>无 CLAUDE.md 兜底</strong>。但有<strong>两个</strong>全局根：<code>~/.dsh</code> 与 <code>~/.agents</code>，二者均无 <code>.local</code> overlay。<br><span class="ev">agent-instructions/src/render.ts:122,96,105</span></td></tr>
+    <tr><td><code>SKILL.md</code></td><td class="num"><span class="b b-mid">需换目录</span></td><td>frontmatter 格式兼容，仅 <code>name</code>+<code>description</code> 必填。但 <code>.claude/skills</code> <strong>不是</strong> dsh 技能根目录，须落到 6 个 rank 之一。<br><span class="ev">skill-filesystem/src/index.ts:244-264</span></td></tr>
+    <tr><td>子代理 <code>.claude/agents/*.md</code></td><td class="num"><span class="b b-crit">无导入</span></td><td>dsh 的 agent preset 是带 <code>agent.cordis.yml</code> 的<strong>目录</strong>，非 markdown。需转换。</td></tr>
+    <tr><td>Slash 命令 <code>.claude/commands/*.md</code></td><td class="num"><span class="b b-crit">无对应</span></td><td>dsh 命令为代码注册，无文件等价物。user-invocable skill 是替代品。</td></tr>
+    <tr><td>MCP <code>.mcp.json</code></td><td class="num"><span class="b b-ok">近无损</span></td><td>工具名 <code>mcp__server__tool</code> 字面一致，刻意对齐 Claude Code / Codex。但工具名含非法字符或超 <strong>64 字符</strong>时改名并追加 12 位哈希。<br><span class="ev">mcp/mcp-client/src/tools.ts:82-86,48</span></td></tr>
+    <tr><td>权限规则 <code>allow</code>/<code>ask</code>/<code>deny</code></td><td class="num"><span class="b b-crit">结构性缺失</span></td><td>详见 <a href="#g1">Gap G1</a>。</td></tr>
+    <tr><td>会话文件 <code>~/.dsh/sessions</code></td><td class="num"><span class="b b-mid">有迁移链</span></td><td>zstd 帧式 JSONL，<code>SESSION_FORMAT_VERSION = 4</code>（<strong>非 0</strong>），v0→v4 相邻迁移链完整，官方给出显式兼容义务。<br><span class="ev">core/session/src/types.ts:90 · docs/session-format-status.md</span></td></tr>
+  </tbody>
+</table>
+
+<div class="verdict v-mid">
+  <h3>技能根目录：6 个 rank，<code>.claude/skills</code> 不在其中</h3>
+  <p><code>skill-filesystem</code> 的 <code>roots()</code> 仅产出以下来源，同名按 rank 决胜（<code>rank → providerOrder → localOrder</code> 三级）；<strong>跨 scope layer 时 rank 不参与</strong>，最近层静默覆盖远层。</p>
+  <table>
+    <thead><tr><th style="width:10%">rank</th><th style="width:34%">路径</th><th style="width:22%">来源名</th><th>备注</th></tr></thead>
+    <tbody>
+      <tr><td class="num">100</td><td><code>&lt;projectRoot&gt;/.dsh/skills</code></td><td>project-dsh</td><td>projectRoot = 最近的含 <code>.git</code> 祖先，回退 cwd</td></tr>
+      <tr><td class="num">200</td><td><code>&lt;projectRoot&gt;/.agents/skills</code></td><td>project-agents</td><td>—</td></tr>
+      <tr><td class="num">250</td><td>（内存）</td><td>runtime</td><td><code>ctx.skills.register()</code> 注入，非文件系统根</td></tr>
+      <tr><td class="num">300</td><td><code>customSkillDirs</code></td><td>custom</td><td>配置列举的任意路径</td></tr>
+      <tr><td class="num">400</td><td><code>~/.dsh/skills</code></td><td>user-dsh</td><td><strong>唯一</strong>跳过 <code>.system</code> 的根</td></tr>
+      <tr><td class="num">500</td><td><code>~/.agents/skills</code></td><td>user-agents</td><td>—</td></tr>
+      <tr><td class="num">600</td><td><code>bundledSkillDir</code></td><td>bundled</td><td>另有 3 个 provider 复用此 rank</td></tr>
+    </tbody>
+  </table>
+  <p style="font-size:13px"><strong>其他易踩点：</strong>不支持嵌套发现（<code>SKILL.md</code> 须在根下一层，README 明文 <em>「nested <code>**/SKILL.md</code> files are deliberately not discovered」</em>）；<code>cwd === undefined</code> 时两个 project 根整段缺席；<code>.git</code> 为文件（worktree / submodule gitlink）亦判定为 root。</p>
+</div>
+
+<div class="verdict v-high">
+  <h3>frontmatter 陷阱：三个 legacy 键会导致整条 skill 被丢弃</h3>
+  <p>未知键（如 <code>allowed-tools</code>、<code>license</code>）被静默忽略；但 <code>disableModelInvocation</code> / <code>modelInvocable</code> / <code>userInvocable</code> 任一出现会<strong>抛错并丢弃整条 skill</strong>，且无告警。<code>name</code> 另有 kebab-case 正则约束 <code>^[a-z0-9]+(?:-[a-z0-9]+)*$</code>。</p>
+<pre><code>// skill-filesystem/src/index.ts:1019-1023
+function rejectLegacyInvocationKey(data, legacy, canonical) {
+  if (Object.hasOwn(data, legacy)) {
+    throw new Error(`frontmatter field "${legacy}" is unsupported; use "${canonical}"`)
+  }
+}</code></pre>
+</div>
+
+<h3>1.3 hooks 桥接：30 个事件只映射 7 个</h3>
+<p>官方包 <code>@deepseek-ai/dsh-hooks-claude-code</code>（源码位于 <code>packages/experimental/hooks-claude-code/</code>；注意 <code>packages/hooks/</code> 是 gitignore 的构建残留，非源码）能直接运行现有 <code>hooks.json</code> 的 command handler，并替换 <code>${CLAUDE_PROJECT_DIR}</code> 与 <code>${CLAUDE_PLUGIN_ROOT}</code>。</p>
+
+<table>
+  <thead><tr><th style="width:26%">事件</th><th style="width:12%">状态</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td><code>SessionStart</code> <code>UserPromptSubmit</code> <code>PreToolUse</code> <code>PostToolUse</code> <code>Stop</code> <code>SubagentStart</code> <code>SubagentStop</code></td><td class="num"><span class="b b-ok">已映射</span></td><td>源码 <code>config.ts:11-19</code> 的 <code>CLAUDE_EVENTS</code> 数组，7 项，与本文所述名单逐字一致。</td></tr>
+    <tr><td>其余 23 个事件<br><span class="ev">Setup / PermissionRequest / PreCompact / SessionEnd / WorktreeCreate …</span></td><td class="num"><span class="b b-crit">静默跳过</span></td><td>实现是「只遍历白名单」而非「遍历后过滤」，未支持事件的 key <strong>从不被读取</strong>。测试专门断言此行为。</td></tr>
+    <tr><td>非 command 类型 handler<br><span class="ev">http / mcp_tool / prompt / agent</span></td><td class="num"><span class="b b-high">跳过并告警</span></td><td>会打 warn 日志。注意：<code>type</code> 字段缺失时<strong>默认按 command 处理</strong>。</td></tr>
+  </tbody>
+</table>
+
+<div class="verdict v-crit">
+  <h3>四个已源码确证的 fail-open 风险</h3>
+  <ul>
+    <li><strong>matcher 大小写敏感且 dsh 工具名全小写。</strong>匹配为字面比较（<code>'Bash'.split('|').includes('bash') → false</code>）。dsh 工具名为 <code>bash</code> / <code>read</code> / <code>edit</code> / <code>write</code> / <code>grep</code> / <code>pwsh</code>。<br><span class="ev">hook-protocol/src/matcher.ts:18,61-62</span></li>
+    <li><strong><code>{"continue": false}</code> 只记录不终止。</strong>源码留有显式 TODO：<span class="ev">hooks-claude-code/src/index.ts:195 — <code>// TODO(hook-continue-false): merged.stop is logged but needs a run-level halt mechanism.</code></span></li>
+    <li><strong>SubagentStart/Stop 的 matcher 是写死常量 <code>"general-purpose"</code></strong>，非真实 agent kind。按 <code>code-reviewer</code> 之类 kind 匹配的子代理 hook 永不触发。<br><span class="ev">hooks-claude-code/src/index.ts:340</span></li>
+    <li><strong>Stop hook 阻塞会无限强制续跑。</strong><code>Stop</code> 阻塞调用 <code>agent.steer()</code> 强制再跑一轮，桥不设上限：<span class="ev">hooks-claude-code/src/index.ts:275 — <code>// TODO(stop-loop-guard): cap consecutive forced continuations</code></span></li>
+  </ul>
+</div>
+
+<p><strong>Windows exit 2 传播：</strong>源码中<strong>完全没有</strong>相关处理或注释（三路 grep 零命中），<code>pwsh-local</code> 构造 argv 时未补 <code>exit $LASTEXITCODE</code>，且测试套件全部只在 bash 上跑，此路径零覆盖。但需注意：这只能证明「无缓解措施」，不能直接推断「必然失效」——中间还隔着你实际组合了哪个 shell executor。<span class="b b-mute">待运行时验证</span></p>
+
+<h3>1.4 Claude Code Mods 兼容层</h3>
+<p>v0.2.1-alpha.1 引入（包 <code>packages/experimental/claude-code-mods/</code>）。dsh 官方 release note 定性为设计验证而非可用能力：</p>
+<p class="quote">「At this stage, the main goal is to verify that the Claude Code Mods API's capabilities are broadly a subset of what DeepSeek Harness plugins can do, <strong>rather than to offer users complete, practical compatibility.</strong>」</p>
+<p>官方文档 <code>docs/subsystems/claude-code-mods.md</code> 实为一张逐条列出差异的对照表，其中对权限语义尤为不利：</p>
+<table>
+  <thead><tr><th style="width:32%">能力</th><th style="width:16%">状态</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td><code>tool.call</code> 时序</td><td class="num"><span class="b b-crit">语义相反</span></td><td>Claude Code 在<strong>权限检查之前</strong>运行；此桥在 <code>tools/execute</code> 周围、<strong>权限决定之后</strong>运行。改写参数或换工具名会被跳过。</td></tr>
+    <tr><td><code>tool.check</code> / <code>describe</code> / <code>list</code> / <code>register</code></td><td class="num"><span class="b b-crit">不触发</span></td><td>mod 无法塑形权限，只能观察。</td></tr>
+    <tr><td><code>$.model</code> <code>$.agent</code> <code>$.config</code> <code>$.settings</code> <code>$.mcp</code> <code>$.audio</code> <code>$.telemetry</code> <code>$.turn</code></td><td class="num"><span class="b b-crit">全部拒绝</span></td><td>返回 <code>no implementation</code>。</td></tr>
+    <tr><td><code>$.session.authorize</code></td><td class="num"><span class="b b-crit">缺失</span></td><td>连同 <code>compact</code>、<code>surfaces</code> 一并缺失。</td></tr>
+    <tr><td>沙箱</td><td class="num"><span class="b b-crit">无</span></td><td>官方文档：<em>「the process's full authority: <code>$.env</code> reads and writes the harness environment, <code>$.http.fetch</code> reaches any URL」</em></td></tr>
+    <tr><td>mod tiers / <code>next.to</code></td><td class="num"><span class="b b-high">降级</span></td><td>一律按 <code>user</code> tier 处理，<code>next.to</code> 直接拒绝（managed settings 非 dsh 概念）。</td></tr>
+  </tbody>
+</table>
+<p>文档基线为 Claude Code <code>2.1.287</code>。此外 <code>plugin.json</code> 与 <code>hooks.json</code> <strong>不被读取</strong>，mod 的 manifest 会被忽略。</p>
+
+<h3>1.5 双向集成：三种已存在的路径</h3>
+<table>
+  <thead><tr><th style="width:22%">方向</th><th style="width:26%">机制</th><th>状态</th></tr></thead>
+  <tbody>
+    <tr><td>Claude Code → dsh</td><td><code>dsh-skills-bridge</code>、<code>dsh-skills-anywhere</code> 等社区插件，挂载 Claude Code 技能目录</td><td><span class="b b-ok">社区可用</span></td></tr>
+    <tr><td>dsh 调用 Claude Code</td><td>官方 <code>subagent-claude-code</code>：spawn 真实 Claude CLI 子进程作为子代理后端</td><td><span class="b b-ok">官方 on-demand</span>　但 <strong>不回退到宿主 <code>claude</code> 可执行文件</strong>，使用平台固定载荷，SDK 钉在 0.3.263。与社区「用已登录 Claude 当后端」的插件<strong>不是一回事</strong>。</td></tr>
+    <tr><td>Claude Code 调用 dsh</td><td><code>dsh-plugin-cc</code>：以 Claude Code 插件形式从 slash command 调 dsh</td><td><span class="b b-ok">社区可用</span></td></tr>
+  </tbody>
+</table>
+<p>官方按需目录<strong>恰好 2 条</strong>：<code>@deepseek-ai/dsh-subagent-claude-code</code> 与 <code>@deepseek-ai/dsh-subagent-codex</code>，两者均声明可用于 headless / SDK / ACP 三类 profile。</p>
+
+<h3>1.6 供应链与安全约束</h3>
+<ul>
+  <li><strong>安装冷却：</strong><code>dsh plugin add</code> 因 pnpm 11 内置默认 <code>minimumReleaseAge = 24h</code>，永远装不到 24 小时内新版本。<span class="ev">仓库无 <code>.npmrc</code>，此为上游行为而非 dsh 设计；dsh UI 文案主动承认了该行为（<code>ui-plugin-manager/src/client/locales.ts:426</code>）</span></li>
+  <li><strong>安全公告：</strong><code>README.md:13</code> 全大写警告 <em>「THERE WILL BE COMPATIBILITY-BREAKING CHANGES.」</em>；<code>SAFETY.md:7</code> 明言 <em>「has not undergone a security audit and must not be treated as secure or production-ready」</em>。</li>
+  <li><strong>已知 CVE：</strong>CVE-2026-82533（CVSS 9.4，2026-09-08 披露）沙箱逃逸 + 认证绕过，已于 0.1.2-alpha.1 修复。</li>
+  <li><strong>hooks 桥为 opt-in：</strong>当前<strong>没有任何 preset 组合</strong> <code>hooks-claude-code</code>，须显式启用。</li>
+</ul>
+
+<h2 id="s2">2. drive 现状</h2>
+
+<h3>2.1 组成</h3>
+<p>drive 由三类元素构成，均位于 <code>plugin.json</code> 声明之下：</p>
+<table>
+  <thead><tr><th style="width:16%">元素</th><th style="width:14%">数量</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td>agents</td><td class="num">7</td><td><code>.claude/agents/*.md</code>，frontmatter 含 <code>tools</code> 窄授权白名单（PascalCase 工具名）</td></tr>
+    <tr><td>skills</td><td class="num">17</td><td>全部 name 符合 kebab-case 正则，<strong>零 legacy frontmatter 键</strong></td></tr>
+    <tr><td>hooks</td><td class="num">6 + 1 配置</td><td>5 个 Python 模块 + <code>hooks.json</code>，共 1356 行</td></tr>
+    <tr><td>scripts</td><td class="num">46</td><td><strong>全部 Python</strong>，零 shell / JS / TS 依赖</td></tr>
+  </tbody>
+</table>
+
+<h3>2.2 强制层：双闸门设计</h3>
+<p>drive 的不变量由两层独立执行，<code>hooks_protocol.py</code> 的 docstring 明确说明其分工：</p>
+<p class="quote">「与 state_cli 的同名检查是两道独立的门：CLI 那道可能被绕过（模型换别的方式写状态），<strong>本道由 harness 强制，模型无法跳过</strong>。」</p>
+<table>
+  <thead><tr><th style="width:22%">闸门</th><th style="width:30%">载体</th><th>职责</th></tr></thead>
+  <tbody>
+    <tr><td>CLI 层</td><td><code>state_cli.py</code> / <code>dag_runtime.py</code></td><td>自校验。含 <code>PROTECTED_FIELDS</code> 保护 <code>confirmed_stages</code> / <code>confirmed_nodes</code> 不被 <code>update --set</code> 直接写</td></tr>
+    <tr><td>harness 层</td><td><code>state_transition_guard.py</code> 等 3 个 PreToolUse hook</td><td>模型无法跳过的强制执行。<strong>drive 的核心保证在此层</strong></td></tr>
+  </tbody>
+</table>
+
+<h3>2.3 HITL 机制：依赖 dsh 不具备的差分权限</h3>
+<div class="verdict v-crit">
+  <h3>确认门禁的机制：不在 <code>allowed-tools</code> 内 → 弹权限窗 → 弹窗即确认</h3>
+  <p><code>skills/dag-runtime/SKILL.md:90</code> 原文：<em>「<strong><code>confirm_node.py</code> 不在任何 skill 的 <code>allowed-tools</code> 内</strong>：执行时由 Claude Code 弹授权请求作为人工确认。」</em></p>
+  <p>该机制的要害是<strong>差分</strong>：9 个 skill 各有窄授权（如 <code>Bash(python3 *dag_runtime.py*)</code>），其余一律弹窗。deny 消息里也复述了这一契约：<em>「该命令会向用户请求授权 —— 那个授权即人工确认。」</em></p>
+</div>
+
+<h3>2.4 三个自动化层级</h3>
+<p>drive 内置了绕过 HITL 的机制，<strong>且在 harness 与 CLI 两层一致实现</strong>：</p>
+<table>
+  <thead><tr><th style="width:24%">层级</th><th style="width:12%">作用域</th><th>实现位置</th></tr></thead>
+  <tbody>
+    <tr><td><code>auto_mode=true</code></td><td class="num">全局旁路</td><td><code>hooks_protocol.py:389</code>（stage）、<code>:474</code>（DAG 节点）、<code>state_cli.py:334</code>、<code>dag_runtime.py:165</code></td></tr>
+    <tr><td><code>skip_when: [auto_mode]</code></td><td class="num">逐 gate</td><td><code>workflow.yaml</code> gate 声明式跳过</td></tr>
+    <tr><td><code>complexity=trivial</code></td><td class="num">部分旁路</td><td><strong>仅 harness 层</strong>（<code>hooks_protocol.py:393</code>，跳过 analyze/plan/execute，evaluate 始终强制）。CLI 层 <code>check_stage_confirmed</code> 无 <code>complexity</code> 分支。DAG 模式明确不认此机制。</td></tr>
+  </tbody>
+</table>
+<p>默认 <code>auto_mode=false</code>，仅当用户显式说「自动」才置 true。<strong><code>auto_mode</code> 是贯穿两层、最可靠的自动化路径</strong>，这正是它能化解 Gap G1 的原因。</p>
+
+<h3>2.5 阻断路径恰好落在 dsh 已实现的一侧</h3>
+<p><code>HookResult.exit_code()</code> 返回 <code>2</code> 而非 JSON 输出：</p>
+<pre><code># hooks_protocol.py:61-63
+def exit_code(self) -> int:
+    """deny → 2（Claude Code 回显 stderr 给 LLM），allow → 0。"""
+    return 2 if self.is_denied else 0</code></pre>
+<p>dsh 的 codec 识别 <code>exitCode === 2</code>（<code>hook-protocol/src/codec.ts:8</code> 的 <code>BLOCKING_EXIT_CODE</code>）。<strong>drive 完全不使用 <code>{"continue": false}</code></strong>，因此「只记录不终止」这个缺口对 drive <strong>不适用</strong>。这是 drive 阻断路径的一次幸运落位。</p>
+
+<h3>2.6 可移植性分级</h3>
+<table>
+  <thead><tr><th style="width:24%">层</th><th style="width:14%">可移植性</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td>业务逻辑</td><td class="num"><span class="b b-ok">完全可移植</span></td><td>46 个 Python CLI，零 Claude 依赖</td></tr>
+    <tr><td>技能定义</td><td class="num"><span class="b b-ok">格式兼容</span></td><td>name 全合规、零 legacy 键；仅需换根目录</td></tr>
+    <tr><td>指令注入</td><td class="num"><span class="b b-ok">原生</span></td><td>CLAUDE.md / AGENTS.md 直接被读</td></tr>
+    <tr><td>阻断语义</td><td class="num"><span class="b b-ok">兼容</span></td><td>exit 2 被识别；<code>${CLAUDE_PLUGIN_ROOT}</code> 被替换</td></tr>
+    <tr><td>子代理定义</td><td class="num"><span class="b b-high">需转换</span></td><td>md → <code>agent.cordis.yml</code> 目录</td></tr>
+    <tr><td>插件打包</td><td class="num"><span class="b b-high">需重构</span></td><td><code>plugin.json</code> 不被读取</td></tr>
+    <tr><td>权限模型</td><td class="num"><span class="b b-crit">机制缺失</span></td><td><code>allowed-tools</code> 无等价物</td></tr>
+    <tr><td>hook 分发</td><td class="num"><span class="b b-crit">全部失效</span></td><td>matcher 大小写不匹配</td></tr>
+  </tbody>
+</table>
+
+<h3>2.7 Codex 端口先例（附带发现）</h3>
+<p>仓库内已有 <code>dist/codex-drive/</code> 一次跨 harness 移植。核查发现其为<strong>近乎机械的复制</strong>：hooks.json 仅改 <code>${PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}</code>，agents 由 <code>.md</code> 转 <code>.toml</code>，<strong><code>allowed-tools</code> 原样保留在 9/17 个 skill 中</strong>。</p>
+<p>这意味着该端口的隐含假设是「Codex 支持同样的 <code>allowed-tools</code> 语义」。<strong>若该假设不成立，这份产物带着与 dsh 同类的潜在问题，且存在时间更早。</strong>建议单独验证 Codex 端口在 Codex 上运行时的 HITL 是否真的弹窗。</p>
+
+<h2 id="s3">3. Gap 分析</h2>
+
+<div class="gap" id="g1">
+  <div class="gap-h"><span class="id">G1</span><span class="ti">差分权限机制缺失</span><span class="b b-crit">CRITICAL</span><span class="b b-mute">影响 HITL 模式</span></div>
+  <p>drive 的确认门禁依赖 <code>allowed-tools</code> 的差分授权。dsh 的审批只有会话级二值：</p>
+<pre><code>// packages/interaction/user-approval/src/index.ts:67
+export type ApprovalPolicy = 'ask' | 'never'</code></pre>
+  <p>全仓 grep <code>allowedTools</code> / <code>Bash(</code> 模式匹配<strong>零命中</strong>。仅有会话级二值意味着只有两个选项，两条都是死路：</p>
+  <table>
+    <thead><tr><th style="width:14%">策略</th><th>后果</th></tr></thead>
+    <tbody>
+      <tr><td><code>ask</code></td><td>所有工具调用都弹窗 → 提示疲劳，不可用</td></tr>
+      <tr><td><code>never</code></td><td>一律不弹，<strong>包括 confirm 脚本</strong> → HITL 门禁彻底敞开</td></tr>
+    </tbody>
+  </table>
+  <p><strong>放大因素：</strong><code>allowed-tools</code> 是 dsh <strong>不识别的 frontmatter 键，被静默忽略而非报错</strong>。9 个 skill 的窄授权会无声消失，不产生任何告警。</p>
+  <p style="margin-bottom:0"><strong>缓解：</strong><code>auto_mode=true</code> 下该 gap 完全消失（不需确认脚本）。否则须改造 HITL 机制本身（见 <a href="#s4">§4</a>）。</p>
+</div>
+
+<div class="gap" id="g2">
+  <div class="gap-h"><span class="id">G2</span><span class="ti">PreToolUse matcher 全部静默失效</span><span class="b b-crit">CRITICAL</span><span class="b b-mute">影响所有模式</span></div>
+  <p>drive 的 <code>hooks.json</code> 使用的 matcher 全为 Claude PascalCase 工具名：</p>
+  <table>
+    <thead><tr><th style="width:24%">drive matcher</th><th style="width:26%">dsh 实际工具名</th><th style="width:12%">结果</th><th>失效守卫</th></tr></thead>
+    <tbody>
+      <tr><td><code>Write|Edit|MultiEdit</code></td><td><code>write</code> / <code>edit</code></td><td class="num"><span class="b b-crit">不触发</span></td><td rowspan="3"><code>planning_write_guard</code><br><code>state_transition_guard</code><br><code>audit_events</code></td></tr>
+      <tr><td><code>Bash</code></td><td><code>bash</code></td><td class="num"><span class="b b-crit">不触发</span></td></tr>
+      <tr><td><code>Task|Agent|Skill</code></td><td><code>send_message</code> / <code>skill</code> / …</td><td class="num"><span class="b b-crit">不触发</span></td></tr>
+      <tr><td>（无 matcher）</td><td>—</td><td class="num"><span class="b b-ok">触发</span></td><td><code>subagent_report_guard</code>　<strong>唯一存活</strong>，因未写 matcher 而匹配一切</td></tr>
+    </tbody>
+  </table>
+  <p style="margin-bottom:0">失败模式为 <strong>静默不调用</strong>，而非 fail-open 报错。这是与 G1 独立的第二个阻断项：即使 G1 在 auto 模式下消失，本 gap 仍使全部状态机不变量失效。</p>
+</div>
+
+<div class="gap" id="g3">
+  <div class="gap-h"><span class="id">G3</span><span class="ti">子代理定义格式不兼容</span><span class="b b-high">HIGH</span></div>
+  <p style="margin-bottom:0">7 个 <code>.claude/agents/*.md</code> 无法直接导入，dsh agent preset 为带 <code>agent.cordis.yml</code> 的目录。各 agent 的 <code>tools</code> 窄授权（<code>["Read","Write","Edit","Bash"]</code>）在 dsh 中亦无等价物——即便转换格式，权限收敛能力仍会丢失。Codex 端口的 <code>.md → .toml</code> 可作为转换脚本的参考，但目标格式不同。</p>
+</div>
+
+<div class="gap" id="g4">
+  <div class="gap-h"><span class="id">G4</span><span class="ti">插件打包机制不兼容</span><span class="b b-high">HIGH</span></div>
+  <p style="margin-bottom:0"><code>.claude-plugin/plugin.json</code> 与 <code>marketplace.json</code> 在 dsh 中不被读取（已在 Mods 桥文档中源码确证：<em>「<code>plugin.json</code> and <code>hooks.json</code> are not read」</em>）。dsh 插件为 npm 包 + <code>cordis.yml</code>，经 profile 层装配。skills 须落入 6 个 rank 之一。这是纯工程量问题，无设计障碍。</p>
+</div>
+
+<div class="gap" id="g5">
+  <div class="gap-h"><span class="id">G5</span><span class="ti">失效完全静默</span><span class="b b-high">HIGH</span><span class="b b-mute">横切</span></div>
+  <p style="margin-bottom:0">G1 与 G2 均无任何错误信号：<code>allowed-tools</code> 被忽略不报错，matcher 不匹配不报错，守卫不触发不报错。workflow 会一路跑完、产出格式完整、看不出异常，但零强制。<strong>这是最危险的配置组合</strong>——auto 模式叠加失效分发层，等于一个沉默失效的状态机。任何迁移方案都必须包含一个「守卫是否真的在跑」的自检手段。</p>
+</div>
+
+<div class="gap" id="g6">
+  <div class="gap-h"><span class="id">G6</span><span class="ti">次要项与观察</span><span class="b b-mid">MEDIUM</span></div>
+  <table style="margin-top:4px">
+    <thead><tr><th style="width:34%">项</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>SubagentStart/Stop kind 匹配</td><td>dsh 侧 matcher 写死 <code>"general-purpose"</code>。drive 当前 <code>SubagentStop</code> 未写 matcher 故存活，但若将来按 kind 匹配 <code>drive:code-reviewer</code> 之类将永不触发。</td></tr>
+      <tr><td>MCP 工具名 64 字符上限</td><td>超限或含非法字符会改名加哈希。当前 drive 未使用 MCP，暂无影响。</td></tr>
+      <tr><td>安装冷却</td><td><code>dsh plugin add</code> 装不到 24h 内新版本，发布插件需提前一天。</td></tr>
+      <tr><td>trivial 旁路疑似单侧</td><td>harness 层认 <code>complexity=trivial</code>，CLI 层无对应分支，阶段流转实际可能仍被 CLI 拦截。<strong>需自行验证</strong>。</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2 id="s4">4. 改造方案：drive 做成 dsh 插件</h2>
+
+<div class="verdict v-ok">
+  <h3>核心判断：1356 行守卫逻辑一行不用改，需要替换的只是约 50 行接线</h3>
+  <p>drive 的守卫是纯 Python、无 Claude 运行时依赖、输入输出契约（读 hook JSON → 写 stderr + exit 2）与宿主无关。<strong>失效的只是「谁来调用它」这一层分发机制。</strong>dsh 的 <code>tools/pre-execute</code> 是正式 waterfall 拦截点（<code>core/tools/src/index.ts:154</code>，标注 <code>@mode waterfall</code>，返回 <code>PreToolDecision</code>），原生插件挂上去可直接读 <code>exec.name</code>（小写 <code>bash</code> / <code>write</code> / <code>edit</code>）自行分发，<strong>完全绕开那套失效的 matcher</strong>。</p>
+</div>
+
+<h3>4.1 目标形态</h3>
+<p>一个 dsh 插件包 <code>@yourorg/dsh-drive</code>，包含：</p>
+<ul>
+  <li><code>cordis.yml</code> —— dsh 插件清单，挂载技能包、agent preset、以及强制层插件</li>
+  <li><code>skills/</code> —— 17 个 SKILL.md，<strong>name 与 body 均无需改动</strong>，仅 <code>allowed-tools</code> 键需按 dsh 规则处理</li>
+  <li><code>agents/</code> —— 7 个 agent preset 目录，各含 <code>agent.cordis.yml</code></li>
+  <li><code>guards/</code> —— 原生插件，挂 <code>tools/pre-execute</code>，内部 shell out 调用现有 Python 守卫</li>
+</ul>
+
+<h3>4.2 任务拆解</h3>
+<table>
+  <thead><tr><th style="width:8%">阶段</th><th style="width:26%">任务</th><th style="width:10%">工作量</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td class="num">P0</td><td>可行性验证：原生插件挂 <code>tools/pre-execute</code> 调 <code>state_transition_guard.py</code>，实测 deny 是否真阻断</td><td class="num">0.5 天</td><td><strong>先做这个。</strong>成本最低，且直接证实或证伪整条路径。若 exit 2 无法从插件侧可靠传递，后续方案需重估。</td></tr>
+    <tr><td class="num">P1</td><td>强制层：编写 dsh 原生插件替代 <code>hooks.json</code> 分发</td><td class="num">2–3 天</td><td>挂 <code>tools/pre-execute</code> + <code>tools/post-execute</code>；读 <code>exec.name</code> 自行映射（<code>bash</code>→Bash 语义、<code>write</code>/<code>edit</code>→Write 语义）；shell out 调用现有 Python，透传 exit 2。解决 G2。</td></tr>
+    <tr><td class="num">P2</td><td>技能包：17 个 SKILL.md 适配</td><td class="num">1 天</td><td><strong>name 与 body 零改动</strong>（已验证合规）。仅需处理 <code>allowed-tools</code>：dsh 静默忽略该键，故要么移除、要么改由 P3 的显式机制承担。</td></tr>
+    <tr><td class="num">P3</td><td>HITL 改造：从「权限弹窗即确认」改为显式 <code>ask_user_question</code> 调用</td><td class="num">2–4 天</td><td>解决 G1。dsh 有 <code>ask_user_question</code>（<code>packages/interaction/tool-ask-user</code>），能力齐全。改法比现在<strong>更明确</strong>，且不依赖任何权限机制——这是把隐性契约变为显式契约。</td></tr>
+    <tr><td class="num">P4</td><td>子代理：7 个 md → <code>agent.cordis.yml</code> 目录</td><td class="num">2–3 天</td><td>解决 G3。可参考 <code>dist/codex-drive/</code> 的 <code>.md → .toml</code> 转换脚本。<strong>注意 <code>tools</code> 窄授权无等价物</strong>，需在 SKILL.md 或插件配置层另行承接。</td></tr>
+    <tr><td class="num">P5</td><td>打包：npm 包 + profile 装配</td><td class="num">1–2 天</td><td>解决 G4。发布需提前 24h（安装冷却）。</td></tr>
+    <tr><td class="num">P6</td><td>自检机制：守卫存活探针</td><td class="num">0.5 天</td><td>解决 G5。<strong>不可省略。</strong>一个启动时或定期运行的探针，确认 <code>tools/pre-execute</code> 监听器确实挂载且被调用；否则静默失效无法察觉。</td></tr>
+  </tbody>
+</table>
+<p style="font-size:13px">合计约 <strong>9–16 人日</strong>。若仅需 G1 豁免的 auto 编排场景，可只做 P0+P1+P2+P5+P6，约 <strong>5–8 人日</strong>。</p>
+
+<h3>4.3 强制层的两条可选路径</h3>
+<div class="grid2">
+  <div class="card">
+    <h4>路径 A：dsh 原生插件重实现分发层 <span class="b b-ok">推荐</span></h4>
+    <p>挂 <code>tools/pre-execute</code>，读 <code>exec.name</code> 自行分发，shell out 调现有 Python。</p>
+    <p><strong>优点：</strong>守卫逻辑零改动；绕开 matcher 问题；dsh 一等拦截点，受支持。</p>
+    <p><strong>缺点：</strong>需 TypeScript 胶水层；G1 仍须靠 P3 单独解决。</p>
+  </div>
+  <div class="card">
+    <h4>路径 B：修正 hooks.json 的 matcher</h4>
+    <p>把 <code>Bash</code> 改为 <code>bash</code>、<code>Write|Edit</code> 改为 <code>write|edit</code>，继续用官方桥。</p>
+    <p><strong>优点：</strong>改动量最小（约 3 行）。</p>
+    <p><strong>缺点：</strong>仍受制于桥的能力边界：SubagentStart/Stop 的 kind 匹配写死、<code>continue:false</code> 不终止、Windows 无防护且零测试覆盖、且该桥<strong>不在任何 preset 中</strong>须显式启用。属治标。</p>
+  </div>
+</div>
+
+<h3>4.4 建议路线</h3>
+<ol>
+  <li><strong>先跑 P0。</strong>零风险地证实或证伪整条路径，再决定投入。</li>
+  <li><strong>按目标场景分支。</strong>若定位为纯自动编排器 → P0+P1+P2+P5+P6；若需保留完整 HITL 语义 → 全量 9–16 人日。</li>
+  <li><strong>独立跟进两件事</strong>（与 dsh 迁移无依赖，建议并行）：(a) 验证 Codex 端口的 HITL 是否真的弹窗（§2.7，疑似历史遗留问题）；(b) 验证 <code>complexity=trivial</code> 旁路是否因 CLI 层缺分支而失效（G6）。</li>
+</ol>
+
+<h2 id="s5">5. 附录：证据索引与未决问题</h2>
+
+<h3>5.1 核查方法</h3>
+<p>本报告 dsh 侧结论全部来自对 <code>dsh-v0.2.1-rc.2</code>（HEAD <code>687f282e86</code>）git 跟踪源码的直接核查，本地仓库自 <code>0.1.6-alpha.1</code> fast-forward 5218 个提交后取得。<strong>刻意规避社区流传的 <code>dsh-movein</code> 对照表</strong>——该表写于 2026-08 对 rc.6，核查发现其 session 格式章节已被 dsh 自身推翻（见下）。</p>
+
+<h3>5.2 核查中纠正的常见错误说法</h3>
+<table>
+  <thead><tr><th style="width:34%">流传说法</th><th>源码事实</th></tr></thead>
+  <tbody>
+    <tr><td><code>SESSION_FORMAT_VERSION = 0</code></td><td>实为 <code>4</code>。<code>0</code> 仅为 v0 文件命名世代。<span class="ev">core/session/src/types.ts:90</span></td></tr>
+    <tr><td>session 格式「官方明确不保证向后兼容」</td><td><strong>方向相反。</strong><code>docs/session-format-status.md</code> 给出显式兼容义务：<em>「GitHub's prerelease flag does not make persisted user data disposable.」</em> 且有 v0→v4 完整迁移链。</td></tr>
+    <tr><td>权限「只有三档硬编码 preset」</td><td>preset 表是部署可配置的 <code>z.dict</code>；库默认 2 档，shipped base bundle 配 3 档，另有保留的 <code>auto</code> 与派生的 <code>custom</code>。审批策略本身只有 <code>ask</code>/<code>never</code> 两值。</td></tr>
+    <tr><td><code>minimumReleaseAge: 1440</code> 是 dsh 配置</td><td>仓库无 <code>.npmrc</code>，<code>pnpm-workspace.yaml</code> 只有 Exclude 白名单。生效值来自 pnpm 11 内置默认。</td></tr>
+    <tr><td>技能优先级只有 100/200/300/400/500/600</td><td>存在 rank <code>250 = runtime</code>（内存技能注入）。</td></tr>
+  </tbody>
+</table>
+
+<h3>5.3 未决问题</h3>
+<table>
+  <thead><tr><th style="width:40%">问题</th><th style="width:16%">类型</th><th>验证方式</th></tr></thead>
+  <tbody>
+    <tr><td>Windows 下 pwsh executor 是否丢失原生 exit 2</td><td><span class="b b-mute">源码只能证「无防护」</span></td><td>需 Windows 真机 + 组合 pwsh executor + 真实 hook 实测</td></tr>
+    <tr><td><code>complexity=trivial</code> 旁路是否因 CLI 缺分支而失效</td><td><span class="b b-mute">drive 内部待验</span></td><td>在 Claude Code 上跑一个 trivial 任务，观察阶段流转是否被 CLI 拦</td></tr>
+    <tr><td>Codex 端口 HITL 是否真的弹窗</td><td><span class="b b-mute">drive 内部待验</span></td><td>在 Codex 上运行 <code>dist/codex-drive</code>，确认 <code>allowed-tools</code> 语义是否成立</td></tr>
+    <tr><td>原生插件能否可靠传递 exit 2</td><td><span class="b b-mute">P0 待验</span></td><td>最小插件挂 <code>tools/pre-execute</code> 调用 <code>state_transition_guard.py</code></td></tr>
+  </tbody>
+</table>
+
+<h3>5.4 关键源码位置索引</h3>
+<details>
+  <summary>展开：dsh 侧（路径相对 deepseek-harness 仓库根）</summary>
+  <table style="margin-top:6px">
+    <thead><tr><th style="width:46%">文件</th><th style="width:14%">行</th><th>内容</th></tr></thead>
+    <tbody>
+      <tr><td><code>packages/experimental/hooks-claude-code/src/config.ts</code></td><td class="num">11-19</td><td>CLAUDE_EVENTS 白名单（7 项）</td></tr>
+      <tr><td><code>packages/experimental/hooks-claude-code/src/index.ts</code></td><td class="num">195</td><td>TODO(hook-continue-false)</td></tr>
+      <tr><td><code>packages/experimental/hooks-claude-code/src/index.ts</code></td><td class="num">275</td><td>TODO(stop-loop-guard)</td></tr>
+      <tr><td><code>packages/experimental/hooks-claude-code/src/index.ts</code></td><td class="num">340</td><td>SUBAGENT_TYPE 写死常量</td></tr>
+      <tr><td><code>packages/experimental/hook-protocol/src/matcher.ts</code></td><td class="num">18, 61-62</td><td>大小写敏感字面匹配</td></tr>
+      <tr><td><code>packages/experimental/hook-protocol/src/codec.ts</code></td><td class="num">8</td><td>BLOCKING_EXIT_CODE = 2</td></tr>
+      <tr><td><code>packages/interaction/user-approval/src/index.ts</code></td><td class="num">67</td><td>ApprovalPolicy = 'ask' | 'never'</td></tr>
+      <tr><td><code>packages/core/tools/src/index.ts</code></td><td class="num">154</td><td>tools/pre-execute waterfall</td></tr>
+      <tr><td><code>packages/skill/skill-filesystem/src/index.ts</code></td><td class="num">244-264</td><td>roots() 枚举</td></tr>
+      <tr><td><code>packages/skill/skill/src/index.ts</code></td><td class="num">25, 700</td><td>RUNTIME_RANK = 250</td></tr>
+      <tr><td><code>packages/context/agent-instructions/src/config.ts</code></td><td class="num">12-13, 41-42</td><td>指令文件候选</td></tr>
+      <tr><td><code>packages/context/agent-instructions/src/render.ts</code></td><td class="num">122</td><td>USER_GLOBAL_FILE = 'AGENTS.md'</td></tr>
+      <tr><td><code>packages/mcp/mcp-client/src/tools.ts</code></td><td class="num">48, 82-86</td><td>MCP 工具命名与 64 字符上限</td></tr>
+      <tr><td><code>packages/core/session/src/types.ts</code></td><td class="num">90</td><td>SESSION_FORMAT_VERSION = 4</td></tr>
+      <tr><td><code>docs/subsystems/claude-code-mods.md</code></td><td class="num">全文</td><td>Mods 桥差异对照表</td></tr>
+      <tr><td><code>docs/session-format-status.md</code></td><td class="num">全文</td><td>session 格式兼容义务</td></tr>
+    </tbody>
+  </table>
+</details>
+
+<details>
+  <summary>展开：drive 侧（路径相对本仓库根）</summary>
+  <table style="margin-top:6px">
+    <thead><tr><th style="width:46%">文件</th><th style="width:14%">行</th><th>内容</th></tr></thead>
+    <tbody>
+      <tr><td><code>hooks/hooks_protocol.py</code></td><td class="num">61-63</td><td>exit_code() → 2</td></tr>
+      <tr><td><code>hooks/hooks_protocol.py</code></td><td class="num">389</td><td>auto_mode 旁路（stage）</td></tr>
+      <tr><td><code>hooks/hooks_protocol.py</code></td><td class="num">393</td><td>trivial 旁路（仅 harness 层）</td></tr>
+      <tr><td><code>hooks/hooks_protocol.py</code></td><td class="num">474</td><td>auto_mode 旁路（DAG 节点）</td></tr>
+      <tr><td><code>skills/state-machine/scripts/state_cli.py</code></td><td class="num">107</td><td>PROTECTED_FIELDS</td></tr>
+      <tr><td><code>skills/state-machine/scripts/state_cli.py</code></td><td class="num">327-350</td><td>check_stage_confirmed（无 trivial 分支）</td></tr>
+      <tr><td><code>skills/dag-runtime/scripts/dag_runtime.py</code></td><td class="num">164-166</td><td>CLI 层 auto_mode 旁路</td></tr>
+      <tr><td><code>skills/dag-runtime/SKILL.md</code></td><td class="num">90</td><td>HITL 机制说明</td></tr>
+      <tr><td><code>hooks/hooks.json</code></td><td class="num">1-58</td><td>4 组 hook 配置（3 组 PreToolUse matcher 失效）</td></tr>
+      <tr><td><code>.claude-plugin/plugin.json</code></td><td class="num">27-35</td><td>7 个 agent 声明</td></tr>
+    </tbody>
+  </table>
+</details>
+
+<hr class="sep">
+<footer>
+  <p>报告生成于 2026-10-22　·　dsh 基线 <code>dsh-v0.2.1-rc.2</code>（HEAD <code>687f282e86</code>）　·　drive 基线 <code>v2.3.4</code></p>
+  <p>dsh 处于 developer preview，官方明示将持续产生破坏性变更。本报告的行号与结论随上游演进可能失效，复核时请以所标注的 tag 为准。</p>
+</footer>
+
+</div>
+</body>
+</html>

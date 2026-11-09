@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "smart-factory",
+  "name": {
+    "zh-CN": "智慧工厂",
+    "en-US": "Smart Factory"
+  },
+  "description": {
+    "zh-CN": "智能体的创建与运行",
+    "en-US": "Create and run agents"
+  },
+  "version": "0.1.0",
+  "entry": "http://localhost:4110/",
+  "allowedOrigins": ["http://localhost:4110"],
+  "mounts": [
+    {
+      "capability": "experts",
+      "path": "/experts",
+      "entryPath": "/agents"
+    },
+    {
+      "capability": "agent-dev",
+      "path": "/agent-dev"
+    }
+  ],
+  "icon": null,
+  "healthcheck": "http://localhost:4110/"
+}

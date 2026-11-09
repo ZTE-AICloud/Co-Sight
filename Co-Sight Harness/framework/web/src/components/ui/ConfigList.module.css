@@ -1,0 +1,98 @@
+/* 配置行骨架（见 ConfigList.tsx 的解释：只共享样式，不共享状态逻辑）。 */
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-card);
+  border-radius: var(--r-card);
+  background: var(--color-surface);
+}
+
+.main {
+  /* 不加 min-width: 0 的话，长名字会把右侧操作区挤出容器而不是被截断。 */
+  min-width: 0;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.title {
+  overflow: hidden;
+  color: var(--text-heading);
+  font-family: var(--font-medium);
+  font-size: var(--fs-label);
+  font-weight: var(--fw-medium);
+  line-height: var(--lh-label);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/*
+ * 可点标题（`onSelect` 存在时）。
+ *
+ * 除了按钮的原生外观清零，三处是必须的：
+ * - `min-width: 0`：它是 `.titleRow` 这个 flex 容器的子项，不给的话长名字不肯
+ *   收缩，省略号永远不出现、右侧操作区被挤出去；
+ * - `max-width: 100%`：同上，给单行 flex 项一个收缩上限；
+ * - `text-align: inherit` + `padding: 0`：按钮默认居中且带内边距，会让标题
+ *   相对同一列表里不可点的行左右错开几像素。
+ */
+.titleButton {
+  display: block;
+  max-width: 100%;
+  min-width: 0;
+  padding: 0;
+  overflow: hidden;
+  border: none;
+  background: none;
+  color: var(--text-heading);
+  font-family: var(--font-medium);
+  font-size: var(--fs-label);
+  font-weight: var(--fw-medium);
+  line-height: var(--lh-label);
+  text-align: inherit;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+/*
+ * 焦点环由 `styles/global.css` 的全局 `:focus-visible` 负责，这里**不重复声明**：
+ * 各组件各写一份的话，改一次品牌色就得改十几处，而且总会漏掉几个。
+ */
+
+.titleButton:hover {
+  text-decoration: underline;
+}
+
+.meta {
+  margin-top: 2px;
+  overflow: hidden;
+  color: var(--text-secondary);
+  font-size: var(--fs-sidebar-sub);
+  line-height: var(--lh-sidebar-sub);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+}

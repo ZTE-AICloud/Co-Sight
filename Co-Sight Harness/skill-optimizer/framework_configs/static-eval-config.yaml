@@ -1,0 +1,666 @@
+# static-eval-config.yaml — /skill_optimize framework 配置
+# ─────────────────────────────────────────────────────────────────────
+# ⚠️ 这是 framework 维护者管的文件，业务方**不要修改**！
+# 业务方唯一配置入口：config/optimize-user-config.yaml
+#
+# 包含 4 大块：
+#   1. rubric            12 维评分定义（每 dim 含 criteria + anti_criteria + scoring_rubric）
+#   2. dispatch_rules    文件类型 dispatch（md → SkillOptimizerAgent / 代码 → CodeOptimizerAgent）
+#   3. safety            4 层安全网参数（git snapshot / protected_assets / revert / break）
+#   4. hl_rules          HL-1~HL-4 实战经验（注入 optimizer prompt 强约束）
+# ─────────────────────────────────────────────────────────────────────
+
+# ─── 1. 多维评分 rubric（v3 重设计：12 dim × {criteria, anti_criteria, scoring_rubric}）───
+# v3 设计原则：
+#   1. 每个 dim 自带"好/坏"两套标准：criteria（5-7 条具体标准）+ anti_criteria（原 SAP 翻译 + 部分 OAP 翻译）
+#   2. 评分档位：10 / 8 / 6 / 4 / 2（标准统一）
+#   3. 维度按"被评 Skill 的属性"切分，不按"工具来源"（darwin / AgentGenesis / Anthropic SF）
+#   4. 9 LLM 评 + 3 auto (coverage / safety / efficiency)
+# 评分权重对照 darwin：
+#   dim3 失败与恢复 + dim5 措辞具体性 各 1.5（最高，杠杆点）
+#   dim2 步骤可执行性 + dim8 Anthropic SF 合规 各 1.2（次高）
+#   其他 1.0（基线）
+# 总分公式：total = weighted_mean(dim_scores, weights) * 10（百分制 0~100）
+rubric:
+  # ──  6 个 LLM 评内容质量维度（dim1~6） ──
+
+  dim1_metadata_trigger:
+    name: "元数据与触发"
+    weight: 1.0
+    criteria: |
+      - 必有 name + description 字段
+      - description 含"做什么 + 何时用 + 触发词"三要素
+      - 触发词含可识别动词（创建/分析/评审/优化/读取/生成/转换/提取）
+      - description 长度 30-1024 字符
+      - frontmatter 含 allowed-tools 白名单，必要时含 protected_assets 声明
+    anti_criteria: |
+      - AP1: description 含"处理相关任务"等模糊短语（-1.5）
+      - AP2: description 不含触发动词或描述 < 10 字符（-1.5）
+      - AP3: SKILL.md 含"准确率 ≥ X%"等无验证方法的断言（-1.5）
+    scoring_rubric: |
+      10: 全部 criteria + 无 anti
+      8: 大部分 criteria + ≤1 处 anti
+      6: 部分 criteria + 2 处 anti
+      4: 部分 criteria + 3 处 anti
+      2: 多数 criteria 缺失
+
+  dim2_step_executability:
+    name: "步骤可执行性"
+    weight: 1.2
+    criteria: |
+      - 步骤无歧义、可被 Agent 直接执行
+      - 50 行以上的流程段拆为 H3 子步骤，每步含明确输入/输出
+      - 命令行示例含 --flag value 完整实例（不是裸 python3 xxx.py）
+      - 资源引用相对化（references/X.md 用相对路径，禁 /media/vdb/ 等绝对路径）
+      - 流程闭环（开始→处理→输出）
+    anti_criteria: |
+      - AP4: 代码块含 `python3 xxx.py` 或 `bash xxx.sh` 而无 --flag 参数（-1.5）
+      - AP5: 含绝对路径（/media/vdb/ /home/xxx/ /tmp/）且非配置项（-1.5）
+    scoring_rubric: |
+      10: 全部 criteria + 无 anti
+      8: 大部分 criteria + ≤1 处 anti
+      6: 部分 criteria + 2 处 anti
+      4: 部分 criteria + 3 处 anti
+      2: 多数 criteria 缺失
+
+  dim3_failure_recovery:
+    name: "失败与恢复"
+    weight: 1.5
+    leverage_note: "HL-2: 三段式 fallback（触发条件 / 一线修复 / 仍失败兜底）杠杆点，4 行改动可撬 +4 分"
+    criteria: |
+      - 显式列出 ≥3 类失败（网络错误/超时/参数缺失/权限不足等）
+      - 每类失败用"三段式"：触发条件 / 一线修复 / 仍失败兜底
+      - 不只写"重试"，必须含重试次数/退避策略/退出条件
+      - 失败处理段至少包含一个 🔴 STOP 视觉标记
+    anti_criteria: |
+      - AP6: 失败处理段含"重试"但不含"次数" / "退避" / "退出" 等具体参数（-1.5）
+    scoring_rubric: |
+      10: 全部 criteria + 无 anti
+      8: 大部分 criteria + ≤1 处 anti
+      6: 部分 criteria + 2 处 anti
+      4: 部分 criteria + 3 处 anti
+      2: 多数 criteria 缺失
+
+  dim4_checkpoints:
+    name: "检查点设计"
+    weight: 1.0
+    leverage_note: "HL-1: 🔴 STOP/CHECKPOINT 视觉标记是杠杆点，4 行改动可撬 dim4 +3 分"
+    criteria: |
+      - 关键节点有可验证检查（"看到 X 才继续" / "输出 Y 才算成功"）
+      - 输出有明确成功条件
+      - 副作用操作有回滚说明
+      - 使用 🔴 STOP 或 CHECKPOINT 等视觉标记
+      - 至少 2 处显式检查点
+    anti_criteria: |
+      - AP7: ## 执行步骤 等流程段，连续 >3 个步骤无"看到 X 才继续"等验证节点（-1.5）
+    scoring_rubric: |
+      10: 全部 criteria + 无 anti
+      8: 大部分 criteria + ≤1 处 anti
+      6: 部分 criteria + 2 处 anti
+      4: 部分 criteria + 3 处 anti
+      2: 多数 criteria 缺失
+
+  dim5_specificity:
+    name: "措辞具体性"
+    weight: 1.5
+    leverage_note: "避免软化措辞：建议/灵活/根据情况/视情况而定 出现 ≥3 处扣 ≥3 分"
+    criteria: |
+      - 步骤描述具体到操作+参数（如 "python3 xxx.py --flag value" 而非 "运行脚本"）
+      - 条件分支明确（"如果 X 则 Y" 而非 "可能需要..."）
+      - 命令行示例含完整 flag 和参数
+      - 数字 / 阈值 / 路径 全部明确（不写"较长" / "很多"）
+    anti_criteria: |
+      - AP8: 出现"建议"/"灵活"/"根据情况"/"视情况而定"等软化措辞 ≥3 处（-3）
+      - AP9: 条件分支用"可能"/"也许"/"或许"等模糊词（-1.5）
+    scoring_rubric: |
+      10: 全部 criteria + 无 anti
+      8: 大部分 criteria + ≤1 处 anti
+      6: 部分 criteria + 2 处 anti
+      4: 部分 criteria + 3 处 anti
+      2: 多数 criteria 缺失
+
+  dim6_cross_section_consistency:
+    name: "跨章节一致性"
+    weight: 1.0
+    criteria: |
+      - 跨章节引用闭合（如 ## A 引用 ## B 内容必须存在）
+      - 术语全文一致（无同义词混用）
+      - 多处输出统一合并到表格，避免同一信息在不同章节重复
+      - >4 层 H 标题砍到 3 层，嵌套过深的列表改为表格
+      - 流程闭环（开始→处理→输出）
+    anti_criteria: |
+      - AP10: A 章节说"先 X 再 Y" 而 B 章节说"先 Y 再 X"（-1.5）
+    scoring_rubric: |
+      10: 全部 criteria + 无 anti
+      8: 大部分 criteria + ≤1 处 anti
+      6: 部分 criteria + 2 处 anti
+      4: 部分 criteria + 3 处 anti
+      2: 多数 criteria 缺失
+
+  # ──  2 个 LLM 评契约 / 规范对齐维度（dim7~8） ──
+
+  dim7_agent_contract_alignment:
+    name: "Agent 契约对齐"
+    weight: 1.0
+    criteria: |
+      - GC-1 Role 一致性：Skill 不越权（执行修改操作前对照 Agent safety_constraints）
+      - GC-2 Tool 权限：Skill 用到的工具必须在 Agent 白名单内
+      - GC-3 I/O 路径约定：Skill 输出路径与 Agent work_dir_convention 对齐（不偷用 /tmp）
+      - GC-4 Safety 约束：Skill 不绕过 Agent 审查门禁（self_review 不能代替 G1 reviewer）
+      - GC-7 Review 策略：Skill 自审不替代 Agent G1 独立审查
+      - 适配场景：单 Skill 模式（无 Agent COSIGHT.md）自动 PASS（无对比基准）
+    anti_criteria: |
+      - AP11: Skill 越权（执行修改操作但未对照 Agent safety_constraints）（-1.5）
+    scoring_rubric: |
+      10: 全部 criteria + 无 anti
+      8: 大部分 criteria + ≤1 处 anti
+      6: 部分 criteria + 2 处 anti
+      4: 部分 criteria + 3 处 anti
+      2: 多数 criteria 缺失
+
+  dim8_anthropic_sf:
+    name: "Anthropic Skill 规范合规（SF）"
+    weight: 1.2
+    leverage_note: "SF 规范是 Anthropic 官方推荐的结构层，违规会让 Skill 难以分发到其他 runtime"
+    criteria: |
+      - SF-1 目录结构：SKILL.md 在根目录，附属资产在 references/ / scripts/ / templates/
+      - SF-3 行数 ≤500：SKILL.md 单文件不超过 500 行
+      - SF-5 命名：Kebab-case（lowercase-with-hyphens）
+      - SF-6 描述公式：description 含"做什么 + 何时用"
+      - SF-8 模板沉淀：可复用模式沉淀到 templates/
+    anti_criteria: |
+      - AP12: frontmatter 缺 name 或 description 字段（-1.5）
+    scoring_rubric: |
+      10: 全部 criteria + 无 anti
+      8: 大部分 criteria + ≤1 处 anti
+      6: 部分 criteria + 2 处 anti
+      4: 部分 criteria + 3 处 anti
+      2: 多数 criteria 缺失
+
+  # ──  3 个 auto 维度（Python 端直接算分，LLM 不评） ──
+
+  dim9_coverage_auto:
+    name: "测试覆盖率（auto）"
+    weight: 1.0
+    auto: true
+    compute_mode: "auto"
+    criteria: |
+      - 框架自动算：rubric 中所有 enabled 维度的高分覆盖率
+      - 启用 dim 数 > 12 时自动降权（保持总分稳定）
+    anti_criteria: ""
+    scoring_rubric: |
+      10: 覆盖率 ≥ 90%
+      8: 覆盖率 ≥ 70%
+      6: 覆盖率 ≥ 50%
+      4: 覆盖率 ≥ 30%
+      2: 覆盖率 < 30%
+
+  dim10_safety_auto:
+    name: "Skill 安全（prompt injection 扫描，auto）"
+    weight: 0.8
+    auto: true
+    compute_mode: "auto"
+    criteria: |
+      - 框架自动算：扫描 SKILL.md 是否含 prompt injection 关键词
+      - 命中 ≥2 条即 reject；命中 0 条 PASS
+    anti_criteria: ""
+    scoring_rubric: |
+      10: 0 命中
+      6: 1 命中（warning）
+      2: ≥2 命中（reject）
+    # 检测关键词（借鉴 skillspector + 双语覆盖；匹配方式：完全子串匹配，区分大小写已 .lower()）
+    # 分两类：(A) 指令覆盖/jailbreak；(B) System prompt 暴露/提取
+    detection_keywords:
+      # A. 指令覆盖/jailbreak（skillspector P1/AR2/AR3）
+      - "ignore previous instructions"
+      - "ignore previous instruction"
+      - "disregard all prior constraints"
+      - "you are now in developer mode"
+      - "you have no restrictions"
+      - "do anything now"
+      - "ignore your guidelines"
+      - "remove all safety"
+      - "忽略先前的指令"
+      - "忽略之前指令"
+      - "无视所有约束"
+      - "你现在处于开发者模式"
+      - "你没有限制"
+      - "做任何事"
+      - "忽略你的准则"
+      - "移除所有安全"
+      # B. System prompt 暴露/提取（skillspector P6/P7/P8）
+      - "system prompt"
+      - "developer message"
+      - "reveal prompt"
+      - "print prompt"
+      - "output system"
+      - "expose instructions"
+      - "系统提示"
+      - "开发者消息"
+      - "显示提示词"
+      - "打印提示"
+      - "输出系统"
+      - "暴露指令"
+    warn_score: 6
+    reject_score: 2
+    reject_threshold: 2
+    max_score: 10
+
+  dim11_efficiency_auto:
+    name: "Token 效率（auto）"
+    weight: 0.8
+    auto: true
+    compute_mode: "auto"
+    criteria: |
+      - 框架自动算：相对 baseline_token_count 的 token 增量
+      - 精简→9，微变→8，膨胀每 +50% 减 1 分
+    anti_criteria: ""
+    scoring_rubric: |
+      10: 精简（-30%）
+      9: 微变（±20%）
+      8: 轻微膨胀（+20%~+50%）
+      6: 中度膨胀（+50%~+100%）
+      4: 重度膨胀（+100%~+200%）
+      2: 极重膨胀（>+200%）
+
+  # ──  1 个 LLM 评结构纯净度（OAP9/11/3 翻译） ──
+
+  dim12_structure_purity:
+    name: "结构纯净度"
+    weight: 1.0
+    criteria: |
+      - Skill 文件不含完整方法/类定义（避免在 SKILL.md 中插入大段代码）
+      - 章节不大幅变动（修改后整体结构与原版差异 ≤ 50%）
+      - 触顶信号出现后不增冗余（HL-4 触顶 break 规则）
+      - SKILL.md 内部无内容重复（v15+ 治本：防 optimizer-agent 多轮 mod 累积同规则分散描述）
+        · description 字段 30~1024 字符内同一触发词/触发短语不得出现 ≥2 次
+        · 同一参数定义/同一失败处理逻辑在同一节内只写一种形式（详细 🔴 版 或 简短版），不得两种并存
+        · 同一章节内不得出现语义重复段落（连续 ≥30 字符的重复子串或雷同句式）
+    anti_criteria: |
+      - AP13: 成品 Skill 含完整方法/类定义（async/function/class + 完整 body），说明是"重写"而非"局部修改"（-1.5）
+      - AP14: modification.after / before 比例 > 5（即 after 比 before 长 5 倍以上）说明爆改（-1.5）
+      - AP15: 触顶信号后仍新增冗余段，未见好就收（-1.5）
+      - AP16: SKILL.md 内部内容重复（v15+ 治本反例，每条 -1.5）
+        · AP16a: description 触发词重复（出现 ≥2 次同一 trigger phrase 或 keyword）
+        · AP16b: 同一参数定义重复（如 `{子系统名称}：$ARGUMENTS[1]` 在 #0 节出现 ≥2 次）
+        · AP16c: 同一失败处理两版并存（详细 🔴 版 + 简短版"一线修复：.../仍失败兜底：..."）
+        · AP16d: 同一章节内 ≥30 字符的语义重复子串
+    scoring_rubric: |
+      10: 全部 criteria + 无 anti
+      8: 大部分 criteria + ≤1 处 anti
+      6: 部分 criteria + 2 处 anti
+      4: 部分 criteria + 3 处 anti
+      2: 多数 criteria 缺失
+
+  # ──  3 个 2026-07-13 新增框架合规维度（dim13/14/15）──
+  # 触发:`04_skill_dir/组件间流程设计/` v1 暴露 11 个 bug 集中在 3 个领域
+  # 模式: framework_configs/llm_checkpoint_sentinel_v1.md + patterns/*.md
+  # 评分方式: 框架自动 grep + 结构检查(auto) + LLM 评 (rubric)
+
+  dim13_llm_checkpoint_protocol:
+    name: "LLM 断点协议合规(2026-07-13 新增,根治 #8 反模式)"
+    weight: 1.2
+    auto: true
+    compute_mode: "auto"
+    criteria: |
+      - Skill run.sh 主循环用 if-else 显式检测退出码 100
+      - 步骤脚本 LLM 等待分支用 `exit 100`(不是 `exit 0`)
+      - 协议详见 framework_configs/llm_checkpoint_sentinel_v1.md
+    anti_criteria: |
+      - AP#8: 步骤脚本 LLM 断点用 `exit 0`(导致 LLM 响应数据被后续步骤覆盖)
+      - AP#8b: run.sh 主循环用 `if ! bash` + `if [[ $rc -eq 0 ]]` 死代码模式
+    scoring_rubric: |
+      10: 全部 steps 用 `exit 100` + run.sh 正确检测
+      8: 部分修正(部分用 100,部分仍 0) 或 run.sh 检测不严
+      4: 多数 step 仍用 `exit 0` 或 run.sh 死代码
+      0: 完全未处理 LLM 断点
+    # 自动检测
+    detection_patterns:
+      llm_exit_100: 'grep -rE "exit 100" scripts/ | wc -l'
+      llm_exit_0: 'grep -rE "exit 0" scripts/ | wc -l'
+      run_sh_pattern: 'grep -nE "rc -eq 100" scripts/run.sh'
+    # 触发器:静态评估时自动跑上述 3 个 grep
+    auto_compute: |
+      score = 10
+      if llm_exit_100 == 0: score -= 5
+      if llm_exit_0 > 0 and llm_exit_100 == 0: score -= 3
+      if run_sh_pattern == 0: score -= 2
+      return max(score, 0)
+
+  dim14_topology_validation:
+    name: "拓扑校验完整度(2026-07-13 新增,根治 #9 反模式)"
+    weight: 1.0
+    auto: true
+    compute_mode: "auto"
+    criteria: |
+      - Step 11 校验覆盖 5 项:C1 变更组件完整性/C2 anchor 范围/C3 首末行流向/C4 重复消息对/C5 兜底一致性
+      - 模式: patterns/topology_validation_v1.md
+      - 通用工具: scripts/common/validate_topology.sh
+    anti_criteria: |
+      - AP#9: 校验覆盖度 < 3/5(多数关键校验缺失)
+      - AP#9b: 校验逻辑写在 step11 内联而非调用通用工具
+    scoring_rubric: |
+      10: 5/5 校验 + 调用通用工具
+      8: 4/5 校验
+      6: 3/5 校验
+      4: 2/5 校验
+      0: 0/5 校验
+    # 自动检测:读 step11 脚本,grep 5 项关键字
+    detection_keywords:
+      C1: ["变更组件完整性", "component.*未出现", "change_component"]
+      C2: ["anchor.*范围", "anchor.*超出", "anchor.*out"]
+      C3: ["首行源", "首末行", "外部子系统进入"]
+      C4: ["重复消息对", "重复业务流", "duplicate"]
+      C5: ["接口待定.*flow_type", "兜底一致性", "fallback.*consistency"]
+    # 触发:静态评估时按 detection_keywords grep step11 脚本
+    auto_compute: |
+      hit_count = 0
+      for category, keywords in detection_keywords:
+        for kw in keywords:
+          if grep -q kw scripts/step*.sh: hit_count += 1; break
+      if hit_count == 5: return 10
+      elif hit_count == 4: return 8
+      elif hit_count == 3: return 6
+      elif hit_count == 2: return 4
+      else: return 0
+
+  dim15_field_value_fallback:
+    name: "字段值兜底规则存在性(2026-07-13 通用化,根治 #10 反模式)"
+    weight: 0.8
+    auto: true
+    compute_mode: "auto"
+    criteria: |
+      - LLM 响应校验块含任意字段的兜底逻辑(不绑死 biz_if)
+      - 兜底模板含"待补充" / "pending" / "待定" 等通用标识关键词
+      - 兜底后强制关联标志字段为兜底语义值(默认"新增",可配置)
+      - 模式: patterns/field_value_fallback_v1.md(通用);business_flow_fallback_v1.md 为业务示例
+    anti_criteria: |
+      - AP#10: 字段值兜底规则缺失(LLM 响应关键字段为空时直接 fail)
+      - AP#10b: 兜底值不含"待补充" / "pending" 标识(下游校验无法识别)
+    scoring_rubric: |
+      10: 兜底规则 + 校验联动(完整)
+      6: 部分兜底(只在 LLM 响应校验块加)
+      0: 无兜底规则
+    # 自动检测:grep 通用兜底关键字(不绑死业务字段名)
+    detection_keywords:
+      fallback_id: ["待补充", "待定", "pending", "fallback", "兜底", "tbd"]
+      rule_ref: ["field_value_fallback", "apply_field_fallback", "字段值兜底"]
+    auto_compute: |
+      has_id = 0
+      has_ref = 0
+      for kw in detection_keywords.fallback_id:
+        if grep -rE kw references/ scripts/ | head -1: has_id = 1; break
+      for kw in detection_keywords.rule_ref:
+        if grep -rE kw references/ scripts/ | head -1: has_ref = 1; break
+      if has_id and has_ref: return 10
+      elif has_id or has_ref: return 6
+      else: return 0
+# ── v_next+1：文件关系树配置（确定性扫描器参数）──
+# 说明：详见 scripts/optimizers/static_relations.py，framework 侧配置供 Python 只读调用。
+relation_tree:
+  enabled: true
+  scanner:
+    # 附属文件注入 prompt 时的「首尾摘要」字符上限（原 6000 → 1500 → 2500，更大上下文便于跨文件分析）
+    char_cap_per_file: 2500
+    # 关系树最多收录文件数（50 → 100，覆盖更大 skill）
+    max_files: 100
+    # 单个源文件的最大出边数（防止循环引用打爆关系树）
+    max_edge_per_src: 15
+  read_directive:
+    # subagent 模式：超此行数的文件 optimizer 必须先用 Read 读真实全文
+    min_lines_for_full_read: 50
+    min_chars_for_full_read: 2000
+  # 覆盖保护：防止 optimizer 多轮只改 1 个文件
+  coverage_guard:
+    enabled: true
+    # 每轮至少覆盖 N 个不同文件（0=不检查）。prompt 端约束，非硬阻断。
+    min_files_per_round: 3
+    # 连续 K 轮只改 1 个文件 → 触发覆盖警告（注入到 REVISE 信号）
+    max_consecutive_single_file_rounds: 2
+    # per_file_findings 强制覆盖率：LLM 必须为骨架表 ≥N% 的文件输出 findings（<1.0 → REWORK）
+    min_per_file_findings_pct: 1.0
+
+# ── v_next 新增：评估视角（决定评分时主要看哪些文件）──
+# 设计原则：
+#   1. 渐进式披露：只声明"看哪些文件"，不重复 rubric criteria 文本（避免 prompt 臃肿）
+#   2. 业务方可覆盖：在 optimize-user-config.yaml 的 dim_view_overrides 段覆盖
+#   3. less is more 引导：note 字段提醒 LLM 评分时不要被"SKILL.md 罗列多"误导
+#
+# 字段：
+#   primary_files   主要看（70%）— 评分证据主要来自这些文件
+#   secondary_files 次要看（30%）— 仅作交叉验证（可选）
+#   note            1~2 句话注意事项（不写长）
+eval_view:
+  dim1_metadata_trigger:
+    primary_files: ["SKILL.md"]
+    note: "只看 frontmatter 字段"
+
+  dim2_step_executability:
+    primary_files: ["SKILL.md", "scripts/*"]
+    note: "SKILL.md 步骤 + scripts/* 实际命令形态"
+
+  dim3_failure_recovery:
+    primary_files: ["scripts/*"]
+    secondary_files: ["SKILL.md"]
+    note: "🔴 主要评 scripts/* 实际错误处理；SKILL.md 简短但 scripts/* 完整实现 = 高分"
+
+  dim4_checkpoints:
+    primary_files: ["SKILL.md", "scripts/*"]
+    note: "SKILL.md 检查点标记 + scripts/* 里的 success 验证"
+
+  dim5_specificity:
+    primary_files: ["scripts/*", "SKILL.md"]
+    note: "scripts/* 参数处理 + SKILL.md 命令示例"
+
+  dim6_cross_section_consistency:
+    primary_files: ["SKILL.md", "scripts/*", "references/*"]
+    note: "跨文件引用闭合；SKILL.md 提到的路径真实存在"
+
+  dim7_agent_contract_alignment:
+    primary_files: ["SKILL.md", "scripts/*", "references/*"]
+    note: "🔴 跨文件扫描 8 条反例；不能仅在 SKILL.md 找"
+
+  dim8_anthropic_sf:
+    primary_files: ["SKILL.md"]
+    secondary_files: ["agents/*.md"]
+    note: "Skill 与所在 Agent 契约对齐"
+
+  dim9_coverage_auto:
+    primary_files: ["SKILL.md"]
+    secondary_files: ["skills/*", "references/*", "scripts/*"]
+    note: "SF-1~SF-8 规范跨文件评估"
+
+  dim10_safety_auto:
+    primary_files: ["SKILL.md", "scripts/*"]
+    note: "🔴 真实 api_key/token 是运行时配置不是示例代码，不扣分"
+
+  dim11_efficiency_auto:
+    primary_files: ["SKILL.md", "scripts/*"]
+    note: "auto 维度：token 增量相对 baseline 量化"
+
+  dim12_structure_purity:
+    primary_files: ["SKILL.md", "scripts/*"]
+    note: "成品 Skill 避免大段方法/类定义；结构与原版差异 ≤50%；v15+ 重点检查 AP16 内部内容重复（description 触发词、参数定义、失败处理两版并存、章节内重复子串）"
+
+# 总分公式（顶层,与 rubric 平级,不放在 rubric 段内以免污染 dim_keys 过滤）
+total_formula: "weighted_mean(dim_scores, weights) * 10"
+
+# ─── 4. 文件类型 dispatch ───
+dispatch_rules:
+  md_files:
+    extensions: [".md"]
+    agent: "SkillOptimizerAgent"
+    tool: "Edit"
+    rational: |
+      md 文件结构清晰，Agent 直改风险低。
+      SkillOptimizerAgent 加载 11 patterns 做精准 Edit。
+
+  code_files:
+    extensions: [".py", ".sh", ".json", ".yaml", ".toml"]
+    agent: "CodeOptimizerAgent"
+    tool: "Edit"
+    rational: |
+      代码文件必须强制加载"编码 skill" 4 原则（不假设/最少代码/精准修改/目标驱动），
+      避免 LLM 直改代码常见的过度工程/抽象蔓延/扩散式编辑。
+
+  skip_files:
+    extensions: ["*.png", "*.jpg", "*.jpeg", "*.gif", "*.pdf", "*.zip", "*.tar", "*.gz", "*.bin"]
+    rational: |
+      二进制/压缩文件不在优化范围内，直接跳过。
+
+# ─── 5. 4 层安全网参数 ───
+safety:
+  # Layer 1: git snapshot
+  snapshot:
+    enabled: true
+    commit_message_template: "round_{N}_{stage}_auto"
+    track_submodules: false
+
+  # Layer 2: protected_assets 白名单
+  protected_assets:
+    sources:
+      - "cli_arg"           # --protected-assets 参数
+      - "frontmatter"       # SKILL.md frontmatter 声明
+      - "defaults"          # framework 默认值
+    default_patterns:
+
+    merge_strategy: "union"  # 三层取并集
+    cli_priority: true      # CLI 覆盖 frontmatter
+
+  # Layer 3: git revert HEAD
+  revert:
+    enabled: true
+    enabled_override_flag: "--no-revert"  # 关闭此机制的 flag
+    revert_command: "git revert HEAD --no-edit"
+    condition: "new_score < baseline_score"
+
+  # Layer 4: 触顶 break（darwin HL-4）
+  break_threshold:
+    enabled: true
+    threshold_default: 2        # Δ < 2
+    consecutive_rounds: 2       # 连续 2 轮
+    threshold_override_flag: "--break-threshold"
+    exception_max_rounds: true  # 跑满 max_rounds 仍不停（除非 break 触发）
+
+# ─── 6. modification_budget（参考 SkillOpt lr_autonomous）───
+modification_budget:
+  default: 8          # 前几轮允许大改
+  slope: 1            # 每轮减 1
+  floor: 2            # 最少 2 条
+  formula: "max(default - slope * round_num, floor)"
+
+# ─── 7. expert_guidance 注入规则 ───
+expert_guidance:
+  max_length: 2000     # 超出截断
+  inject_position: "prompt_top"
+  priority: "highest"  # 覆盖 framework 默认
+  proposal_ref_field: "expert_guidance_ref"
+
+# ─── 8. HL-1~4 实战经验（darwin 高杠杆点，注入到 optimizer prompt）───
+# 这些是 darwin 跑出来的" 改 4 行能撬动 3 分" 的实战经验
+# 注入到 optimizer prompt 顶部，编码为强制约束
+hl_rules:
+  - id: HL-1
+    name: "🔴 STOP 视觉标记是杠杆点"
+    lever: "dim4"
+    expected_delta: "+3 分"
+    rule: |
+      在 ## 失败处理 / ## 检查点 等关键段落，插入 🔴 STOP 或 CHECKPOINT 视觉标记
+      （如 "🔴 STOP: 看到 'done' 才继续，否则重跑"）。
+      仅靠"如果...建议..."不算检查点。4 行改动可撬动 dim4 +3 分。
+
+  - id: HL-2
+    name: "三段式 fallback"
+    lever: "dim3"
+    expected_delta: "+4 分"
+    rule: |
+      每个失败处理段按"触发条件 / 一线修复 / 仍失败兜底"三段式重写，
+      禁止只写"重试"或"重试 X 次"这种单段式。
+      一线修复必须含具体操作（如 "sleep 5 + 重试"），
+      仍失败兜底必须含 exit code / fallback 路径。
+      **覆盖度硬约束**：三段式 fallback 必须覆盖 SKILL.md 中所有子技能/子命令调用步骤
+      （如 #2/#3/#4/#5），不能只覆盖 #1 前置或 #6 检查步骤；否则 LLM judge 会因
+      "覆盖度不足"扣 dim3（实证：sub0 给 8 分，sub1/sub2 仅给 5 分，stdev=5.6）。
+
+  - id: HL-3
+    name: "dim2/3/4 是相关簇"
+    lever: "dim2, dim3, dim4"
+    expected_delta: "联动 +5 分"
+    rule: |
+      改 dim3 失败模式时，dim2 工作流可执行性和 dim4 检查点通常联动。
+      改一个维度时同步观察另两个评分变化，
+      必要时在同轮 modifications 中捆绑修改（但每条 mod 标注 dim_improved）。
+
+  - id: HL-4
+    name: "触顶 break"
+    lever: "loop_control"
+    expected_delta: "N/A（避免过拟合）"
+    rule: |
+      连续 2 轮 Δ < break-threshold 即停止，
+      不要为了凑分硬加冗余内容（OAP3）。
+      break-threshold 默认 2 分，可通过 --break-threshold 覆盖。
+
+# ─── 9. REWORK 机制（AgentGenesis 严谨度）───
+# /skill_optimize 6 phase 中 P3 builder（optimizer）+ P5 evaluator 失败时
+# 触发自动 retry，避免偶然网络抖动 / LLM 格式异常终止任务。
+# 形式 = AgentGenesis（attempt 计数 + 指数退避 + 写回 progress-state.yaml）
+rework_policy:
+  max_attempts: 3                 # retry 上限（含第 1 次）
+  backoff_seconds: [2, 4, 8]      # attempt 1/2/3 退避（attempt 0 立即）
+  on_exceeded: "mark_broken_continue"  # 超限行为：标记 BROKEN + 继续下一 round
+  trigger_phases: ["P3", "P5"]    # 仅 builder + evaluator 触发 REWORK
+  failure_definitions:
+    evaluator:
+      - "json parse fail（parse_json_response 抛 ValueError）"
+      - "missing required dim_scores keys（dim1~dim9 任意缺失）"
+      - "LLM 返回非 JSON 且正则兜底失败"
+    optimizer:
+      - "json parse fail（parse_json_response 抛 ValueError）"
+      - "modifications 字段缺失或非数组"
+      - "expert_guidance_ref 字段缺失"
+  rationale: |
+    形式 = AgentGenesis（retry 形式 / 状态机 / 写回 phase_history）。
+    触发点 = darwin 视角（仅主流程 P3/P5，基础设施 P1/P2/P4/P6 失败不 retry）。
+    超限 = 继续下一 round（保留 darwin HL-4 触顶 break 兜底，不终止整个任务）。
+
+# ─── 10. 6 phase 状态机定义（AgentGenesis planner/review/builder/verifier/evaluator/summary）───
+# 适配 /skill_optimize 无 eval-cmd 特性：
+#   P1/P3/P6 = AgentGenesis 形式（planner/builder/summary）
+#   P2/P4/P5 = darwin 内部动作（snapshot/apply/revert + break）
+phase_definitions:
+  - id: P1
+    name: "planner"
+    source: "AgentGenesis"
+    action: |
+      读 framework_cfg + 上一轮 history → 选 P1~P11 patterns 中适用项 →
+      算 modification_budget（max(default - slope * round_num, floor)）
+  - id: P2
+    name: "reviewer"
+    source: "darwin (4 层安全网 L1)"
+    action: |
+      git snapshot（commit baseline）+ .skillx-bak 强制备份 +
+      protected_assets 3 层合并 + HL 经验注入 prompt
+  - id: P3
+    name: "builder"
+    source: "AgentGenesis"
+    action: "invoke_optimizer → 生成 modifications → md/code dispatch"
+    rework_eligible: true
+  - id: P4
+    name: "verifier"
+    source: "darwin (4 层安全网 L2+L3)"
+    action: |
+      apply_modifications + 资产校验（validate_assets 仅作 warning，不参与评分）+ 体积膨胀校验 +
+      评分回退时 git revert HEAD --no-edit（OAP2 强制）
+  - id: P5
+    name: "evaluator"
+    source: "darwin (多维评分 + HL-4)"
+    action: |
+      invoke_evaluator → 多维评分（：dim8_global_context + dim9_design_form）+ Δ 计算 + HL-4 触顶检测（连续 2 轮）
+    rework_eligible: true
+  - id: P6
+    name: "summary"
+    source: "AgentGenesis"
+    action: |
+      写 round_result.json（合并 proposal + apply + validation） +
+      评分提升时更新 best_skill + 追加 phase_history
+

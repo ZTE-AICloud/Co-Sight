@@ -1,0 +1,33 @@
+# E2E 测试任务配置 — Mode A 预置（随代码提交）
+#
+# 自检模式：target_path="."，sources 指向 golden-cases/
+# 产物验证模式：Pipeline 动态写入 work/{name}/e2e/suite.yaml
+
+target_path: "."          # 待测项目根目录（. = AgentGenesis-Code 自身）
+cli: "claude"              # claude | cosight
+timeout_per_test: 300      # 默认每用例超时（秒）
+
+# 测试用例来源 — golden-cases/ 下全部 11 个 domain YAML
+# 相对路径以 REPO_ROOT 解析（run_e2e.py 双根约定）
+sources:
+  - "skills/e2e-test-runner/golden-cases/domain-a-intent-detection.yaml"
+  - "skills/e2e-test-runner/golden-cases/domain-b-independent-commands.yaml"
+  - "skills/e2e-test-runner/golden-cases/domain-c-pattern-matching.yaml"
+  - "skills/e2e-test-runner/golden-cases/domain-d-agent-creation.yaml"
+  - "skills/e2e-test-runner/golden-cases/domain-e-skill-creation.yaml"
+  - "skills/e2e-test-runner/golden-cases/domain-f-skill-optimization.yaml"
+  - "skills/e2e-test-runner/golden-cases/domain-g-state-machine.yaml"
+  - "skills/e2e-test-runner/golden-cases/domain-h-safety-constraints.yaml"
+  - "skills/e2e-test-runner/golden-cases/domain-i-self-evolution.yaml"
+  - "skills/e2e-test-runner/golden-cases/domain-j-integration-scenarios.yaml"
+  - "skills/e2e-test-runner/golden-cases/domain-k-multi-agent.yaml"
+
+# 可选：过滤条件
+filter:
+  # ids: ["TC-ID-05", "TC-SM-01"]    # 只跑指定用例
+  # domain: ["A", "B"]               # 只跑指定域
+
+# 执行参数
+execution:
+  parallel: false
+  work_dir: "work/"

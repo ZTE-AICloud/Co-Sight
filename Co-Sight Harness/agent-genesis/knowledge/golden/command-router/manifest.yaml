@@ -1,0 +1,33 @@
+# golden manifest — command-router（G2 批, 源自 gacui-claude 改造）
+# 契约见 schemas/golden-manifest.schema.yaml（字段语义单点在该文件）
+
+task_tag: command-router
+line: agent
+mode_id: W2-Router                      # 货架位（检索键）, 非身份声明（R9）
+patterns:                               # 如实完整模式维度集（现行词汇, §3.5②重映射后）
+  - W2-Router
+  - MN-Deterministic
+  - K4-Rule-Driven
+  - DT1-Linear-Pass-Through
+  - IH1-Fire-and-Forget
+  - CD1-Input-Gating
+anchor_fit: real                        # 源 CLAUDE.md 即 W2-Router 最简纯正实现
+standard_ref: knowledge/agent-creation/agent-output-standard.yaml
+shape_counts: {agent_entry: 1, prompt_files: 3, scripts: 0, templates: 0}
+acceptance:
+  - 首词路由表触发词用用户原话词汇, 回退推断规则按特异性从高到低排列
+  - 路由器不含业务逻辑, 全部执行内容在独立指令文件中
+  - 新增流程 = 新增指令文件 + 路由表登记一行, 不动既有件
+  - 回退推断覆盖研究类/编码类/其他三类, 每类有明确输入形态特征
+anchors:
+  build_plan: anchors/build-plan.md
+  self_report: anchors/self-report.md
+  derived: true                         # 外部启发过程锚（§3.5⑤）
+known_concerns: []                      # G2 准入跑 G028 后如实回填
+provenance:
+  origin_repo: "vczh-libraries/Release（外部参照库 golden-examples 策展）"
+  license: "MIT（详见 https://github.com/vczh-libraries/License）"
+  snapshot_date: "2026-10-16"
+  reshaped: true
+source: "G2 批量抽取批次（docs/plan/golden-asset-pool-plan.md §4 G2 步骤 1）"
+status: active

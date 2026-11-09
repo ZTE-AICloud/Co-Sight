@@ -1,0 +1,302 @@
+# optimize-user-config.yaml — /skill_optimize 业务方唯一配置入口
+# ─────────────────────────────────────────────────────────────────────
+# 本文件**专门**服务于 /skill_optimize 静态优化模式，**与 evolve-user-config.yaml 完全独立**。
+# 两个文件不共享字段，业务方按需分别维护。
+#
+# eval 模式（/skill_evolve）请编辑 config/evolve-user-config.yaml。
+# optimize 模式（/skill_optimize）请编辑本文件。
+#
+# 与 framework_configs/static-eval-config.yaml 的区别：
+#   - static-eval-config.yaml = framework 维护者管（rubric / patterns / 4 层安全网）
+#   - optimize-user-config.yaml = 业务方管（per-skill protected_assets / expert_guidance）
+# ─────────────────────────────────────────────────────────────────────
+
+# =============================================================================
+# 1. 强制保护的附属资产清单（per-skill 覆盖）
+# =============================================================================
+# 3 层合并顺序（取并集）：
+#   1. CLI 参数 --protected-assets（最高优先级）
+#   2. SKILL.md frontmatter 的 protected_assets 字段
+#   3. 本文件声明的 protected_assets 段
+#   4. framework defaults: ["references/standard-*.md", "templates/*.md", "CHANGELOG.md"]
+#
+# glob 风格：支持 * ? [seq]
+# 匹配规则：相对 Skill 根目录的文件路径 或 文件名 basename
+protected_assets: []
+
+# =============================================================================
+# 2. 触顶 break 配置
+# =============================================================================
+# 连续 N 轮 Δ < threshold → 自动停止（HL-4 规则）
+# 也可通过 CLI --break-threshold 覆盖（优先级最高）
+break_threshold: 2.0
+consecutive_rounds: 2
+
+# =============================================================================
+# 3. 修改预算（modification_budget，借鉴 SkillOpt lr_autonomous）
+# =============================================================================
+# 前几轮允许大改，后几轮收敛到 floor 防止破坏已收敛的 skill
+# formula: max(default - slope * round_num, floor)
+modification_budget:
+  default: 10
+  slope: 1
+  floor: 2
+
+# =============================================================================
+# 4. 用户专家指引（自然语言）
+# =============================================================================
+# 注入到所有子 Agent prompt 顶部的「最高优先级」约束段。
+# 也可通过 CLI --expert-guidance 传入（优先级最高，覆盖本文件）。
+#
+# 推荐在文件里写**通用的、跨 Skill 的**约束（如团队规范），
+# 把**特定 Skill 的**约束放在 SKILL.md frontmatter 或 CLI 参数里。
+#
+# 示例（业务方按需替换）：
+# expert_guidance: |
+#   所有外部 API 调用必须使用统一的错误处理包装器；
+#   不允许引入第三方库；
+#   评审文档按 [背景/方案/风险/验证] 四段式输出；
+#   H2 段落不超过 200 行；
+#   不允许出现'可能'、'应该'等模糊措辞。
+expert_guidance: ""
+
+# 超出此长度将被截断（hard limit，与框架常量保持一致）
+expert_guidance_max_length: 2000
+
+# =============================================================================
+# 5. 单轮最大修改文件数
+# =============================================================================
+# 防止单轮乱改。也可通过 CLI --max-files 覆盖。
+max_files_per_round: 10
+
+# =============================================================================
+# 6. 文件类型 dispatch（一般无需修改）
+# =============================================================================
+# md 文件 → SkillOptimizerAgent
+# 代码文件 → CodeOptimizerAgent（强制加载"编码 skill"4 原则）
+# 二进制 → 跳过
+# 此处仅允许业务方禁用某些类型（如不允许改 .py）
+# disabled_extensions: [".py"]  # 注释以启用
+disabled_extensions: []
+
+# =============================================================================
+# 7. 日志与产物输出
+# =============================================================================
+# 评分历史 JSON 路径（相对于 workspace）
+history_filename: "static_history.json"
+# 单轮产物目录模板（相对于 workspace）
+round_dir_template: "round_{N}"
+
+# =============================================================================
+# 8. LLM API 配置（v2 静态评分走本地 ccr HTTP）
+# =============================================================================
+# 与 config/evolve-user-config.yaml 的 model 段**保持一致**（共享同一个 ccr 实例）。
+# 业务方可在此覆盖；优先级链：CLI env > 本文件 > framework 默认。
+#
+# 字段说明：
+#   name         模型名（ccr 注册的模型 ID）
+#   base_url     ccr HTTP base URL（Anthropic 协议）
+#   api_key      API key
+#   max_tokens   单次响应最大 token 数
+#   temperature  采样温度（评分建议 0.3，生成建议 0.5）
+llm_api:
+  model:
+    # name: minimax2.7
+    # base_url: http://localhost:3456
+    # api_key: REPLACE_WITH_YOUR_KEY
+    name: MiniMax-M3
+    base_url: https://api.minimaxi.com/anthropic
+    api_key: "***"
+    # SECURITY: 加密存储,运行时通过 SKILLX_OPT_API_KEY 环境变量注入
+    # name: glm-5.2
+    # base_url: https://api1.halphen.cn:55888/anthropic
+    # api_key: sk-sp-ZETZwUovtEtL7vxiIxcYQbPfBWJ56pR0
+    temperature: 0.3
+
+# =============================================================================
+# 9. 高级：自定义 8 维评分 rubric 覆盖
+# =============================================================================
+# 一般情况下**不要**在这里覆盖 rubric，应编辑 framework YAML。
+# 如需 per-skill 调整阈值，可在此声明（如某 Skill 场景下 dim1 权重更高）：
+# dim_weights:
+#   dim1_frontmatter: 2.0      # 默认 1.0，加权后影响 total 计算
+#   dim3_failure_modes: 1.5
+#   其他维度: 1.0
+# dim_weights: {}
+
+# =============================================================================
+# 10. 高级：自定义反例（v3 已融合进 dim 的 anti_criteria 段，**不再需要本配置**）
+# =============================================================================
+# v2 时代有 `custom_anti_patterns: []` 段用于在 framework 默认 8 条 SAP 基础上追加业务方私有反例，
+# 但 framework 代码从未读取该配置（死配置）。
+# v3 起，反例全部融进 12 dim 的 anti_criteria 段，业务方如需追加，
+# 请改 framework_configs/static-eval-config.yaml 对应 dim 的 anti_criteria 字段。
+# （framework YAML 维护者负责，业务方不直接改）
+
+# =============================================================================
+# 11. REWORK 机制（AgentGenesis 严谨度，可选覆盖 framework 默认）
+# =============================================================================
+# 业务方覆盖 framework_configs/static-eval-config.yaml 的 §9 rework_policy 段。
+# 不覆盖则走 framework 默认（max_attempts=3, backoff=[2,4,8]）。
+# 推荐：一般不要在这里改，保持 framework 默认；调试时再覆盖。
+#
+# 示例（注释以启用）：
+# rework_policy:
+#   max_attempts: 5                # 调试 LLM 频繁失败时调大
+#   on_exceeded: "mark_broken_continue"  # 推荐：超限继续下一 round
+#   trigger_phases: ["P3", "P5"]   # 推荐：仅 builder + evaluator
+rework_policy: {}
+
+# =============================================================================
+# 12. HITL 三层守关阈值（ P0-1）
+# =============================================================================
+# 三层判定逻辑（每轮 verdict 决策）：
+#   delta ≥ pass_threshold      → auto_pass（直接采纳）
+#   delta ≤ revert_threshold    → auto_revert（直接回退）
+#   中间地带                    → human_review（按 on_human_review 决议）
+#
+# 也可通过 CLI 覆盖（优先级最高）：
+#   --hitl-pass-threshold
+#   --hitl-revert-threshold
+#   --hitl-on-human-review {auto_accept|interactive|log_only}
+#
+# 注意：本阈值与 #2 的 break_threshold 不同。
+#   break_threshold = HL-4 触顶 break（连续 N 轮 Δ < threshold 停止）
+#   hitl.*         = 单轮 verdict 决策（三层守关）
+hitl:
+  pass_threshold: 3.0      # 默认 +3 分
+  revert_threshold: -2.0   # delta ≤ -2 → auto_revert(比 +3 更严,LLM 改坏立即回退)
+  on_human_review: "auto_accept"  # auto_accept / interactive / log_only
+  interactive_timeout_seconds: 60  # 仅 interactive 时生效
+
+# =============================================================================
+# 13. LLM judge 多轨迹采样（ P0-2，验证已实现）
+# =============================================================================
+# 默认 3 次取均值，subprocess 子进程隔离（ B 已实现）。
+# 业务方按精度/成本权衡调整：
+#   - eval_runs=1：单次评分，速度快但方差大
+#   - eval_runs=3（默认）：3 次均值，平衡精度与成本
+#   - eval_runs=5：高精度，成本 ×5
+#
+# ⚠️ 2026-07-03 临时降为 1：subagent 模式下 3 并发触发 HTTP 429（Concurrent limit exceeded）。
+#     subagent 本身稳定性高（真子 Agent + 编码 skill），单次评分方差可接受。
+#     后续如需恢复多次评分，需配合串行化或指数退避启动。
+eval_runs: 3
+
+# =============================================================================
+# 14. 启用的扩展维度（ P1-4/5/6）
+# =============================================================================
+# 只列出要启用的维度，enabled=true 才参与评分。
+# 未启用的维度不进入 rubric 计算，也不进入 prompt 注入。
+# .2 默认全开：多维评分（多维原有 + 3 维 auto）。
+# 业务方如不需要 auto 维度，可关闭：
+#   dim10_coverage: false   → 不算 coverage
+#   dim11_safety: false     → 不算 safety
+#   dim12_efficiency: false → 不算 token 效率
+enabled_dimensions:
+  dim9_coverage_auto: true     # 测试覆盖率（Skill Coverage 借鉴）
+  dim10_safety_auto: true      # Skill 安全（SkillSafetyBench 关键词扫描）
+  dim11_efficiency_auto: true  # Token 效率（SkillReducer 借鉴）
+
+# =============================================================================
+# 15. 维度权重配置（.2 全量配齐）
+# =============================================================================
+# 多维评分权重，对应 framework YAML rubric 段的 weight 字段。
+# 未在此列出的维度走 framework YAML 默认值。
+#
+# 权重含义：总分公式 total = sum(dim_score × weight) / sum(weight) × 10
+# 权重越高，对总分影响越大。建议把"杠杆点维度"加权：
+#   - dim3_failure_modes 1.5（HL-2 三段式 fallback 是最高杠杆点）
+#   - dim5_specificity 1.5（禁软化措辞）
+#   - dim2_workflow 1.2 / dim9_design_form 1.2（次高）
+#   - 其余 1.0（基线）
+#
+# auto 维度（ 新增）：
+#   - dim10_coverage 1.0（覆盖率是评分盲区指标，适中权重）
+#   - dim11_safety 0.8（安全是"一票否决"特征，权重不宜过高避免压制内容质量）
+#   - dim12_efficiency 0.8（Token 效率是辅助优化目标）
+dim_weights:
+  # ── v3 重设计 12 维权重（与 framework YAML rubric.weights 对齐）──
+  dim1_metadata_trigger: 1.0
+  dim2_step_executability: 1.2
+  dim3_failure_recovery: 1.5
+  dim4_checkpoints: 1.0
+  dim5_specificity: 1.5
+  dim6_cross_section_consistency: 1.0
+  dim7_agent_contract_alignment: 1.0
+  dim8_anthropic_sf: 1.2
+  dim9_coverage_auto: 1.0
+  dim10_safety_auto: 0.8
+  dim11_efficiency_auto: 0.8
+  dim12_structure_purity: 1.0
+
+# =============================================================================
+# 16. 维度定义覆盖（.2 业务方个性化配置）
+# =============================================================================
+# framework YAML 是 framework 维护者管的"通用定义"。但业务方个性化
+# （换关键词、调阈值、改权重、改 criteria）通常只想改这一个文件。
+#
+# dim_overrides 让你**在 optimize-user-config.yaml 里覆盖 framework YAML
+# 任意 dim 字段**，不必动 framework YAML。
+#
+# 合并策略：浅合并每个 dim dict。framework 默认字段全保留，override 字段覆盖。
+# weight 字段也可在此覆盖（与 dim_weights 等价，但优先级更高）。
+#
+# .2 默认配置：覆盖 3 个 auto 维度的关键阈值，让业务方首次启用即可获得合理默认值。
+dim_overrides:
+  # ── dim9_coverage_auto：覆盖率（默认 7 分门槛偏松，提到 7.5 更合理）──
+  dim9_coverage_auto:
+    high_score_threshold: 7   # 维度分数 ≥ 7 算"高分"
+    low_threshold: 4          # coverage < 4 严重盲区
+    high_threshold: 7         # coverage ≥ 7 健康
+
+  # ── dim10_safety_auto：安全关键词扫描（保持 framework 默认）──
+  # dim10_safety_auto:
+  #   detection_keywords:
+  #     - "ignore previous"
+  #     - "ignore above"
+  #     - "ignore the above"
+  #     - "system prompt"
+  #     - "exfiltrate"
+  #     - "leak credentials"
+  #   warn_score: 8            # 命中 1 条 → 警告分
+  #   reject_score: 0          # 命中 ≥2 条 → 直接拒
+  #   reject_threshold: 2
+
+  # ── dim11_efficiency_auto：Token 效率（默认每 10% 减 1 分，per_pct_penalty=1）──
+  # dim11_efficiency_auto:
+  #   per_pct_penalty: 1.0
+  #   baseline_source: "round_0"
+  #   max_score: 10
+
+# =============================================================================
+# 17. 评估视角覆盖（v_next：评分主要看哪些文件）
+# =============================================================================
+# framework YAML 的 eval_view 段定义通用评估视角。
+# 业务方个性化（如"dim3 强看代码"或"dim5 强看文档"）可在此覆盖。
+#
+# 浅合并：override 字段替换 framework 默认，未列出的 dim 走 framework 默认。
+# 字段同 eval_view 段（primary_files / secondary_files / note）。
+#
+# 业务方修改时仍要遵循 less is more：
+#   - SKILL.md 简短但 scripts/* 完整实现 = 高分
+#   - SKILL.md 罗列但 scripts/* 无实现 = 扣分
+# dim_view_overrides:
+#   dim3_failure_modes:
+#     primary_files: ["scripts/*"]
+#     note: "业务方定制：dim3 强看代码质量"
+dim_view_overrides: {}
+
+# =============================================================================
+# 18. Skill 设计原则覆盖（v_next：注入 optimizer prompt 强约束）
+# =============================================================================
+# framework YAML 的 optimizer_design_principles 段定义通用 5 大原则。
+# 业务方按业务特点可追加/覆盖：
+#   - 追加：自定义原则条目（如团队规范、领域特殊约束）
+#   - 覆盖：disable 某条 framework 原则（极少见，确认后再做）
+#
+# design_principles_overrides:
+#   - id: P-OURS-1
+#     name: "团队代码风格"
+#     rule: "所有 scripts/*.mjs 必须用 ES Module，禁用 CommonJS require()"
+design_principles_overrides: []

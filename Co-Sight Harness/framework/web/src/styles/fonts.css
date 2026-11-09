@@ -1,0 +1,54 @@
+/*
+ * 字体声明（D23 = A：自托管 Alibaba PuHuiTi）。
+ *
+ * ⚠️ 字体文件当前**不在仓库里**。UX 稿只给了族名，没有给字体文件，本机也没有
+ * 安装普惠体（详见 design-tokens.md §8.2）。所以这里做的是"把声明写好、把回退
+ * 链接好"：字体文件一旦放进 `public/fonts/`，下面的 @font-face 立即生效，
+ * 无需改任何代码；在此之前由 tokens.css 里同字重的回退链兜底。
+ *
+ * 三点设计取舍：
+ *
+ * 1. **`local()` 排在 `url()` 前面**。装了普惠体的机器直接命中本地字体，
+ *    既不产生网络请求，也不会因为 woff2 缺失而白白等一次失败的加载。
+ *
+ * 2. **Regular 与 Medium 各写一条 @font-face，且都显式给 weight**。
+ *    稿里的族名把字重写进了名字（`Alibaba-PuHuiTi-R` / `-M`），是"两个族各一个
+ *    字面"。这里保留这套族名（组件里的 font-family 变量就是这么引用的），
+ *    同时各自声明真实字重，这样 `font-weight: 500` 能真正拿到 Medium 字面，
+ *    而不是被浏览器合成（synthetic bold）或直接降级成 400。
+ *
+ * 3. **`font-display: swap`**。字体是装饰性的，内容必须立刻可见。工作台首屏
+ *    若因字体阻塞而白屏，代价远大于一瞬的字形切换。
+ *
+ * 文件命名与放置规则见 `public/fonts/README.md`。
+ */
+
+/* Regular —— 卡片描述、上传者、历史项、正文 */
+@font-face {
+  font-family: 'Alibaba-PuHuiTi-R';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src:
+    local('Alibaba PuHuiTi'), local('AlibabaPuHuiTiR'),
+    url('/fonts/AlibabaPuHuiTi-Regular.woff2') format('woff2');
+}
+
+/* Medium —— 卡片标题、导航项、页标题 */
+@font-face {
+  font-family: 'Alibaba-PuHuiTi-M';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src:
+    local('Alibaba PuHuiTi Medium'), local('AlibabaPuHuiTiM'),
+    url('/fonts/AlibabaPuHuiTi-Medium.woff2') format('woff2');
+}
+
+/*
+ * 只给 woff2、不给 ttf/otf 回退，是刻意的：woff2 在本项目的浏览器支持范围内
+ * （Chrome 36+ / Firefox 39+ / Safari 12+）已经是全覆盖格式。多写一条 ttf 只在
+ * 文件缺失时把每次失败请求从 2 个变成 4 个，并在控制台留下更多噪音，
+ * 换不到任何真实兼容性。
+ */
+

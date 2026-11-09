@@ -1,0 +1,31 @@
+{
+  "notFound": {
+    "code": "404",
+    "title": "页面未找到",
+    "description": "您请求的路由不存在。请使用导航返回有效页面。",
+    "goDashboard": "返回仪表盘",
+    "goBack": "返回上一页"
+  },
+  "notifications": {
+    "newSession": "新会话",
+    "sessionDefault": "会话 ",
+    "sessionError": "会话错误",
+    "subagentSpawned": "Subagent已生成",
+    "finishedResponding": "Claude 已完成响应",
+    "readyForInput": "等待输入",
+    "sessionCompleted": "会话已完成",
+    "sessionClosed": "会话已关闭",
+    "defaultTitle": "通知",
+    "defaultBody": "通知"
+  },
+  "toolLegend": {
+    "read": "读取",
+    "write": "写入",
+    "edit": "编辑",
+    "bash": "Bash",
+    "grep": "Grep",
+    "glob": "Glob",
+    "agent": "Agent",
+    "other": "其他"
+  }
+}

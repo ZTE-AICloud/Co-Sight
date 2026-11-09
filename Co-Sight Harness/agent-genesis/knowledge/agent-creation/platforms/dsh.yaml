@@ -1,0 +1,287 @@
+# DSH（DeepSeek Harness）平台事实源 — Agent 创建的产物映射
+# build-planner / agent-executor / g025 / G030 共用；其他文件不得再各写一份映射。
+# 基线：deepseek-harness-master 源码（2026-10 核对）。DSH 字段若变更，只改本文件。
+
+meta:
+  platform: dsh
+  display_name: DeepSeek Harness
+  baseline: "deepseek-harness-master @ 2026-10"
+  status: experimental
+  design_principle: >
+    DSH 的 Agent 不是目录约定，而是「bundle 包 → cordis.patch.yml 插入 preset 行 →
+    preset.config.plugins 列出子插件」。因此 DSH 产物必须打包、可安装、可被 UI 选择；
+    把 .claude/ 目录原样搬过去不会被识别。
+
+# ------------------------------------------------------------
+# 宿主约束（决定产物形态，全部来自源码核对）
+# ------------------------------------------------------------
+host_constraints:
+  preset_registry:
+    fact: "agent-preset-registry 不扫描目录，也不接受 preset 路径；新 preset 只能通过 patch 插入行"
+    consequence: "生成物必须是 bundle 包，不能只落一个 agent 目录"
+  install_unit:
+    fact: "package.json 的 dsh.bundle.patch 指向 patch 文件；dsh plugin --profile <p> add <dir> 登记"
+    consequence: "产物根必须有 package.json + cordis.patch.yml"
+  instructions:
+    fact: "agent-instructions 从 cwd 向上发现 AGENTS.md/CLAUDE.md；无绝对路径配置"
+    consequence: "CLAUDE.md 可复用，但只在 agent 目录内生效；跨目录可用需把身份写进 persona.prefix"
+  skills:
+    fact: "技能根只有 .dsh/skills、.agents/skills、customSkillDirs、~/.dsh/skills、~/.agents/skills、bundled；无 .claude/skills"
+    consequence: "生成的技能必须由 preset 内 skill-filesystem.customSkillDirs 挂载"
+  subagents:
+    fact: "子代理是逐实例的 tool-subagent 行（provider/toolName/persona/toolFilter/maxDepth）"
+    consequence: ".claude/agents/<role>.md 映射为每个角色一行；调用是异步的"
+  settings_hooks:
+    fact: "DSH 无 .claude/settings.json / hooks.json 的等价物（权限由宿主策略，钩子需自写插件）"
+    consequence: "这两个产物在 dsh 平台不生成，只在 README 声明能力边界"
+  workspace_sandbox:
+    fact: >
+      会话访问模式为「工作区内修改」（workspace-write）时，bash 运行在 bwrap 沙箱中：
+      根文件系统整体以只读方式可见（--ro-bind / /），工作区额外以可写方式绑定；
+      唯一被遮蔽的是 /tmp——沙箱内的 /tmp 是一个空 tmpfs。因此：
+      （1）工作区外、且不在 /tmp 下的文件，bash 与 read 都能正常读取；
+      （2）bundle 若位于 /tmp 且不在工作区内，bash 中该路径不存在（ENOENT）；
+      （3）企业环境（如 FtEnFs/ecryptfs）可能把 / 以镜像路径（如 /.ft/e/...）暴露，
+          该镜像路径在 OS 层即拒绝读取（EACCES），与 DSH 访问模式和提权无关。
+      技能的 SKILL.md 由宿主 skill 插件在沙箱外加载，不受上述限制。
+    consequence: >
+      bundle 的安装/引用路径不得位于 /tmp（产物应留在用户工作区或 ~/.dsh 等稳定路径）；
+      生成的技能必须写明随包文件读取方式（见 mapping.skill.read_guidance）：
+      用 read 工具 + 技能目录的原始绝对路径，禁止用 find / 全盘搜索定位文件、
+      禁止使用 /.ft/e 等企业镜像路径；bash 中的 ENOENT 不代表文件不存在。
+      rules/ 与技能 references/ 不得作为 agent 运行时「按需 read」的唯一来源；
+      关键判定口径必须写进 persona.prefix 或 SKILL.md 正文（宿主加载）。
+
+# ------------------------------------------------------------
+# 产物契约
+# ------------------------------------------------------------
+artifact_contract:
+  output_root: "output/agents/{name}/v1/dsh/"
+  platform_value: dsh            # build-plan frontmatter platforms[] 取值
+  required_files:
+    - target: "dsh/package.json"
+      generation: template
+      source: "assets/templates/dsh/package.json.tpl"
+      template_variables: [package_name, version, description]
+      description: "npm 包清单；必须含 dsh.bundle.patch -> ./cordis.patch.yml。bundle 包只需 patch，无需 main/exports"
+    - target: "dsh/cordis.patch.yml"
+      generation: generate
+      description: "插入 preset 行与全部子插件行（persona/instructions/tools/skills/subagents/ask-user）"
+    - target: "dsh/README.md"
+      generation: generate
+      description: >
+        安装、选择、使用、能力差异（诚实清单）；不得省略无等价物项。
+        安装步骤必须提示 bundle 源目录不得位于 /tmp（workspace-write 沙箱下 /tmp 被遮蔽），
+        产物若在 /tmp 下，先复制到用户工作区或 ~/.dsh 再执行 dsh plugin add。
+    - target: "CLAUDE.md"
+      generation: generate
+      description: "与 claude-code 平台共用；DSH 下由 agent-instructions 在 agent 目录内读取"
+  conditional_files:
+    - target: "dsh/skills/{skill}/SKILL.md"
+      condition: "build_type_decision.skills 非空，或 Step 1b 注入知识库资产"
+      generation: generate | pre_staged
+    - target: "dsh/install.sh"
+      condition: "默认生成（薄封装，幂等）"
+      generation: template
+      source: "assets/templates/dsh/install.sh.tpl"
+      template_variables: [package_name, display_name, preset_id]
+    - target: "dsh/rules/{rule}.md"
+      condition: "需要把通用规则随包分发时"
+      generation: copy
+  forbidden_artifacts:
+    - ".claude/settings.json"
+    - ".claude/hooks/hooks.json"
+    - ".claude/agents/{role}.md"
+    - ".claude/skills/{skill}/SKILL.md"
+  forbidden_reference_patterns:
+    - ".claude/skills/"
+    - ".claude/agents/"
+    - ".claude/settings.json"
+
+# ------------------------------------------------------------
+# Claude 产物 → DSH 落点
+# ------------------------------------------------------------
+mapping:
+  claude_md:
+    target: "CLAUDE.md"
+    action: reuse
+    note: "agent-instructions 默认候选含 CLAUDE.md；仅在 cwd 位于 agent 目录时加载"
+  skill:
+    target: "dsh/skills/{skill}/"
+    action: relocate
+    mount: "preset 内 skill-filesystem.customSkillDirs"
+    note: "frontmatter 必须有 name（kebab-case）+ description；名称建议加 {name}- 前缀防宿主重名"
+    read_guidance: |
+      ## 随包文件读取（DSH 必需）
+      - 本技能目录下的 references/、scripts/，以及 bundle 的 rules/、phase/，一律用 read 工具按原始绝对路径读取。
+      - 不要用 find / 或全盘搜索定位随包文件；不要在路径前加 /.ft/e 等企业加密盘镜像前缀。
+      - 「工作区内修改」模式下 bash 看不到 /tmp 下工作区外的文件（ENOENT），此时改用 read 工具读原始路径，不要据此判断文件不存在。
+  subagent:
+    target: "dsh/cordis.patch.yml 内一行 @deepseek-ai/dsh-tool-subagent"
+    action: translate
+    build_plan_shape: >
+      build-plan 不为每个角色单独建 file 条目（会与单个 patch 文件重复 path）。
+      统一由一条 dsh_preset 条目承载：brief 内列出「角色 → toolName / persona 来源 /
+      toolFilter.allow」表，invariants 用 content_contains 逐个校验
+      `toolName: subagent_<role>`。
+    fields:
+      provider: "spawn"
+      toolName: "subagent_{role}（role 的 - 换 _；全 preset 唯一）"
+      persona: "role.md 正文（不含 frontmatter）"
+      toolFilter.allow: "由 role frontmatter tools 映射（见 tool_names）"
+      maxDepth: "按拓扑深度，默认 2"
+    note: "DSH 子代理是异步的：先返回 started subagent <id>，完成走通知；工作流不得假设同步结果"
+  rule:
+    target: "dsh/rules/{rule}.md（随包分发）"
+    action: copy + reference
+    note: >
+      DSH 不自动加载 rules/；必须在 persona.prefix 或 CLAUDE.md 中显式给出路径。
+      workspace-write 下工作区外（/tmp 以外）的 rules/ 可读，但 /tmp 下的路径被沙箱遮蔽、
+      企业镜像路径（/.ft/e）不可读（见 host_constraints.workspace_sandbox）；
+      关键口径仍需同时写入 persona/SKILL.md，按需读取只是增强
+  workflow_md:
+    target: "phase/02-workflows/（与 claude-code 共用）"
+    action: reuse
+    note: "普通文档，模型按需 read；其中的工具名按 tool_names 改写"
+  schema:
+    target: "dsh/schemas/{entity}.schema.json"
+    action: relocate
+    note: "原 .claude/schemas 在 DSH 不会被自动读取，仅作文件引用目标"
+  settings:
+    target: null
+    action: drop
+    note: "无等价物"
+  hooks:
+    target: null
+    action: drop
+    note: "无等价物；如必须保留，需另写 DSH 插件，v1 不支持"
+
+tool_names:
+  Read: read
+  Write: write
+  Edit: edit
+  Bash: bash
+  Grep: grep
+  Glob: glob
+  WebFetch: web_fetch
+  WebSearch: web_search
+  TodoWrite: todo_write
+  AskUserQuestion: ask_user_question
+  Task: subagent
+  Agent: subagent
+  Skill: skill
+  ExitPlanMode: exit_plan_mode
+
+# ------------------------------------------------------------
+# preset 行骨架（build-planner 生成 cordis.patch.yml 时以此为模板）
+# ------------------------------------------------------------
+preset:
+  id_rule: "preset-{name}（行 id，kebab-case）"
+  config:
+    id: "{name}"                 # 必填，全局唯一
+    name: "{display_name}"       # UI 展示名
+    description: "{一句话描述}"  # UI 展示描述
+    order: 50                    # 建议值；同 profile 内不重复
+  baseline_rows:
+    - "persona"
+    - "agent-instructions"
+    - "tool-bash"
+    - "tool-fs"
+    - "tool-fs-search"
+    - "tool-web"
+    - "tool-todo"
+    - "skill-filesystem"
+    - "tool-skill"
+    - "tool-ask-user"
+  conditional_rows:
+    subagent: "仅在生成子代理时插入每角色一行 tool-subagent。**不要**在 preset 内重复挂载 dsh-subagent / dsh-subagent-spawn-in-process——它们由 base bundle 在 profile 根挂载，preset 子作用域直接注入 ctx.subagents（官方 preset 同此做法）"
+  # DSH 0.2 起这三个插件把关键字段改为「必填、无默认值」：preset 里漏写会让整行
+  # 校验失败，preset 仍会注册但被标记为 broken，UI 下拉中不显示该 Agent。
+  # 官方 preset-standard 的取值即下列默认值。
+  required_row_config:
+    agent-instructions:
+      package: '@deepseek-ai/dsh-agent-instructions'
+      config:
+        maxBytes: 65536
+      rationale: "指令文件读取上限；官方标准 preset 取值"
+    tool-fs-search:
+      package: '@deepseek-ai/dsh-tool-fs-search'
+      config:
+        sampleOverCapGlobResults: false
+      rationale: "glob 结果超限时是否抽样；官方标准 preset 取值"
+    tool-todo:
+      package: '@deepseek-ai/dsh-tool-todo'
+      config:
+        allowParallelInProgress: false
+      rationale: "必填无默认值。单代理（无子代理/后台并发）用 false；agent 会并发跑子代理或后台任务时改 true"
+  subagent_rows_snippet: |
+    # 每个角色一行；id 与 toolName 均唯一
+    - id: tool-subagent-{role_underscored}
+      name: '@deepseek-ai/dsh-tool-subagent'
+      config:
+        provider: spawn            # 由 profile 根的 dsh-subagent-spawn-in-process 提供
+        toolName: subagent_{role_underscored}
+        maxDepth: 2
+        persona: |
+          <role.md 正文，不含 frontmatter>
+        toolFilter:
+          allow: [<role tools 经 tool_names 映射后的名字>]
+  packages:
+    persona: "@deepseek-ai/dsh-persona"
+    agent-instructions: "@deepseek-ai/dsh-agent-instructions"
+    tool-bash: "@deepseek-ai/dsh-tool-bash"
+    tool-fs: "@deepseek-ai/dsh-tool-fs"
+    tool-fs-search: "@deepseek-ai/dsh-tool-fs-search"
+    tool-web: "@deepseek-ai/dsh-tool-web"
+    tool-todo: "@deepseek-ai/dsh-tool-todo"
+    tool-ask-user: "@deepseek-ai/dsh-tool-ask-user"
+    skill-filesystem: "@deepseek-ai/dsh-skill-filesystem"
+    tool-skill: "@deepseek-ai/dsh-tool-skill"
+    subagent: "@deepseek-ai/dsh-subagent"
+    subagent-spawn: "@deepseek-ai/dsh-subagent-spawn-in-process"
+    tool-subagent: "@deepseek-ai/dsh-tool-subagent"
+  skills_mount_snippet: |
+    # {package_name} 必须替换为本 bundle 的 package.json name（见 package.json.tpl）；
+    # 解析自身 package.json → 其所在目录（即 bundle 根）→ 拼 skills/。
+    customSkillDirs:
+      - !!js process.getBuiltinModule('node:path').join(
+          process.getBuiltinModule('node:path').dirname(
+            process.getBuiltinModule('node:module')
+              .createRequire(baseUrl).resolve('{package_name}/package.json')),
+          'skills')
+
+# ------------------------------------------------------------
+# 安装与验收
+# ------------------------------------------------------------
+install:
+  steps:
+    - "cd output/agents/{name}/v1/dsh"
+    - "dsh plugin --profile <profile> add ."
+    - "重启 dsh（bundle 只在启动时读取）"
+    - "dsh --dump-config | grep -A3 'preset-{name}'"
+    - "在 UI 选择 preset；技能列表应出现生成的技能"
+  dev_only: "dsh --patch ./cordis.patch.yml（裸包名按 patch 文件目录解析，需在已装依赖的目录）"
+  uninstall: "dsh plugin --profile <profile> remove <package-name>，然后重启"
+  path_constraint: >
+    bundle 源目录不得位于 /tmp（workspace-write 沙箱内 /tmp 被空 tmpfs 遮蔽）。
+    产物若在 /tmp 下，先复制到用户工作区或 ~/.dsh 等稳定路径，再执行 dsh plugin add。
+
+acceptance:
+  - "package.json 存在且 dsh.bundle.patch 指向现有文件"
+  - "cordis.patch.yml 可被 YAML 解析，顶层为 insert 列表"
+  - "preset 行有 id + plugins；id 与包名一致且 kebab-case"
+  - "每个插件行的 name 是已知 @deepseek-ai/dsh-* 包或相对路径"
+  - "required_row_config 列出的包必须带齐必填 config（漏写会让 preset 在宿主侧变成 broken 且 UI 不可选）"
+  - "toolName 在 preset 内唯一"
+  - "每个 dsh/skills/<skill>/SKILL.md 有 name + description frontmatter"
+  - "无 .claude/settings.json / .claude/hooks/hooks.json / .claude/agents 依赖"
+  - "dsh 可用时 --dump-config 能输出 preset 行且无 duplicateError"
+
+capability_limits:
+  - ".claude/settings.json（权限/模型）无等价物——由宿主 profile 策略决定"
+  - ".claude/hooks/hooks.json 无等价物——需自写 DSH 插件，v1 不生成"
+  - "子代理调用是异步的，不能等价 Claude 的同步 Task"
+  - "rules/ 不自动加载，仅作被引用文件；bundle 不得安装/引用 /tmp 下的路径，关键规则仍须内联进 persona 或 SKILL.md"
+  - "运行期读取随包 references/ 在 /tmp 以外可读；/tmp 被沙箱遮蔽、企业镜像路径（/.ft/e）不可读；按 read_guidance 用 read 工具读原始路径"
+  - "技能正文（SKILL.md）由宿主在沙箱外加载，不受工作区访问模式限制"
+  - "persona.complete=true 会压制其他提示段，禁止使用"

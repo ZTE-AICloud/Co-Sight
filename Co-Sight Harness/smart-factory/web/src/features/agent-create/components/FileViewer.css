@@ -1,0 +1,373 @@
+/*
+ * 工作空间文件浏览器：左树右预览。类名统一 fv- 前缀。
+ *
+ * 高度由外层撑开（`.ac-work--files` 是定高 flex column），这里只管在给定高度里
+ * 左右分栏、各自内部滚动 —— 不要在这里写死 px 高度，否则页面高度一变就露馅。
+ */
+
+.fv {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+}
+
+/* ---------- 左侧文件树 ---------- */
+
+.fv-tree {
+  display: flex;
+  flex-direction: column;
+  width: 248px;
+  flex-shrink: 0;
+  min-height: 0;
+  border-right: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.fv-tree-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  height: 40px;
+  padding: 0 8px 0 14px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.fv-tree-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--color-text);
+}
+
+.fv-tree-refresh {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-text-weak);
+  cursor: pointer;
+}
+
+.fv-tree-refresh:hover {
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.fv-tree-body {
+  flex: 1;
+  min-height: 0;
+  padding: 8px 6px;
+  overflow-y: auto;
+}
+
+.fv-tree-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 5px 8px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: 12.5px;
+  line-height: 1.4;
+  text-align: left;
+  cursor: pointer;
+}
+
+.fv-tree-row:hover {
+  background: var(--color-bg);
+}
+
+.fv-tree-row--selected {
+  background: rgba(47, 111, 237, 0.1);
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+.fv-tree-caret {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  flex-shrink: 0;
+  color: var(--color-text-weak);
+}
+
+.fv-tree-icon {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  color: var(--color-text-weak);
+}
+
+.fv-tree-row--selected .fv-tree-icon {
+  color: var(--color-primary);
+}
+
+.fv-tree-name {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* ---------- 树里的状态行（加载 / 出错 / 空目录） ---------- */
+
+.fv-tree-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  color: var(--color-text-weak);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.fv-tree-note--error {
+  color: #a52a20;
+}
+
+.fv-tree-note--error span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.fv-tree-note--empty {
+  font-style: italic;
+  opacity: 0.7;
+}
+
+.fv-tree-retry {
+  flex-shrink: 0;
+  margin-left: auto;
+  padding: 2px 6px;
+  border: 1px solid currentColor;
+  border-radius: 5px;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.fv-tree-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 36px 18px;
+  text-align: center;
+  color: var(--color-text-weak);
+}
+
+.fv-tree-empty p {
+  margin: 4px 0 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.fv-tree-empty span {
+  font-size: 11.5px;
+  line-height: 1.6;
+}
+
+/* ---------- 右侧内容区 ---------- */
+
+.fv-view {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.fv-view-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  min-height: 40px;
+  padding: 6px 12px 6px 14px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.fv-view-path {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--color-text);
+  font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+  font-size: 12.5px;
+}
+
+.fv-lang {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--color-bg);
+  color: var(--color-text-weak);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.fv-size {
+  flex-shrink: 0;
+  color: var(--color-text-weak);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.fv-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.fv-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 7px;
+  background: var(--color-surface);
+  color: var(--color-text-weak);
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1.3;
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.fv-btn:hover:not(:disabled) {
+  border-color: #c9cfd6;
+  color: var(--color-text);
+}
+
+.fv-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* 代码块样：深底浅字，跟代码编辑器一致 */
+.fv-code {
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  padding: 16px 18px;
+  overflow: auto;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.7;
+  white-space: pre;
+  tab-size: 2;
+}
+
+/* ---------- 预览区的空态 / 错误态 ---------- */
+
+.fv-placeholder {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 28px;
+  text-align: center;
+  color: var(--color-text-weak);
+}
+
+.fv-placeholder > svg {
+  color: #9aa3af;
+}
+
+.fv-placeholder p {
+  max-width: 420px;
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.7;
+}
+
+.fv-placeholder--error {
+  color: #a52a20;
+}
+
+.fv-placeholder--error > svg {
+  color: #d64545;
+}
+
+.fv-placeholder .fv-actions {
+  margin-left: 0;
+}
+
+/* ---------- 图片预览 ---------- */
+
+.fv-image-wrap {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow: auto;
+  /* 透明图片能看出边界 */
+  background:
+    linear-gradient(45deg, #f0f1f3 25%, transparent 25%, transparent 75%, #f0f1f3 75%),
+    linear-gradient(45deg, #f0f1f3 25%, #fff 25%, #fff 75%, #f0f1f3 75%);
+  background-size: 16px 16px;
+  background-position: 0 0, 8px 8px;
+}
+
+.fv-image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 4px;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.12);
+}
+
+/* ---------- 加载指示 ---------- */
+
+.fv-spinner {
+  width: 11px;
+  height: 11px;
+  flex-shrink: 0;
+  border: 1.5px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: fv-spin 0.7s linear infinite;
+}
+
+.fv-placeholder .fv-spinner {
+  width: 18px;
+  height: 18px;
+  border-width: 2px;
+}
+
+@keyframes fv-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

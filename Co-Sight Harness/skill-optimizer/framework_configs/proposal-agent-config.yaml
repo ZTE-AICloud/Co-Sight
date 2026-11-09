@@ -1,0 +1,697 @@
+focus_blocks:
+  f1_focus: |
+    ## 评分模式:仅关注分数(result_score)
+    当前配置只把 **分数(F1/result_score)** 作为量化评估指标,
+    耗时、Token 用量、工具调用次数等指标**仅作参考,不参与评分**。
+
+    请把分析精力集中在:
+    - 各 CASE 的 result_score 差异(高分与低分 CASE 的对比)
+    - Skill 产出与金标准的差异(评测 JSON 中的 differences / diff_notes)
+    - 低分 CASE 的根因(Skill 指导缺失、冲突、误导)
+
+    可以**忽略**以下维度的异常,不要为它们生成 modification:
+    - 耗时偏高/偏低
+    - Token 用量异常
+    - 工具调用次数与执行效率
+    - 工具调用顺序、错误重试等纯执行侧问题
+
+    唯一目标:在不牺牲分数的前提下,让 Skill 产出更贴合金标准。
+  general_focus: ''
+prompt_sections:
+  single_pass_optimize: |
+    ## Skill 一次性优化任务
+
+    你是 **Skill 一次性优化专家**（合并 proposal + apply）。
+    **核心约束**:一次 LLM 调用完成所有工作——context 加载 + gap 识别 + modification 生成 + 立即 Edit 应用 + summary 落盘。
+
+    **禁止**:
+    - 拆成 context → gaps → modifications 多步骤
+    - 只输出 JSON 不动手 Edit（必须用 Read/Edit/Write 工具真实修改 Skill 文件）
+    - 只修改 SKILL.md（如有 scripts/templates/references 必须覆盖）
+    - `edit_exact add` 无脑加规则段
+
+    ---
+
+    ### 输入
+
+    - `skill_root`：候选 Skill 根目录（含 SKILL.md / scripts/ / templates/ / references/ 子目录）
+    - `data_dir`：评测产物目录（含 phase1-build/ phase2-exec/ phase3-eval/）
+    - `modification_budget`：**{{ modification_budget }}** 条（前几轮 8，后几轮 2；round=0: 8, round≥6: 2）
+    - `round_dir`：当前 round 目录（落盘 optimization_summary.md 用）
+
+    **业务方声明的产物结构**（从 user-config.yaml 注入,LLM 必须尊重）:
+
+    ### 执行轨迹
+    **结构**: {{ user.execution_traces.structure }}
+    **case_id 解析**: {{ user.execution_traces.parsing }}
+    **读取方式**: {{ user.execution_traces.reading }}
+
+    ### 分数提取
+    **结构**: {{ user.score_extraction.structure }}
+    **提取步骤**: {{ user.score_extraction.extraction }}
+    **错误处理**: {{ user.score_extraction.handling }}
+
+    ### 资源消耗指标(输入/输出 token + 时间消耗)
+    **结构**: {{ user.metrics_extraction.structure }}
+    **提取步骤**: {{ user.metrics_extraction.extraction }}
+    **错误处理**: {{ user.metrics_extraction.handling }}
+
+    {{ focus_block }}
+
+    ---
+
+    ### Step 1:Reproduce(重现失败)— 扫描 Skill 全貌 + 读取失败证据
+
+    ```bash
+    find {{ skill_root }} -type f | grep -v __pycache__
+    ```
+
+    列出所有文件（不只 SKILL.md）。用 Read 工具读每个 .md 提取 `## ` 章节列表。脚本/二进制文件 h2_sections 写 `[]`。
+
+    **读取失败证据**(在 `{{ diff_report_path }}` 已完整重现,直接 Read):
+    - `{{ data_dir }}/phase3-eval/*/results/*.json` 的 `differences[]` / `diff_notes`
+
+    **跨 run CASE 分数矩阵**(框架预计算,LLM 必须分析,禁止只看单 run):
+    ```json
+    {{ case_run_matrix }}
+    ```
+
+    per-case 标准差:
+    ```json
+    {{ per_case_stddev }}
+    ```
+
+    per-case CV:
+    ```json
+    {{ per_case_cv }}
+    ```
+
+    **baseline 稳定性**: avg=`{{ baseline_avg }}`, stddev=`{{ baseline_stddev }}`, CV=`{{ baseline_cv }}`
+    (CV > 0.20 提示稳定性不足, CV > 0.35 提示分数不可信)
+
+    ---
+
+        ### Step 2:Isolate(隔离)— 扫描 workspace 全景(吸收历史经验)
+
+    workspace 根: `{{ workspace_root }}`(任务目录,含 baseline/ + round_*/ 子目录)
+    当前轮次: round {{ round_num }},target = `{{ target_label }}`
+
+    **必须扫描的产物**(用 Bash + Read,自上而下):
+    ```bash
+    # 1) 列出所有子目录结构(找到历史轮次和 candidate)
+    find {{ workspace_root }} -maxdepth 3 -type d | grep -E "(baseline|round_)" | sort
+
+    # 2) baseline 视角产物(每轮都有,提供"分数演化基线")
+    cat {{ workspace_root }}/baseline/score_baseline.json   # ← baseline 聚合分(case_run_matrix + stddev)
+    cat {{ workspace_root }}/baseline/run_1/score.json      # ← baseline 单 run 分 + LLM 写的 zero_root_cause
+    cat {{ workspace_root }}/baseline/proposal.md          # ← baseline 视角初版提案(可能被覆盖)
+
+    # 3) 历史轮次产物(round < 当前轮次,提供"已经尝试过什么 mods,效果如何")
+    #    用 ls 列出 round_1..round_{N-1} 的 candidate_*/optimization_summary.md + run_*/score.json
+    for r in $(seq 1 {{ prev_round_max }}); do
+      ls {{ workspace_root }}/round_${r}/candidate_*/optimization_summary.md 2>/dev/null
+      ls {{ workspace_root }}/round_${r}/candidate_*/run_*/score.json 2>/dev/null
+    done
+    ```
+
+    **每个产物的用途**:
+    - `baseline/score_baseline.json`:cross-round 对比的"锚点",必须看 baseline 聚合分(不是单 run)
+    - `baseline/run_1/score.json`:`info.zero_root_cause` 是 LLM 自己写的归因,直接复用
+    - `baseline/proposal.md`:baseline 视角初版提案(如已被覆盖则看 round_1/proposal.md)
+    - `round_N/candidate_K/optimization_summary.md`:该轮 LLM 实际应用了哪些 mods(知道自己改过哪里)
+    - `round_N/candidate_K/run_M/score.json`:该候选跑分(知道 mods 效果)
+
+    **目标**:
+    - 避免重复改同一章节(Solution C 的 prev_failure_block 仅提示 file+section,这里给完整上下文)
+    - 看到 baseline 视角的初版建议 + 实际跑了多少轮 + 每轮分数走向
+    - 跨多轮的"mods 演进"一目了然(改了什么 → 分数变了吗 → 这次改哪里)
+
+    **降级**:workspace_root 不存在或无 baseline/round_* 子目录 → 跳过本步,不报错
+
+    ---
+
+    ### Step 3:Hypothesize(假设)— 识别 gaps + 失败模式分类(内部分析,不落盘 JSON)
+
+    从 5 个维度分析:
+    1. **分数缺口**(哪些 CASE 持续低分 / 0 分)
+    2. **一致性缺口**(跨 run 波动)
+    3. **效率缺口**(执行耗时 / token 异常)
+    4. **覆盖缺口**(关键章节被忽略)
+    5. **格式缺口**(列名 / 字段 / 命名与 Gold 不匹配)
+
+    **失败模式分类**(每 case 必做):M1 空产出 / M2 过度生成 / M3 主体错配 / M4 粒度 / M5 行为 / M6 限定 / M7 完美
+    - M1 最严重(0 分 = round 白做),M3-M6 是粒度问题改**具体维度章节**
+
+    每条 gap 内部分析:
+    - `failure_layer`: skill / pipeline_artifact / pipeline_unit / pipeline_input / pipeline_eval / unknown
+    - `unsolvable_by_skill`: `failure_layer=pipeline_*` 时填 true（**不生成 modification**）
+    - `severity`: critical / high / medium / low
+
+    ---
+
+    ### Step 4:Instrument(仪器化)— 生成 modifications（按代码化优先级排序）
+
+    **预算** = **{{ modification_budget }}** 条,按 cost_benefit 降序选,超出不写。
+
+    **代码化优先级排序**:
+    1. **`extract_to_script`**（最优先）:抽到 `scripts/validate_*.py`,SKILL.md 只写引用
+    2. **`condense`**:合并冗余段
+    3. **`delete_redundant`**:删被新规则覆盖的旧规则
+    4. **`split_skill`**（SKILL.md > 500 行时,渐进式披露）:拆 SKILL.md + `<skill>_advanced.md` + `references/`
+    5. **`edit_exact`**（**慎用**）:仅替换单段,**绝不无脑加新规则段**
+
+    **禁止 100% `edit_exact add`**——实测 baseline→R3 涨 +6.8%(纯加规则反模式)。
+
+    每条 mod 必填字段:
+    - `action`: edit_exact / condense / delete_redundant / extract_to_script / split_skill
+    - `file`: 候选副本里的文件路径（相对 skill_root）
+    - `section`: 目标 H2 章节完整行（含 `## ` 前缀,精确匹配）
+    - `current_content`: **从原文 Read 后逐字符复制**(Step A/B/C 自检)
+    - `new_content`: 完整新内容
+    - `estimated_token_impact`: int（**允许负值**,extract/condense/delete 通常为负）
+    - `score_impact`: float
+    - `cost_benefit`: float = `score_impact / max(1, abs(estimated_token_impact) / 100)`
+    - `reason`: **泛化性证明**（必须含 `通用` / `系统` / `一致` / `共同` / `大多数` / `通常` 之一）
+    - `non_target_cases_risk`: 0/1/2 — 评估此 mod 误伤 Step 2 识别的「稳定满分 case」的风险
+    - `risk_evidence`: **必带 result_diff_report.md 第 N 段引用**(`{case_id} 的 {column} 列:gold='{gold}', LLM='{llm}', 失分={delta}(来源:result_diff_report.md 第 N 段)`)
+
+    **代码化范本**:
+
+    ❌ **错误（实测 baseline→R3 +6.8% 反模式）**:
+    ```markdown
+    ## 验证检查清单
+    - 09 与 10 文件成功写入且非空
+    - 09 的"用户"字段仅出现一个合法角色
+    + **Step 4: 跨 Skill 衔接交接（强制收尾）**
+    + 1. 完成 09-10 写入后必须委派下一 Skill...
+    + 2. 仅当下一 Skill 显式回执后才视为完成
+    + 3. 适用范围本约束对所有同类需求通用
+    ```
+
+    ✅ **正确(extract_to_script + condense)**:
+    1. `extract_to_script`:`scripts/post_check.py` 写完整 Python 检查 09/10/req_design_document
+    2. `condense`:原"验证检查清单"段直接删（被 scripts 替代）
+    3. SKILL.md 中只写一句："完成度由 `python3 scripts/post_check.py` 校验"
+
+    ---
+
+    ### Step 5:Verify(验证)— 静态检查假设是否站得住
+
+    > **能力边界**:LLM 无法真实跑评测 — 此步只能做**静态逻辑检查**,**实际效果**留给下一轮 orchestrator 跑评测验证。
+
+    **每条 mod 在落盘前必过 4 道静态检查**:
+    1. **失败证据存在**:此 mod 修复的 case 在 `{{diff_report_path}}` 第 N 段确实有 gold vs LLM 输出差异吗?(读 diff 文本核实)
+    2. **根因匹配**:假设的失败模式(M1-M7)和 diff_notes 五维评分对得上吗?
+    3. **mod ↔ 历史一致性**:历史 rounds diff 中是否已有类似 mod 改过同类 case?效果如何?(跨 rounds 对比)
+    4. **副作用预测**:`non_target_cases_risk` 评估 — 这个 mod 会不会误伤 Step 2 识别的「稳定满分 case」?
+
+    **任一检查不过** → 回到 Step 3 重写假设,**禁止**直接进入 Fix。
+
+    ---
+
+    ### Step 6:Fix(修复)— 立即用 Edit/Write 工具应用（重 agent 轻代码）
+
+    **禁止**只输出 JSON。必须用工具真实修改:
+
+    ```python
+    # edit_exact / condense / delete_redundant
+    Edit(file_path=full_path, old_string=current_content, new_string=new_content)
+
+    # extract_to_script(创建新文件)
+    Write(file_path=script_path, content=extract_code)
+    Edit(file_path=skill_md_path, old_string=ref_old, new_string=skill_ref)
+
+    # split_skill(拆文件,渐进式披露)
+    Write(file_path=advanced_path, content=split_content)
+    Edit(file_path=skill_md_path, old_string=core_old, new_string=core_with_link)
+    ```
+
+    **当前内容读取校验链**(避免 Edit 不匹配):
+    - **Step A**:用 Read 工具读出文件完整字符串
+    - **Step B**:把 Read 输出**逐字符**复制到 `current_content`
+    - **Step C**(自检):用 Bash 跑 `python3 -c "import sys; src=open('<file>').read(); cur='''<current_content>'''; print('FOUND' if cur in src else 'MISSING')"`
+      - MISSING → 重新 Read,补全差异(H2 空格 / 列表缩进 / 中英文标点)
+      - FOUND → 继续
+
+    **禁止凭印象写 current_content**。
+
+    **🚨 反硬编码原则**(绝对过拟合屏障):
+    - `extract_to_script` 的 `extract_code` **绝对禁止含 case_id / RAN-xxx**——必须用通用占位符
+    - 禁止 `if RAN-xxx == "...": pass` 类的硬编码特判
+    - 禁止在 `reason` 字段里引用具体 case_id
+    - scripts/validate_*.py 必须是可重用的通用校验函数
+
+    ---
+
+    ### Step 7:Regression Test(回归测试)— self_check 5 项检查 + 落盘 summary
+
+    > **能力边界**:LLM 在 self_check 阶段也只能做**静态逻辑检查**,**不是真实运行**:
+    > - ✅ 可检查:`risk_evidence` 是否引用了 result_diff_report.md 的真实行号
+    > - ✅ 可检查:每条 mod 是否都有 `non_target_cases_risk` / `cost_benefit` 字段值
+    > - ❌ 不可验证:mod 应用后 case 真实分数是否提升(由下一轮 orchestrator 评测)
+
+    写到 `{{ round_dir }}/candidate_{{ cand_id }}/optimization_summary.md`,模板见 `optimization_summary_template`。
+
+    **必须包含**:
+    - 修改文件清单（每文件 action + section + diff 行数）
+    - 覆盖 gaps 表（gap_id / severity / 修改编号）
+    - **总 token 预估影响**(sum,**至少 1 条 negative impact 证明真的省 token**)
+    - 未覆盖 gaps(如下轮需修复)
+    - **self_check 5 项**:trade_off_check / per_case_failure_diagnosis / risk_evidence_cites_diff_report / code_friendly / progressive_disclosure
+
+    **overall_pass=false → 回到 Step 3 重写**(对应 debug-pro 假说错则回退)。
+    **真实运行验证**:本轮所有 mod 应用后,**真实效果**(case 分数是否真提升)由下一轮 orchestrator 跑 `data/phase3-eval` 评测,产物 → 下一轮 `result_diff_report.md` → 下一轮 Step 5 可回头看本轮 mod 是否生效。
+
+    ---
+
+    ### 上轮失败回顾(Solution B)
+
+    {% if round_num > 1 %}
+    ```
+    {{ prev_failure_block }}
+    ```
+    **本轮铁律**:
+    1. **禁止**重复上轮已尝试的 modifications(file + section 组合相同 → 跳过)
+    2. 必须**分析上轮失败/采纳原因**,针对性调整方向
+    {% endif %}
+
+    ---
+
+    ### 防过拟合硬约束
+
+    {% for rule in anti_overfitting_rules %}
+    - {{ rule }}
+    {% endfor %}
+
+    ---
+
+    ### 红线
+
+    | 想做的事 | 实际在犯的错 | 应改成的做法 |
+    |---------|------------|------------|
+    | "分步生成 context → gaps → modifications" | **破坏一次性硬约束** | 一次 LLM 调用全部完成 |
+    | "只输出 JSON 不动手 Edit" | **框架无法应用修改** | 用 Edit/Write 工具真实修改 |
+    | "只改 SKILL.md 不动 scripts/" | **违反修改覆盖硬约束** | 优先 extract_to_script 抽到 scripts/ |
+    | "`edit_exact add` 加新规则段" | **纯加规则反模式** | 优先 extract_to_script / condense / delete_redundant |
+    | "current_content 凭印象写" | **Edit 匹配失败** | Read + Step A/B/C 自检到 FOUND |
+    | "evidence 写成'评测数据显示分数低'" | **不可定位** | 写具体 phase3-eval/RAN-xxx/results/*.json: differences[0].diff_notes=... |
+    | "root_cause 引用具体业务名" | **过拟合** | 改通用术语(如"特定协议特性"、"通信大类") |
+  # ==== DEPRECATED stage_* 段(2026-07-31 v3.0 重构后保留,不再作为主路径 prompt 来源) ====
+  # 主路径已切换到 agents/proposal-agent.md(LLM 单次调用,7 步 + plan + Read audit)
+  # 本段仍被 score_analyzer.py:_generate_proposal_via_agent 读取,但 score_analyzer 主入口
+  # (orchestrator.py:2004) 在 baseline / candidate 阶段调的是 analyze_run / analyze_candidate,
+  # 都不触发 _generate_proposal_via_agent,因此这些 key 仅在 debug_agents_e2e.py 中被使用。
+  # 不删除以保持向后兼容;新增代码应优先用 single_pass_optimize + agents/proposal-agent.md
+  stage_1_load_context: |+
+    ### 输入
+
+    - `skill_root`：候选 Skill 根目录(含 SKILL.md / scripts/ / templates/ / references/ 子目录)
+    - `data_dir`：评测产物目录(含 phase1-build/ phase2-exec/ phase3-eval/)
+    - `modification_budget`：**{{ modification_budget }}** 条(前几轮 8,后几轮 2;round=0: 8, round≥6: 2)
+    - `round_dir`：当前 round 目录(落盘 optimization_summary.md 用)
+
+    **业务方声明的产物结构**(从 user-config.yaml 注入,LLM 必须尊重):
+
+    ### 执行轨迹
+    **结构**: {{ user.execution_traces.structure }}
+    **case_id 解析**: {{ user.execution_traces.parsing }}
+    **读取方式**: {{ user.execution_traces.reading }}
+
+    ### 分数提取
+    **结构**: {{ user.score_extraction.structure }}
+    **提取步骤**: {{ user.score_extraction.extraction }}
+    **错误处理**: {{ user.score_extraction.handling }}
+
+    ### 资源消耗指标(输入/输出 token + 时间消耗)
+    **结构**: {{ user.metrics_extraction.structure }}
+    **提取步骤**: {{ user.metrics_extraction.extraction }}
+    **错误处理**: {{ user.metrics_extraction.handling }}
+
+    {{ focus_block }}
+
+    ---
+
+    ### 第 1 步：扫描 Skill 全貌
+
+    ```bash
+    find {{ skill_root }} -type f | grep -v __pycache__
+    ```
+
+    列出所有文件（不只 SKILL.md）。用 Read 工具读每个 .md 提取 `## ` 章节列表。脚本/二进制文件 h2_sections 写 `[]`。
+
+
+
+    ---
+
+    ### 第 2 步：读取失败证据
+
+    - `{{ data_dir }}/phase3-eval/*/results/*.json` 的 `differences[]` / `diff_notes`
+
+    **跨 run CASE 分数矩阵**(框架预计算,LLM 必须分析,禁止只看单 run):
+    ```json
+    {{ case_run_matrix }}
+    ```
+
+    per-case 标准差:
+    ```json
+    {{ per_case_stddev }}
+    ```
+
+    per-case CV:
+    ```json
+    {{ per_case_cv }}
+    ```
+
+    **baseline 稳定性**: avg=`{{ baseline_avg }}`, stddev=`{{ baseline_stddev }}`, CV=`{{ baseline_cv }}`
+    (CV > 0.20 提示稳定性不足, CV > 0.35 提示分数不可信)
+
+    ---
+
+        ### 第 2.5 步:扫描 workspace 全景(吸收历史经验)
+
+    workspace 根: `{{ workspace_root }}`(任务目录,含 baseline/ + round_*/ 子目录)
+    当前轮次: round {{ round_num }},target = `{{ target_label }}`
+
+    **必须扫描的产物**(用 Bash + Read,自上而下):
+    ```bash
+    # 1) 列出所有子目录结构(找到历史轮次和 candidate)
+    find {{ workspace_root }} -maxdepth 3 -type d | grep -E "(baseline|round_)" | sort
+
+    # 2) baseline 视角产物(每轮都有,提供"分数演化基线")
+    cat {{ workspace_root }}/baseline/score_baseline.json   # ← baseline 聚合分(case_run_matrix + stddev)
+    cat {{ workspace_root }}/baseline/run_1/score.json      # ← baseline 单 run 分 + LLM 写的 zero_root_cause
+    cat {{ workspace_root }}/baseline/proposal.md          # ← baseline 视角初版提案(可能被覆盖)
+
+    # 3) 历史轮次产物(round < 当前轮次,提供"已经尝试过什么 mods,效果如何")
+    #    用 ls 列出 round_1..round_{N-1} 的 candidate_*/optimization_summary.md + run_*/score.json
+    for r in $(seq 1 {{ prev_round_max }}); do
+      ls {{ workspace_root }}/round_${r}/candidate_*/optimization_summary.md 2>/dev/null
+      ls {{ workspace_root }}/round_${r}/candidate_*/run_*/score.json 2>/dev/null
+    done
+    ```
+
+    **每个产物的用途**:
+    - `baseline/score_baseline.json`:cross-round 对比的"锚点",必须看 baseline 聚合分(不是单 run)
+    - `baseline/run_1/score.json`:`info.zero_root_cause` 是 LLM 自己写的归因,直接复用
+    - `baseline/proposal.md`:baseline 视角初版提案(如已被覆盖则看 round_1/proposal.md)
+    - `round_N/candidate_K/optimization_summary.md`:该轮 LLM 实际应用了哪些 mods(知道自己改过哪里)
+    - `round_N/candidate_K/run_M/score.json`:该候选跑分(知道 mods 效果)
+
+    **目标**:
+    - 避免重复改同一章节(Solution C 的 prev_failure_block 仅提示 file+section,这里给完整上下文)
+    - 看到 baseline 视角的初版建议 + 实际跑了多少轮 + 每轮分数走向
+    - 跨多轮的"mods 演进"一目了然(改了什么 → 分数变了吗 → 这次改哪里)
+
+    **降级**:workspace_root 不存在或无 baseline/round_* 子目录 → 跳过本步,不报错
+
+    ---
+
+
+
+    ---
+
+        ### 第 2.5 步:扫描 workspace 全景(吸收历史经验)
+
+        workspace 根: `{{ workspace_root }}`(任务目录,含 baseline/ + round_*/ 子目录)
+        当前轮次: round {{ round_num }},target = `{{ target_label }}`
+
+        **必须扫描的产物**(用 Bash + Read,自上而下):
+        ```bash
+        # 1) 列出所有子目录结构(找到历史轮次和 candidate)
+        find {{ workspace_root }} -maxdepth 3 -type d | grep -E "(baseline|round_)" | sort
+
+        # 2) baseline 视角产物(每轮都有,提供"分数演化基线")
+        cat {{ workspace_root }}/baseline/score_baseline.json   # ← baseline 聚合分(case_run_matrix + stddev)
+        cat {{ workspace_root }}/baseline/run_1/score.json      # ← baseline 单 run 分 + LLM 写的 zero_root_cause
+        cat {{ workspace_root }}/baseline/proposal.md          # ← baseline 视角初版提案(可能被覆盖)
+
+        # 3) 历史轮次产物(round < 当前轮次,提供"已经尝试过什么 mods,效果如何")
+        #    用 ls 列出 round_1..round_{N-1} 的 candidate_*/optimization_summary.md + run_*/score.json
+        for r in $(seq 1 {{ prev_round_max }}); do
+          ls {{ workspace_root }}/round_${r}/candidate_*/optimization_summary.md 2>/dev/null
+          ls {{ workspace_root }}/round_${r}/candidate_*/run_*/score.json 2>/dev/null
+        done
+        ```
+
+        **每个产物的用途**:
+        - `baseline/score_baseline.json`:cross-round 对比的"锚点",必须看 baseline 聚合分(不是单 run)
+        - `baseline/run_1/score.json`:`info.zero_root_cause` 是 LLM 自己写的归因,直接复用
+        - `baseline/proposal.md`:baseline 视角初版提案(如已被覆盖则看 round_1/proposal.md)
+        - `round_N/candidate_K/optimization_summary.md`:该轮 LLM 实际应用了哪些 mods(知道自己改过哪里)
+        - `round_N/candidate_K/run_M/score.json`:该候选跑分(知道 mods 效果)
+
+        **目标**:
+        - 避免重复改同一章节(Solution C 的 prev_failure_block 仅提示 file+section,这里给完整上下文)
+        - 看到 baseline 视角的初版建议 + 实际跑了多少轮 + 每轮分数走向
+        - 跨多轮的"mods 演进"一目了然(改了什么 → 分数变了吗 → 这次改哪里)
+
+        **降级**:workspace_root 不存在或无 baseline/round_* 子目录 → 跳过本步,不报错
+
+        ---
+
+  stage_2_identify_gaps: |+
+    ### 第 3 步：识别 gaps（内部分析,不落盘 JSON）
+
+    从 5 个维度分析:
+    1. **分数缺口**(哪些 CASE 持续低分 / 0 分)
+    2. **一致性缺口**(跨 run 波动)
+    3. **效率缺口**(执行耗时 / token 异常)
+    4. **覆盖缺口**(关键章节被忽略)
+    5. **格式缺口**(列名 / 字段 / 命名与 Gold 不匹配)
+
+    每条 gap 内部分析:
+    - `failure_layer`: skill / pipeline_artifact / pipeline_unit / pipeline_input / pipeline_eval / unknown
+    - `unsolvable_by_skill`: `failure_layer=pipeline_*` 时填 true（**不生成 modification**）
+    - `severity`: critical / high / medium / low
+
+    ---
+
+    ### 第 4 步：生成 modifications（按代码化优先级排序）
+
+    **预算** = **{{ modification_budget }}** 条,按 cost_benefit 降序选,超出不写。
+
+    **代码化优先级排序**:
+    1. **`extract_to_script`**（最优先）:抽到 `scripts/validate_*.py`,SKILL.md 只写引用
+    2. **`condense`**:合并冗余段
+    3. **`delete_redundant`**:删被新规则覆盖的旧规则
+    4. **`split_skill`**（SKILL.md > 500 行时,渐进式披露）:拆 SKILL.md + `<skill>_advanced.md` + `references/`
+    5. **`edit_exact`**（**慎用**）:仅替换单段,**绝不无脑加新规则段**
+
+    **禁止 100% `edit_exact add`**——实测 baseline→R3 涨 +6.8%(纯加规则反模式)。
+
+    每条 mod 必填字段:
+    - `action`: edit_exact / condense / delete_redundant / extract_to_script / split_skill
+    - `file`: 候选副本里的文件路径（相对 skill_root）
+    - `section`: 目标 H2 章节完整行（含 `## ` 前缀,精确匹配）
+    - `current_content`: **从原文 Read 后逐字符复制**(Step A/B/C 自检)
+    - `new_content`: 完整新内容
+    - `estimated_token_impact`: int（**允许负值**,extract/condense/delete 通常为负）
+    - `score_impact`: float
+    - `cost_benefit`: float = `score_impact / max(1, abs(estimated_token_impact) / 100)`
+    - `reason`: **泛化性证明**（必须含 `通用` / `系统` / `一致` / `共同` / `大多数` / `通常` 之一）
+
+    **代码化范本**:
+
+    ❌ **错误（实测 baseline→R3 +6.8% 反模式）**:
+    ```markdown
+    ## 验证检查清单
+    - 09 与 10 文件成功写入且非空
+    - 09 的"用户"字段仅出现一个合法角色
+    + **Step 4: 跨 Skill 衔接交接（强制收尾）**
+    + 1. 完成 09-10 写入后必须委派下一 Skill...
+    + 2. 仅当下一 Skill 显式回执后才视为完成
+    + 3. 适用范围本约束对所有同类需求通用
+    ```
+
+    ✅ **正确(extract_to_script + condense)**:
+    1. `extract_to_script`:`scripts/post_check.py` 写完整 Python 检查 09/10/req_design_document
+    2. `condense`:原"验证检查清单"段直接删（被 scripts 替代）
+    3. SKILL.md 中只写一句："完成度由 `python3 scripts/post_check.py` 校验"
+
+    ---
+
+  stage_3_translate_to_mods: |+
+    ### 第 5 步：立即用 Edit/Write 工具应用（重 agent 轻代码）
+
+    **禁止**只输出 JSON。必须用工具真实修改:
+
+    ```python
+    # edit_exact / condense / delete_redundant
+    Edit(file_path=full_path, old_string=current_content, new_string=new_content)
+
+    # extract_to_script(创建新文件)
+    Write(file_path=script_path, content=extract_code)
+    Edit(file_path=skill_md_path, old_string=ref_old, new_string=skill_ref)
+
+    # split_skill(拆文件,渐进式披露)
+    Write(file_path=advanced_path, content=split_content)
+    Edit(file_path=skill_md_path, old_string=core_old, new_string=core_with_link)
+    ```
+
+    **当前内容读取校验链**(避免 Edit 不匹配):
+    - **Step A**:用 Read 工具读出文件完整字符串
+    - **Step B**:把 Read 输出**逐字符**复制到 `current_content`
+    - **Step C**(自检):用 Bash 跑 `python3 -c "import sys; src=open('<file>').read(); cur='''<current_content>'''; print('FOUND' if cur in src else 'MISSING')"`
+      - MISSING → 重新 Read,补全差异(H2 空格 / 列表缩进 / 中英文标点)
+      - FOUND → 继续
+
+    **禁止凭印象写 current_content**。
+
+    **🚨 反硬编码原则**(绝对过拟合屏障):
+    - `extract_to_script` 的 `extract_code` **绝对禁止含 case_id / RAN-xxx**——必须用通用占位符
+    - 禁止 `if RAN-xxx == "...": pass` 类的硬编码特判
+    - 禁止在 `reason` 字段里引用具体 case_id
+    - scripts/validate_*.py 必须是可重用的通用校验函数
+
+    ---
+
+    ### 第 6 步：落盘 optimization_summary.md
+
+    写到 `{{ round_dir }}/candidate_{{ cand_id }}/optimization_summary.md`,模板见 `optimization_summary_template`。
+
+    **必须包含**:
+    - 修改文件清单（每文件 action + section + diff 行数）
+    - 覆盖 gaps 表（gap_id / severity / 修改编号）
+    - **总 token 预估影响**(sum,**至少 1 条 negative impact 证明真的省 token**)
+    - 未覆盖 gaps(如下轮需修复)
+    - 防过拟合自检 4 项
+
+    ---
+
+
+
+    ---
+
+    ### 上轮失败回顾(Solution B)
+
+    {% if round_num > 1 %}
+    ```
+    {{ prev_failure_block }}
+    ```
+    **本轮铁律**:
+    1. **禁止**重复上轮已尝试的 modifications(file + section 组合相同 → 跳过)
+    2. 必须**分析上轮失败/采纳原因**,针对性调整方向
+    {% endif %}
+
+    ---
+
+  stage_4_self_check: |
+    ### 防过拟合硬约束
+
+    {% for rule in anti_overfitting_rules %}
+    - {{ rule }}
+    {% endfor %}
+
+    ---
+
+
+
+    ---
+
+    ### 红线
+
+    | 想做的事 | 实际在犯的错 | 应改成的做法 |
+    |---------|------------|------------|
+    | "分步生成 context → gaps → modifications" | **破坏一次性硬约束** | 一次 LLM 调用全部完成 |
+    | "只输出 JSON 不动手 Edit" | **框架无法应用修改** | 用 Edit/Write 工具真实修改 |
+    | "只改 SKILL.md 不动 scripts/" | **违反修改覆盖硬约束** | 优先 extract_to_script 抽到 scripts/ |
+    | "`edit_exact add` 加新规则段" | **纯加规则反模式** | 优先 extract_to_script / condense / delete_redundant |
+    | "current_content 凭印象写" | **Edit 匹配失败** | Read + Step A/B/C 自检到 FOUND |
+    | "evidence 写成'评测数据显示分数低'" | **不可定位** | 写具体 phase3-eval/RAN-xxx/results/*.json: differences[0].diff_notes=... |
+    | "root_cause 引用具体业务名" | **过拟合** | 改通用术语(如"特定协议特性"、"通信大类") |
+anti_overfitting_rules:
+- 禁止引用具体业务术语名(产品名/协议字段名/特性名)→ 改「该类查询项」「该类变更模式」
+- 禁止捏造具体数字阈值(长度/数量/次数)→ 改「完整」「明确」「可验证」
+- 禁止列举具体 case_id → 改「N 个 CASE 共现」
+- 禁止写「差 vs 优」对照示例 → 改通用原则 + 验证方法
+- reason 必须证明泛化性:「该修改对未来新需求也有效,因为…(不依赖当前 case 内容)」
+- current_content 必须从原文复制(不是凭印象)
+- coverage 中 unchanged 也要写 reason
+- 只能在 H2 层级做合并/补充/拆解,不发明 Skill 没有的章节
+- extract_to_script 的 extract_code 必须用通用占位符({req_id}/{work_dir}),禁止硬编码 case_id
+gap_extractors:
+- name: from_info_zero_root_cause
+  type: from_info_field
+  field_path: zero_root_cause
+  gap_type: zero_score_root_cause
+  severity: critical
+  scope: systemic
+  fix_suggestion: 对照 zero_root_cause 文本,定位 Skill 中缺失/错误的指导章节
+failure_classify_threshold: 0.5
+min_runs_for_determinism: 2
+stability_cv_warn: 0.2
+stability_cv_untrusted: 0.35
+stability_min_runs_for_cv: 3
+failure_layer_keywords: {}
+modification_budget:
+  default: 8
+  slope: 1
+  floor: 2
+step_buffer:
+  max_entries: 5
+  max_chars: 4000
+  filename: _step_buffer.json
+enforce_preservation: false
+# 2026-07-31 v3.0 proposal agent 重构配套配置
+# 与 agents/proposal-agent.md 主 prompt 同步启用
+read_audit:
+  # Read 强制落地段配套配置;框架层(context_extractor.py)校验
+  min_read_edit_ratio: 1.5
+  audit_file: "_read_audit.json"
+  required_step_files:
+    - "references/workflow-steps/step-1-reproduce.md"
+    - "references/workflow-steps/step-2-isolate.md"
+    - "references/workflow-steps/step-3-hypothesize.md"
+    - "references/workflow-steps/step-4-instrument.md"
+    - "references/workflow-steps/step-5-verify.md"
+    - "references/workflow-steps/step-6-fix.md"
+    - "references/workflow-steps/step-7-regression-test.md"
+plan_mode:
+  # Plan 阶段引导段配套配置;LLM 必须落盘 _plan_summary.md
+  required: true
+  plan_summary_chars_max: 200
+  plan_summary_file: "_plan_summary.md"
+time_budget:
+  # 时长预算段配套配置;context_extractor 监测 duration_sec
+  target_seconds: 600       # 单次 proposal 目标 10 分钟
+  upper_seconds: 900        # 上限 15 分钟
+  rushed_threshold_seconds: 300  # < 5 分钟标记 rushed
+optimization_summary_template: |-
+  # Round {{ round_num }} Candidate {{ cand_id }} 优化摘要
+
+  ## 修改文件清单
+
+  | 文件 | action | section | diff 行数 | estimated_token_impact |
+  |------|--------|---------|-----------|------------------------|
+  | `SKILL.md` | condense | ## 加载上下文 | -12 | -300 |
+  | `scripts/validate_paths.py` | extract_to_script | (新建) | +45 | +200 |
+
+  ## 覆盖 gaps
+
+  | gap_id | severity | 修改编号 |
+  |--------|----------|---------|
+  | G1 | critical | M1, M3 |
+  | G2 | high | M2 |
+
+  ## Token / 时间预估影响
+
+  - **总 token 预估影响**:{{ sum_token_impact }}（负值表示减少）
+  - **总时间预估影响**:{{ sum_time_impact }}（基于 scripts/validate 抽取是否减少 LLM 调用次数）
+  - **cost_benefit 总和**:{{ sum_cost_benefit }}
+
+  ## 未覆盖 gaps（如下轮需修复）
+
+  | gap_id | severity | scope | reason |
+  |--------|----------|-------|--------|
+  | G4 | high | single_point | 本轮无对应 modification,下轮优先 |
+
+  ## 防过拟合自检
+
+  - [ ] `extract_to_script` 中无 case_id 硬编码(grep `RAN-\d+` 为空)
+  - [ ] `reason` 字段全含泛化性关键词
+  - [ ] `current_content` 全部通过 FOUND 自检
+  - [ ] 修改覆盖 ≥ SKILL.md(如有 scripts/templates 必含)
+
+  ## _provenance
+
+  `single_pass_optimize LLM`

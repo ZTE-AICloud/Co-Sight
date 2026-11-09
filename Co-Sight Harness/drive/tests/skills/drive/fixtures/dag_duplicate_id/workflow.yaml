@@ -1,0 +1,10 @@
+# DAG 模式 fixture —— agent id 重复
+mode: dag
+
+agents:
+  - id: a
+    agent: drive:analyzer
+    depends_on: []
+  - id: a
+    agent: drive:planner
+    depends_on: []

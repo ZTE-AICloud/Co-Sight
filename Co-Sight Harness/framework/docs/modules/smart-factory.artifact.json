@@ -1,0 +1,166 @@
+{
+  "schemaVersion": 1,
+  "id": "smart-factory",
+  "moduleRoot": "smart-factory",
+  "priority": 30,
+  "platforms": ["linux-x64", "win32-x64"],
+  "startAfter": "framework",
+  "env": {
+    "NODE_ENV": "production",
+    "COSIGHT_HOME": "{{dataDir}}",
+    "FRAMEWORK_BASE_URL": "{{frameworkUrl}}"
+  },
+  "prepare": [
+    {
+      "name": "database",
+      "cwd": ".",
+      "command": [
+        "node",
+        "--disable-warning=ExperimentalWarning",
+        "db-init.mjs",
+        "--template",
+        "db-template.sqlite",
+        "--file",
+        "smart-factory.db"
+      ],
+      "timeoutMs": 30000
+    }
+  ],
+  "bundle": {
+    "include": [
+      "server/dist",
+      "server/package.json",
+      "server/prisma",
+      "server/node_modules",
+      "server/builtin-agents",
+      "web/dist",
+      "LICENSE"
+    ],
+    "exclude": [
+      "server/node_modules/.bin",
+      "server/node_modules/prisma",
+      "server/node_modules/@prisma/engines",
+      "server/node_modules/@prisma/fetch-engine",
+      "server/node_modules/typescript",
+      "server/node_modules/tsx",
+      "server/node_modules/@types",
+      "server/node_modules/esbuild",
+      "server/node_modules/@esbuild",
+      "server/node_modules/@anthropic-ai",
+      "server/.env",
+      "web/.env"
+    ],
+    "builds": [
+      {
+        "command": ["npm", "run", "prisma:generate"],
+        "cwd": "server",
+        "inputs": ["prisma/schema.prisma", "package.json"],
+        "outputs": ["node_modules/.prisma/client/index.d.ts"],
+        "timeoutMs": 120000
+      },
+      {
+        "command": ["npm", "run", "build"],
+        "cwd": "server",
+        "inputs": ["src", "prisma", "tsconfig.json", "package.json"],
+        "outputs": ["dist/index.js"],
+        "timeoutMs": 300000
+      },
+      {
+        "command": ["npm", "run", "build"],
+        "cwd": "web",
+        "inputs": [
+          "src",
+          "index.html",
+          "vite.config.ts",
+          "tsconfig.json",
+          "tsconfig.app.json",
+          "tsconfig.node.json",
+          "package.json"
+        ],
+        "outputs": ["dist/index.html"],
+        "timeoutMs": 300000
+      }
+    ],
+    "assets": [
+      {
+        "from": "framework/scripts/artifact/module-web-server.mjs",
+        "to": "web-server.mjs"
+      },
+      {
+        "from": "framework/scripts/artifact/module-db-init.mjs",
+        "to": "db-init.mjs"
+      }
+    ],
+    "install": [
+      {
+        "command": ["node", "scripts/prepare-native-artifacts.mjs"],
+        "cwd": "."
+      },
+      {
+        "command": ["npm", "ci"],
+        "cwd": "server"
+      },
+      {
+        "command": ["npm", "ci"],
+        "cwd": "web"
+      },
+      {
+        "command": ["node", "scripts/prepare-native-artifacts.mjs"],
+        "cwd": "."
+      }
+    ],
+    "database": {
+      "command": ["node", "scripts/db.mjs", "sync"],
+      "cwd": "server",
+      "template": "db-template.sqlite",
+      "file": "smart-factory.db"
+    },
+    "dependencyRoots": ["server"],
+    "required": [
+      "server/dist/index.js",
+      "server/package.json",
+      "server/prisma/schema.prisma",
+      "server/node_modules/@prisma/client/package.json",
+      "server/node_modules/.prisma/client/libquery_engine-debian-openssl-1.0.x.so.node",
+      "server/node_modules/.prisma/client/query_engine-windows.dll.node",
+      "web/dist/index.html",
+      "web-server.mjs",
+      "db-init.mjs",
+      "db-template.sqlite",
+      "server/builtin-agents/software-rd-team/agent.json",
+      "LICENSE"
+    ],
+    "executable": []
+  },
+  "services": [
+    {
+      "name": "server",
+      "cwd": ".",
+      "command": ["node", "server/dist/index.js"],
+      "port": 4100,
+      "readyPath": "/api/smart-factory/v1/health",
+      "readyTimeoutMs": 60000,
+      "env": {
+        "HOST": "0.0.0.0",
+        "PORT": "4100"
+      }
+    },
+    {
+      "name": "web",
+      "cwd": ".",
+      "command": [
+        "node",
+        "web-server.mjs",
+        "--root",
+        "web/dist",
+        "--port",
+        "4110",
+        "--api",
+        "http://127.0.0.1:4100"
+      ],
+      "port": 4110,
+      "readyPath": "/",
+      "readyTimeoutMs": 30000
+    }
+  ]
+}
