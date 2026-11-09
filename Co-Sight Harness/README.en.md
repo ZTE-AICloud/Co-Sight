@@ -26,8 +26,7 @@ and DSH into one front-end / back-end shell, and holds long-running, knowledge-i
 tasks in place with versioned and auditable control data — goals, state, context, tools, permissions,
 verification and evidence — so they stay stable well beyond the demo.
 
-It does not train models and does not think for them. It builds **the control structure around the
-model**.
+What it builds is **the control structure around the model**.
 
 ```bash
 # From source: two commands to bring the framework up (see QUICKSTART.en.md)
@@ -76,6 +75,8 @@ probabilistic core it establishes four control planes:
 | `04` | How do we prove it was done right? | **Evidence** | Trace · Eval · Review · Version · Rollback: a three-level metric system, an evaluation loop that decides what to change, and merge only after regression passes |
 
 > **One principle: control data lives outside the model.**
+
+![Four control planes around a probabilistic core](docs/images/four-control-planes.en.svg)
 
 ---
 
@@ -143,33 +144,7 @@ Measured on real business acceptance work:
 Harness assets drive execution; the enablement centre closes the *produce · evaluate · optimise*
 loop; the knowledge engine and model supply sit underneath as external dependencies:
 
-```text
-INTERACTION · session UI
-│  Session UI — dispatch tasks · review results
-│  Observability — run status / logs
-   │
-   ▼  dispatch · asset loading
-HARNESS · cosight-harness
-│  Harness assets (built-in · custom)
-│    ▸ software development expert · domain experts 1…N · expert teams 1…N
-│  Agent execution support
-│    ▸ asset loading · session management · agent run management · agent loop integration · runtime data · trace
-   │
-   ▼  generate → evaluate → optimise loop
-ENABLEMENT
-│  ① AgentGenesis (produce harness assets) → ② Drive (task-driven execution)
-│       → ③ agent-evaluator (result · process evaluation) → ④ skill-optimizer (skill self-optimisation)
-│  ↺ optimised assets flow back · produce → execute → evaluate → optimise
-   │
-   ▼  agent loop integration
-AGENTCORE
-│  Cosight Pro · Claude Code · DSH · … — a model-agnostic execution loop
-   │
-   ▼  context fetch · model inference
-EXTERNAL
-│  Knowledge engine — knowledge management / context / retrieval / graph services
-│  LLMs — embedding / rerank / LLM / … · behind one proxy, models are swappable
-```
+![Co-Sight Harness architecture overview](docs/images/arch-overview.en.svg)
 
 > Assets are produced in enablement, executed on AgentCore, informed by external knowledge.
 

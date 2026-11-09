@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="760" viewBox="0 0 960 760" font-family="'PingFang SC','Microsoft YaHei','Noto Sans CJK SC',system-ui,sans-serif">
+  <rect width="960" height="760" fill="#ffffff"/>
+
+  <text x="480" y="40" text-anchor="middle" font-size="23" font-weight="700" fill="#17181c">Co-Sight Harness · Architecture Overview</text>
+  <text x="480" y="64" text-anchor="middle" font-size="13.5" fill="#6b7280">Asset-driven execution · the enablement centre closes the produce · evaluate · optimise loop · knowledge engine and model supply as external dependencies</text>
+
+  <!-- layer label column -->
+  <g font-size="12" font-weight="800" fill="#1d4ed8" text-anchor="middle">
+    <rect x="40" y="96"  width="76" height="64" rx="10" fill="#eff6ff" stroke="#dbeafe"/>
+    <text x="78" y="122">INTER</text><text x="78" y="140">ACTION</text>
+    <rect x="40" y="212" width="76" height="112" rx="10" fill="#eff6ff" stroke="#dbeafe"/>
+    <text x="78" y="262">HARNESS</text><text x="78" y="280">runtime</text>
+    <rect x="40" y="376" width="76" height="96" rx="10" fill="#eff6ff" stroke="#dbeafe"/>
+    <text x="78" y="418">ENABLE</text><text x="78" y="436">MENT</text>
+    <rect x="40" y="524" width="76" height="56" rx="10" fill="#eff6ff" stroke="#dbeafe"/>
+    <text x="78" y="548">AGENT</text><text x="78" y="566">CORE</text>
+    <rect x="40" y="624" width="76" height="64" rx="10" fill="#eff6ff" stroke="#dbeafe"/>
+    <text x="78" y="650">EXTER</text><text x="78" y="668">NAL</text>
+  </g>
+
+  <!-- INTERACTION -->
+  <g>
+    <rect x="140" y="96" width="780" height="64" rx="12" fill="#ffffff" stroke="#b7b7b7" stroke-width="2"/>
+    <text x="164" y="122" font-size="14" font-weight="700" fill="#17181c">Session interaction</text>
+    <text x="164" y="144" font-size="12.5" fill="#3f3f3f">Session UI — dispatch tasks · review results　　Observability — run status / logs</text>
+  </g>
+
+  <!-- arrow 1 -->
+  <g stroke="#1d4ed8" stroke-width="2" fill="none">
+    <line x1="530" y1="160" x2="530" y2="196"/>
+    <path d="M524 188 L530 198 L536 188" fill="#1d4ed8" stroke="none"/>
+  </g>
+  <text x="544" y="184" font-size="12" fill="#6b7280">task dispatch · asset loading</text>
+
+  <!-- HARNESS -->
+  <g>
+    <rect x="140" y="204" width="780" height="128" rx="12" fill="#ffffff" stroke="#1d4ed8" stroke-width="2.5"/>
+    <text x="164" y="230" font-size="14" font-weight="700" fill="#1d4ed8">Harness · cosight-harness</text>
+    <text x="164" y="254" font-size="12.5" fill="#3f3f3f">Harness assets (built-in · custom)</text>
+    <text x="164" y="274" font-size="12.5" fill="#6b7280">▸ software development expert · domain experts 1…N · expert teams 1…N</text>
+    <text x="164" y="300" font-size="12.5" fill="#3f3f3f">Agent execution support</text>
+    <text x="164" y="320" font-size="12.5" fill="#6b7280">▸ asset loading · session management · agent run management · agent loop integration · runtime data · trace</text>
+  </g>
+
+  <!-- arrow 2 -->
+  <g stroke="#1d4ed8" stroke-width="2" fill="none">
+    <line x1="530" y1="332" x2="530" y2="360"/>
+    <path d="M524 352 L530 362 L536 352" fill="#1d4ed8" stroke="none"/>
+  </g>
+  <text x="544" y="354" font-size="12" fill="#6b7280">produce → evaluate → optimise loop</text>
+
+  <!-- ENABLEMENT -->
+  <g>
+    <rect x="140" y="368" width="780" height="112" rx="12" fill="#ffffff" stroke="#b7b7b7" stroke-width="2"/>
+    <text x="164" y="394" font-size="14" font-weight="700" fill="#17181c">Enablement centre · produce → execute → evaluate → optimise</text>
+    <!-- four nodes -->
+    <g font-size="12.5">
+      <rect x="164"  y="410" width="160" height="52" rx="9" fill="#eff6ff" stroke="#dbeafe"/>
+      <text x="176" y="432" font-weight="700" fill="#1d4ed8">① AgentGenesis</text>
+      <text x="176" y="450" fill="#3f3f3f">produce harness assets</text>
+      <rect x="348"  y="410" width="160" height="52" rx="9" fill="#eff6ff" stroke="#dbeafe"/>
+      <text x="360" y="432" font-weight="700" fill="#1d4ed8">② Drive</text>
+      <text x="360" y="450" fill="#3f3f3f">task-driven execution</text>
+      <rect x="532"  y="410" width="160" height="52" rx="9" fill="#eff6ff" stroke="#dbeafe"/>
+      <text x="544" y="432" font-weight="700" fill="#1d4ed8">③ agent-evaluator</text>
+      <text x="544" y="450" fill="#3f3f3f">result · process evaluation</text>
+      <rect x="716"  y="410" width="160" height="52" rx="9" fill="#eff6ff" stroke="#dbeafe"/>
+      <text x="728" y="432" font-weight="700" fill="#1d4ed8">④ skill-optimizer</text>
+      <text x="728" y="450" fill="#3f3f3f">skill self-optimisation</text>
+      <g stroke="#1d4ed8" stroke-width="1.8" fill="#1d4ed8">
+        <line x1="324" y1="436" x2="344" y2="436" stroke="none"/><path d="M338 430 L348 436 L338 442"/>
+        <line x1="508" y1="436" x2="528" y2="436" stroke="none"/><path d="M522 430 L532 436 L522 442"/>
+        <line x1="692" y1="436" x2="712" y2="436" stroke="none"/><path d="M706 430 L716 436 L706 442"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- feedback loop: enablement -> harness -->
+  <g stroke="#047857" stroke-width="2" stroke-dasharray="6 5" fill="none">
+    <path d="M140 424 L112 424 L112 268 L136 268"/>
+    <path d="M126 261 L140 268 L126 275" fill="#047857" stroke="none"/>
+  </g>
+  <text x="104" y="352" text-anchor="end" font-size="12" font-weight="700" fill="#047857">↺ asset feedback</text>
+
+  <!-- arrow 3 -->
+  <g stroke="#1d4ed8" stroke-width="2" fill="none">
+    <line x1="530" y1="480" x2="530" y2="508"/>
+    <path d="M524 500 L530 510 L536 500" fill="#1d4ed8" stroke="none"/>
+  </g>
+  <text x="544" y="502" font-size="12" fill="#6b7280">agent loop integration</text>
+
+  <!-- AGENTCORE -->
+  <g>
+    <rect x="140" y="516" width="780" height="72" rx="12" fill="#f7f8fc" stroke="#b7b7b7" stroke-width="2"/>
+    <text x="164" y="544" font-size="14" font-weight="700" fill="#17181c">AgentCore · a model-agnostic execution loop</text>
+    <text x="164" y="568" font-size="12.5" fill="#3f3f3f">Cosight Pro · Claude Code · Codex · DSH · …</text>
+  </g>
+
+  <!-- arrow 4 -->
+  <g stroke="#1d4ed8" stroke-width="2" fill="none">
+    <line x1="530" y1="588" x2="530" y2="608"/>
+    <path d="M524 600 L530 610 L536 600" fill="#1d4ed8" stroke="none"/>
+  </g>
+  <text x="544" y="604" font-size="12" fill="#6b7280">context fetch · model inference</text>
+
+  <!-- EXTERNAL -->
+  <g>
+    <rect x="140" y="616" width="780" height="80" rx="12" fill="#ffffff" stroke="#b7b7b7" stroke-width="2"/>
+    <text x="164" y="642" font-size="12.5" fill="#3f3f3f"><tspan font-weight="700" fill="#17181c">Knowledge engine</tspan>　— knowledge management / context / retrieval / graph services</text>
+    <text x="164" y="670" font-size="12.5" fill="#3f3f3f"><tspan font-weight="700" fill="#17181c">LLMs</tspan>　— embedding / rerank / LLM / … · unified proxy access, models swappable</text>
+  </g>
+
+  <!-- bottom principle bar -->
+  <rect x="170" y="716" width="620" height="30" rx="8" fill="#1a1a1a"/>
+  <text x="480" y="736" text-anchor="middle" font-size="12.5" font-weight="700" fill="#ffffff">Produced in enablement · executed by AgentCore · knowledge from outside</text>
+</svg>

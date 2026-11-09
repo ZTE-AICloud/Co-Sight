@@ -25,7 +25,7 @@ Co-Sight Harness 是一个**本地优先**的 Agent 宿主：把 Claude Code、C
 运行时串在同一个前后端外壳里，用一套可版本化、可审计的控制数据（目标、状态、上下文、工具、
 权限、验证、证据）托住长链路、知识密集的业务任务——让它们跑出 Demo 之外的稳定性。
 
-它不训练模型，也不替模型思考。它做的是**围绕模型的那层控制结构**。
+它做的，就是**围绕模型的那层控制结构**。
 
 ```bash
 # 源码态：两条命令起框架（详见 QUICKSTART.md）
@@ -72,6 +72,8 @@ Co-Sight Harness 把这个问题的解法放在**模型之外**：状态、约�
 | `04` | 怎么证明做对了？ | **证据控制面** | Trace · Eval · Review · Version · Rollback：三级指标体系，评测闭环决定改什么，回归通过才允许合入 |
 
 > **原则只有一条：控制数据外置于模型。**
+
+![四个控制面：围绕概率核心的运行时控制结构](docs/images/four-control-planes.zh.svg)
 
 ---
 
@@ -137,33 +139,7 @@ CONTROLLED EXECUTION LOOP
 
 Harness 资产驱动执行，使能中心完成「生产 · 评估 · 优化」闭环，知识引擎与模型供给作为外部依赖：
 
-```text
-INTERACTION · 会话交互
-│  会话交互 UI —— 任务下发 · 结果查看
-│  观测 —— 运行状态 / 日志
-   │
-   ▼  任务下发 · 资产加载
-HARNESS · cosight-harness
-│  Harness 资产（预置 · 自定义）
-│    ▸ 软件开发专家 · 领域专家 1…N · 专家团队 1…N
-│  Agent 执行支撑
-│    ▸ 资产加载 · 会话管理 · Agent 运行管理 · Agent Loop 接入 · 运行时数据管理 · Trace
-   │
-   ▼  生成 → 评估 → 优化闭环
-ENABLEMENT · 使能中心层
-│  ① AgentGenesis（Harness 资产生产）→ ② Drive（任务驱动执行）
-│       → ③ agent-evaluator（结果 · 过程评估）→ ④ skill-optimizer（Skill 自优化）
-│  ↺ 优化回流资产 · 生产 → 执行 → 评估 → 优化闭环
-   │
-   ▼  Agent Loop 接入
-AGENTCORE
-│  Cosight Pro · Claude Code · DSH · … —— 模型无关的执行循环
-   │
-   ▼  Context 获取 · 模型推理
-EXTERNAL · 外部依赖
-│  知识引擎 —— 知识管理 / Context 获取 / 检索 / 图谱服务
-│  模型 LLM —— Embedding / rerank / LLM / … · 统一代理接入，模型可替换
-```
+![Co-Sight Harness 总体架构](docs/images/arch-overview.zh.svg)
 
 > 生产在使能中心，执行靠 AgentCore，知识靠外部依赖。
 

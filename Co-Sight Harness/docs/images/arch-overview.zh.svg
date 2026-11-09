@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="760" viewBox="0 0 960 760" font-family="'PingFang SC','Microsoft YaHei','Noto Sans CJK SC',system-ui,sans-serif">
+  <rect width="960" height="760" fill="#ffffff"/>
+
+  <text x="480" y="40" text-anchor="middle" font-size="23" font-weight="700" fill="#17181c">Co-Sight Harness 总体架构</text>
+  <text x="480" y="64" text-anchor="middle" font-size="13.5" fill="#6b7280">资产驱动执行 · 使能中心完成「生产 · 评估 · 优化」闭环 · 知识引擎与模型供给作为外部依赖</text>
+
+  <!-- layer label column -->
+  <g font-size="12" font-weight="800" fill="#1d4ed8" text-anchor="middle">
+    <rect x="40" y="96"  width="76" height="64" rx="10" fill="#eff6ff" stroke="#dbeafe"/>
+    <text x="78" y="122">INTER</text><text x="78" y="140">ACTION</text>
+    <rect x="40" y="212" width="76" height="112" rx="10" fill="#eff6ff" stroke="#dbeafe"/>
+    <text x="78" y="262">HARNESS</text><text x="78" y="280">运行时</text>
+    <rect x="40" y="376" width="76" height="96" rx="10" fill="#eff6ff" stroke="#dbeafe"/>
+    <text x="78" y="418">ENABLE</text><text x="78" y="436">MENT</text>
+    <rect x="40" y="524" width="76" height="56" rx="10" fill="#eff6ff" stroke="#dbeafe"/>
+    <text x="78" y="548">AGENT</text><text x="78" y="566">CORE</text>
+    <rect x="40" y="624" width="76" height="64" rx="10" fill="#eff6ff" stroke="#dbeafe"/>
+    <text x="78" y="650">EXTER</text><text x="78" y="668">NAL</text>
+  </g>
+
+  <!-- INTERACTION -->
+  <g>
+    <rect x="140" y="96" width="780" height="64" rx="12" fill="#ffffff" stroke="#b7b7b7" stroke-width="2"/>
+    <text x="164" y="122" font-size="14" font-weight="700" fill="#17181c">会话交互</text>
+    <text x="164" y="144" font-size="12.5" fill="#3f3f3f">会话交互 UI —— 任务下发 · 结果查看　　观测 —— 运行状态 / 日志</text>
+  </g>
+
+  <!-- arrow 1 -->
+  <g stroke="#1d4ed8" stroke-width="2" fill="none">
+    <line x1="530" y1="160" x2="530" y2="196"/>
+    <path d="M524 188 L530 198 L536 188" fill="#1d4ed8" stroke="none"/>
+  </g>
+  <text x="544" y="184" font-size="12" fill="#6b7280">任务下发 · 资产加载</text>
+
+  <!-- HARNESS -->
+  <g>
+    <rect x="140" y="204" width="780" height="128" rx="12" fill="#ffffff" stroke="#1d4ed8" stroke-width="2.5"/>
+    <text x="164" y="230" font-size="14" font-weight="700" fill="#1d4ed8">Harness · cosight-harness</text>
+    <text x="164" y="254" font-size="12.5" fill="#3f3f3f">Harness 资产（预置 · 自定义）</text>
+    <text x="164" y="274" font-size="12.5" fill="#6b7280">▸ 软件开发专家 · 领域专家 1…N · 专家团队 1…N</text>
+    <text x="164" y="300" font-size="12.5" fill="#3f3f3f">Agent 执行支撑</text>
+    <text x="164" y="320" font-size="12.5" fill="#6b7280">▸ 资产加载 · 会话管理 · Agent 运行管理 · Agent Loop 接入 · 运行时数据管理 · Trace</text>
+  </g>
+
+  <!-- arrow 2 -->
+  <g stroke="#1d4ed8" stroke-width="2" fill="none">
+    <line x1="530" y1="332" x2="530" y2="360"/>
+    <path d="M524 352 L530 362 L536 352" fill="#1d4ed8" stroke="none"/>
+  </g>
+  <text x="544" y="354" font-size="12" fill="#6b7280">生成 → 评估 → 优化闭环</text>
+
+  <!-- ENABLEMENT -->
+  <g>
+    <rect x="140" y="368" width="780" height="112" rx="12" fill="#ffffff" stroke="#b7b7b7" stroke-width="2"/>
+    <text x="164" y="394" font-size="14" font-weight="700" fill="#17181c">使能中心 · 生产 → 执行 → 评估 → 优化</text>
+    <!-- four nodes -->
+    <g font-size="12.5">
+      <rect x="164"  y="410" width="160" height="52" rx="9" fill="#eff6ff" stroke="#dbeafe"/>
+      <text x="176" y="432" font-weight="700" fill="#1d4ed8">① AgentGenesis</text>
+      <text x="176" y="450" fill="#3f3f3f">Harness 资产生产</text>
+      <rect x="348"  y="410" width="160" height="52" rx="9" fill="#eff6ff" stroke="#dbeafe"/>
+      <text x="360" y="432" font-weight="700" fill="#1d4ed8">② Drive</text>
+      <text x="360" y="450" fill="#3f3f3f">任务驱动执行</text>
+      <rect x="532"  y="410" width="160" height="52" rx="9" fill="#eff6ff" stroke="#dbeafe"/>
+      <text x="544" y="432" font-weight="700" fill="#1d4ed8">③ agent-evaluator</text>
+      <text x="544" y="450" fill="#3f3f3f">结果 · 过程评估</text>
+      <rect x="716"  y="410" width="160" height="52" rx="9" fill="#eff6ff" stroke="#dbeafe"/>
+      <text x="728" y="432" font-weight="700" fill="#1d4ed8">④ skill-optimizer</text>
+      <text x="728" y="450" fill="#3f3f3f">Skill 自优化</text>
+      <g stroke="#1d4ed8" stroke-width="1.8" fill="#1d4ed8">
+        <line x1="324" y1="436" x2="344" y2="436" stroke="none"/><path d="M338 430 L348 436 L338 442"/>
+        <line x1="508" y1="436" x2="528" y2="436" stroke="none"/><path d="M522 430 L532 436 L522 442"/>
+        <line x1="692" y1="436" x2="712" y2="436" stroke="none"/><path d="M706 430 L716 436 L706 442"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- feedback loop: enablement -> harness -->
+  <g stroke="#047857" stroke-width="2" stroke-dasharray="6 5" fill="none">
+    <path d="M140 424 L112 424 L112 268 L136 268"/>
+    <path d="M126 261 L140 268 L126 275" fill="#047857" stroke="none"/>
+  </g>
+  <text x="104" y="352" text-anchor="end" font-size="12" font-weight="700" fill="#047857">↺ 优化回流资产</text>
+
+  <!-- arrow 3 -->
+  <g stroke="#1d4ed8" stroke-width="2" fill="none">
+    <line x1="530" y1="480" x2="530" y2="508"/>
+    <path d="M524 500 L530 510 L536 500" fill="#1d4ed8" stroke="none"/>
+  </g>
+  <text x="544" y="502" font-size="12" fill="#6b7280">Agent Loop 接入</text>
+
+  <!-- AGENTCORE -->
+  <g>
+    <rect x="140" y="516" width="780" height="72" rx="12" fill="#f7f8fc" stroke="#b7b7b7" stroke-width="2"/>
+    <text x="164" y="544" font-size="14" font-weight="700" fill="#17181c">AgentCore · 模型无关的执行循环</text>
+    <text x="164" y="568" font-size="12.5" fill="#3f3f3f">Cosight Pro · Claude Code · Codex · DSH · …</text>
+  </g>
+
+  <!-- arrow 4 -->
+  <g stroke="#1d4ed8" stroke-width="2" fill="none">
+    <line x1="530" y1="588" x2="530" y2="608"/>
+    <path d="M524 600 L530 610 L536 600" fill="#1d4ed8" stroke="none"/>
+  </g>
+  <text x="544" y="604" font-size="12" fill="#6b7280">Context 获取 · 模型推理</text>
+
+  <!-- EXTERNAL -->
+  <g>
+    <rect x="140" y="616" width="780" height="80" rx="12" fill="#ffffff" stroke="#b7b7b7" stroke-width="2"/>
+    <text x="164" y="642" font-size="12.5" fill="#3f3f3f"><tspan font-weight="700" fill="#17181c">知识引擎</tspan>　—— 知识管理 / Context 获取 / 检索 / 图谱服务</text>
+    <text x="164" y="670" font-size="12.5" fill="#3f3f3f"><tspan font-weight="700" fill="#17181c">模型 LLM</tspan>　—— Embedding / rerank / LLM / … · 统一代理接入，模型可替换</text>
+  </g>
+
+  <!-- bottom principle bar -->
+  <rect x="230" y="716" width="500" height="30" rx="8" fill="#1a1a1a"/>
+  <text x="480" y="736" text-anchor="middle" font-size="13" font-weight="700" fill="#ffffff">生产在使能中心，执行靠 AgentCore，知识靠外部依赖</text>
+</svg>
