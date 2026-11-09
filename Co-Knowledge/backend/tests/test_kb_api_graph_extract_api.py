@@ -1,8 +1,8 @@
-"""抽图端点（``POST /graph/extract``）的纯逻辑测试。
+"""抽图链路的共享工具（落文件 / 调算子 / schema 注入）的纯逻辑测试。
 
-真实链路（算子 → 产出 → 导入）在 ``tools/verify/verify-graph-extract-diff.py``
+真实链路（算子 → 产出 → 导入）在 ``tools/verify/verify-graph-extract-e2e.py``
 与手工探针里验过（算子会调 LLM，很慢，不适合放进单测）。
-这里钉的是**入参解析与校验**那几处 —— 它们的错误码分得很细，写错就是静默分叉。
+这里钉的是算子调用契约与 schema 注入判据那几处 —— 写错就是静默分叉。
 
 跑法::
 
@@ -12,89 +12,7 @@
 
 import pytest
 
-from shared.errors.api import KbApiError, KbServerError  # noqa: E402
 from graph.service import graph_extract_api as api  # noqa: E402
-
-
-# ----------------------------------------------------------------------
-# data 解析：空串也**算失败**
-# ----------------------------------------------------------------------
-
-
-@pytest.mark.parametrize('raw', ['', '   ', '{bad json', '[1,2]', '"a string"', 'null', '123'])
-def test_parse_dto_rejects_bad_input(raw):
-    """空串/非对象都算解析失败，不是「当空对象」。"""
-    with pytest.raises(KbApiError) as caught:
-        api._parse_dto(raw)
-    assert caught.value.key == 'graph.extract.json.parse.failed'
-    assert caught.value.code == '0004'
-
-
-def test_parse_dto_accepts_object():
-    assert api._parse_dto('{"kbId":"x"}') == {'kbId': 'x'}
-    assert api._parse_dto('{}') == {}
-
-
-def test_parse_dto_message_follows_language():
-    """文案是 i18n 键、跟随请求语言 —— 别写成中文字面量（英文请求回英文）。"""
-    with pytest.raises(KbApiError) as caught:
-        api._parse_dto('{bad')
-    assert caught.value.render('en').startswith('Graph extract request parameter JSON')
-    assert caught.value.render('zh').startswith('图提取请求参数JSON')
-
-
-# ----------------------------------------------------------------------
-# kbId / operatorId 校验
-# ----------------------------------------------------------------------
-
-
-def test_kb_id_null_passes_through():
-    """``validateKbId(null)`` **直接 return** —— 不报错。"""
-    api._validate_kb_id(None)          # 不抛
-
-
-def test_kb_id_over_100_reports_length():
-    with pytest.raises(KbApiError) as caught:
-        api._validate_kb_id('a' * 101)
-    assert caught.value.key == 'graph.extract.kbid.length.exceed'
-    assert caught.value.args == (101,)
-    assert caught.value.code == '0004'
-
-
-def test_kb_id_missing_is_0004(monkeypatch):
-    """查不到库 → 0004。**打桩**掉存储层，免得单测要连真库。"""
-    from knowledge_base.service import kbase_service as kbase_store
-
-    monkeypatch.setattr(kbase_store, 'get_kbase_row', lambda _kbid: None)
-    with pytest.raises(KbApiError) as caught:
-        api._validate_kb_id('0' * 32)
-    assert caught.value.key == 'graph.extract.kbid.not.exist'
-    assert caught.value.code == '0004'
-
-
-def test_kb_id_existing_passes(monkeypatch):
-    from knowledge_base.service import kbase_service as kbase_store
-
-    monkeypatch.setattr(kbase_store, 'get_kbase_row', lambda _kbid: {'kbase_id': 'x'})
-    api._validate_kb_id('x')           # 不抛
-
-
-def test_operator_id_null_passes_in_v1_but_not_v2():
-    """v1 的 ``validateOperatorId(null)`` **静默放行**，v2 才抛 ``operatorid.empty``。
-
-    测试环境里没库连接，v1 那条会走到真实查询 —— 所以只钉 v2 的严格分支。
-    """
-    with pytest.raises(KbApiError) as caught:
-        api._validate_operator_id(None, strict=True)
-    assert caught.value.key == 'graph.extract.operatorid.empty'
-
-
-def test_operator_id_over_10_reports_length():
-    """上限是 **10 个字符**（把 Long 转成字符串再数），不是数值大小。"""
-    with pytest.raises(KbApiError) as caught:
-        api._validate_operator_id(12345678901)
-    assert caught.value.key == 'graph.extract.operatorid.length.exceed'
-    assert caught.value.args == (11,)
 
 
 # ----------------------------------------------------------------------
@@ -120,16 +38,8 @@ def test_no_schema_id_literal_is_the_source_string():
     assert api.NO_SCHEMA_ID == 'None'
 
 
-def test_limits_match_source():
-    assert api.KB_ID_MAX == 100
+def test_operator_id_limit_matches_source():
     assert api.OPERATOR_ID_MAX == 10
-
-
-def test_graph_files_are_what_import_engine_reads():
-    """算子产出与导入引擎读的条目名必须一致（``entities.jsonl``/``edges.jsonl``）。"""
-    from graph.service import graph_import_engine as engine
-
-    assert set(api.GRAPH_FILES) == {engine.ENTITIES_ENTRY, engine.EDGES_ENTRY}
 
 
 # ----------------------------------------------------------------------
@@ -369,41 +279,29 @@ def test_general_schema_id_is_the_value_operators_self_report():
     assert api.GENERAL_SCHEMA_ID == 'General_Schema'
 
 
-def test_resolve_schema_accepts_general_schema_for_general_operator(monkeypatch):
-    """``-6`` + ``General_Schema``：不查模板表，返回 ``(id, None)``。
+def test_general_schema_id_accepted_for_general_operator(monkeypatch):
+    """``-6`` + ``General_Schema``：判为系统自产、走「没给 schemaId」那条路。
 
-    既存缺陷：系统自己产出的 id 自己不吃 ——
-    现在走「没给 schemaId」那条路，schema 对象由算子产出的 schema.json 补上。
+    schema 对象由算子产出的 schema.json 在导入前补上。
     """
-    from graph.repository import graph_schema_store
-
-    monkeypatch.setattr(graph_schema_store, 'get_schema_by_id',
-                        lambda _sid: pytest.fail('系统自产的 schema id 不该查模板表'))
     _patch_operator(monkeypatch, -6, ['chunkSize', 'llm', 'overlap'])
 
-    assert api._resolve_schema('General_Schema', -6) == ('General_Schema', None)
+    assert api.is_system_generated_schema_id('General_Schema', -6) is True
 
 
-def test_resolve_schema_rejects_general_schema_for_professional_operator(monkeypatch):
-    """``-5``（吃 schema）传 ``General_Schema`` 仍是 **0001** —— 它不是模板。
+def test_general_schema_id_rejected_for_professional_operator(monkeypatch):
+    """``-5``（吃 schema）传 ``General_Schema`` 不算系统自产 —— 它不是模板。
 
     判据的第 2 条：这个 id 只在**不吃 schema** 的通用链路里有意义。
     """
-    from graph.repository import graph_schema_store
-
     _patch_operator(monkeypatch, -5, ['schemaId', 'llm'])
-    monkeypatch.setattr(graph_schema_store, 'get_schema_by_id', lambda _sid: None)
 
-    with pytest.raises(KbServerError):
-        api._resolve_schema('General_Schema', -5)
+    assert api.is_system_generated_schema_id('General_Schema', -5) is False
 
 
-def test_resolve_schema_still_rejects_unknown_id_for_general_operator(monkeypatch):
-    """拼错/不存在的 id 照旧 0001（不能被这个例外放宽）—— 回归闸门。"""
-    from graph.repository import graph_schema_store
-
+def test_unknown_schema_id_not_accepted(monkeypatch):
+    """拼错/不存在的 id 不能被这个例外放宽 —— 回归闸门。"""
     _patch_operator(monkeypatch, -6, ['chunkSize', 'llm'])
-    monkeypatch.setattr(graph_schema_store, 'get_schema_by_id', lambda _sid: None)
 
-    with pytest.raises(KbServerError):
-        api._resolve_schema('no_such_schema', -6)
+    assert api.is_system_generated_schema_id('no_such_schema', -6) is False
+    assert api.is_system_generated_schema_id('General_schema', -6) is False

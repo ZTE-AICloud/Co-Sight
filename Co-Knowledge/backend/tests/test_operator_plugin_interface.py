@@ -1,4 +1,4 @@
-"""Operator plugin ABI v2: public imports and legacy rejection."""
+"""Operator plugin interface v2: public imports and legacy rejection."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ import pytest
 
 from shared.errors.api import KbApiError
 from operators.service.operator_import import (TEMPLATE_DIR,
-                                                validate_plugin_abi,
+                                                validate_plugin_interface,
                                                 validate_script)
 
 
@@ -27,7 +27,7 @@ def test_operator_api_imports_are_accepted(tmp_path):
         'from operator_api.types import Chunk\n'
     ))
 
-    validate_plugin_abi(path)
+    validate_plugin_interface(path)
 
 
 @pytest.mark.parametrize('module', ['client.graph_checker', 'utility.txlog',
@@ -37,7 +37,7 @@ def test_legacy_plugin_imports_are_rejected(tmp_path, module):
     path = _write(tmp_path, f'from {module} import thing\n')
 
     with pytest.raises(KbApiError) as caught:
-        validate_plugin_abi(path)
+        validate_plugin_interface(path)
 
     assert caught.value.key == 'operator.plugin.incompatible'
 
@@ -52,7 +52,7 @@ def test_import_validation_rejects_legacy_graph_operator(tmp_path):
 
 
 def test_project_root_imports_are_not_flagged(tmp_path):
-    """``operator_api`` is the new ABI; a package whose name merely starts with
+    """``operator_api`` is the new interface; a package whose name merely starts with
     a legacy prefix (none exist today) must not be rejected by prefix matching."""
     path = _write(tmp_path, (
         'import json\n'
@@ -60,11 +60,11 @@ def test_project_root_imports_are_not_flagged(tmp_path):
         'from operator_api.graph import GraphChecker\n'
     ))
 
-    validate_plugin_abi(path)
+    validate_plugin_interface(path)
 
 
-def test_bundled_graph_template_uses_v2_abi():
-    """The shipped graph-extraction template must import only the public ABI."""
+def test_bundled_graph_template_uses_v2_interface():
+    """The shipped graph-extraction template must import only the public interface."""
     template = TEMPLATE_DIR / 'graph_extract.zip'
     with zipfile.ZipFile(template) as archive:
         source = archive.read('graph_extract/graph_extract.py').decode('utf-8')

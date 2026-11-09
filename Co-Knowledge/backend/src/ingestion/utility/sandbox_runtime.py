@@ -79,7 +79,7 @@ _import_root_ready = False
 def ensure_import_root():
     """Ensure ``src/`` is importable inside the sandbox process.
 
-    Custom plugins import the public ABI via ``operator_api.*``.  The old
+    Custom plugins import the public interface via ``operator_api.*``.  The old
     top-level packages (``client`` / ``utility`` / ``service`` / ``split``) are
     not added to ``sys.path``; plugins using them are rejected at import time
     with ``operator_plugin_incompatible``.

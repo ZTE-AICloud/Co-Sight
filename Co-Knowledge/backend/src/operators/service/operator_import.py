@@ -63,10 +63,10 @@ CODE_CHECKERS = {
 }
 TEMPLATE_DIR = Path(__file__).resolve().parent.parent / 'templates'
 
-#: Top-level packages outside the v2 plugin ABI.  The sandbox only exposes the
+#: Top-level packages outside the v2 plugin interface.  The sandbox only exposes the
 #: standard library and ``operator_api.*``; reject these imports at import time
 #: with a clear error instead of failing later inside the sandbox.
-UNSUPPORTED_ABI_TOP_LEVELS = frozenset({
+UNSUPPORTED_PLUGIN_TOP_LEVELS = frozenset({
     'client', 'utility', 'service', 'split', 'doc_pipeline',
 })
 
@@ -86,11 +86,11 @@ def _imported_top_levels(path: Path) -> set[str]:
     return names
 
 
-def validate_plugin_abi(path: Path) -> None:
-    """Reject plugins that import modules outside the public ABI."""
-    unsupported = _imported_top_levels(path) & UNSUPPORTED_ABI_TOP_LEVELS
+def validate_plugin_interface(path: Path) -> None:
+    """Reject plugins that import modules outside the public interface."""
+    unsupported = _imported_top_levels(path) & UNSUPPORTED_PLUGIN_TOP_LEVELS
     if unsupported:
-        log.warning('operator plugin uses unsupported ABI imports: %s', sorted(unsupported))
+        log.warning('operator plugin uses unsupported plugin imports: %s', sorted(unsupported))
         raise KbApiError('operator.plugin.incompatible', code='0005')
 
 
@@ -381,10 +381,10 @@ def validate_operator_description(manifest: dict) -> None:
 
 
 def validate_script(path: Path, manifest: dict) -> None:
-    """``validateScript``：先校验插件 ABI，再按模块做代码检查。
+    """``validateScript``：先校验插件接口，再按模块做代码检查。
 
-    ABI 校验适用于所有模块：导入 ``client.*`` / ``utility.*`` 等旧顶层包的脚本
-    会以 ``operator_plugin_incompatible`` 拒绝（见 :func:`validate_plugin_abi`）。
+    接口校验适用于所有模块：导入 ``client.*`` / ``utility.*`` 等旧顶层包的脚本
+    会以 ``operator_plugin_incompatible`` 拒绝（见 :func:`validate_plugin_interface`）。
 
     检查改为**进程内直调**
     ``ingestion.runtime``。脚本检查不通过 → 「自定义算子内容校验不通过」。
@@ -398,7 +398,7 @@ def validate_script(path: Path, manifest: dict) -> None:
     """
     if not path.exists() or not path.is_file():
         raise KbApiError('RetCode.operator.storage.insufficient', code='0005')
-    validate_plugin_abi(path)
+    validate_plugin_interface(path)
     checker_name = CODE_CHECKERS.get(manifest['module'])
     if checker_name is None:
         return

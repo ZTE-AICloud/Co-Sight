@@ -361,7 +361,7 @@ def test_system_operator_timeout_returns_instead_of_hanging():
 
 
 def test_operator_can_import_operator_api():
-    """Custom operators import the public ABI via ``operator_api.*``.
+    """Custom operators import the public interface via ``operator_api.*``.
 
     The sandbox exposes only the standard library and ``operator_api``; the
     old top-level packages (``client.*`` / ``utility.*``) are intentionally

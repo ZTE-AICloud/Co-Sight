@@ -1,9 +1,6 @@
-"""抽图端点：``POST /graph/extract``（v1）与 ``/graph/extract``（v2）。
+"""抽图链路的共享工具：落临时目录、调算子、读产出、打包。
 
-对照 ``GraphExtractController`` + ``AsyncGraphExtractService``（v1，468 行）
-与 ``GraphExtractControllerV2`` + ``AsyncGraphExtractServiceV2``（v2）。
-
-## 链路（两条最终都汇到导入引擎）
+链路（由 ``graph_extract_v2_service`` 驱动）::
 
     上传文件 → 落临时目录 → 建任务行 → **异步**：
       调抽图算子（ingestion 模块）→ 产出 entities/edges/schema.json
@@ -12,11 +9,6 @@
 算子的调用契约见 ``memory/graph-extract-operator-contract.md`` 记的那份 ——
 其中最关键的一条：**``llm`` 必须放在 ``args`` 里、且 argName 叫 ``kwargs``**；
 顶层 ``kwargs`` 只管切分参数。
-
-## 这一族的错误码：几乎全是 **0004**
-
-JSON 解析失败、schema 不存在、kbId/operatorId 不存在或超长都是 0004；
-只有**文件落盘失败**是 0001。
 
 ## 路径契约：``diskFileKey`` 必须是**临时目录** ``<uuid>/input``
 
@@ -42,33 +34,23 @@ JSON 解析失败、schema 不存在、kbId/operatorId 不存在或超长都是 
 ``schemaId`` 传 —— 它不是 ``graph_schema`` 的模板行，schema 对象由算子产出的
 ``schema.json`` 在导入前补上（与「没给 schemaId」同一条路）。判据与边界见
 ``is_system_generated_schema_id``：**任何其他**查不到 ``graph_schema`` 的 id
-（包括拼写变体）照旧报模板不存在（v1 0001 / v2 0004）。
+（包括拼写变体）照旧报模板不存在（0004）。
 """
 
 from __future__ import annotations
 
 import json
 import os
-import shutil
 import uuid
 import zipfile
-from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
-from typing import Optional
 
 from infrastructure.storage import kb_storage as storage
 from knowledge_base.task import operator_runtime
-from shared.errors.api import KbApiError, KbLiteralError, KbServerError
-from graph.service import graph_common, graph_import_engine
-from operators.service import operator_service
-from graph.repository import graph_extract_store, graph_import_store
+from graph.service import graph_common
 from infrastructure.logging.logutil import log
 
-# ``AsyncConfig`` 的 ``GraphExtractExecuteThread``：core 3 / max 5 / queue 100 / CallerRuns
-_EXTRACT_POOL = ThreadPoolExecutor(max_workers=5, thread_name_prefix='graph_extract')
-
 # ``GraphExtractController`` 的长度上限
-KB_ID_MAX = 100
 OPERATOR_ID_MAX = 10
 
 # 没给 schemaId 时塞的字面量（它会落进任务行）
@@ -78,112 +60,6 @@ NO_SCHEMA_ID = 'None'
 # ``kb_kbase.schema_id`` / ``schema_obj`` 的值。它**不是** ``graph_schema`` 里的
 # 模板行 —— 解析时的容忍判据见 :func:`is_system_generated_schema_id`。
 GENERAL_SCHEMA_ID = 'General_Schema'
-
-# 算子产出（也是导入引擎要的条目）
-GRAPH_FILES = ('entities.jsonl', 'edges.jsonl')
-
-
-def extract_graph_v1(files: list, data_json: str, emp_no: str = '') -> dict:
-    """``POST /graph/extract``（v1）。返回 ``GraphExtractTaskResponseDTO``。"""
-    dto = _parse_dto(data_json)
-    _validate_kb_id(dto.get('kbId'))
-    # ⚠️ v1 的 ``validateOperatorId(null)`` **静默放行**（v2 才抛）—— 别统一
-    _validate_operator_id(dto.get('operatorId'), strict=False)
-
-    schema_id, _ = _resolve_schema(dto.get('schemaId'), dto.get('operatorId'))
-    tmp_dir = _save_files(files, dto)
-
-    task_id = graph_extract_store.insert_task(
-        kbase_id=dto.get('kbId'), schema_id=schema_id,
-        # ⚠️ 不要 ``or 0``：v1 的 ``validateOperatorId(null)`` 静默放行，
-        #    随后在 ``operator_id NOT NULL`` 上炸掉 → 0001。兜成 0 会变成成功。
-        operator_id=dto.get('operatorId'), file_count=len(files),
-        created_by='system')                       # v1 **写死 system**（v2 是当前用户）
-
-    _submit(task_id, dto, schema_id, tmp_dir)
-    return {
-        'taskId': task_id,
-        'status': graph_extract_store.STATUS_INIT,
-        'statusDesc': '初始化',                     # **写死中文**，不跟语言
-        'createdTime': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-    }
-
-
-# ----------------------------------------------------------------------
-# 入参
-# ----------------------------------------------------------------------
-
-
-def _parse_dto(data_json: str) -> dict:
-    """``data`` 是个 **JSON 字符串**（multipart 的一个普通字段）。
-
-    ⚠️ 空串也**算解析失败**（解析器会抛），不是「当空对象」；
-    解析出数组/字符串同样失败（绑不上 ``GraphExtractReqDTO``）。
-    文案是 i18n 键、**跟随请求语言**，别写成中文字面量。
-    """
-    try:
-        parsed = json.loads(data_json)
-    except ValueError as error:
-        log.error('failed to parse graph extract dto: %s', error)
-        raise _invalid('graph.extract.json.parse.failed')
-    if not isinstance(parsed, dict):
-        log.error('graph extract dto is not an object: %s', type(parsed).__name__)
-        raise _invalid('graph.extract.json.parse.failed')
-    return parsed
-
-
-def _validate_kb_id(kb_id: Optional[str]) -> None:
-    """``validateKbId``：**null 直接放行**；超 100 → 0004；查不到 → 0004。"""
-    if kb_id is None:
-        return
-    if len(str(kb_id)) > KB_ID_MAX:
-        raise _invalid('graph.extract.kbid.length.exceed', len(str(kb_id)))
-    from knowledge_base.service import kbase_service as kbase_store
-
-    if kbase_store.get_kbase_row(str(kb_id)) is None:
-        raise _invalid('graph.extract.kbid.not.exist', kb_id)
-
-
-def _validate_operator_id(operator_id, strict: bool = True) -> None:
-    """``validateOperatorId``：``strict=False`` 时 **null 放行**（v1 的行为）。"""
-    if operator_id is None:
-        if strict:
-            raise _invalid('graph.extract.operatorid.empty')
-        return
-    text = str(operator_id)
-    if len(text) > OPERATOR_ID_MAX:
-        raise _invalid('graph.extract.operatorid.length.exceed', len(text))
-    if operator_service.get_operator_row(operator_id) is None:
-        raise _invalid('graph.extract.operatorid.not.exist', operator_id)
-
-
-def _invalid(key: str, *args) -> KbApiError:
-    """这一族几乎全是 **0004**。"""
-    return KbApiError(key, *args, code='0004')
-
-
-def _resolve_schema(schema_id: Optional[str],
-                    operator_id) -> tuple[str, Optional[dict]]:
-    """给了 schemaId 就查 ``graph_schema``（查不到 → **0001**）；没给则用字面量 ``"None"``。
-
-    例外只有一条：``General_Schema``（系统自产的通用 schema id，见
-    :func:`is_system_generated_schema_id`）不查模板表，返回 ``(id, None)`` ——
-    schema 对象由算子产出的 ``schema.json`` 在导入前补上。
-    """
-    if schema_id is not None and str(schema_id).strip():
-        if is_system_generated_schema_id(schema_id, operator_id):
-            return str(schema_id), None
-        from graph.repository import graph_schema_store
-
-        row = graph_schema_store.get_schema_by_id(str(schema_id))
-        obj = graph_common.schema_obj(row) if row else None
-        if not obj:
-            # ⚠️ **0001**，不是 0004：查不到 schema 时抛服务器错误（不是返回 null）。
-            # 例如 ``schemaId=no_such_schema`` 回 0001。
-            raise KbServerError(f'Failed to parse schema obj JSON: {schema_id}')
-        return str(schema_id), obj
-    return NO_SCHEMA_ID, None
-
 
 # ----------------------------------------------------------------------
 # 落文件
@@ -204,28 +80,8 @@ def save_tmp_files(files: list) -> str:
     tmp_dir = storage.tmp_preview_dir(uuid.uuid4().hex) / 'input'
     tmp_dir.mkdir(parents=True, exist_ok=True)
     for index, item in enumerate(files):
-        filename, content = _name_and_content(item)
-        (tmp_dir / safe_name(filename, index)).write_bytes(content)
+        (tmp_dir / safe_name(item.filename, index)).write_bytes(item.content)
     return str(tmp_dir)
-
-
-def _name_and_content(item):
-    """v1 传 ``(文件名, 内容)`` 元组、v2 传 ``UploadedFile`` —— 两种都收。"""
-    if hasattr(item, 'filename'):
-        return item.filename, item.content
-    filename, content = item
-    return filename, content
-
-
-def _save_files(files: list, dto: dict) -> str:
-    """v1 那层包装：落盘失败是这一族里**唯一**的 0001。"""
-    try:
-        return save_tmp_files(files)
-    except Exception as error:                                     # noqa: BLE001
-        log.exception('failed to save uploaded files')
-        raise KbLiteralError(
-            f'文件保存到临时目录失败，算子ID：{dto.get("operatorId")}，文件数量：{len(files)}',
-            code='0001') from error
 
 
 def safe_name(filename: str, index: int) -> str:
@@ -234,68 +90,6 @@ def safe_name(filename: str, index: int) -> str:
     if not base or base in ('.', '..'):
         base = f'upload_{index}'
     return base
-
-
-# ----------------------------------------------------------------------
-# 异步执行
-# ----------------------------------------------------------------------
-
-
-def _submit(task_id: str, dto: dict, schema_id: str, tmp_dir: str) -> None:
-    def run() -> None:
-        try:
-            execute(task_id, dto, schema_id, tmp_dir)
-        except Exception as error:                                 # noqa: BLE001
-            log.exception('graph extract task %s failed', task_id)
-            graph_extract_store.update_task_status(
-                task_id, graph_extract_store.STATUS_FAIL, 0, str(error))
-
-    try:
-        _EXTRACT_POOL.submit(run)
-    except Exception:                                              # noqa: BLE001
-        log.warning('graph extract pool rejected the task; running inline')
-        run()
-
-
-def execute(task_id: str, dto: dict, schema_id: str, tmp_dir: str) -> None:
-    """进度点是 10 → 30 → 50 → 70 → 90 → 100。"""
-    graph_extract_store.update_task_status(
-        task_id, graph_extract_store.STATUS_RUNNING, 10)
-
-    operator_id = dto.get('operatorId')
-    python_path = operator_service.operator_python_path(operator_id)
-    if not python_path:
-        raise KbLiteralError(f'算子不存在，算子ID：{operator_id}', code='0004')
-
-    graph_extract_store.update_task_status(
-        task_id, graph_extract_store.STATUS_RUNNING, 30)
-
-    # 整目录一次调用：切分把该目录下**所有**原文写成一份
-    # ``output/document_chunk.jsonl``，算子也只跑一次。
-    graph_extract_store.update_task_status(
-        task_id, graph_extract_store.STATUS_RUNNING, 50)
-    result = call_operator(dto, operator_id, python_path, tmp_dir, schema_id)
-    if str((result or {}).get('code')) != '0':
-        raise RuntimeError(f'图提取失败: {(result or {}).get("message")}')
-    produced: list[dict] = [read_outputs(tmp_dir)]
-
-    graph_extract_store.update_task_status(
-        task_id, graph_extract_store.STATUS_RUNNING, 70)
-
-    schema_obj = _resolve_import_schema(dto, schema_id, produced)
-    zip_path = zip_outputs(tmp_dir, produced)
-
-    graph_extract_store.update_task_status(
-        task_id, graph_extract_store.STATUS_RUNNING, 90)
-
-    graph_import_engine.import_from_zip(
-        f'{graph_import_store.KB_ID_PREFIX}{dto.get("kbId")}',
-        schema_obj.get('schema_id') or schema_id, zip_path, kbase_schema_obj=schema_obj)
-
-    graph_extract_store.update_task_status(
-        task_id, graph_extract_store.STATUS_SUCCESS, 100)
-    # 临时目录是 ``<uuid>/input``，要删的是它那层
-    shutil.rmtree(os.path.dirname(tmp_dir), ignore_errors=True)
 
 
 def operator_consumes_schema(operator_id) -> bool:
@@ -339,10 +133,9 @@ def is_system_generated_schema_id(schema_id, operator_id) -> bool:
     2. 本请求的算子**不吃 ``schema`` 参数**（``operator_consumes_schema`` 为 False）。
        这个 id 只在**通用链路**里有意义：算子不接收 ``schema``，schema 完全由它产出的
        ``schema.json`` 提供。专业算子（如 ``-5``，自带模板才有意义）传它仍是错，
-       保持现有报错分级（v1 0001 / v2 0004）—— 别把这条读成「General_Schema 万能」。
+       照常报模板不存在（0004）—— 别把这条读成「General_Schema 万能」。
 
-    既存缺陷：系统自己产出的 id 系统自己不接受 ——
-    v1 回 0001、v2 回 0004。修复即本判据；``no_such_schema`` 这类输入不受影响。
+    ``no_such_schema`` 这类拼错/不存在的 id 不受这条例外影响。
     """
     if schema_id is None or str(schema_id) != GENERAL_SCHEMA_ID:
         return False
@@ -416,7 +209,7 @@ def call_operator(dto: dict, operator_id, python_path: str, disk_file_key: str,
         if obj:
             args.append({'argName': 'schema', 'argType': 'object', 'defaultValue': obj})
 
-    # v2 的 ``_run`` 已经塞过一条 ``kwargs``；``extract_params`` 是「后者胜」，
+    # ``_run`` 已经塞过一条 ``kwargs``；``extract_params`` 是「后者胜」，
     # 所以把带上 ``llmConfig`` 的这份追加在最后即可覆盖（不要原地改 dto）。
     operator_kwargs = dict(dto.get('kwargs') or {})
     endpoint_config = _llm_endpoint_config(dto)
@@ -459,26 +252,6 @@ def read_outputs(disk_file_key: str) -> dict:
         except ValueError as error:
             log.warning('produced schema.json is not valid JSON: %s', error)
     return out
-
-
-def _resolve_import_schema(dto: dict, schema_id: str, produced: list) -> dict:
-    """``importSchemaFromFile``：没给 schema 时**用算子产出的 schema.json**。
-
-    抽图链路新建的库 ``kb_kbase.schema_obj`` 还是空的 —— 不导入这份 schema，
-    导入引擎就找不到任何实体类型，会以「0 条」静默完成。
-    """
-    if schema_id and schema_id != NO_SCHEMA_ID:
-        from graph.repository import graph_schema_store
-
-        row = graph_schema_store.get_schema_by_id(schema_id)
-        obj = graph_common.schema_obj(row) if row else None
-        if obj:
-            return obj
-
-    for item in produced:
-        if item.get('schema'):
-            return item['schema']
-    raise RuntimeError('No schema available: neither schemaId nor produced schema.json')
 
 
 def zip_outputs(tmp_dir: str, produced: list) -> str:

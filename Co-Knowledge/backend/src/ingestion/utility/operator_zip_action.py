@@ -1,6 +1,6 @@
 """系统算子执行路径（`split/system_split_manager.py::segment_file` 调用）。
 
-安全契约（见 `docs/operator-abi.md`）：
+安全契约（见 `docs/operator-interface.md`）：
 - 结果序列化：**禁 pickle，改 JSON**。系统算子 `file_split` 返回 `List[LCDocument]`
   （自定义类，非 JSON 可序列化），因此在子进程内先把每个 `LCDocument` 转成
   `{"page_content", "metadata", "id"}` 字典，再经 JSON 文件在父子进程间交换，
@@ -128,7 +128,7 @@ def sandbox_worker(queue, module_path: str, function_name: str, temp_dir: str, *
         #    operator_api.llm 在**导入时**读 MODEL_GATEWAY_*，
         #    顺序错了会静默丢配置（算子退回默认端点）。
         sandbox_runtime.sanitize_environment()
-        # 0.5) 把 src/ 放进 import 路径（公开 ABI operator_api 从这里导入）
+        # 0.5) 把 src/ 放进 import 路径（公开接口 operator_api 从这里导入）
         sandbox_runtime.ensure_import_root()
         # 1) 资源限制（与 A 路同口径）
         set_resource_limits()

@@ -1,4 +1,4 @@
-"""Public operator plugin ABI (v2).
+"""Public operator plugin interface (v2).
 
 Custom operators may import only the standard library and ``operator_api.*``.
 The package is deliberately import-light: importing ``operator_api.llm`` does
@@ -15,5 +15,5 @@ Submodules:
 
 __all__ = ['graph', 'llm', 'logging', 'storage', 'types']
 
-#: ABI version embedded in plugin metadata; bump on incompatible changes.
-ABI_VERSION = '2.0'
+#: Interface version embedded in plugin metadata; bump on incompatible changes.
+INTERFACE_VERSION = '2.0'
