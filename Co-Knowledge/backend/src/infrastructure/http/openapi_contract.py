@@ -179,7 +179,7 @@ _REQUEST_SCHEMAS: dict[str, dict[str, Any]] = {
                 'type': 'array', 'minItems': 1,
                 'items': {
                     'type': 'object',
-                    'required': ['baseList'],
+                    'required': ['baseList', 'priority'],
                     'properties': {
                         'baseList': {'type': 'array', 'minItems': 1,
                                      'items': {'type': 'string'},
