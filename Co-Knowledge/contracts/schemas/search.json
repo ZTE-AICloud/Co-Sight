@@ -22,8 +22,8 @@
                 "description": "库名列表，格式必须是 doc_<kbId>（不是裸 kbaseId）。后端按 kb_kbase.table_name 解析物理向量表（文档库为 doc_<kbId>_vector）；传裸 id 会静默返回空结果。可选后缀 |#|dev 会被自动剥离。"
               },
               "priority":       { "type": "integer", "minimum": 0, "maximum": 10, "default": 0, "description": "必填：后端用 Collectors.groupingBy(priority) 分组，缺失会抛 element cannot be mapped to a null key" },
-              "topK":           { "type": "integer", "minimum": 1, "maximum": 80, "default": 8, "description": "JSON 名 top_k" },
-              "scoreThreshold": { "type": "number", "minimum": 0, "maximum": 1, "default": 0, "description": "JSON 名 score_threshold" }
+              "top_k":           { "type": "integer", "minimum": 1, "maximum": 80, "default": 8, "description": "返回条数；JSON 字段名为 top_k" },
+              "score_threshold": { "type": "number", "minimum": 0, "maximum": 1, "default": 0, "description": "向量路相似度阈值；JSON 字段名为 score_threshold" }
             },
             "additionalProperties": false
           }
