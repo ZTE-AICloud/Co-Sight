@@ -1,0 +1,153 @@
+<mxfile host="app.diagrams.net" modified="2025-07-30T12:05:00.000Z" agent="Gemini" etag="2" version="24.4.0" type="device">
+  <diagram name="Code Execution Flow" id="exec-flow-diag">
+    <mxGraphModel dx="2500" dy="1500" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="3300" pageHeight="1700" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <!-- Lifelines -->
+        <mxCell id="user" value="User" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="40" y="40" width="100" height="1600" as="geometry" />
+        </mxCell>
+        <mxCell id="ui" value="Co-Sight UI" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="200" y="40" width="120" height="1600" as="geometry" />
+        </mxCell>
+        <mxCell id="router" value="Search Router" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="380" y="40" width="120" height="1600" as="geometry" />
+        </mxCell>
+        <mxCell id="orchestrator" value="CoSight Orchestrator" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="560" y="40" width="140" height="1600" as="geometry" />
+        </mxCell>
+        <mxCell id="planner_agent" value="Task Planner Agent" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="760" y="40" width="140" height="1600" as="geometry" />
+        </mxCell>
+        <mxCell id="actor_agent" value="Task Actor Agent" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="960" y="40" width="140" height="1600" as="geometry" />
+        </mxCell>
+        <mxCell id="base_agent" value="Base Agent" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="1160" y="40" width="120" height="1600" as="geometry" />
+        </mxCell>
+        <mxCell id="plan_object" value="Plan Object" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="1340" y="40" width="120" height="1600" as="geometry" />
+        </mxCell>
+        <mxCell id="event_manager" value="Event Manager" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="1520" y="40" width="120" height="1600" as="geometry" />
+        </mxCell>
+        <mxCell id="llm_service" value="LLM Service" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="1700" y="40" width="120" height="1600" as="geometry" />
+        </mxCell>
+        <mxCell id="toolkits" value="Toolkits" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="1880" y="40" width="120" height="1600" as="geometry" />
+        </mxCell>
+        <mxCell id="workspace" value="Workspace" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="2060" y="40" width="120" height="1600" as="geometry" />
+        </mxCell>
+
+        <!-- Messages -->
+        <mxCell id="msg1" value="1. Input Query" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;align=left;verticalAlign=bottom;endArrow=classic;endFill=1;" edge="1" parent="1" source="user" target="ui">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="90" y="100" as="sourcePoint"/><mxPoint x="260" y="100" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="msg2" value="2. POST /deep-research/search" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;align=left;verticalAlign=bottom;endArrow=classic;endFill=1;" edge="1" parent="1" source="ui" target="router">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="260" y="140" as="sourcePoint"/><mxPoint x="440" y="140" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="msg3" value="6. run_manus(query)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;align=left;verticalAlign=bottom;endArrow=classic;endFill=1;" edge="1" parent="1" source="router" target="orchestrator">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="440" y="180" as="sourcePoint"/><mxPoint x="630" y="180" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="msg4" value="10. create_plan(query)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;align=left;verticalAlign=bottom;endArrow=classic;endFill=1;" edge="1" parent="1" source="orchestrator" target="planner_agent">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="630" y="220" as="sourcePoint"/><mxPoint x="830" y="220" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="msg5" value="11. execute(prompt)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;align=left;verticalAlign=bottom;endArrow=classic;endFill=1;" edge="1" parent="1" source="planner_agent" target="base_agent">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="830" y="260" as="sourcePoint"/><mxPoint x="1220" y="260" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="msg6" value="12. create_with_tools(prompt, tools)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;align=left;verticalAlign=bottom;endArrow=classic;endFill=1;" edge="1" parent="1" source="base_agent" target="llm_service">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="1220" y="300" as="sourcePoint"/><mxPoint x="1760" y="300" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="msg7" value="13. tool_call: create_plan(...)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;align=left;verticalAlign=bottom;endArrow=classic;endFill=1;dashed=1;" edge="1" parent="1" source="llm_service" target="base_agent">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="1760" y="340" as="sourcePoint"/><mxPoint x="1220" y="340" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="msg8" value="14. PlanToolkit.create_plan(...)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;align=left;verticalAlign=bottom;endArrow=classic;endFill=1;" edge="1" parent="1" source="base_agent" target="toolkits">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="1220" y="380" as="sourcePoint"/><mxPoint x="1940" y="380" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="msg9" value="15. plan.update(...)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;align=left;verticalAlign=bottom;endArrow=classic;endFill=1;" edge="1" parent="1" source="toolkits" target="plan_object">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="1940" y="420" as="sourcePoint"/><mxPoint x="1400" y="420" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="msg10" value="16. publish(plan_created)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;align=left;verticalAlign=bottom;endArrow=classic;endFill=1;" edge="1" parent="1" source="plan_object" target="event_manager">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="1400" y="460" as="sourcePoint"/><mxPoint x="1580" y="460" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="msg11" value="17. callback(plan_data)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;align=left;verticalAlign=bottom;endArrow=classic;endFill=1;" edge="1" parent="1" source="event_manager" target="router">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="1580" y="500" as="sourcePoint"/><mxPoint x="440" y="500" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="msg12" value="19. Stream Response" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;align=left;verticalAlign=bottom;endArrow=classic;endFill=1;dashed=1;" edge="1" parent="1" source="router" target="ui">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="440" y="540" as="sourcePoint"/><mxPoint x="260" y="540" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="msg13" value="20. Display Plan" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;align=left;verticalAlign=bottom;endArrow=classic;endFill=1;dashed=1;" edge="1" parent="1" source="ui" target="user">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="260" y="580" as="sourcePoint"/><mxPoint x="90" y="580" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <!-- Step Execution Loop -->
+        <mxCell id="loop" value="Loop: For each ready step" style="shape=umlFrame;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="550" y="620" width="1550" height="600" as="geometry" />
+        </mxCell>
+        <mxCell id="msg14" value="26. execute_step_thread(step)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;align=left;verticalAlign=bottom;endArrow=classic;endFill=1;" edge="1" parent="loop" source="orchestrator" target="actor_agent">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="80" y="680" as="sourcePoint"/><mxPoint x="420" y="680" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="msg15" value="27. mark_step(in_progress)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;align=left;verticalAlign=bottom;endArrow=classic;endFill=1;" edge="1" parent="loop" source="actor_agent" target="plan_object">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="420" y="720" as="sourcePoint"/><mxPoint x="800" y="720" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="msg16" value="28. publish(plan_process)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;align=left;verticalAlign=bottom;endArrow=classic;endFill=1;" edge="1" parent="loop" source="plan_object" target="event_manager">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="800" y="760" as="sourcePoint"/><mxPoint x="980" y="760" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="msg17" value="32. execute(prompt)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;align=left;verticalAlign=bottom;endArrow=classic;endFill=1;" edge="1" parent="loop" source="actor_agent" target="base_agent">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="420" y="800" as="sourcePoint"/><mxPoint x="620" y="800" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="msg18" value="33. create_with_tools(prompt, tools)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;align=left;verticalAlign=bottom;endArrow=classic;endFill=1;" edge="1" parent="loop" source="base_agent" target="llm_service">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="620" y="840" as="sourcePoint"/><mxPoint x="1160" y="840" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="msg19" value="34. tool_call: e.g. search_google()" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;align=left;verticalAlign=bottom;endArrow=classic;endFill=1;dashed=1;" edge="1" parent="loop" source="llm_service" target="base_agent">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="1160" y="880" as="sourcePoint"/><mxPoint x="620" y="880" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="msg20" value="35. SearchToolkit.search_google()" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;align=left;verticalAlign=bottom;endArrow=classic;endFill=1;" edge="1" parent="loop" source="base_agent" target="toolkits">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="620" y="920" as="sourcePoint"/><mxPoint x="1340" y="920" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="msg21" value="38. tool_call: mark_step(completed)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;align=left;verticalAlign=bottom;endArrow=classic;endFill=1;dashed=1;" edge="1" parent="loop" source="llm_service" target="base_agent">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="1160" y="960" as="sourcePoint"/><mxPoint x="620" y="960" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="msg22" value="39. ActToolkit.mark_step(...)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;align=left;verticalAlign=bottom;endArrow=classic;endFill=1;" edge="1" parent="loop" source="base_agent" target="toolkits">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="620" y="1000" as="sourcePoint"/><mxPoint x="1340" y="1000" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="msg23" value="40. plan.mark_step(completed)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;align=left;verticalAlign=bottom;endArrow=classic;endFill=1;" edge="1" parent="loop" source="toolkits" target="plan_object">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="1340" y="1040" as="sourcePoint"/><mxPoint x="800" y="1040" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="msg24" value="41. publish(plan_process)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;align=left;verticalAlign=bottom;endArrow=classic;endFill=1;" edge="1" parent="loop" source="plan_object" target="event_manager">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="800" y="1080" as="sourcePoint"/><mxPoint x="980" y="1080" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="msg25" value="43. Stream Response" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;align=left;verticalAlign=bottom;endArrow=classic;endFill=1;dashed=1;" edge="1" parent="1" source="router" target="ui">
+            <mxGeometry relative="1" as="geometry"><mxPoint x="440" y="1120" as="sourcePoint"/><mxPoint x="260" y="1120" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <!-- Finalization -->
+        <mxCell id="msg26" value="49. finalize_plan(...)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;align=left;verticalAlign=bottom;endArrow=classic;endFill=1;" edge="1" parent="1" source="orchestrator" target="planner_agent">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="630" y="1240" as="sourcePoint"/><mxPoint x="830" y="1240" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="msg27" value="50. chat_to_llm(prompt)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;align=left;verticalAlign=bottom;endArrow=classic;endFill=1;" edge="1" parent="1" source="planner_agent" target="llm_service">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="830" y="1280" as="sourcePoint"/><mxPoint x="1760" y="1280" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="msg28" value="51. Final Summary" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;align=left;verticalAlign=bottom;endArrow=classic;endFill=1;dashed=1;" edge="1" parent="1" source="llm_service" target="planner_agent">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="1760" y="1320" as="sourcePoint"/><mxPoint x="830" y="1320" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="msg29" value="52. set_plan_result(summary)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;align=left;verticalAlign=bottom;endArrow=classic;endFill=1;" edge="1" parent="1" source="planner_agent" target="plan_object">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="830" y="1360" as="sourcePoint"/><mxPoint x="1400" y="1360" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="msg30" value="53. publish(plan_result)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;align=left;verticalAlign=bottom;endArrow=classic;endFill=1;" edge="1" parent="1" source="plan_object" target="event_manager">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="1400" y="1400" as="sourcePoint"/><mxPoint x="1580" y="1400" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="msg31" value="55. Stream Final Result" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;align=left;verticalAlign=bottom;endArrow=classic;endFill=1;dashed=1;" edge="1" parent="1" source="router" target="ui">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="440" y="1440" as="sourcePoint"/><mxPoint x="260" y="1440" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="msg32" value="56. Display Final Report" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;align=left;verticalAlign=bottom;endArrow=classic;endFill=1;dashed=1;" edge="1" parent="1" source="ui" target="user">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="260" y="1480" as="sourcePoint"/><mxPoint x="90" y="1480" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

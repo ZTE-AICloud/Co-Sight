@@ -1,0 +1,109 @@
+<mxfile host="app.diagrams.net" modified="2025-07-30T12:00:00.000Z" agent="Gemini" etag="1" version="24.4.0" type="device">
+  <diagram name="System Architecture" id="arch-diag">
+    <mxGraphModel dx="1434" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <!-- Components -->
+        <mxCell id="user" value="User (Human)" style="shape=actor;whiteSpace=wrap;html=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="40" y="260" width="100" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="ui" value="Co-Sight UI (Angular Frontend)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="200" y="280" width="160" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="server_container" value="Co-Sight Server (FastAPI Backend)" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=#f5f5f5;strokeColor=#666666;align=left;verticalAlign=top;spacingTop=10;" vertex="1" parent="1">
+          <mxGeometry x="440" y="40" width="780" height="560" as="geometry" />
+        </mxCell>
+        <mxCell id="api_router" value="API Routers" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="server_container">
+          <mxGeometry x="20" y="40" width="140" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="streaming_handler" value="Streaming Response Handler" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="server_container">
+          <mxGeometry x="20" y="120" width="140" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="static_server" value="Static File Server" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="server_container">
+          <mxGeometry x="20" y="200" width="140" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="config_manager" value="Config Manager" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="server_container">
+          <mxGeometry x="20" y="280" width="140" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="orchestrator" value="CoSight Orchestrator" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="server_container">
+          <mxGeometry x="200" y="140" width="160" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="planner" value="Task Planner Agent" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="server_container">
+          <mxGeometry x="400" y="40" width="140" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="actor" value="Task Actor Agent" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="server_container">
+          <mxGeometry x="400" y="240" width="140" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="base_agent" value="Base Agent" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="server_container">
+          <mxGeometry x="580" y="140" width="140" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="plan_object" value="Plan Object (In-Memory)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="server_container">
+          <mxGeometry x="210" y="380" width="140" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="event_manager" value="Plan Report Event Manager" style="shape=ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="server_container">
+          <mxGeometry x="400" y="460" width="140" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="llm_service" value="LLM Service (External/Local)" style="shape=cloud;whiteSpace=wrap;html=1;fillColor=#B3B3B3;strokeColor=#666666;fontColor=#FFFFFF;" vertex="1" parent="1">
+          <mxGeometry x="1280" y="100" width="180" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="toolkits" value="Toolkits (Python Modules)" style="shape=folder;whiteSpace=wrap;html=1;tabWidth=40;tabHeight=14;tabPosition=left;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="1280" y="300" width="180" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="workspace" value="Workspace (File System)" style="shape=datastore;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="1280" y="500" width="180" height="120" as="geometry" />
+        </mxCell>
+
+        <!-- Connections -->
+        <mxCell id="arrow-user-ui" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="user" target="ui">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="150" y="320" as="targetPoint" /></mxGeometry>
+        </mxCell>
+        <mxCell id="arrow-ui-server" value="HTTP API Call" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;align=center;verticalAlign=middle;endArrow=classic;endFill=1;" edge="1" parent="1" source="ui" target="api_router">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow-router-orchestrator" value="Instantiate &amp; Call" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;align=center;verticalAlign=middle;endArrow=classic;endFill=1;" edge="1" parent="server_container" source="api_router" target="orchestrator">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow-orchestrator-planner" value="Call" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;align=center;verticalAlign=middle;endArrow=classic;endFill=1;" edge="1" parent="server_container" source="orchestrator" target="planner">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow-orchestrator-actor" value="Call" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;align=center;verticalAlign=middle;endArrow=classic;endFill=1;" edge="1" parent="server_container" source="orchestrator" target="actor">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow-planner-base" value="Uses" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;align=center;verticalAlign=middle;endArrow=classic;endFill=1;dashed=1;" edge="1" parent="server_container" source="planner" target="base_agent">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow-actor-base" value="Uses" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;align=center;verticalAlign=middle;endArrow=classic;endFill=1;dashed=1;" edge="1" parent="server_container" source="actor" target="base_agent">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow-base-llm" value="Interact" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;align=center;verticalAlign=middle;endArrow=classic;endFill=1;" edge="1" parent="1" source="base_agent" target="llm_service">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="1200" y="190" as="targetPoint" /></mxGeometry>
+        </mxCell>
+        <mxCell id="arrow-base-toolkits" value="Calls" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;align=center;verticalAlign=middle;endArrow=classic;endFill=1;" edge="1" parent="1" source="base_agent" target="toolkits">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="1200" y="360" as="targetPoint" /></mxGeometry>
+        </mxCell>
+        <mxCell id="arrow-toolkits-workspace" value="Read/Write" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;align=center;verticalAlign=middle;endArrow=classic;endFill=1;" edge="1" parent="1" source="toolkits" target="workspace">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow-toolkits-plan" value="Modifies" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;align=center;verticalAlign=middle;endArrow=classic;endFill=1;" edge="1" parent="1" source="toolkits" target="plan_object">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="800" y="420" as="sourcePoint" /><mxPoint x="700" y="420" as="targetPoint" /></mxGeometry>
+        </mxCell>
+        <mxCell id="arrow-orchestrator-plan" value="Manages" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;align=center;verticalAlign=middle;endArrow=classic;endFill=1;" edge="1" parent="server_container" source="orchestrator" target="plan_object">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow-plan-event" value="Publishes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;align=center;verticalAlign=middle;endArrow=classic;endFill=1;" edge="1" parent="server_container" source="plan_object" target="event_manager">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow-router-event" value="Subscribes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;align=center;verticalAlign=middle;endArrow=classic;endFill=1;dashed=1;" edge="1" parent="server_container" source="api_router" target="event_manager">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="200" y="500" as="sourcePoint" /></mxGeometry>
+        </mxCell>
+        <mxCell id="arrow-event-router" value="Streams Updates" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;align=center;verticalAlign=middle;endArrow=classic;endFill=1;" edge="1" parent="1" source="event_manager" target="streaming_handler">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="500" y="500" as="sourcePoint" /><mxPoint x="500" y="150" as="targetPoint" /></mxGeometry>
+        </mxCell>
+         <mxCell id="arrow-streaming-ui" value="HTTP Stream" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;align=center;verticalAlign=middle;endArrow=classic;endFill=1;" edge="1" parent="1" source="streaming_handler" target="ui">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="400" y="150" as="sourcePoint" /><mxPoint x="400" y="320" as="targetPoint" /></mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
