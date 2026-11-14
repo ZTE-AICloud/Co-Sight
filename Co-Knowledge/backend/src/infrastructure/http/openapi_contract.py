@@ -571,6 +571,51 @@ def normalize_object_schemas(schema: Any) -> Any:
     return schema
 
 
+def normalize_nullable_schemas(schema):
+    """Rewrite 3.1-style null unions into OpenAPI 3.0 ``nullable: true``.
+
+    FastAPI generates on the 3.1 schema model, so optional fields come out as
+    ``anyOf: [X, {"type": "null"}]`` (and ``type: ["string", "null"]`` for some
+    Pydantic versions).  The agent contract is declared ``3.0.2`` because
+    Dify/Coze only import 3.0, and 3.0 has no ``null`` type: a strict importer
+    rejects the whole document instead of one field.
+    """
+    def walk(node):
+        if isinstance(node, dict):
+            types = node.get('type')
+            if isinstance(types, list) and 'null' in types:
+                rest = [item for item in types if item != 'null']
+                node['type'] = rest[0] if len(rest) == 1 else rest
+                node['nullable'] = True
+            for union_key in ('anyOf', 'oneOf'):
+                union = node.get(union_key)
+                if not isinstance(union, list):
+                    continue
+                non_null = [branch for branch in union if branch != {'type': 'null'}]
+                if len(non_null) == len(union):
+                    continue
+                if len(non_null) == 1:
+                    merged = dict(non_null[0])
+                    for key, value in node.items():
+                        if key not in ('anyOf', 'oneOf'):
+                            merged.setdefault(key, value)
+                    merged['nullable'] = True
+                    node.clear()
+                    node.update(merged)
+                else:
+                    node[union_key] = non_null
+                    node['nullable'] = True
+                break
+            for value in node.values():
+                walk(value)
+        elif isinstance(node, list):
+            for value in node:
+                walk(value)
+
+    walk(schema)
+    return schema
+
+
 def _tags_for(path: str) -> list[str]:
     first = path.lstrip('/').split('/', 1)[0]
     return [first or 'root']

@@ -21,11 +21,12 @@
     "category":        { "type": "integer" },
     "orgId":           { "type": "string" },
     "createdBy":       { "type": "string" },
-    "createdDate":     { "type": ["string", "null"], "format": "date-time" },
+    "createdDate":     { "type": ["string", "null"], "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$", "description": "后端按 %Y-%m-%d %H:%M:%S 输出（无时区），非 RFC 3339" },
     "lastUpdatedBy":   { "type": "string" },
-    "lastUpdatedDate": { "type": ["string", "null"], "format": "date-time" },
+    "lastUpdatedDate": { "type": ["string", "null"], "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$", "description": "后端按 %Y-%m-%d %H:%M:%S 输出（无时区），非 RFC 3339" },
     "props":           { "type": ["object", "null"], "description": "扩展属性；当前列表 VO 恒为 null" },
     "currentFileCount":{ "type": ["integer", "null"], "description": "当前文件数；列表行按库统计" },
+    "chunkCount":      { "type": ["integer", "null"], "description": "切片数；仅文档类知识库的详情端点返回（kbase_service.get_kbase_detail）" },
     "fullName":        { "type": ["string", "null"] },
     "fullNameEn":      { "type": ["string", "null"] },
     "action":          { "type": ["string", "null"] },
@@ -34,7 +35,7 @@
     "schemaName":      { "type": ["string", "null"], "description": "图谱模板名（仅图谱库）" },
     "schemaObj":       { "type": ["object", "null"], "description": "图谱模板内容（仅图谱库）" },
     "process":         { "type": ["string", "null"], "description": "处理阶段" },
-    "processDetailInfo":{ "type": ["object", "null"], "description": "处理阶段明细" }
+    "processDetailInfo":{ "type": ["string", "null"], "description": "处理阶段明细：_localized_text/_localized_string_value 产出字符串，键缺失时为字面量字符串 null，无消息时为空串" }
   },
   "additionalProperties": false
 }

@@ -4,10 +4,10 @@
   "title": "Document",
   "description": "文档/目录节点。文件与目录同一模型，用 type 区分。",
   "type": "object",
-  "required": ["id", "kbId", "type"],
+  "required": ["id", "kbaseId", "type"],
   "properties": {
     "id":         { "type": "string", "description": "fileId，UUID" },
-    "kbId":       { "type": "string" },
+    "kbaseId":    { "type": "string", "description": "所属知识库 id（后端 VO 键名 kbaseId）" },
     "title":      { "type": "string", "description": "文件名或目录名" },
     "parentId":   { "type": ["string", "null"] },
     "parentPath": { "type": ["string", "null"] },
@@ -24,9 +24,9 @@
     "idChain":    { "type": ["string", "null"] },
     "chunkCount": { "type": ["integer", "null"], "description": "仅部分列表端点返回" },
     "createdBy":       { "type": ["string", "null"] },
-    "createdDate":     { "type": ["string", "null"], "format": "date-time" },
+    "createdDate":     { "type": ["string", "null"], "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$", "description": "后端按 %Y-%m-%d %H:%M:%S 输出（无时区），非 RFC 3339" },
     "lastUpdatedBy":   { "type": ["string", "null"] },
-    "lastUpdatedDate": { "type": ["string", "null"], "format": "date-time" }
+    "lastUpdatedDate": { "type": ["string", "null"], "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$", "description": "后端按 %Y-%m-%d %H:%M:%S 输出（无时区），非 RFC 3339" }
   },
   "additionalProperties": false
 }

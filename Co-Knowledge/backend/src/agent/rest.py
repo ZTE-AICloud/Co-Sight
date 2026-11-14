@@ -22,7 +22,10 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from infrastructure.logging import trace
 from infrastructure.logging.logutil import log
-from infrastructure.http.openapi_contract import normalize_object_schemas
+from infrastructure.http.openapi_contract import (
+    normalize_nullable_schemas,
+    normalize_object_schemas,
+)
 
 from agent import config, query as agent_query, service
 from agent.auth import (AgentContext, agent_context, error_headers,
@@ -236,6 +239,7 @@ def _build_openapi(app: FastAPI) -> dict:
     # FastAPI 生成的是 3.1 结构；本接口没用到 3.1 特性，Dify/Coze 只认 3.0。
     schema['openapi'] = '3.0.2'
     normalize_object_schemas(schema)
+    normalize_nullable_schemas(schema)
     # FastAPI 0.162 给 ValidationError 增加了 ctx/input；本契约保持原有形状。
     validation_error = (schema.get('components', {}).get('schemas', {})
                         .get('ValidationError', {}).get('properties', {}))
