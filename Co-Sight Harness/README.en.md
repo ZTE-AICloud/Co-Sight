@@ -1,6 +1,6 @@
 <div align="center">
 
-# Co-Sight Harness
+# Co-Sight Harness Studio
 
 **A runtime control structure for agents, built around the model**
 
@@ -21,12 +21,15 @@
 
 ---
 
-Co-Sight Harness is a **local-first agent host**. It ties agent runtimes such as Claude Code, Codex
+Co-Sight Harness Studio is a **local-first agent host**. It ties agent runtimes such as Claude Code, Codex
 and DSH into one front-end / back-end shell, and holds long-running, knowledge-intensive business
 tasks in place with versioned and auditable control data — goals, state, context, tools, permissions,
 verification and evidence — so they stay stable well beyond the demo.
 
 What it builds is **the control structure around the model**.
+
+> **Naming note**: this project (Co-Sight Harness Studio) is the agent host / workbench.
+> DSH is one of the runtimes it hosts — they are not the same thing.
 
 ```bash
 # From source: two commands to bring the framework up (see QUICKSTART.en.md)
@@ -331,6 +334,6 @@ in [`cosight-viewer/NOTICE`](cosight-viewer/NOTICE).
 
 `start cheap` · `run under control` · `get smarter every run`
 
-<sub>`Co-Sight Harness` · Built with control, not luck.</sub>
+<sub>`Co-Sight Harness Studio` · Built with control, not luck.</sub>
 
 </div>

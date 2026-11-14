@@ -1,6 +1,6 @@
 <div align="center">
 
-# Co-Sight Harness
+# Co-Sight Harness Studio
 
 **围绕模型的 Agent 运行时控制结构**
 
@@ -21,11 +21,14 @@
 
 ---
 
-Co-Sight Harness 是一个**本地优先**的 Agent 宿主：把 Claude Code、Codex、DSH 这类 Agent
+Co-Sight Harness Studio 是一个**本地优先**的 Agent 宿主：把 Claude Code、Codex、DSH 这类 Agent
 运行时串在同一个前后端外壳里，用一套可版本化、可审计的控制数据（目标、状态、上下文、工具、
 权限、验证、证据）托住长链路、知识密集的业务任务——让它们跑出 Demo 之外的稳定性。
 
 它做的，就是**围绕模型的那层控制结构**。
+
+> **注意命名**：本项目（Co-Sight Harness Studio）是 Agent 宿主/工作台；DSH 是被它托管的
+> 运行时之一，两者不是同一个东西。
 
 ```bash
 # 源码态：两条命令起框架（详见 QUICKSTART.md）
@@ -323,6 +326,6 @@ pnpm dev:all
 
 `低成本立起` · `可控地跑` · `越跑越聪明`
 
-<sub>`Co-Sight Harness` · Built with control, not luck.</sub>
+<sub>`Co-Sight Harness Studio` · Built with control, not luck.</sub>
 
 </div>
