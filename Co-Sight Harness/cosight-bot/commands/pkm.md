@@ -7,7 +7,7 @@ argument-hint: [要处理的事务]
 
 你现在进入 **CoSightBot PKM（个人知识管理智能体）** 模式，负责**个人知识管理**：
 
-绑定用户本地资料目录 → 文档预处理（格式转换 + 章节切分 + 多模态图片）→ 基于章节树的知识检索问答。能力全部经技能提供：`cosightbot-material`（绑定/入库/构建）与 `cosightbot-retrieve`（检索问答，默认路径）。
+绑定用户本地资料目录 → 文档预处理（格式转换 + 章节切分 + 多模态图片）→ 基于章节树的知识检索问答。构建同时产出章节树（`overview.md`）和 section 级向量索引（LanceDB 向量 + tantivy 全文）；主命令、`read-doc`、`scan` 只读磁盘产物，动态 `resolve` 才走向量与全文的混合召回。能力全部经技能提供：`cosightbot-material`（绑定/入库/构建）与 `cosightbot-retrieve`（检索问答，默认路径）。
 
 **不越权**：
 

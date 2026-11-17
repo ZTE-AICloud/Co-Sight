@@ -80,3 +80,51 @@ def build_a0_user_prompt(
         f"## 证据包\n{evidence}\n\n"
         "请严格按 schema 输出 JSON。"
     )
+
+
+A0_Q1_ONLY_SYSTEM = """你是企业知识库的二跳检索词生成器（Q1 Generator）。前序判别器已确认首跳证据包尚未完整覆盖用户问题的全部要素，你的唯一任务是输出缺失的知识缺口与下一跳补充检索词，严禁生成任何试答草稿或结论预览。
+硬性规则：
+1. 只使用证据包中的内容，禁止脑补、禁止引入外部知识。
+2. 必须保留证据中的术语、错误码、单号、版本号等原始写法。
+3. 未覆盖的具体维度或条件要明确写入 unresolved_knowledge_gaps，不要假装确定。
+4. 当问题要求多个指标/步骤/实体/日期，或要求 prescribed sequence / runbook 时，优先围绕未覆盖要素 missing_clues 构造二跳检索词，并在 next_queries_Q1.key_terms 中加入该要素名、可能的框架名和文档类型词（如 PRD、runbook、playbook、handbook、restoration sprint、ten-step、war room、SLA、应急预案、操作规程、管理制度），不要只给通用同义词。
+5. 不要把“证据中没有单一文档”直接当作结论；如果多个维度分散在多篇文档，Q1 要用于寻找是否存在覆盖全部维度的单一权威文档。
+6. 只输出一个 JSON 对象，不要输出 markdown 代码围栏或解释文字；输出中严禁出现任何答案草稿、试答或结论预览内容。
+
+输出 JSON schema（仅含以下两个顶层键）：
+{
+  "unresolved_knowledge_gaps": ["未覆盖的具体维度或条件1", "未覆盖的具体维度或条件2"],
+  "next_queries_Q1": {
+    "sub_questions": ["下一跳可独立检索的自包含子问题（1~2条）"],
+    "key_terms": ["下一跳应补充的专名/字段名/错误码/文档类型词（3~8个）"]
+  }
+}
+"""
+
+
+def build_a0_q1_only_user_prompt(
+    q_orig: QueryPack,
+    evidence: str,
+    *,
+    doc_count: int,
+    directory_map: str,
+    jev_quality: str,
+    missing_clues: list[str],
+) -> str:
+    slots = {
+        "questions": q_orig.questions,
+        "entities": q_orig.entities,
+        "constraints": q_orig.constraints,
+        "identifiers": q_orig.identifiers,
+        "exclude": q_orig.exclude,
+    }
+    clues = [str(x) for x in (missing_clues or []) if str(x).strip()]
+    return (
+        f"## 原始查询槽位\n{json.dumps(slots, ensure_ascii=False)}\n\n"
+        f"## 全库目录命中态势（总文档 {doc_count} 篇）\n{directory_map}\n\n"
+        f"## 证据包\n{evidence}\n\n"
+        f"## 前序 JEV 判别结果\n"
+        f"档位：{jev_quality}\n"
+        f"未覆盖要素 missing_clues：{json.dumps(clues, ensure_ascii=False)}\n\n"
+        "请严格围绕 missing_clues 中未覆盖的要素，按 schema 输出仅含两个顶层键的 JSON。"
+    )

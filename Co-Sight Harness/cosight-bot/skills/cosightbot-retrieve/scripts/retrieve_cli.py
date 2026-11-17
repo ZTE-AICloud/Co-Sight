@@ -18,12 +18,22 @@
   # 按节点读全文
   python "${CLAUDE_PLUGIN_ROOT}"/skills/cosightbot-retrieve/scripts/retrieve_cli.py --agent-id main read-doc --node-id f001 [--line-range 100:200]
 
-  # pre-processed 层全文扫描（多词 and 共现）
-  python "${CLAUDE_PLUGIN_ROOT}"/skills/cosightbot-retrieve/scripts/retrieve_cli.py --agent-id main scan --terms "甲,乙"
+  # pre-processed 层全文扫描（多词 and 共现；truncated 时按提示 --offset 翻页）
+  python "${CLAUDE_PLUGIN_ROOT}"/skills/cosightbot-retrieve/scripts/retrieve_cli.py --agent-id main scan --terms "甲,乙" [--offset N]
 
   # 大库动态概览（Tier 1/2）
   python "${CLAUDE_PLUGIN_ROOT}"/skills/cosightbot-retrieve/scripts/retrieve_cli.py --agent-id main \
     resolve --question "自包含问题" [--force-dynamic]
+
+  # 权威候选提取 / 扫描命中筛选 / 多源冲突判定 / 完答前置核验（均纯只读）
+  python "${CLAUDE_PLUGIN_ROOT}"/skills/cosightbot-retrieve/scripts/retrieve_cli.py --agent-id main \
+    check-authority --file /tmp/overview.md
+  python "${CLAUDE_PLUGIN_ROOT}"/skills/cosightbot-retrieve/scripts/retrieve_cli.py --agent-id main \
+    filter-hits --question "自包含问题" --include-rule "纳入口径" --scan-json /tmp/scan.json
+  python "${CLAUDE_PLUGIN_ROOT}"/skills/cosightbot-retrieve/scripts/retrieve_cli.py --agent-id main \
+    check-conflict --question-json '{"question":"自包含问题"}' --doc-ids f001,f002
+  python "${CLAUDE_PLUGIN_ROOT}"/skills/cosightbot-retrieve/scripts/retrieve_cli.py --agent-id main \
+    verify-answer --question-file /tmp/q.txt --draft-file /tmp/draft.md --read-docs f001,f002
 
 只读红线（S-01）：本入口绝不触发索引构建/写入；需要构建时引导用户
 使用 cosightbot-material 技能。
