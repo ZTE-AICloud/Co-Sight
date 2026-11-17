@@ -35,7 +35,7 @@ python "${CLAUDE_PLUGIN_ROOT}"/skills/cosightbot-material/scripts/material_cli.p
 
 ## 环境自检（preflight）
 
-脚本返回 **exit 3** + `{"hint": "please_run_install", ...}` 时：运行环境未初始化或依赖已变更——执行 `python "${CLAUDE_PLUGIN_ROOT}"/scripts/install.py`（幂等、非交互），装完按 `数据根目录下的 .env` 模板引导用户配置环境变量（**构建必需 LLM**：`OPENAI_*` 优先，未配则回退继承 CC 会话的 `ANTHROPIC_*`；embedding 已不需要——去向量构建）。**不得绕过**（S-05）。
+脚本返回 **exit 3** + `{"hint": "please_run_install", ...}` 时：运行环境未初始化或依赖已变更——执行 `python "${CLAUDE_PLUGIN_ROOT}"/scripts/install.py`（幂等、非交互），装完按 `数据根目录下的 .env` 模板引导用户配置环境变量（**构建必需 LLM**：`OPENAI_*` 优先，未配则回退继承 CC 会话的 `ANTHROPIC_*`；**embedding 用于构建期的 section 向量**，未配置时章节树照常生成，section 索引记为失败或部分完成，动态检索不可用）。**不得绕过**（S-05）。
 
 ## 构建的执行方式（重要）
 

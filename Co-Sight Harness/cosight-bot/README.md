@@ -1,10 +1,10 @@
 # CoSightBot（CC 插件）
 
-CoSightBot 企业知识助手，**Claude Code 插件**形态：个人知识管理专家（Office）与标书应答专家（SOC）合一插件。
+CoSightBot 企业知识助手，**Claude Code 插件**形态：以**个人知识库（PKM，个人知识管理智能体）**为主要能力，同时内置标书应答专家（SOC）。
 
 | 专家模式 | 定位 | 能力 |
 |---|---|---|
-| Office 个人知识管理智能体 | 个人资料检索 | 绑定本地资料目录 → 预处理 + 向量化构建索引 → 基于章节树的知识检索问答 |
+| PKM 个人知识管理智能体（主能力） | 个人资料检索 | 绑定本地资料目录 → 预处理 + 章节树/section 向量索引构建 → 基于章节树的知识检索问答 |
 | SOC 标书智能体 | 标书应答 | 本地构建 SOC 知识库 → 标书 Excel 需求提取 → 批量应答 → LLM 复核 → 回填 |
 
 ## 安装
@@ -22,6 +22,47 @@ python cosight-bot/scripts/install.py
 ```
 
 开发调试可用 `claude --plugin-dir cosight-bot` 直接加载本目录。
+
+## 快速上手（个人知识库 PKM）
+
+### 1. 初始化环境
+
+```bash
+python cosight-bot/scripts/install.py   # 创建 .venv-pkm、初始化数据根、生成 .env；幂等可重跑
+```
+
+编辑数据根下的 `.env`（默认 `~/.claude/plugins/data/cosightbot/.env`，可用 `COSIGHTBOT_HOME` 覆盖）：
+
+- `OPENAI_BASE_URL/_API_KEY/_MODEL`：技能内部 LLM，构建必需（OpenAI chat/completions 兼容协议；未配置时回退继承 CC 会话的 `ANTHROPIC_*`，端点需支持 OpenAI 协议）；
+- `COSIGHTBOT_EMBEDDING_API_URL/_KEY`：embedding 端点，动态检索用——不配置时章节树照常生成、章节树检索仍可用，但 section 向量索引记为失败/部分完成，动态 `resolve` 不可用；
+- `COSIGHTBOT_RERANK_API_URL/_MODEL`：可选，动态检索强烈建议。
+
+### 2. 绑定资料目录
+
+在 Claude Code 会话里说或用命令：
+
+```
+/cosightbot:pkm 绑定 /path/to/你的资料目录
+```
+
+绑定成功后**自动首次构建**（产出章节树 `overview.md` 与 section 级向量索引）。大目录首次构建需数分钟，插件会转后台执行并汇报进度；日常加文件（「把 xx 加入知识库」）、删文件、资料有更新（「同步一下」）都是一句话完成，操作即自动增量构建，无需手动跑构建命令。
+
+### 3. 问问题
+
+```
+/cosightbot:pkm 帮我查一下 xx 项目的验收结论
+/cosightbot:retrieve xx 的操作步骤是什么
+```
+
+也可以直接自然语言提问（如「用个人知识管理智能体查一下……」），插件会自动接管并按检索纪律执行。
+
+### 检索流程（插件内部自动完成的三步法）
+
+1. **拿章节树**：小库直接读全量章节树 `merged_overview`；大库/超阈值自动走 `resolve` 动态概览（section 向量 + 全文混合召回，返回 Tier 1/2 候选池）；
+2. **读全文**：按候选节点 `[F###]` 逐篇 `read-doc` 实读原文（含图片实读），结论只来自实读，不凭标题或记忆作答；
+3. **综合答案**：事实与推断分层、字段术语逐字、冲突文档按证据采信，末尾披露候选池规模与未读情况，保证答案可溯源。
+
+用户只需关心第 1～3 步的提问，检索纪律由插件自动遵守。
 
 ## 使用
 
@@ -72,7 +113,7 @@ cosight-bot/
 
 ## 运行数据与配置
 
-- **数据根**：`COSIGHTBOT_HOME` 环境变量 > `CLAUDE_PLUGIN_DATA`（CC 插件数据目录）> `~/.claude/plugins/data/cosightbot`（默认）。Office 与 SOC 共用一个数据根，`workspace-main/`（资料索引）与 `workspace-soc/`（标书知识库）互不干扰。
+- **数据根**：`COSIGHTBOT_HOME` 环境变量 > `CLAUDE_PLUGIN_DATA`（CC 插件数据目录）> `~/.claude/plugins/data/cosightbot`（默认）。PKM 与 SOC 共用一个数据根，`workspace-main/`（资料索引）与 `workspace-soc/`（标书知识库）互不干扰。
 - **venv**：数据根下 `.venv-pkm/` 与 `.venv-soc/` 两套独立虚拟环境（依赖相互隔离）；技能 CLI 启动时自动重入，对用户透明。
 - **配置**：数据根下唯一 `.env`（模板 `scripts/.env.template`）。首次使用时构建资料索引和 SOC 知识库即可（embedding 模型不变时 SOC 知识库可用 `--force` 快速重建）。
 
@@ -95,6 +136,8 @@ cosight-bot/
 - `COSIGHTBOT_RERANK_API_URL/_MODEL`：PKM 动态检索强烈建议，SOC 可选；
 - `OPENAI_BASE_URL/_API_KEY/_MODEL`：技能内部 LLM（OpenAI chat/completions 兼容协议），构建链必需；未配置时回退继承 CC 会话的 `ANTHROPIC_*`（端点需支持 OpenAI 协议）；
 - `SSL_CERT_FILE`：install.py 自动探测写入；
+- `COSIGHTBOT_M1_MODEL`（可选 `COSIGHTBOT_M1_BASE_URL/_API_KEY/_WORKERS/_TIMEOUT_S`）：构建期 M1 文档角色先验——弱标题文档由 OpenAI 兼容小模型（单篇一请求）分类，端点与密钥缺省复用 `OPENAI_*`，不设模型名则跳过 M1（静态标题规则仍生效）；
+- `COSIGHTBOT_JEV_ENABLED / COSIGHTBOT_JEV_INTERNAL_ENDPOINTS / COSIGHTBOT_JEV_INTERNAL_MODEL`：开启私有化 JEV 五节点（`E1,E2,A1,A2,A3`）检索导航与出口核验；默认 `internal` 直连且绝不自动回退公网端点（评测可显式设 `COSIGHTBOT_JEV_CHANNEL=external` 切换备选通道）；
 - 其余（视觉模型、超时重试、动态概览调优等）见模板内注释。
 
 ## 回归验证

@@ -128,6 +128,8 @@ desktop.ini
 .env
 .env.*
 !.env.example
+# CoSightBot 插件的 .env 模板需入库（install.py 依赖，全部为空占位、不含真实凭据）
+!cosight-bot/scripts/.env.template
 # 装配态/本地启动用的配置文件；里面常放真实凭据（模板见
 # framework/scripts/artifact/cosight.env.example）
 cosight.env

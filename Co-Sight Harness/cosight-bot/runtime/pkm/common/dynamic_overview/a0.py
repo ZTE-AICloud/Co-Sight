@@ -1,6 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""内部 A0 模型调用（黑盒）：OpenAI 兼容协议优先，Anthropic 回退。"""
+"""内部 A0 模型调用（黑盒）：OpenAI 兼容协议优先，Anthropic 回退。
+
+T3 (JEV-E1) 改造：
+- ``call_a0`` 入口按 ``jev_client.is_stage_enabled("E1")`` 开关透明分发：
+  开启时走 ``a0_jev.call_a0_jev``（三档快筛 + 去预览污染），关闭时 100%
+  保持原有 legacy 行为（字节级兼容）；
+- 底层通用聊天请求抽离为 ``_request_llm_json``，供 legacy A0 与
+  ``a0_jev.call_a0_q1_only``（轻量二跳词生成）复用，消除协议分支重复代码。
+"""
 from __future__ import annotations
 
 import json
@@ -39,7 +47,9 @@ def _extract_json(text: str) -> dict | None:
         except json.JSONDecodeError:
             continue
         if isinstance(data, dict) and (
-            "hit_quality" in data or "next_queries_Q1" in data
+            "hit_quality" in data
+            or "next_queries_Q1" in data
+            or "unresolved_knowledge_gaps" in data
         ):
             return data
     return None
@@ -84,25 +94,26 @@ def _parse_payload(data: dict) -> dict:
     }
 
 
-def call_a0(
-    q_orig: QueryPack,
-    evidence: str,
+def _request_llm_json(
+    system_prompt: str,
+    user_prompt: str,
     *,
-    doc_count: int,
-    directory_map: str,
-    timeout: float = 120.0,
-) -> tuple[dict | None, str, float, int]:
-    """调用 A0。
+    tag: str,
+    default_max_tokens: int,
+    timeout: float,
+    log_extras: dict | None = None,
+) -> tuple[dict | None, str, float, int, dict]:
+    """通用 LLM JSON 请求（OpenAI 兼容优先，Anthropic 回退）。
 
     Returns:
-        (payload, error, elapsed_ms, prompt_tokens)
-        payload 为 None 时 error 说明原因，调用方走 degraded 单跳。
+        (data, error, elapsed_ms, prompt_tokens, meta)
+        data 为 None 时 error 说明原因；meta 含 model/source 供上层审计。
     """
-    config = resolve_runtime_llm_config(tag="dynamic-a0")
+    config = resolve_runtime_llm_config(tag=tag)
     if not config:
         log_event(logger, "a0:config:error", level=logging.WARNING,
                   reason="config_unavailable")
-        return None, "A0 LLM config unavailable (OPENAI_*/ANTHROPIC_* unset)", 0.0, 0
+        return None, "A0 LLM config unavailable (OPENAI_*/ANTHROPIC_* unset)", 0.0, 0, {}
     base_url = config.get("base_url") or ""
     api_key = config.get("api_key") or ""
     model = config.get("model") or ""
@@ -110,17 +121,13 @@ def call_a0(
         log_event(logger, "a0:config:error", level=logging.WARNING,
                   reason="config_incomplete", source=config.get("_source"),
                   has_base_url=bool(base_url), has_api_key=bool(api_key), has_model=bool(model))
-        return None, "A0 LLM config incomplete", 0.0, 0
+        return None, "A0 LLM config incomplete", 0.0, 0, {}
+    meta = {"model": model, "source": config.get("_source")}
 
-    user_prompt = build_a0_user_prompt(
-        q_orig, evidence, doc_count=doc_count, directory_map=directory_map
-    )
-    prompt_tokens = estimate_tokens(A0_SYSTEM + user_prompt)
+    prompt_tokens = estimate_tokens(system_prompt + user_prompt)
     anthropic = "anthropic" in str(config.get("_source") or "").lower()
     url = _chat_url(base_url, anthropic)
-    # 推理型模型会在 JSON 前输出大段思考文本，900 tokens 常被截断；
-    # 默认给 3000，可用 COSIGHTBOT_DYNAMIC_A0_MAX_TOKENS 覆盖。
-    max_tokens = max(512, int(os.environ.get("COSIGHTBOT_DYNAMIC_A0_MAX_TOKENS", "3000")))
+    max_tokens = max(512, int(default_max_tokens))
     if config.get("max_tokens"):
         max_tokens = min(max_tokens, int(config["max_tokens"]))
 
@@ -132,7 +139,7 @@ def call_a0(
             "model": model,
             "max_tokens": max_tokens,
             "temperature": 0,
-            "system": A0_SYSTEM,
+            "system": system_prompt,
             "messages": [{"role": "user", "content": user_prompt}],
         }
     else:
@@ -142,7 +149,7 @@ def call_a0(
             "max_tokens": max_tokens,
             "temperature": 0,
             "messages": [
-                {"role": "system", "content": A0_SYSTEM},
+                {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
             ],
         }
@@ -155,8 +162,7 @@ def call_a0(
         logger, "a0:request:start", model=model, source=config.get("_source"),
         protocol="anthropic" if anthropic else "openai",
         prompt_tokens=prompt_tokens, max_tokens=max_tokens, timeout_s=timeout,
-        evidence_chars=len(evidence), directory_map_chars=len(directory_map),
-        doc_count=doc_count, json_mode=("response_format" in body),
+        json_mode=("response_format" in body), **(log_extras or {}),
     )
     started = time.perf_counter()
     try:
@@ -179,7 +185,7 @@ def call_a0(
         log_event(logger, "a0:error", level=logging.WARNING,
                   error=f"{type(exc).__name__}: {exc}", duration_ms=elapsed,
                   url=url, status_code=getattr(getattr(exc, "response", None), "status_code", None))
-        return None, f"A0 request failed: {type(exc).__name__}: {exc}", elapsed, prompt_tokens
+        return None, f"A0 request failed: {type(exc).__name__}: {exc}", elapsed, prompt_tokens, meta
 
     elapsed = round((time.perf_counter() - started) * 1000, 1)
     content = ""
@@ -203,7 +209,36 @@ def call_a0(
         log_event(logger, "a0:parse:error", level=logging.WARNING,
                   duration_ms=elapsed, content_chars=len(content),
                   content_preview=preview_text(content, 200))
-        return None, "A0 returned empty/invalid JSON", elapsed, prompt_tokens
+        return None, "A0 returned empty/invalid JSON", elapsed, prompt_tokens, meta
+    return data, "", elapsed, prompt_tokens, meta
+
+
+def _call_a0_legacy_llm(
+    q_orig: QueryPack,
+    evidence: str,
+    *,
+    doc_count: int,
+    directory_map: str,
+    timeout: float = 120.0,
+) -> tuple[dict | None, str, float, int]:
+    """原有 legacy A0 全量行为（JEV 开关关闭时的 100% 兼容路径）。"""
+    user_prompt = build_a0_user_prompt(
+        q_orig, evidence, doc_count=doc_count, directory_map=directory_map
+    )
+    # 推理型模型会在 JSON 前输出大段思考文本，900 tokens 常被截断；
+    # 默认给 3000，可用 COSIGHTBOT_DYNAMIC_A0_MAX_TOKENS 覆盖。
+    max_tokens = max(512, int(os.environ.get("COSIGHTBOT_DYNAMIC_A0_MAX_TOKENS", "3000")))
+    data, error, elapsed, prompt_tokens, meta = _request_llm_json(
+        A0_SYSTEM, user_prompt,
+        tag="dynamic-a0", default_max_tokens=max_tokens, timeout=timeout,
+        log_extras={
+            "evidence_chars": len(evidence),
+            "directory_map_chars": len(directory_map),
+            "doc_count": doc_count,
+        },
+    )
+    if data is None:
+        return None, error, elapsed, prompt_tokens
 
     parsed = _parse_payload(data)
     log_event(
@@ -218,6 +253,35 @@ def call_a0(
         answer_chars=len(parsed["intermediate_result_A"]),
         answer_preview=preview_text(parsed["intermediate_result_A"], 160),
         duration_ms=elapsed, prompt_tokens=prompt_tokens,
-        model=model, source=config.get("_source"),
+        model=meta.get("model"), source=meta.get("source"),
     )
     return parsed, "", elapsed, prompt_tokens
+
+
+def call_a0(
+    q_orig: QueryPack,
+    evidence: str,
+    *,
+    doc_count: int,
+    directory_map: str,
+    timeout: float = 120.0,
+) -> tuple[dict | None, str, float, int]:
+    """调用 A0（JEV-E1 开关开启时透明分发至 a0_jev 三档快筛）。
+
+    Returns:
+        (payload, error, elapsed_ms, prompt_tokens)
+        payload 为 None 时 error 说明原因，调用方走 degraded 单跳。
+    """
+    from common import jev_client
+
+    if jev_client.is_stage_enabled("E1"):
+        from .a0_jev import call_a0_jev
+
+        return call_a0_jev(
+            q_orig, evidence,
+            doc_count=doc_count, directory_map=directory_map, timeout=timeout,
+        )
+    return _call_a0_legacy_llm(
+        q_orig, evidence,
+        doc_count=doc_count, directory_map=directory_map, timeout=timeout,
+    )

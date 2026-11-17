@@ -49,6 +49,11 @@ for _p in (_current_dir, _runtime_root):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
+from common.bootstrap import load_env  # noqa: E402
+
+# 独立启动 runner（如后台直跑 full_build）时幂等加载 data/.env；父进程已注入变量优先。
+load_env()
+
 from common.logging_setup import log_event, setup_logging  # noqa: E402
 
 setup_logging()

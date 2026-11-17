@@ -89,7 +89,7 @@ def extract_sections(lines: list[str]) -> list[dict]:
     return sections
 
 
-def _first_sentence(lines: list[tuple[int, str]], limit: int = 60) -> str:
+def _first_sentence(lines: list[tuple[int, str]], limit: int = 120) -> str:
     for idx, (_, text) in enumerate(lines):
         stripped = text.strip()
         if not stripped or stripped.startswith("#"):
@@ -132,7 +132,7 @@ def extract_table_signatures(lines: list[str]) -> list[dict]:
             "header_line": start + 1,
             "columns": columns,
             "row_count": len(rows),
-            "first_col_keys": first_col_keys[:20],
+            "first_col_keys": first_col_keys[:100],
         })
     return tables
 
@@ -165,10 +165,85 @@ def extract_skeleton(path: Path) -> dict:
     }
 
 
+def _path_semantic_words(rel_path: str) -> str:
+    """把 rel_path 转成路径语义词：去 .md 后缀，/、\\、_、- 替换为空格。"""
+    if not rel_path:
+        return ""
+    lowered = rel_path.lower()
+    if lowered.endswith(".md"):
+        rel_path = rel_path[:-3]
+    return re.sub(r"[/\\_\-]+", " ", rel_path).strip()
+
+
+def structure_embedding_text(
+    section: dict,
+    *,
+    rel_path: str = "",
+    tables: list[dict] | None = None,
+    bold_keys: list[dict] | None = None,
+    max_chars: int = 500,
+) -> str:
+    """路 1 纯结构语义向量输入：路径词 + 标题链 + 首句 + 表格签名 + 加粗键。
+
+    零长正文混入，总长控制在 80~500 字黄金窗口（max_chars 截断）。
+    """
+    parts: list[str] = []
+    path_words = _path_semantic_words(rel_path)
+    if path_words:
+        parts.append(path_words)
+    header_path = str(section.get("header_path") or "")
+    if header_path and header_path != "[Para-Group]":
+        parts.append(header_path)
+    first_sentence = str(section.get("first_sentence") or "")[:120]
+    if first_sentence:
+        parts.append(first_sentence)
+    for table in (tables or [])[:6]:
+        columns = [str(c) for c in (table.get("columns") or []) if str(c).strip()]
+        keys = [str(k) for k in (table.get("first_col_keys") or [])[:10] if str(k).strip()]
+        if not columns and not keys:
+            continue
+        chunk = f"Tables: {' | '.join(columns)}" if columns else "Tables:"
+        if keys:
+            chunk = f"{chunk}; Keys: {', '.join(keys)}"
+        parts.append(chunk)
+    bold = [str(b.get("key") or "").strip() for b in (bold_keys or [])[:15]]
+    bold = [k for k in bold if k]
+    if bold:
+        parts.append(f"Bold: {', '.join(bold)}")
+    return " ".join(parts)[:max_chars]
+
+
+def contextual_chunk_embedding_text(
+    chunk: dict,
+    *,
+    rel_path: str = "",
+    lines: list[str] | None = None,
+    max_chars: int = 800,
+) -> str:
+    """路 3 上下文前缀锚定 Chunk 向量输入：[doc | 标题链] + 表头行 + 正文。
+
+    计算完向量即丢弃该临时拼装文本，nodes_pointer 不存 text 原文列。
+    """
+    doc_title = Path(rel_path).stem if rel_path else ""
+    doc_title = doc_title or rel_path
+    header_path = str(chunk.get("header_path") or "")
+    table_header = ""
+    header_line = int(chunk.get("header_line") or 0)
+    start_line = int(chunk.get("start_line") or 0)
+    if header_line > 0 and lines and header_line < start_line:
+        if 1 <= header_line <= len(lines):
+            table_header = lines[header_line - 1]
+    prefix = f"[{doc_title or ''} | {header_path}]"
+    parts = [prefix]
+    if table_header:
+        parts.append(table_header)
+    parts.append(str(chunk.get("text") or ""))
+    return "\n".join(p for p in parts if p)[:max_chars]
+
+
 def section_embedding_text(section: dict, max_chars: int = 4000) -> str:
-    """section 向量输入：标题链 + 首句 + 正文（截断）。"""
-    body = "\n".join(text for _, text in section.get("lines", []))
-    return f'{section.get("header_path", "")}\n{section.get("first_sentence", "")}\n{body[:max_chars]}'
+    """向后兼容薄包装：转发至 structure_embedding_text（不再混入长正文）。"""
+    return structure_embedding_text(section, max_chars=max_chars)
 
 
 def _split_long_text(text: str, limit: int) -> list[str]:
@@ -208,6 +283,7 @@ def _blocks_from_section(section: dict) -> list[dict]:
                     "start_line": buf[0][0],
                     "end_line": buf[-1][0],
                     "text": text,
+                    "lines": list(buf),
                 })
             buf = []
 
@@ -289,15 +365,18 @@ def chunk_sections(
                 table_buf.append(block)
                 continue
             flush_table()
-            for piece in _split_long_text(block["text"], chunk_max):
-                text_buf.append({
-                    "start_line": block["start_line"],
-                    "end_line": block["end_line"],
-                    "text": piece,
-                })
-                text_chars += len(piece)
-                if text_chars >= chunk_min or len(piece) >= chunk_max:
-                    flush_text()
+            # 逐行累积切块：piece 行号精确到单行（block 级行号会让长 block
+            # 的所有 chunk 共享同一起止行，破坏路 3 精确行号指针）。
+            for line_no, line in block.get("lines", []):
+                for piece in _split_long_text(line, chunk_max):
+                    text_buf.append({
+                        "start_line": line_no,
+                        "end_line": line_no,
+                        "text": piece,
+                    })
+                    text_chars += len(piece)
+                    if text_chars >= chunk_min or len(piece) >= chunk_max:
+                        flush_text()
         flush_text()
         flush_table()
     return chunks

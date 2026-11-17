@@ -13,9 +13,12 @@ sys.path.insert(0, str(_RUNTIME))
 sys.path.insert(0, str(_RUNTIME / "watch_dog"))
 
 from watch_dog.file_watcher.skeleton_extractor import (  # noqa: E402
+    _first_sentence,
     chunk_sections,
+    contextual_chunk_embedding_text,
     extract_skeleton,
     section_embedding_text,
+    structure_embedding_text,
 )
 
 SAMPLE = """# 总标题
@@ -105,6 +108,114 @@ class SkeletonExtractorTest(unittest.TestCase):
         text = section_embedding_text(sec)
         self.assertIn("1. 概述", text)
         self.assertIn("概述第一句", text)
+
+
+class StructureEmbeddingTextTest(unittest.TestCase):
+    def test_first_sentence_limit_120(self) -> None:
+        long_sentence = "字" * 200
+        text = _first_sentence([(1, long_sentence)])
+        self.assertEqual(len(text), 120)
+
+    def test_first_col_keys_limit_100(self) -> None:
+        lines = ["| 键 | 值 |", "|---|---|"]
+        for i in range(1, 121):
+            lines.append(f"| VND-{i:03d} | x |")
+        tables = extract_skeleton_from_lines(lines)
+        self.assertEqual(len(tables), 1)
+        self.assertEqual(len(tables[0]["first_col_keys"]), 100)
+        self.assertIn("VND-100", tables[0]["first_col_keys"])
+        self.assertNotIn("VND-101", tables[0]["first_col_keys"])
+
+    def test_structure_embedding_text_components(self) -> None:
+        section = {
+            "header_path": "1. P0 Escalation Thresholds",
+            "first_sentence": "Effective 2026-11-27, mandatory failover steps."[:200],
+            # 混入长正文，断言结构向量输入零正文污染
+            "lines": [(i, f"第 {i} 行正文填充内容") for i in range(1, 200)],
+        }
+        tables = [{
+            "start_line": 10, "end_line": 60,
+            "columns": ["Vendor ID", "Vendor Name", "Status"],
+            "first_col_keys": [f"VND-{i:03d}" for i in range(1, 31)],
+        }]
+        bold_keys = [{"line": 12, "key": "强制切换步骤"}, {"line": 14, "key": "回滚护栏"}]
+        text = structure_embedding_text(
+            section, rel_path="ops/handoffs/2026-11-27-mariner-health.md",
+            tables=tables, bold_keys=bold_keys,
+        )
+        # 路径语义词（/、_、- 替换为空格，去 .md）
+        self.assertIn("ops handoffs 2026 11 27 mariner health", text)
+        # 标题链与首句
+        self.assertIn("1. P0 Escalation Thresholds", text)
+        self.assertIn("mandatory failover steps", text)
+        # 表格列名与前 10 个首列键
+        self.assertIn("Vendor ID", text)
+        self.assertIn("VND-001", text)
+        self.assertIn("VND-010", text)
+        self.assertNotIn("VND-011", text)
+        # 加粗键
+        self.assertIn("强制切换步骤", text)
+        # 零长正文混入：lines 里的填充正文不得出现
+        self.assertNotIn("第 100 行正文填充内容", text)
+        self.assertNotIn("第 150 行正文填充内容", text)
+        # 黄金窗口上限
+        self.assertLessEqual(len(text), 500)
+
+    def test_structure_embedding_text_empty_section(self) -> None:
+        text = structure_embedding_text({"header_path": "", "first_sentence": ""})
+        self.assertEqual(text, "")
+
+    def test_compat_wrapper_forwards(self) -> None:
+        section = {"header_path": "A/B", "first_sentence": "首句内容"}
+        self.assertEqual(
+            section_embedding_text(section), structure_embedding_text(section)
+        )
+
+
+class ContextualChunkEmbeddingTextTest(unittest.TestCase):
+    LINES = [
+        "# Doc", "",
+        "| Code | Meaning |",
+        "|---|---|",
+        "| ERR_1 | a |",
+        "", "正文段落。",
+    ]
+
+    def test_contextual_prefix_and_table_header(self) -> None:
+        chunk = {
+            "header_path": "1. 表格",
+            "header_line": 3,
+            "start_line": 5,
+            "end_line": 5,
+            "text": "| ERR_1 | a |",
+        }
+        text = contextual_chunk_embedding_text(
+            chunk, rel_path="clients/mariner_health/ops.md", lines=self.LINES
+        )
+        self.assertTrue(text.startswith("[ops | 1. 表格]"))
+        self.assertIn("| Code | Meaning |", text)
+        self.assertIn("| ERR_1 | a |", text)
+        self.assertLessEqual(len(text), 800)
+
+    def test_no_table_header_when_header_line_zero(self) -> None:
+        chunk = {"header_path": "1. 表格", "header_line": 0, "start_line": 5, "text": "正文"}
+        text = contextual_chunk_embedding_text(chunk, rel_path="a/b.md", lines=self.LINES)
+        self.assertTrue(text.startswith("[b | 1. 表格]"))
+        self.assertNotIn("| Code | Meaning |", text)
+        self.assertIn("正文", text)
+
+    def test_no_table_header_when_header_after_start(self) -> None:
+        chunk = {"header_path": "", "header_line": 8, "start_line": 5, "text": "正文"}
+        text = contextual_chunk_embedding_text(chunk, rel_path="a.md", lines=self.LINES)
+        self.assertNotIn("| Code | Meaning |", text)
+        self.assertTrue(text.startswith("[a | ]"))
+        self.assertIn("正文", text)
+
+
+def extract_skeleton_from_lines(lines: list[str]) -> list[dict]:
+    from watch_dog.file_watcher import skeleton_extractor as se
+
+    return se.extract_table_signatures(lines)
 
 
 if __name__ == "__main__":

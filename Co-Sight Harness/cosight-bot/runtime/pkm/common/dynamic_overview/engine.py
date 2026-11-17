@@ -15,6 +15,7 @@ import math
 import os
 import re
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -41,8 +42,23 @@ TIER2_LIMIT = int(os.environ.get("COSIGHTBOT_DYNAMIC_TIER2_LIMIT", "150"))
 RERANK_BLOCK_LIMIT = int(os.environ.get("COSIGHTBOT_DYNAMIC_RERANK_BLOCKS", "1200"))
 RERANK_PER_DOC = int(os.environ.get("COSIGHTBOT_DYNAMIC_RERANK_PER_DOC", "5"))
 SEMANTIC_TOP_K = int(os.environ.get("COSIGHTBOT_DYNAMIC_SEMANTIC_TOP_K", "1000"))
+# 底座-B1：路 1（纯结构语义）与路 3（带前缀 Chunk 正文语义）独立 Top-K；
+# SEMANTIC_TOP_K 保留为兼容别名（旧配置/外部脚本引用）。
+STRUCT_SEMANTIC_TOP_K = int(os.environ.get("COSIGHTBOT_DYNAMIC_STRUCT_SEMANTIC_TOP_K", "300"))
+BODY_SEMANTIC_TOP_K = int(os.environ.get("COSIGHTBOT_DYNAMIC_BODY_SEMANTIC_TOP_K", "800"))
 SKELETON_FTS_TOP_K = int(os.environ.get("COSIGHTBOT_DYNAMIC_SKELETON_TOP_K", "500"))
 BODY_FTS_TOP_K = int(os.environ.get("COSIGHTBOT_DYNAMIC_BODY_TOP_K", "800"))
+
+
+def _legacy_compat_enabled() -> bool:
+    """v2 兼容开关：允许动态引擎在 v2 存量索引上以降级形态运行（路 3 关闭）。
+
+    仅影响检索读取路径；构建侧 full_build 的强制重建判定不受影响。v1 索引
+    （doc_key=rel_path）与 v2/v3 的文档标识语义不兼容，无论开关一律拒绝。
+    """
+    return os.environ.get("COSIGHTBOT_DYNAMIC_LEGACY_COMPAT", "").strip().lower() in (
+        "1", "true", "yes", "on",
+    )
 SCORE_MODE = os.environ.get("COSIGHTBOT_DYNAMIC_SCORE_MODE", "hybrid").lower()
 HYBRID_WEIGHT = float(os.environ.get("COSIGHTBOT_DYNAMIC_HYBRID_WEIGHT", "1.0"))
 HOP2_NEW_DOCS_ONLY = os.environ.get("COSIGHTBOT_DYNAMIC_HOP2_NEW_DOCS_ONLY", "1") != "0"
@@ -57,6 +73,24 @@ QUERY_REWRITE_MAX_QUESTIONS = int(os.environ.get("COSIGHTBOT_DYNAMIC_QUERY_REWRI
 MAX_QUESTIONS = 4
 OUTPUT_TOKEN_LIMIT = int(os.environ.get("COSIGHTBOT_DYNAMIC_OUTPUT_TOKENS", "35000"))
 EVIDENCE_TOKEN_LIMIT = int(os.environ.get("COSIGHTBOT_DYNAMIC_EVIDENCE_TOKENS", "30000"))
+# 底座-B1 规则 3 闭合顺延软上限（字符）与结构导言骨架上限
+RESTORE_BODY_SOFT_LIMIT = 950
+RESTORE_SKELETON_CHARS = 600
+RESTORE_SKELETON_LINES = 25
+# 相邻正文 Chunk 合并：行距阈值与合并后最大跨度（行）
+MERGE_ADJACENT_GAP = 3
+MERGE_ADJACENT_MAX_SPAN = 45
+
+# 未闭合引出词结尾（规则 3 顺延触发）
+_OPEN_LEAD_RE = re.compile(
+    r"[:：]\s*$|如下\s*$|包括\s*$|(?:following|below|such as)\s*[：:]?\s*$",
+    re.IGNORECASE,
+)
+_LEADING_LIST_RE = re.compile(r"^\s*([-*+]|\d+\.)\s")
+_TABLE_LINE_RE = re.compile(r"^\s*\|")
+_TABLE_SEP_LINE_RE = re.compile(r"^\s*\|?\s*:?-{3,}")
+# ASCII 硬标识符：字母/数字开头，可含点/连字符/下划线（ERR_401、X-Redwood、v2.3.1）
+_HARD_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_\-.]*$")
 
 
 class DynamicIndexError(RuntimeError):
@@ -76,6 +110,9 @@ class RouteContext:
     doc_count: int
     prefix: str
     route_index: int = 0
+    # v2 兼容降级标记：True 表示该路由运行在存量 v2 索引上（路 3 已由
+    # SectionIndex.search_pointers 自动跳过；FTS 按旧 Schema 域过滤）。
+    legacy_compat: bool = False
     _line_cache: dict[str, list[str]] = field(default_factory=dict)
 
     def global_id(self, local_id: str) -> str:
@@ -87,6 +124,19 @@ class RouteContext:
     def read_lines(self, rel_path: str, start: int, end: int) -> str:
         if not rel_path:
             return ""
+        lines = self.all_lines(rel_path)
+        if not lines:
+            return ""
+        start = max(1, int(start))
+        end = min(len(lines), int(end))
+        if end < start:
+            return ""
+        return "\n".join(lines[start - 1:end])
+
+    def all_lines(self, rel_path: str) -> list[str]:
+        """整篇文档行数组（带缓存）；供规则 3 逐行顺延闭合使用。"""
+        if not rel_path:
+            return []
         lines = self._line_cache.get(rel_path)
         if lines is None:
             try:
@@ -96,19 +146,13 @@ class RouteContext:
             except OSError:
                 lines = []
             self._line_cache[rel_path] = lines
-        if not lines:
-            return ""
-        start = max(1, int(start))
-        end = min(len(lines), int(end))
-        if end < start:
-            return ""
-        return "\n".join(lines[start - 1:end])
+        return lines
 
 
 def _section_columns() -> list[str]:
     return [
         "doc_key", "section_id", "header_path", "level", "start_line",
-        "end_line", "char_count", "first_sentence", "table_sig",
+        "end_line", "char_count", "first_sentence", "table_sig", "bold_keys",
     ]
 
 
@@ -185,6 +229,7 @@ class DynamicOverviewEngine:
                     pass
             if not (
                 (lan_dir / "section_skeleton.lance").is_dir()
+                and (lan_dir / "nodes_pointer.lance").is_dir()
                 and (lan_dir / "fts" / "body").is_dir()
                 and (lan_dir / "fts" / "skeleton").is_dir()
             ):
@@ -195,6 +240,7 @@ class DynamicOverviewEngine:
             index = SectionIndex(lan_dir)
             # schema v1 的 doc_key=rel_path，与稳定 ID 节点表不兼容；必须让
             # 调用方重建，不能静默返回空候选。
+            legacy_compat = False
             try:
                 meta = {
                     row["key"]: row["value"]
@@ -206,7 +252,27 @@ class DynamicOverviewEngine:
                     legacy = index.doc_table.to_lance().to_table(
                         filter="doc_key = rel_path", limit=1
                     ).num_rows
-                if legacy or (version and version != str(SCHEMA_VERSION)):
+                if (
+                    index.needs_schema_upgrade
+                    or (version and version != str(SCHEMA_VERSION))
+                ):
+                    # v2 兼容降级：开关开启时允许在 v2 存量索引上检索
+                    # （路 3 由 SectionIndex.search_pointers 自动跳过，路 2 按
+                    # 旧 FTS Schema 域过滤）。开关关闭保持原有强制重建行为。
+                    if not _legacy_compat_enabled():
+                        raise DynamicIndexError(
+                            f"section index schema upgrade required for route "
+                            f"{route.get('label')} (version={version or 'legacy'})",
+                            "DYNAMIC_INDEX_MISSING",
+                        )
+                    legacy_compat = True
+                    log_event(
+                        logger, "engine:route:legacy_compat", level=logging.WARNING,
+                        label=route.get("label"), schema_version=str(version or "legacy"),
+                        note="running dynamic engine on v2 index with degraded "
+                             "capabilities (route 3 body-semantic disabled)",
+                    )
+                if legacy:
                     raise DynamicIndexError(
                         f"section index schema upgrade required for route "
                         f"{route.get('label')} (version={version or 'legacy'})",
@@ -228,6 +294,7 @@ class DynamicOverviewEngine:
                 doc_count=doc_count,
                 prefix=prefix,
                 route_index=len(self.contexts),
+                legacy_compat=legacy_compat,
             ))
             log_event(
                 logger, "engine:route", label=route.get("label"),
@@ -392,28 +459,63 @@ class DynamicOverviewEngine:
         rewrite_meta: dict | None = None
         if hop == 0 and QUERY_REWRITE_ENABLED:
             q, rewrite_meta = self._rewrite_query(q)
-        semantic_candidates: list[Candidate] = []
+        # 查询向量只算一次：路 1 与路 3 复用，避免重复调用 Embedding HTTP 接口
+        query_vectors = self._compute_query_vectors(q)
+        struct_semantic: list[Candidate] = []
         skeleton_candidates: list[Candidate] = []
+        body_semantic: list[Candidate] = []
         body_candidates: list[Candidate] = []
         timings: dict[str, float] = {}
-        for ctx in self.contexts:
-            t0 = time.perf_counter()
-            semantic_candidates.extend(self._probe_semantic(ctx, q))
-            timings["semantic"] = timings.get("semantic", 0.0) + (time.perf_counter() - t0)
-            t0 = time.perf_counter()
-            skeleton_candidates.extend(self._probe_skeleton_fts(ctx, q))
-            timings["skeleton_fts"] = timings.get("skeleton_fts", 0.0) + (time.perf_counter() - t0)
-            t0 = time.perf_counter()
-            body_candidates.extend(self._probe_body_fts(ctx, q))
-            timings["body_fts"] = timings.get("body_fts", 0.0) + (time.perf_counter() - t0)
-        all_candidates = [
-            *semantic_candidates, *skeleton_candidates, *body_candidates,
-        ]
+
+        def timed(name: str, fn, args: tuple):
+            def run():
+                t = time.perf_counter()
+                try:
+                    return fn(*args)
+                finally:
+                    timings[name] = timings.get(name, 0.0) + (time.perf_counter() - t)
+            return run
+
+        # 真·四路线程池并发（底座-B1）：四路探针同时发起，墙钟 ≈ 最慢一路
+        results: dict[str, list[Candidate]] = {}
+        probe_errors: dict[str, str] = {}
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            future_map = {}
+            for ctx in self.contexts:
+                jobs = (
+                    ("struct_semantic", self._probe_struct_semantic, (ctx, query_vectors)),
+                    ("skeleton_fts", self._probe_skeleton_fts, (ctx, q)),
+                    ("body_semantic", self._probe_body_semantic, (ctx, query_vectors)),
+                    ("body_fts", self._probe_body_fts, (ctx, q)),
+                )
+                for name, fn, args in jobs:
+                    future_map[pool.submit(timed(name, fn, args))] = name
+            for future in as_completed(future_map):
+                name = future_map[future]
+                try:
+                    results.setdefault(name, []).extend(future.result())
+                except Exception as exc:
+                    probe_errors[name] = f"{type(exc).__name__}: {exc}"
+        if probe_errors:
+            # 与旧行为一致：探针失败（如 embedding 不可用）直接中断本跳
+            name, msg = sorted(probe_errors.items())[0]
+            code = "EMBEDDING_FAILED" if "semantic" in name else "PROBE_FAILED"
+            log_event(logger, "hop:probe:error", level=logging.ERROR,
+                      probe=name, error=msg)
+            raise DynamicIndexError(f"probe {name} failed: {msg}", code)
+        struct_semantic = results.get("struct_semantic", [])
+        skeleton_candidates = results.get("skeleton_fts", [])
+        body_semantic = results.get("body_semantic", [])
+        body_candidates = results.get("body_fts", [])
+        semantic_candidates = [*struct_semantic, *body_semantic]
+        all_candidates = [*semantic_candidates, *skeleton_candidates, *body_candidates]
         log_event(
             logger, "hop:probe:done", hop=hop,
-            semantic=len(semantic_candidates),
+            struct_semantic=len(struct_semantic),
             skeleton_fts=len(skeleton_candidates),
+            body_semantic=len(body_semantic),
             body_fts=len(body_candidates),
+            semantic=len(semantic_candidates),
             raw=len(all_candidates),
             raw_docs=len({c.doc_id for c in all_candidates}),
             timings_ms={k: round(v * 1000, 1) for k, v in timings.items()},
@@ -451,50 +553,63 @@ class DynamicOverviewEngine:
             "elapsed_ms": elapsed,
             "timings_ms": {k: round(v * 1000, 1) for k, v in timings.items()},
             "probe_counts": {
-                "semantic": len(semantic_candidates),
+                "struct_semantic": len(struct_semantic),
                 "skeleton_fts": len(skeleton_candidates),
+                "body_semantic": len(body_semantic),
                 "body_fts": len(body_candidates),
+                # 兼容旧统计脚本：semantic = 路 1 + 路 3
+                "semantic": len(struct_semantic) + len(body_semantic),
             },
         }
         if rewrite_meta is not None:
             diag["q0_rewrite"] = rewrite_meta
         if self.debug:
             diag["probe_docs"] = {
-                "semantic": sorted({c.doc_id for c in semantic_candidates}),
+                "struct_semantic": sorted({c.doc_id for c in struct_semantic}),
                 "skeleton_fts": sorted({c.doc_id for c in skeleton_candidates}),
+                "body_semantic": sorted({c.doc_id for c in body_semantic}),
                 "body_fts": sorted({c.doc_id for c in body_candidates}),
+                "semantic": sorted({c.doc_id for c in semantic_candidates}),
                 "merged": sorted({c.doc_id for c in merged}),
                 "selected": sorted({c.doc_id for c in selected}),
             }
         return selected, docs, diag
 
-    def _probe_semantic(self, ctx: RouteContext, q: QueryPack) -> list[Candidate]:
+    def _compute_query_vectors(self, q: QueryPack) -> list:
+        """对 q.questions[:MAX_QUESTIONS] 只计算一次查询向量（四路复用）。"""
         questions = [x for x in q.questions[:MAX_QUESTIONS] if x]
-        if not questions:
+        if not questions or not self.contexts:
             return []
-        log_event(
-            logger, "probe:semantic:start",
-            route=ctx.route.get("label"), questions=len(questions),
-            question_preview=preview_items(questions, 2),
-            top_k=SEMANTIC_TOP_K, structural_rank=200,
-        )
-        embedding = ctx.index._get_embedding()
+        embedding = self.contexts[0].index._get_embedding()
         try:
             vectors = embedding._get_text_embeddings(questions)
         except Exception as exc:
             log_event(
-                logger, "probe:semantic:error", level=logging.ERROR,
-                route=ctx.route.get("label"), questions=len(questions),
-                error=f"{type(exc).__name__}: {exc}",
+                logger, "probe:embedding:error", level=logging.ERROR,
+                questions=len(questions), error=f"{type(exc).__name__}: {exc}",
             )
             raise DynamicIndexError(
                 f"embedding failed: {type(exc).__name__}: {exc}", "EMBEDDING_FAILED"
             ) from exc
+        if len(vectors) != len(questions):
+            raise DynamicIndexError(
+                f"embedding returned {len(vectors)} vectors for {len(questions)} questions",
+                "EMBEDDING_FAILED",
+            )
+        return vectors
+
+    def _probe_struct_semantic(self, ctx: RouteContext, query_vectors: list) -> list[Candidate]:
+        """路 1：纯结构语义路。查 section_skeleton 纯结构向量，命中 100% 为真结构契合。"""
+        if not query_vectors:
+            return []
+        log_event(
+            logger, "probe:struct:start",
+            route=ctx.route.get("label"), questions=len(query_vectors),
+            top_k=STRUCT_SEMANTIC_TOP_K,
+        )
         rows: list[dict] = []
-        for vector in vectors:
-            rows.extend(ctx.index.search_sections(vector, top_k=SEMANTIC_TOP_K))
-        # 路 1 取 Top 200 作为结构语义；路 3 取更大 Top-K 作为正文语义。
-        out: list[Candidate] = []
+        for vector in query_vectors:
+            rows.extend(ctx.index.search_sections(vector, top_k=STRUCT_SEMANTIC_TOP_K))
         best: dict[str, tuple[float, dict]] = {}
         for row in rows:
             distance = float(row.get("_distance", 1.0))
@@ -506,12 +621,13 @@ class DynamicOverviewEngine:
             if old is None or score > old[0]:
                 best[section_id] = (score, row)
         ordered = sorted(best.values(), key=lambda item: item[0], reverse=True)
-        for rank, (score, row) in enumerate(ordered):
+        out: list[Candidate] = []
+        for score, row in ordered:
             local_doc = str(row.get("doc_key") or "")
             rel_path = ctx.rel_path(local_doc)
             if not rel_path:
                 continue
-            candidate = Candidate(
+            out.append(Candidate(
                 route_index=ctx.route_index,
                 doc_id=ctx.global_id(local_doc),
                 local_doc_id=local_doc,
@@ -521,16 +637,80 @@ class DynamicOverviewEngine:
                 end_line=int(row.get("end_line") or 1),
                 header_path=str(row.get("header_path") or ""),
                 first_sentence=str(row.get("first_sentence") or ""),
-                structural=rank < 200,
-                source_scores={"semantic_struct" if rank < 200 else "semantic_body": score},
+                structural=True,
+                source_scores={"struct_semantic": score},
                 fallback_score=score,
-            )
-            out.append(candidate)
+            ))
         log_event(
-            logger, "probe:semantic:done",
+            logger, "probe:struct:done",
             route=ctx.route.get("label"), rows=len(rows), sections=len(best),
             candidates=len(out), docs=len({c.doc_id for c in out}),
-            structural=sum(1 for c in out if c.structural),
+            top_score=round(max((c.fallback_score for c in out), default=0.0), 4),
+        )
+        return out
+
+    def _probe_body_semantic(self, ctx: RouteContext, query_vectors: list) -> list[Candidate]:
+        """路 3：正文语义路。查 nodes_pointer 带前缀 Chunk 向量，返回精确行号指针。"""
+        if not query_vectors:
+            return []
+        log_event(
+            logger, "probe:body_semantic:start",
+            route=ctx.route.get("label"), questions=len(query_vectors),
+            top_k=BODY_SEMANTIC_TOP_K, nprobes=96, refine_factor=20,
+        )
+        rows: list[dict] = []
+        for vector in query_vectors:
+            rows.extend(ctx.index.search_pointers(
+                vector, top_k=BODY_SEMANTIC_TOP_K, nprobes=96, refine_factor=20,
+            ))
+        # 按 chunk_id 去重取最高分（跨问句向量）
+        best: dict[str, tuple[float, dict]] = {}
+        for row in rows:
+            distance = float(row.get("_distance", 1.0))
+            score = max(0.0, 1.0 - distance)
+            chunk_id = str(row.get("chunk_id") or "")
+            if not chunk_id:
+                continue
+            old = best.get(chunk_id)
+            if old is None or score > old[0]:
+                best[chunk_id] = (score, row)
+        if not best:
+            log_event(logger, "probe:body_semantic:empty", route=ctx.route.get("label"))
+            return []
+        sections = self._fetch_sections(
+            ctx, [str(r.get("section_id") or "") for _, r in best.values() if r.get("section_id")]
+        )
+        out: list[Candidate] = []
+        rejected_path = 0
+        for chunk_id, (score, row) in best.items():
+            local_doc = str(row.get("doc_key") or "")
+            rel_path = ctx.rel_path(local_doc)
+            if not rel_path:
+                rejected_path += 1
+                continue
+            section_id = str(row.get("section_id") or "")
+            section = sections.get(section_id) or {}
+            out.append(Candidate(
+                route_index=ctx.route_index,
+                doc_id=ctx.global_id(local_doc),
+                local_doc_id=local_doc,
+                rel_path=rel_path,
+                section_id=section_id,
+                chunk_id=chunk_id,
+                start_line=int(row.get("start_line") or 1),
+                end_line=int(row.get("end_line") or 1),
+                header_line=int(row.get("header_line") or 0),
+                header_path=str(section.get("header_path") or ""),
+                first_sentence=str(section.get("first_sentence") or ""),
+                structural=False,
+                source_scores={"body_semantic": score},
+                fallback_score=score,
+            ))
+        log_event(
+            logger, "probe:body_semantic:done",
+            route=ctx.route.get("label"), rows=len(rows), chunks=len(best),
+            candidates=len(out), docs=len({c.doc_id for c in out}),
+            rejected_path=rejected_path,
             top_score=round(max((c.fallback_score for c in out), default=0.0), 4),
         )
         return out
@@ -581,9 +761,10 @@ class DynamicOverviewEngine:
                 str(row.get("header_path") or ""),
                 str(row.get("first_sentence") or ""),
                 str(row.get("table_sig") or ""),
+                str(row.get("bold_keys") or ""),
                 str(hit.get("rel_path") or ""),
             ])
-            if not self._exact_match(text_for_match, terms):
+            if not self._skeleton_term_match(text_for_match, terms):
                 rejected_exact += 1
                 continue
             local_doc = str(row.get("doc_key") or hit.get("doc_id") or "")
@@ -745,6 +926,41 @@ class DynamicOverviewEngine:
         lowered = (text or "").lower()
         return any(term.lower() in lowered for term in terms if term)
 
+    @staticmethod
+    def _is_hard_identifier(term: str) -> bool:
+        """纯 ASCII 硬标识符：错误码/单号/字段名（含数字、下划线或连字符）。"""
+        stripped = (term or "").strip()
+        if not stripped or not _HARD_ID_RE.match(stripped):
+            return False
+        return any(ch.isdigit() for ch in stripped) or "_" in stripped or "-" in stripped
+
+    @staticmethod
+    def _skeleton_term_match(text_for_match: str, terms: list[str]) -> bool:
+        """路 2 二次过滤（防误杀版）。
+
+        - 纯 ASCII 硬标识符（ERR_401、X-Redwood）：忽略大小写精确子串命中；
+        - 自然语言多字词（"专线割接" vs "专线应急割接方案"）：按 tokenize(term)
+          分词后核心切分 token 覆盖率 >= 50% 且至少命中 1 个有效实词 token。
+        """
+        lowered = (text_for_match or "").lower()
+        for term in terms or []:
+            stripped = (term or "").strip()
+            if not stripped:
+                continue
+            if DynamicOverviewEngine._is_hard_identifier(stripped):
+                if stripped.lower() in lowered:
+                    return True
+                continue
+            tokens = [t.lower() for t in tokenize(stripped) if t]
+            if not tokens:
+                if stripped.lower() in lowered:
+                    return True
+                continue
+            hits = sum(1 for t in tokens if t in lowered)
+            if hits >= 1 and hits / len(tokens) >= 0.5:
+                return True
+        return False
+
     # ------------------------------------------------------------------
     # 候选合并 / 还原 / rerank
     # ------------------------------------------------------------------
@@ -770,12 +986,54 @@ class DynamicOverviewEngine:
             existing.header_line = existing.header_line or candidate.header_line
             existing.fallback_score = max(existing.fallback_score, candidate.fallback_score)
         result = list(merged.values())
+        result = self._merge_adjacent_body_chunks(result)
         log_event(
             logger, "merge:done", input_candidates=len(candidates),
             merged_candidates=len(result), merged_docs=len({c.doc_id for c in result}),
             collapsed=len(candidates) - len(result),
         )
         return result
+
+    def _merge_adjacent_body_chunks(self, candidates: list[Candidate]) -> list[Candidate]:
+        """同文档同章节内重叠/相邻正文 Chunk 区间合并（路 3/路 4）。"""
+        groups: dict[tuple, list[Candidate]] = {}
+        passthrough: list[Candidate] = []
+        for candidate in candidates:
+            if not candidate.structural and candidate.chunk_id:
+                groups.setdefault(
+                    (candidate.route_index, candidate.doc_id, candidate.section_id), []
+                ).append(candidate)
+            else:
+                passthrough.append(candidate)
+        if not groups:
+            return candidates
+        merged_count = 0
+        out: list[Candidate] = list(passthrough)
+        for items in groups.values():
+            items.sort(key=lambda c: (c.start_line, c.end_line))
+            cur = items[0]
+            for nxt in items[1:]:
+                span = max(cur.end_line, nxt.end_line) - cur.start_line + 1
+                if nxt.start_line <= cur.end_line + MERGE_ADJACENT_GAP and span <= MERGE_ADJACENT_MAX_SPAN:
+                    for source, score in nxt.source_scores.items():
+                        cur.source_scores[source] = max(
+                            cur.source_scores.get(source, 0.0), score
+                        )
+                    cur.fallback_score = max(cur.fallback_score, nxt.fallback_score)
+                    cur.end_line = max(cur.end_line, nxt.end_line)
+                    cur.header_line = cur.header_line or nxt.header_line
+                    cur.header_path = cur.header_path or nxt.header_path
+                    cur.first_sentence = cur.first_sentence or nxt.first_sentence
+                    merged_count += 1
+                else:
+                    out.append(cur)
+                    cur = nxt
+            out.append(cur)
+        log_event(
+            logger, "merge:adjacent", level=logging.DEBUG,
+            groups=len(groups), merged=merged_count, output=len(out),
+        )
+        return out
 
     def _select_for_rerank(
         self,
@@ -816,16 +1074,32 @@ class DynamicOverviewEngine:
         selected.sort(key=lambda c: c.fallback_score, reverse=True)
         selected = selected[:limit]
         self._restore_texts(selected)
-        # 正文字面路要求“FTS 命中 + 原文精确子串校验”同时成立。
+        # 正文字面路要求“FTS 命中 + 原文精确子串校验”同时成立；跨路误杀修复：
+        # 合并候选同时拥有其他探针得分时，只摘除未通过校验的 body_fts 分量，
+        # 保留候选进入 Rerank；仅当 body_fts 是唯一来源时才丢弃。
         terms = [t.lower() for t in q.positive_terms() if t]
         body_exact_dropped = 0
+        body_fts_popped = 0
         if terms:
             before_exact = len(selected)
-            selected = [
-                c for c in selected
-                if not ("body_fts" in c.source_scores and not any(t in c.text.lower() for t in terms))
-            ]
-            body_exact_dropped = before_exact - len(selected)
+            kept: list[Candidate] = []
+            for candidate in selected:
+                if "body_fts" in candidate.source_scores and not any(
+                    t in candidate.text.lower() for t in terms
+                ):
+                    other_sources = [
+                        s for s in candidate.source_scores if s != "body_fts"
+                    ]
+                    if other_sources:
+                        candidate.source_scores.pop("body_fts")
+                        candidate.fallback_score = self._fallback_score(candidate)
+                        body_fts_popped += 1
+                        kept.append(candidate)
+                    else:
+                        body_exact_dropped += 1
+                    continue
+                kept.append(candidate)
+            selected = kept
         log_event(
             logger, "select:done", input_candidates=input_count,
             input_docs=input_docs, known_filtered=known_filtered,
@@ -833,6 +1107,7 @@ class DynamicOverviewEngine:
             selected_docs=len({c.doc_id for c in selected}),
             dropped=input_count - known_filtered - len(selected),
             body_exact_checked=bool(terms), body_exact_dropped=body_exact_dropped,
+            body_fts_popped=body_fts_popped,
         )
         return selected
 
@@ -840,27 +1115,104 @@ class DynamicOverviewEngine:
         contexts = self.contexts
         total_chars = 0
         empty = 0
+        extended = 0
+        skeleton_only = 0
         for candidate in candidates:
             ctx = contexts[candidate.route_index]
-            text = ctx.read_lines(
-                candidate.rel_path, candidate.start_line, candidate.end_line
+            lines = ctx.all_lines(candidate.rel_path)
+            is_body = bool(candidate.chunk_id) or (
+                "body_semantic" in candidate.source_scores
+                or "body_fts" in candidate.source_scores
             )
-            if candidate.header_line and candidate.header_line < candidate.start_line:
-                header = ctx.read_lines(
-                    candidate.rel_path, candidate.header_line, candidate.header_line
+            if is_body:
+                # 正文块：先读 [start_line, end_line]，再做规则 3 语义闭合顺延
+                new_end = self._extend_to_semantic_close(
+                    lines, candidate.start_line, candidate.end_line,
+                    soft_limit=RESTORE_BODY_SOFT_LIMIT,
                 )
-                if header:
-                    text = header + "\n" + text
+                if new_end > candidate.end_line:
+                    extended += 1
+                    candidate.end_line = new_end
+                text = ctx.read_lines(
+                    candidate.rel_path, candidate.start_line, candidate.end_line
+                )
+                # 表头补齐：header_line < start_line 时补表头行 + 分隔线
+                if candidate.header_line and candidate.header_line < candidate.start_line:
+                    header = ctx.read_lines(
+                        candidate.rel_path, candidate.header_line, candidate.header_line
+                    )
+                    if header:
+                        sep = ctx.read_lines(
+                            candidate.rel_path,
+                            candidate.header_line + 1, candidate.header_line + 1,
+                        )
+                        if sep and _TABLE_SEP_LINE_RE.match(sep):
+                            text = f"{header}\n{sep}\n{text}"
+                        else:
+                            text = f"{header}\n{text}"
+                candidate.text = truncate(text, RESTORE_BODY_SOFT_LIMIT)
+            else:
+                # 整章盲截断拔除：纯结构路候选只取导言骨架（≤600 字符/前 25 行）
+                # 评估标题结构相关性，不再把长章节前 3000 字截断冒充正文块。
+                skeleton_only += 1
+                span = candidate.end_line - candidate.start_line + 1
+                if span > RESTORE_SKELETON_LINES:
+                    text = ctx.read_lines(
+                        candidate.rel_path,
+                        candidate.start_line,
+                        candidate.start_line + RESTORE_SKELETON_LINES - 1,
+                    )
+                else:
+                    text = ctx.read_lines(
+                        candidate.rel_path, candidate.start_line, candidate.end_line
+                    )
+                candidate.text = truncate(text, RESTORE_SKELETON_CHARS)
             if candidate.header_path:
-                text = f"{candidate.header_path}\n{text}"
-            candidate.text = truncate(text, 3000)
+                candidate.text = f"{candidate.header_path}\n{candidate.text}"
             total_chars += len(candidate.text)
             if not candidate.text:
                 empty += 1
         log_event(
             logger, "restore:done", candidates=len(candidates),
-            chars=total_chars, empty=empty, max_chars_per_candidate=3000,
+            chars=total_chars, empty=empty, extended=extended,
+            skeleton_only=skeleton_only,
+            body_soft_limit=RESTORE_BODY_SOFT_LIMIT,
+            skeleton_chars=RESTORE_SKELETON_CHARS,
         )
+
+    @staticmethod
+    def _extend_to_semantic_close(
+        lines: list[str], start_line: int, end_line: int, *, soft_limit: int
+    ) -> int:
+        """规则 3 自适应顺延：末行以未闭合引出词结尾或下一行是列表/表格行时，
+        向后逐行顺延直至列表/表格自然结束或正文总长达到软上限。"""
+        def line_at(no: int) -> str:
+            return lines[no - 1] if 1 <= no <= len(lines) else ""
+
+        last = (line_at(end_line) or "").strip()
+        nxt = line_at(end_line + 1)
+        if not last:
+            return end_line
+        trigger = (
+            bool(_OPEN_LEAD_RE.search(last))
+            or bool(_LEADING_LIST_RE.match(nxt))
+            or bool(_TABLE_LINE_RE.match(nxt))
+        )
+        if not trigger:
+            return end_line
+        cursor = end_line
+        total = sum(len(line_at(no)) for no in range(start_line, end_line + 1))
+        while cursor < len(lines):
+            follow = line_at(cursor + 1)
+            if not follow.strip():
+                break  # 空行 = 列表/表格自然结束
+            if not (_LEADING_LIST_RE.match(follow) or _TABLE_LINE_RE.match(follow)):
+                break
+            if total + len(follow) > soft_limit:
+                break
+            cursor += 1
+            total += len(follow)
+        return cursor
 
     @staticmethod
     def _fallback_score(candidate: Candidate) -> float:
@@ -1251,8 +1603,9 @@ class DynamicOverviewEngine:
         degraded_reason: str,
         a0_meta: dict,
         stats: dict,
+        recommendations: list[DocScore] | None = None,
     ) -> str:
-        def render(max_sections: int, include_tier2: bool) -> str:
+        def render(max_sections: int, include_tier2: bool, show_nav: bool = True) -> str:
             lines: list[str] = ["# 知识库动态检索概览"]
             lines.append(f'> 🎯 检索问题："{q_orig.primary_question}"')
             lines.append("> 🔄 迭代分母收敛记录：")
@@ -1273,6 +1626,18 @@ class DynamicOverviewEngine:
                 lines.append(f"> ⚠️ 降级说明：{degraded_reason}")
             if a0_meta.get("hit_quality"):
                 lines.append(f"> 🧠 A0 判定：{a0_meta['hit_quality']}")
+            # JEV-E2（T4）：顶部 ★ 优先精读建议（仅 attempt 1/2 渲染，attempt 3 极限压缩时不挤占）。
+            recs = recommendations or []
+            if show_nav and recs:
+                lines.append("")
+                lines.append("## ★ 优先精读建议（综合实体吻合度、限定条件与权威/台账角色生成）")
+                for rec_doc in recs:
+                    rec_parents = Path(rec_doc.rel_path).parts[:-1]
+                    rec_dir = f"({'/'.join(rec_parents)}/)" if rec_parents else "()"
+                    rec_badge = f" {rec_doc.jev_badge}" if rec_doc.jev_badge else ""
+                    lines.append(
+                        f"- [{rec_doc.doc_id}] {rec_doc.title}  {rec_dir}{rec_badge}"
+                    )
             lines.append("")
             lines.append(f"## 一、Tier 1 候选池（共 {len(tier1)} 篇，"
                          "按原始问题挑选 3–10 篇精读，不必全读）")
@@ -1284,9 +1649,12 @@ class DynamicOverviewEngine:
             for group_key in sorted(groups):
                 lines.append(f"├── [DIR] {group_key}/")
                 for doc in sorted(groups[group_key], key=lambda d: d.score, reverse=True):
+                    # JEV-E2（T4）：前缀一字不改，仅在右括号后追加行尾徽标
+                    # （_TIER1_DOC_RE 末尾无 $ 锚点，天然向后兼容）。
+                    badge_suffix = f" {doc.jev_badge}" if doc.jev_badge else ""
                     lines.append(
                         f"│   ├── [{doc.doc_id}] {doc.title}  "
-                        f"(命中 {doc.hit_count} 处 | 综合分: {doc.score:.3f})"
+                        f"(命中 {doc.hit_count} 处 | 综合分: {doc.score:.3f}){badge_suffix}"
                     )
                     shown = 0
                     for candidate in doc.candidates:
@@ -1313,9 +1681,11 @@ class DynamicOverviewEngine:
                     hit_lines = ", ".join(
                         f"L{c.start_line}-L{c.end_line}" for c in doc.candidates[:3]
                     )
+                    # JEV-E2（T4）：Tier 2 行同样只在右括号后追加徽标。
+                    badge_suffix = f" {doc.jev_badge}" if doc.jev_badge else ""
                     lines.append(
                         f"- [{doc.doc_id}] {doc.title} (score={doc.score:.3f}"
-                        + (f"; 命中 {hit_lines}" if hit_lines else "") + ")"
+                        + (f"; 命中 {hit_lines}" if hit_lines else "") + f"){badge_suffix}"
                     )
             lines.append("")
             lines.append("## 三、覆盖披露")
@@ -1350,7 +1720,7 @@ class DynamicOverviewEngine:
             )
             return "\n".join(lines)
 
-        text = render(6, True)
+        text = render(6, True, True)
         tokens = estimate_tokens(text)
         log_event(logger, "render:stage", attempt=1, max_sections=6,
                   include_tier2=True, chars=len(text), tokens=tokens,
@@ -1359,7 +1729,7 @@ class DynamicOverviewEngine:
             log_event(logger, "render:done", stage=1, chars=len(text), tokens=tokens,
                       text_preview=preview_text(text, 180))
             return text
-        text = render(3, False)
+        text = render(3, False, True)
         tokens = estimate_tokens(text)
         log_event(logger, "render:stage", attempt=2, max_sections=3,
                   include_tier2=False, chars=len(text), tokens=tokens,
@@ -1368,7 +1738,7 @@ class DynamicOverviewEngine:
             log_event(logger, "render:done", stage=2, chars=len(text), tokens=tokens,
                       text_preview=preview_text(text, 180))
             return text
-        text = render(1, False)
+        text = render(1, False, False)
         tokens = estimate_tokens(text)
         if tokens > OUTPUT_TOKEN_LIMIT:
             text += "\n\n> ⚠️ 输出已按 35K token 上限截断，Tier 2 未展开。"
@@ -1498,6 +1868,25 @@ class DynamicOverviewEngine:
                               error=degraded_reason, exc_info=True)
 
         tier1, tier2, tier_diag = self._apply_tiers(all_docs)
+        # JEV-E2（T4）：_apply_tiers 之后挂接灰区穿透晋升与 Tier1 优先精读导航。
+        # 即使 E2 开关关闭也执行纯本地零延迟的 doc_skeleton M1 角色先验挂载；
+        # JevUnavailable 在 apply_e2_navigation 内部有痕软降级，绝不令 resolve 失败。
+        recommendations: list[DocScore] = []
+        jev_e2_diag: dict = {}
+        try:
+            from .jev_nav import apply_e2_navigation
+
+            tier1, tier2, recommendations, jev_e2_diag = apply_e2_navigation(
+                q_orig, all_docs, tier1, tier2, contexts=self.contexts
+            )
+        except Exception as exc:  # noqa: BLE001 - E2 任何异常均不阻断主链路
+            from common.jev_client import build_degraded_diag
+
+            jev_e2_diag = build_degraded_diag("E2", exc)
+            log_event(
+                logger, "degraded:jev_e2", level=logging.WARNING,
+                error=f"{type(exc).__name__}: {exc}",
+            )
         candidate_pool = int(tier_diag.get("filtered", len(tier1) + len(tier2)))
         stats = {
             "doc_count": self.total_doc_count,
@@ -1527,6 +1916,7 @@ class DynamicOverviewEngine:
             q_orig, tier1, tier2, hop_records,
             degraded=degraded, degraded_reason=degraded_reason,
             a0_meta=a0_meta, stats=stats,
+            recommendations=recommendations,
         )
         log_event(
             logger, "resolve:rendered", merged_chars=len(merged),
@@ -1534,9 +1924,22 @@ class DynamicOverviewEngine:
             merged_preview=preview_text(merged, 200),
             tier1=stats["tier1"], tier2=stats["tier2"],
         )
+        from common.jev_client import build_degraded_diag, is_stage_enabled
+
+        if isinstance(a0_meta.get("jev"), dict):
+            jev_e1_diag: dict = dict(a0_meta["jev"])
+        elif a0_payload is None and is_stage_enabled("E1"):
+            jev_e1_diag = build_degraded_diag("E1", a0_error or "A0 failed")
+        elif not is_stage_enabled("E1"):
+            jev_e1_diag = {"skipped": True, "stage": "E1", "reason": "stage_disabled"}
+        else:
+            jev_e1_diag = {}
+
         diagnostics = {
             "hops": hop_diags,
             "tier": tier_diag,
+            "jev_e1": jev_e1_diag,
+            "jev_e2": jev_e2_diag,
             "a0": {
                 "quality": a0_meta.get("hit_quality"),
                 "gaps": a0_meta.get("unresolved_knowledge_gaps", []),
@@ -1547,6 +1950,7 @@ class DynamicOverviewEngine:
                 "elapsed_ms": a0_elapsed,
                 "evidence_tokens": evidence.tokens,
                 "evidence_docs": evidence.doc_ids[:10],
+                "jev": jev_e1_diag or None,
             },
             "selected_docs": [
                 {

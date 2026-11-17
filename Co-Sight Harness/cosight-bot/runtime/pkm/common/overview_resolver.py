@@ -1599,9 +1599,12 @@ def _overview_gate_check(
 # 命中文件反查 [f###] 接回 read-doc 正规链路。
 #
 # 接口设计原则（用户明确要求）：对外参数最少化——LLM 传错参数是调用失败的
-# 主要来源。scan 只暴露 --terms；检索语义固定为"子串 + 忽略大小写 + 多词 and
-# 共现"；所有保护性闸门（命中数/字符预算/片段数）均为内部常量。找别名等 OR
+# 主要来源。scan 只暴露 --terms 与 --offset；检索语义固定为"子串 + 忽略大小写 +
+# 多词 and 共现"；所有保护性闸门（命中数/字符预算/片段数）均为内部常量。找别名等 OR
 # 语义用单扫两次实现（SKILL 红线允许每问题 2 次）。
+# P0-1：截断不再静默——超限后继续消费 futures 只计数不入列（无额外扫描耗时），
+# 输出 hits_total/hits_shown/hits_remaining 与 --offset 翻页指针；0 命中给换词 hint。
+# 翻页确定性前提：文件枚举 sorted()（_read_indexed_files 返回 set，无序）。
 #
 # 设计要点：
 # - 文件枚举复用 overview_builder._read_indexed_files(skip_chapters_dirs=True)：
@@ -1728,6 +1731,8 @@ def cmd_scan(args, checked: list[dict]) -> int:
     }
 
     # 枚举所有 route 的可扫描文件（跳过 pre_dir 缺失的 route）
+    # sorted()：_read_indexed_files 返回 set（无序），翻页（--offset）要求
+    # 命中顺序跨次调用稳定，否则第二页会拿到另一批文件。
     tasks: list[tuple[str, dict]] = []  # (abs_path, route)
     files_scanned = 0
     skipped_routes = 0
@@ -1736,7 +1741,7 @@ def cmd_scan(args, checked: list[dict]) -> int:
         if not pre_dir.is_dir():
             skipped_routes += 1
             continue
-        for abs_p in _read_indexed_files(pre_dir, skip_chapters_dirs=True):
+        for abs_p in sorted(_read_indexed_files(pre_dir, skip_chapters_dirs=True)):
             tasks.append((abs_p, route))
             files_scanned += 1
 
@@ -1752,10 +1757,12 @@ def cmd_scan(args, checked: list[dict]) -> int:
         ))
         return 1
 
+    offset = max(0, getattr(args, "offset", 0) or 0)
     log_event(
         logger, "scan:start", agent=args.agent_id, terms=terms,
         terms_preview=preview_items(terms, 8), routes=len(routes),
         skipped_routes=skipped_routes, files_scanned=files_scanned,
+        offset=offset,
         max_hits=_SCAN_MAX_HITS, max_chars=_SCAN_MAX_CHARS,
         context=_SCAN_CONTEXT, snippets_per_file=_SCAN_SNIPPETS_PER_FILE,
         workers=_SCAN_WORKERS,
@@ -1763,23 +1770,32 @@ def cmd_scan(args, checked: list[dict]) -> int:
     hits: list[dict] = []
     truncated = False
     out_chars = 0
+    hits_total = 0          # 全库命中文件总数（截断后继续消费 futures 只计数）
+    skipped_by_offset = 0   # 被 --offset 跳过未展示的命中数
     with ThreadPoolExecutor(max_workers=_SCAN_WORKERS) as pool:
         futures = [
             pool.submit(_scan_one_file, abs_p, matchers)
             for abs_p, _route in tasks
         ]
         for (abs_p, route), fut in zip(tasks, futures):
-            if truncated:
-                break
             try:
                 file_hit = fut.result()
             except Exception:
                 continue
             if file_hit is None:
                 continue
+            # 命中即计数：即使已达展示上限也继续消费 future 计数——
+            # ThreadPoolExecutor 退出时本来就要等全部 future，继续计数零额外耗时，
+            # 但让 hits_total/翻页指针有真值（P0-1：截断不再静默丢命中）。
+            hits_total += 1
+            if hits_total - 1 < offset:
+                skipped_by_offset += 1
+                continue
+            if truncated:
+                continue
             if len(hits) >= _SCAN_MAX_HITS:
                 truncated = True
-                break
+                continue
             pre_dir = Path(route["pre_dir"])
             try:
                 rel_path = str(Path(abs_p).resolve().relative_to(pre_dir.resolve()))
@@ -1796,11 +1812,12 @@ def cmd_scan(args, checked: list[dict]) -> int:
             hit_chars = len(json.dumps(hit_entry, ensure_ascii=False))
             if out_chars + hit_chars > _SCAN_MAX_CHARS:
                 truncated = True
-                break
+                continue
             out_chars += hit_chars
             hits.append(hit_entry)
 
     duration_ms = int((time.monotonic() - started) * 1000)
+    hits_remaining = max(0, hits_total - offset - len(hits))
     result = {
         "ok": True,
         "query": {
@@ -1808,27 +1825,41 @@ def cmd_scan(args, checked: list[dict]) -> int:
             "mode": "and",
             "regex": False,
             "ignore_case": True,
+            "offset": offset,
         },
         "routes_scanned": len(routes) - skipped_routes,
         "skipped_routes": skipped_routes,
         "files_scanned": files_scanned,
         "files_with_hits": len(hits),
+        "hits_total": hits_total,
+        "hits_shown": len(hits),
+        "hits_remaining": hits_remaining,
+        "skipped_by_offset": skipped_by_offset,
         "truncated": truncated,
         "duration_ms": duration_ms,
         "hits": hits,
     }
     if truncated:
         result["suggestion"] = (
-            "输出已达上限：请加词缩小范围（多词必须同现）、或降低单次期望后重试"
+            f"仍有 {hits_remaining} 个命中文件未展示"
+            f"（本页 {len(hits)} 个，总命中 {hits_total} 个）："
+            f"可用 --offset {offset + len(hits)} 翻页查看后续，"
+            f"或加词缩小范围（多词必须同现）"
+        )
+    elif hits_total == 0:
+        result["suggestion"] = (
+            "0 命中：确认拼写后换机械变体重试（连写/分写、大小写、同义词）；"
+            "多词 and 可拆成两次单扫分别找别名"
         )
     logger.info(
         f"scan: agent_id={args.agent_id} terms={terms} mode=and "
-        f"files={files_scanned} hits={len(hits)} truncated={truncated} "
-        f"duration_ms={duration_ms}"
+        f"files={files_scanned} hits={len(hits)}/{hits_total} "
+        f"offset={offset} truncated={truncated} duration_ms={duration_ms}"
     )
     log_event(
         logger, "scan:done", agent=args.agent_id, terms=terms,
-        files=files_scanned, hits=len(hits), truncated=truncated,
+        files=files_scanned, hits=len(hits), hits_total=hits_total,
+        offset=offset, truncated=truncated,
         duration_ms=duration_ms, out_chars=out_chars,
         top_hits=preview_items([
             f"{h.get('rel_path')}#{h.get('node_id')}:{sum((h.get('term_hits') or {}).values())}"
@@ -1839,6 +1870,162 @@ def cmd_scan(args, checked: list[dict]) -> int:
     return 0
 
 # ======== [CoSight-END] feature: opt-big-overview W6 full-text scan ========
+
+
+# ======== feature: check-authority 权威候选确定性提取（P2-2） ========
+# 背景：Step 2.5 的权威候选清单原本交给 LLM 现场写 grep/awk 提取，模式写错（如把
+# 权威词钉死在标题开头）就静默漏检金标（评测实测：policy 在标题中部即漏）。本命令
+# 把"标题/路径含权威词"匹配固化为内置词表 + 确定性解析，输入是 resolve 返回的
+# merged_overview 文本（直接输出或 CC persisted-output spill 文件均可）。
+# 只做提取，不做"已读/未读"判定——已读状态只有 agent 自己掌握（read-doc 记录），
+# 由 agent 对照本清单逐条标记；未读条目未逐条给理由不得进入 Step 3。
+
+# （T2 升级）：核心提取逻辑抽离至 runtime/common/authority_extractor.py
+# （中英文双语词表 + 行尾徽标 + doc_skeleton 标量列三源合一），本文件只保留
+# 输入读取与可选的标量列兜底查询装配，严禁触碰本块之外的 subparsers 区域。
+
+
+def _doc_skeleton_role_lookup(routes):
+    """来源 C 兜底查询器：对路由 doc_skeleton.lance 的 jev_* 标量列做批量查询。
+
+    纯 best-effort：路由无 doc_skeleton.lance / 缺 jev_doc_type 列 / 打开失败
+    一律返回 None，check-authority 退回标题词与徽标两源，绝不因索引缺失或
+    旧版本索引而阻断纯文本解析主路径。同时通过 _build_global_node_index 将
+    merged_overview 中的全局 ID（f<prefix><suffix>）精确反查回对应路由的本地
+    doc_key（F### 或 rel_path），并以调用方传入的 gid 作为返回字典键。
+    """
+    route_entries = []
+    table_by_lan = {}
+    for route in routes:
+        lan_dir = Path(route.get("lan_dir") or "")
+        if not (lan_dir / "doc_skeleton.lance").exists():
+            continue
+        try:
+            import lancedb
+
+            table = lancedb.connect(str(lan_dir)).open_table("doc_skeleton")
+            if "jev_doc_type" not in {f.name for f in table.schema}:
+                continue
+            lan_key = str(lan_dir.resolve())
+            route_entries.append((lan_key, table))
+            table_by_lan.setdefault(lan_key, table)
+        except Exception:
+            continue
+    if not route_entries:
+        return None
+
+    gid_to_target = {}
+    try:
+        global_index, per_route_remap = _build_global_node_index(routes)
+        for route, text_remap in per_route_remap:
+            lan_key = str(Path(route.get("lan_dir") or "").resolve())
+            if lan_key not in table_by_lan:
+                continue
+            for local_id, global_id in text_remap.items():
+                meta = global_index.get(global_id) or {}
+                rel_path = str(meta.get("rel_path") or "")
+                rel_norm = "/".join(Path(rel_path).parts) if rel_path else ""
+                cands = tuple(dict.fromkeys(
+                    k for k in (
+                        local_id, local_id.upper(), local_id.lower(),
+                        rel_norm, rel_path,
+                    ) if k
+                ))
+                gid_to_target.setdefault(global_id.lower(), (lan_key, cands))
+    except Exception:
+        gid_to_target = {}
+
+    def lookup(doc_ids):
+        roles = {}
+        per_lan_queries = {lan_key: {} for lan_key, _ in route_entries}
+        for doc_id in doc_ids:
+            s_id = str(doc_id)
+            target = gid_to_target.get(s_id.lower())
+            if target is not None:
+                target_lan, cands = target
+                qmap = per_lan_queries.get(target_lan)
+                if qmap is not None:
+                    for cand in cands:
+                        qmap.setdefault(cand, []).append(s_id)
+            else:
+                for cand in dict.fromkeys((s_id, s_id.upper(), s_id.lower())):
+                    for qmap in per_lan_queries.values():
+                        qmap.setdefault(cand, []).append(s_id)
+
+        for lan_key, table in route_entries:
+            qmap = per_lan_queries.get(lan_key) or {}
+            if not qmap:
+                continue
+            keys = ", ".join("'" + k.replace("'", "''") + "'" for k in sorted(qmap))
+            try:
+                arrow = table.to_lance().to_table(
+                    filter=f"doc_key IN ({keys})",
+                    columns=[
+                        "doc_key", "jev_doc_type", "jev_doc_type_conf",
+                        "jev_is_registry",
+                    ],
+                )
+                for row in arrow.to_pylist():
+                    for orig_gid in qmap.get(str(row["doc_key"]), ()):
+                        roles.setdefault(orig_gid, row)
+            except Exception:
+                continue
+        return roles
+
+    return lookup
+
+
+def cmd_check_authority(args, route_provider=None) -> int:
+    """check-authority 子命令：三源合一确定性提取权威候选（T2 升级）。
+
+    输入：--file <path>（CC persisted-output spill 文件等）或缺省读 stdin。
+    三源：A 中英文标题词命中 / B 行尾 [权威角色:...] 徽标命中 / C 可选
+    doc_skeleton 标量列兜底（route_provider 仅供单测注入；生产路径走
+    collect_routes 解析，任一失败静默退回 A/B 两源）。
+    输出：authority_candidates 清单（node_id/tier/score/title/path/matched_terms，
+    新增可选 jev_doc_type/jev_is_registry/match_sources/authority_role），
+    agent 对照自己的 read-doc 记录逐条标记已读/未读后进入 Step 3。
+    """
+    text = ""
+    file_path = getattr(args, "file", None)
+    if file_path:
+        try:
+            text = Path(file_path).read_text(encoding="utf-8", errors="replace")
+        except OSError as exc:
+            print(json.dumps(
+                {"ok": False, "error": f"cannot read file: {exc}"},
+                ensure_ascii=False,
+            ))
+            return 1
+    else:
+        import sys
+        text = sys.stdin.read()
+
+    from common.authority_extractor import extract_authority_candidates
+
+    skeleton_lookup = None
+    try:
+        routes = route_provider() if route_provider is not None else collect_routes(
+            args.agent_id, None
+        )
+        skeleton_lookup = _doc_skeleton_role_lookup(routes)
+    except Exception:
+        skeleton_lookup = None
+
+    result = extract_authority_candidates(text, skeleton_lookup=skeleton_lookup)
+    if not result.get("ok"):
+        print(json.dumps(result, ensure_ascii=False))
+        return 1
+
+    log_event(
+        logger, "check-authority:done", agent=args.agent_id,
+        file=file_path or "(stdin)", total=result["authority_total"],
+        node_ids=preview_items([c["node_id"] for c in result["authority_candidates"]], 10),
+    )
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    return 0
+
+# ======== [CoSight-END] feature: check-authority ========
 
 
 def _routes_payload(checked: list[dict]) -> list[dict]:
@@ -2142,9 +2329,9 @@ def main() -> int:
     )
 
     # scan 子命令：pre-processed 层受控全文扫描（W6 正规化"模型自发扫盘"野路子）。
-    # 对外只暴露 --terms（参数最少化原则）：检索语义固定为 子串+忽略大小写+多词
+    # 对外暴露 --terms 与 --offset（截断翻页指针）：检索语义固定为 子串+忽略大小写+多词
     # and 共现；命中数/字符预算/片段数等保护性闸门均为内部常量（见 W6 段）。
-    # 用法：python overview_resolver.py --agent-id <id> scan --terms "甲,乙"
+    # 用法：python overview_resolver.py --agent-id <id> scan --terms "甲,乙" [--offset N]
     scan_p = subparsers.add_parser(
         "scan",
         help="pre-processed 层全文扫描（多词 and 共现，命中带 f### 接 read-doc）",
@@ -2153,6 +2340,27 @@ def main() -> int:
         "--terms",
         required=True,
         help="逗号分隔检索词。多词必须同文件共现（and）；找别名请分两次单扫",
+    )
+    scan_p.add_argument(
+        "--offset",
+        type=int,
+        default=0,
+        help="跳过的命中文件数（翻页）：截断提示会给出下一次应传的值",
+    )
+
+    # check-authority 子命令：从 resolve 的 merged_overview 文本确定性提取
+    # 权威词候选（manual/handbook/policy/PRD/final/approval/runbook 等词表内置），
+    # 替代 LLM 现场写 grep 的漏检风险。用法：
+    #   python overview_resolver.py --agent-id <id> check-authority --file <spill文件>
+    #   echo "$OVERVIEW" | python overview_resolver.py --agent-id <id> check-authority
+    ca_p = subparsers.add_parser(
+        "check-authority",
+        help="从 merged_overview 提取权威候选清单（标题/路径含权威词）",
+    )
+    ca_p.add_argument(
+        "--file",
+        default=None,
+        help="merged_overview 文本文件路径（CC persisted-output spill 等）；缺省读 stdin",
     )
 
     # node-id-to-abs-path 子命令：把节点 ID 解析为 abs_path + kind 元数据
@@ -2193,6 +2401,61 @@ def main() -> int:
         help="强制走动态路径（Phase 0/评测/排障）；也可用 COSIGHTBOT_FORCE_DYNAMIC=1",
     )
     resolve_p.add_argument("--debug", action="store_true", help="diagnostics 输出逐篇候选")
+
+    # filter-hits 子命令（T5/JEV-A1）：scan 候选批量 Noul 口径预筛（只读）。
+    # 用法：python overview_resolver.py --agent-id <id> filter-hits \
+    #   --question "..." --include-rule "..." [--exclude-rule "..."] --scan-json /tmp/scan_all.json
+    # 核心实现位于 runtime/common/jev_filter_hits.py（此处仅注册参数与转发）。
+    fh_p = subparsers.add_parser(
+        "filter-hits",
+        help="scan 候选批量 JEV Noul 口径预筛（confirmed/grey/noise 三桶）",
+    )
+    fh_p.add_argument("--question", default="", help="原始用户问题（必填）")
+    fh_p.add_argument("--include-rule", default="", help="纳入统计口径的判据说明（必填）")
+    fh_p.add_argument("--exclude-rule", default="", help="排除口径判据；允许留空")
+    fh_p.add_argument("--scan-json", default="", help="scan 输出 JSON/JSONL 文件路径（必填，支持多页合并）")
+
+    # check-conflict 子命令（T6 JEV-A2）：多篇已读文档冲突矩阵与 R11 主来源裁决。
+    # 只读（S-01）：仅读 pre-processed 原文与内网 JEV 判定；核心实现位于
+    # runtime/common/jev_check_conflict.py，此处仅注册参数（冻结签名见
+    # design/cc/jev-integration/tasks/README.md 第 3.4 节）。
+    conflict_p = subparsers.add_parser(
+        "check-conflict",
+        help="多文档冲突维度矩阵与 R11 主来源裁决（JEV-A2，只读）",
+    )
+    conflict_p.add_argument(
+        "--question-json",
+        required=True,
+        help="内联 JSON 或本地 JSON 文件路径（含 question 必填与可选 dimensions）",
+    )
+    conflict_p.add_argument(
+        "--doc-ids",
+        required=True,
+        help="逗号分隔节点 ID（2–15 篇，大小写不敏感，如 f014,f052）",
+    )
+
+    # verify-answer 子命令（T7 JEV-A3 答案出口双向核验与字面量闸门；只读，核心实现
+    # 位于 runtime/common/jev_verify_answer.py）：
+    #   python overview_resolver.py --agent-id <id> verify-answer \
+    #     --question-file /tmp/q.txt --draft-file /tmp/draft.md \
+    #     --read-docs f003,f018,f042 [--elapsed-seconds 1420]
+    va_p = subparsers.add_parser(
+        "verify-answer",
+        help="Step 3 答案出口核验：预算短路/S-04引文/字面量快检 + JEV 漏点/错否/字面双向核验",
+    )
+    va_p.add_argument("--question-file", required=True, help="问题文本文件路径（UTF-8）")
+    va_p.add_argument("--draft-file", required=True, help="待输出答案草稿文件路径（UTF-8）")
+    va_p.add_argument(
+        "--read-docs",
+        required=True,
+        help="本轮已成功 read-doc 的节点 ID 列表（逗号分隔，兼容大小写；纯 no_documents 场景可传空串）",
+    )
+    va_p.add_argument(
+        "--elapsed-seconds",
+        type=float,
+        default=0.0,
+        help="当前单题已消耗墙钟秒数（>= 2880s 时零延迟短路放行交卷）",
+    )
 
     args = parser.parse_args()
 
@@ -2238,6 +2501,16 @@ def main() -> int:
     if args.command == "scan":
         return cmd_scan(args, checked)
 
+    # ===== check-authority 子命令（权威候选确定性提取；纯文本解析，无环境依赖） =====
+    if args.command == "check-authority":
+        return cmd_check_authority(args)
+
+    # ===== check-conflict 子命令（T6 JEV-A2；薄转发至 runtime/common/jev_check_conflict.py） =====
+    if args.command == "check-conflict":
+        from common.jev_check_conflict import cmd_check_conflict
+
+        return cmd_check_conflict(args, checked)
+
     # ===== node-id-to-abs-path 子命令（节点元数据轻量查询） =====
     # 用法：python overview_resolver.py --agent-id <id> node-id-to-abs-path --node-id f001
     # 返回节点的 abs_path + kind 等元数据，**不读文件正文**，
@@ -2254,6 +2527,19 @@ def main() -> int:
     # ===== resolve 子命令（动态 overview；大库走 Tier 1/2） =====
     if args.command == "resolve":
         return cmd_resolve(args, checked, session_key_hash)
+
+    # ===== filter-hits 子命令（T5/JEV-A1 scan 候选批量 Noul 口径预筛；只读） =====
+    if args.command == "filter-hits":
+        from common.jev_filter_hits import cmd_filter_hits
+        return cmd_filter_hits(args, checked)
+
+    # ===== verify-answer 子命令（T7 JEV-A3 答案出口双向核验与字面量闸门；只读） =====
+    if args.command == "verify-answer":
+        try:
+            from common.jev_verify_answer import run_cli as _verify_answer_cli
+        except ImportError:  # 直接以脚本方式调用时的兜底
+            from jev_verify_answer import run_cli as _verify_answer_cli  # type: ignore[no-redef]
+        return _verify_answer_cli(args, checked)
 
     not_ready = [r for r in checked if not r["ready"]]
 

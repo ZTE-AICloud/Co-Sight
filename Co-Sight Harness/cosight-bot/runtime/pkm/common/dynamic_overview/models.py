@@ -88,6 +88,15 @@ class DocScore:
     structural_first_hits: int = 0
     coverage_terms: list[str] = field(default_factory=list)
     char_count: int = 0
+    # JEV-E2 可选字段（T4）：全部带默认值，100% 向后兼容既有构造点。
+    jev_score: float | None = None          # 综合优先分 J(d)
+    jev_target_match: float | None = None   # noul：实体主体吻合概率
+    jev_constraint_fit: float | None = None # score 3 档期望 E[fit]（满分 2.0）
+    jev_doc_role: str = ""                  # "normative"|"factual_record"|"tentative"|"other"|""
+    jev_doc_type: str = ""                  # doc_skeleton M1 细粒度类型（如 "runbook_sop"）
+    jev_is_registry: bool = False           # doc_skeleton M1 登记表标记
+    jev_promoted: bool = False              # 是否由池外灰区晋升入 Tier 1
+    jev_badge: str = ""                     # 预格式化行尾徽标
 
     @property
     def primary_candidate(self) -> Candidate | None:
