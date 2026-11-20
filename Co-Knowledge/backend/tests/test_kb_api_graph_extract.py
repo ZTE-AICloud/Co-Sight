@@ -68,18 +68,32 @@ def test_graph_progress_writes_are_scoped_to_graph_kbases():
     assert 'category = 10' in service.UPDATE_FAIL_REASON_SQL
 
 
-def test_extract_task_table_is_singular():
-    """表是 ``graph_extract_task``（单数），与 ``graph_import_tasks``（复数）不是一套。"""
+def test_extract_status_maps_to_unified_table():
+    """领域状态 ``INIT/RUNNING/SUCCESS/FAIL`` ↔ 统一表状态。"""
     from graph.repository import graph_extract_store as store
 
-    assert store.TABLE == 'graph_extract_task'
+    assert store._TO_UNIFIED == {
+        'INIT': 'PENDING', 'RUNNING': 'RUNNING',
+        'SUCCESS': 'COMPLETED', 'FAIL': 'FAILED',
+    }
+    assert store._TO_DOMAIN['COMPLETED'] == 'SUCCESS'
+    assert store._TO_DOMAIN['FAILED'] == 'FAIL'
 
 
-def test_store_columns_exist_in_init_schema():
-    """``store.COLUMNS`` 的每一列都必须出现在 init schema 的同名建表块里。
+def test_extract_task_uses_unified_table():
+    """三类任务统一写 ``task_center.task``；``graph_extract_task`` 只是兼容视图。"""
+    from graph.repository import graph_extract_store as store
+
+    assert store.TABLE == 'task_center.task'
+    assert store.TASK_TYPE == 'GRAPH_EXTRACT'
+    assert store.LANE == 'graph_extract'
+
+
+def test_store_columns_exist_in_unified_schema():
+    """抽图需要的列必须出现在统一任务表的建表块里。
 
     回归：代码里的 ``start_time/finish_time`` 改成 ``started_at/finished_at`` 时，
-    库表与 ``deploy/init/pg/00-schema.sql`` 必须同步。
+    库表与 ``deploy/init/pg/10-unify-task-tables.sql`` 必须同步。
     后果不是「慢」而是**任务行永远停在 INIT**：``update_task_status`` 第一次写
     ``started_at`` 就 UndefinedColumn，异常处理里写 ``finished_at`` 再炸一次，
     失败态也落不了库。前端只能看到「已创建」。
@@ -90,13 +104,22 @@ def test_store_columns_exist_in_init_schema():
     from graph.repository import graph_extract_store as store
 
     schema_sql = (Path(__file__).resolve().parents[2]
-                  / 'deploy' / 'init' / 'pg' / '00-schema.sql')
+                  / 'deploy' / 'init' / 'pg' / '10-unify-task-tables.sql')
     text = schema_sql.read_text(encoding='utf-8')
     block = re.search(
-        r'CREATE TABLE (?:IF NOT EXISTS )?public\.graph_extract_task \((.*?)\n\);',
-        text, re.S)
-    assert block, 'graph_extract_task missing from the init schema snapshot'
+        r'CREATE TABLE IF NOT EXISTS task_center\.task \((.*?)\n\);', text, re.S)
+    assert block, 'task table missing from the unification migration'
     columns = set(re.findall(r'^\s*([a-z_][a-z0-9_]*)\s+\w', block.group(1), re.M))
-    assert set(store.COLUMNS) <= columns, sorted(set(store.COLUMNS) - columns)
-    # 这两列是本次回归的当事人：写死了才拦得住下次再顺手改名
-    assert 'start_time' in store.COLUMNS and 'finish_time' in store.COLUMNS
+    assert store.TABLE == 'task_center.task'
+    assert {
+        'id', 'kbase_id', 'payload', 'extra', 'status', 'progress',
+        'error_message', 'created_at', 'updated_at',
+        'start_time', 'finish_time',
+    } <= columns
+    # 私有属性不进表结构，只放 JSONB。
+    assert {
+        'file_id', 'schema_id', 'operator_id', 'file_count', 'result_file_path',
+    }.isdisjoint(columns)
+    assert "payload ->> 'schemaId'" in text
+    assert "extra ->> 'resultFilePath'" in text
+    assert 'CREATE OR REPLACE VIEW public.graph_extract_task' in text

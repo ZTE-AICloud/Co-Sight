@@ -1,14 +1,17 @@
 /**
  * 左栏导航新增词条。
  *
- * ⛔ 只放**新出现的**菜单文案：一级「知识库」「知识检索」「自定义算子」与二级
- * 「文档知识库」「图谱知识库」都复用页面里已有的键（见 `nav/menu.config.js`）。
+ * ⛔ 只放**新出现的**菜单文案：「知识库」「知识检索」「自定义算子」与
+ * 「文档知识库」「图谱知识库」等入口都复用页面里已有的键（见 `nav/menu.config.js`）。
  * 也不复用 `zh.js` 的 `aiMenu` 段——那是旧门户的一级菜单（聊天/应用/数据集/…），
  * 语义与新结构不匹配，且全仓零引用。
  */
 export default {
+  knowledgeApp: '知识应用',
+  capabilityConfig: '能力配置',
   chat: '对话测试',
   modelManagement: '模型管理',
+  taskManagement: '任务管理',
   remoteAccess: '远程接入',
   remoteAccessGuide: '接入方法',
   remoteAccessKeys: '密钥管理',

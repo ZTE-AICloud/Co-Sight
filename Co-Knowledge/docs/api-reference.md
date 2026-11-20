@@ -9,7 +9,7 @@
 > `backend/tests/test_rkb_openapi_snapshot.py`）；Agent 单独见
 > `contracts/openapi/agent-api.yaml`。
 
-> **契约（2.3.0）**：不使用 `{code,bo,other}` 信封；成功体是纯 JSON，分页为
+> **契约（2.4.0）**：不使用 `{code,bo,other}` 信封；成功体是纯 JSON，分页为
 > `{items,total,page,pageSize}`，错误是真实状态码 + RFC 9457 `application/problem+json`。
 > 图谱检索 `/retrieval/graph`、Agent REST `/agent/*` 与编排问答 `/query` 同样走这套契约；
 > `/query` 的流式模式用标准 SSE 具名事件，`/mcp` 保持 MCP 协议。
@@ -1013,3 +1013,33 @@ Cookie：`ragstudio_session`，`HttpOnly; Path=/; SameSite=Lax; Max-Age=<ttl>[; 
 `/auth/login` 与 `/auth/password` 的请求体上限 8KB（nginx `/auth/` 8k + 后端检查），
 超出返回 `413 payload_too_large`。
 对外部脚本，登录后拿不到 token（HttpOnly）；机器访问请使用 Agent API Key。
+
+## 12. 统一任务管理（`/tasks`）
+
+读写 `task_center.task`，覆盖文件导入、图谱抽图、图谱导入三类任务。除登录态外
+无额外权限位；`AUTH_MODE=local` 时需要管理员会话。
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| GET | `/tasks` | 分页列表。过滤：`task_type` / `status`（逗号分隔多值）/ `lane` / `kbase_id` / `keyword`（任务 ID、文件名称或知识库名称/ID）；`page`、`size`（≤200）。列表项含 `fileName` / `kbaseName` |
+| GET | `/tasks/groups` | 按知识库聚合的树表根行；`keyword` 匹配知识库名称/ID；返回 `kbaseId`、`kbaseName`、`total`、`byStatus`、`latestCreatedAt`，分页体额外带 `taskTotal` |
+| GET | `/tasks/stats` | 全局统计：`total`、`queueDepth`、`oldestPendingAgeSeconds`、`overdueRunning`、`byStatus`、`byLane`、`byType` |
+| GET | `/tasks/{task_id}` | 任务详情，含 `payload` / `extra` / `attempts`（每次执行一行） |
+| POST | `/tasks/{task_id}/cancel` | 取消 `PENDING`/`RETRY`（立即 `CANCELLED`）或 `RUNNING`（打取消标记，runner 协作中止）；终态 → `409 task_not_cancellable` |
+| POST | `/tasks/{task_id}/retry` | 把 `FAILED`/`CANCELLED` 重置为 `PENDING`（`attempt=1`）。`COMPLETED_WITH_ERRORS` 不支持；图谱任务输入临时文件已清理 → `409 task_input_expired` |
+| PATCH | `/tasks/{task_id}` | `{"priority": -1000..1000}`；仅 `PENDING`/`RETRY`，越大越先 |
+
+状态：`PENDING` / `RUNNING` / `RETRY` / `COMPLETED` / `COMPLETED_WITH_ERRORS` /
+`FAILED` / `CANCELLED`。列表项字段为 camelCase（`taskType`、`maxAttempts`、
+`errorMessage`、`createdAt`、`cancelRequested` 等）；分页体为
+`{items, total, page, pageSize}`。
+
+取消排队中的任务会同步领域状态：文件行落失败原因 `Task cancelled`，图谱库落
+解析/入库失败。取消 `RUNNING` 任务返回 `200`，响应里 `status` 可能仍是
+`RUNNING`、`cancelRequested=true`；worker 在下一个安全点（文件 handler/向量化
+批次、图谱阶段/导入批次）中止后落 `CANCELLED`。取消是尽力而为：runner 若已越过
+最后一个安全点，任务可能正常完成，客户端应以最终状态为准。
+
+常见错误码：`task_not_found`(404)、`task_not_cancellable`(409)、
+`task_not_retryable`(409)、`task_input_expired`(409)、`task_not_queued`(409)、
+`validation_failed`(422)、`task_queue_full`(503，建库/导入入口的准入拒绝)。

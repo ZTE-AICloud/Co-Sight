@@ -13,6 +13,8 @@ from typing import Optional
 
 from infrastructure.db import identifiers
 from infrastructure.storage import kb_storage as storage
+from infrastructure.tasks import cancellation
+from infrastructure.tasks.cancellation import TaskCancelled
 from knowledge_base.task import operator_runtime
 from model import gateway as model_gateway
 from knowledge_base.repository import chunk as chunk_store, directory as directory_store, node_relation as node_relation_store
@@ -188,6 +190,7 @@ class FileEmbeddingHandler:
 
             results = list(split_result.get('results') or [])
             for start in range(0, len(results), EMBEDDING_BATCH_SIZE):
+                cancellation.raise_if_cancelled()
                 batch = results[start:start + EMBEDDING_BATCH_SIZE]
                 texts = [node.get('text') for node in batch]
                 vectors = _embed(texts, file_handle.get('modelName'))
@@ -288,6 +291,8 @@ def _fail_reason(error: Exception) -> str:
     """
     from shared.errors.api import KbApiError
 
+    if isinstance(error, TaskCancelled):
+        return 'Task cancelled'
     if isinstance(error, KbApiError):
         return error.key
     return 'RetCode.database.updateOrInsertException'

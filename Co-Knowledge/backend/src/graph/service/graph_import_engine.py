@@ -33,6 +33,8 @@ from graph.repository import graph_pg
 from graph.service import graph_common
 from graph.repository import graph_import_store as store
 from infrastructure.logging.logutil import log
+from infrastructure.tasks import cancellation
+from infrastructure.tasks.cancellation import TaskCancelled
 
 # ``GraphDataImportServiceImpl`` 的常量
 VERIFY_BATCH_SIZE = 1000
@@ -136,7 +138,7 @@ def _settle_kbase(kb_index_name: str, status: str,
                   reason: Optional[tuple[str, str]] = None) -> None:
     """把导入任务的终态回写到 ``kb_kbase``。
 
-    只更新 ``graph_import_task`` 而不更新库状态，导入完成后库状态会停在 0（已创建）。
+    只更新 ``task``（``GRAPH_IMPORT``）而不更新库状态，导入完成后库状态会停在 0（已创建）。
     图谱列表因此把“已就绪”显示成“已创建”，用户无法从状态判断导入是否结束。
     """
     from knowledge_base.service import kbase_service as kbase_store
@@ -150,17 +152,24 @@ def _settle_kbase(kb_index_name: str, status: str,
 
 
 def import_from_zip(kb_index_name: str, schema_id: str, zip_path: str,
-                    kbase_schema_obj: Optional[dict] = None) -> str:
+                    kbase_schema_obj: Optional[dict] = None,
+                    task_id: Optional[str] = None) -> str:
     """``importFromZip``。返回 taskId。
 
     **无论成败，返回前任务必为终态**（``COMPLETED`` / ``COMPLETED_WITH_ERRORS`` /
     ``FAILED``）—— 调用方的轮询是无上限的 ``while(true)``，留一个非终态就是死循环。
+
+    ``task_id`` 由 DB 队列调用方传入时，任务行已经由 API 建好（``lane=graph_import``）；
+    不传时（图谱抽图的导入阶段）自建一条**内部**进度行，``lane=graph_import_internal``，
+    避免被 ``graph_import`` 车道的 worker 当成可执行队列任务认领。
     """
     db_name = to_graph_db_name(kb_index_name)
-    task_id = uuid.uuid4().hex
-    # ⚠️ 任务行的 kb_id 保持调用方传来的 ``graph_<kbId>`` ——
-    # deleteKbase 是按这个形状删任务行的
-    store.create_task(task_id, kb_index_name, schema_id)
+    if task_id is None:
+        task_id = uuid.uuid4().hex
+        # ⚠️ 任务行的 kb_id 保持调用方传来的 ``graph_<kbId>`` ——
+        # deleteKbase 是按这个形状删任务行的
+        store.create_task(task_id, kb_index_name, schema_id,
+                          lane='graph_import_internal', max_attempts=1)
 
     entity, edge = Counters(), Counters()
     try:
@@ -173,8 +182,11 @@ def import_from_zip(kb_index_name: str, schema_id: str, zip_path: str,
 
         schema = load_schema(schema_id, to_kbase_id(kb_index_name), kbase_schema_obj)
         _upsert_knowledge_graph_info(db_name, schema_id, schema)
+        cancellation.raise_if_cancelled()
         imported = import_entities(client, zip_path, schema, entity)
+        cancellation.raise_if_cancelled()
         imported_edges = import_edges(client, zip_path, schema, imported, edge)
+        cancellation.raise_if_cancelled()
 
         clean = entity.failed == 0 and edge.failed == 0
 
@@ -186,6 +198,7 @@ def import_from_zip(kb_index_name: str, schema_id: str, zip_path: str,
 
         def _on_progress(percent: int) -> None:
             # 5% 一写：整段向量化只在 100 写一次的话，前端永远停在「已创建」。
+            cancellation.raise_if_cancelled()
             store.update_progress(task_id, percent, entity, edge)
 
         try:
@@ -194,6 +207,8 @@ def import_from_zip(kb_index_name: str, schema_id: str, zip_path: str,
             index_stats = build_pg_index(kb_index_name, zip_path, imported, imported_edges,
                                          bulk=True, progress_cb=_on_progress)
             log.info('[graph-import] task=%s index: %s', task_id, index_stats)
+        except TaskCancelled:
+            raise
         except Exception as error:                                 # noqa: BLE001
             log.exception('[graph-import] task=%s index build failed', task_id)
             index_error = store.abbrev(f'index build failed: {error}')
@@ -236,6 +251,12 @@ def import_from_zip(kb_index_name: str, schema_id: str, zip_path: str,
                 kb_index_name, '104',
                 ('知识图谱导入完成但有失败记录：' + (message or ''),
                  'Knowledge graph import completed with errors: ' + (message or '')))
+    except TaskCancelled:
+        log.info('[graph-import] task=%s cancelled', task_id)
+        store.cancel_task(task_id)
+        _settle_kbase(kb_index_name, '104',
+                      ('知识图谱导入已取消', 'Knowledge graph import cancelled'))
+        return task_id
     except Exception as error:                                     # noqa: BLE001
         log.exception('[graph-import] task=%s failed', task_id)
         store.update_progress(task_id, 0, entity, edge)
@@ -264,6 +285,7 @@ def import_entities(client, zip_path: str, schema: dict, counters: Counters) -> 
     def flush() -> None:
         if not pending:
             return
+        cancellation.raise_if_cancelled()
         batch = pending[:]
         pending.clear()
         try:
@@ -337,6 +359,7 @@ def import_edges(client, zip_path: str, schema: dict, imported: dict,
     def flush() -> None:
         if not pending:
             return
+        cancellation.raise_if_cancelled()
         batch = pending[:]
         pending.clear()
         try:

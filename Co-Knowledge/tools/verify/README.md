@@ -58,6 +58,15 @@ token 词汇（`--ux-*`/`--ds-*`）或在组件内重定义 `--rs-*`**。全局�
 | `verify-agent-admin.py` | Key 管理接口：建 → 用 → 停用 → 启用 → 编辑 → 删除；含过期/未知 scope 负例 | `requests` |
 | `bootstrap-agent-key.sh` | 用容器内 CLI 创建一个测试 Key 并导出环境变量 | 运行中的栈 |
 
+## 任务队列
+
+| 脚本 | 验的是 | 依赖 |
+|---|---|---|
+| `verify-task-queue-e2e.py` | 任务持久化：`task_center.task` 队列列/兼容视图、LISTEN/NOTIFY、真实文件导入任务行、图谱抽图车道认领、`failed_tasks` 查库 | 容器内 Python + `requests` + 运行中的栈 |
+| `verify-real-task-chain-e2e.py` | 真实任务链：文件导入成功/失败、图谱抽图（算子 -6）、导出→导入图谱库 | 容器内 Python + `requests` + 真实模型端点 |
+| `verify-task-management.py` | 统一任务管理面：列表/统计/详情、过滤与错误、取消/重试（含领域回调）、优先级、尝试历史、合成任务清理 | 容器内 Python + `requests` + 运行中的栈 |
+| `verify-task-running-cancel.py` | RUNNING 任务协作式取消：抽图进入 RUNNING → 取消 → 任务/尝试历史落 `CANCELLED`、图谱库落解析失败 | 容器内 Python + `requests` + 真实模型端点 |
+
 ## 图谱
 
 | 脚本 | 验的是 | 依赖 |

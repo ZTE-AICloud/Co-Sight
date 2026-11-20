@@ -99,6 +99,7 @@ export const EP_STUB_COMPONENTS = Object.fromEntries(
     'ElOption',
     'ElDialog',
     'ElDrawer',
+    'ElProgress',
     'ElTree',
     'ElDatePicker',
     'ElCascader'
@@ -173,6 +174,7 @@ export const DEFAULT_ROUTES = [
   { path: '/chat', name: 'chat', component: BlankRoute },
   { path: '/operators', name: 'operators', component: BlankRoute },
   { path: '/models', name: 'models', component: BlankRoute },
+  { path: '/tasks', name: 'tasks', component: BlankRoute },
   { path: '/access', name: 'access', component: BlankRoute },
   { path: '/keys', name: 'keys', component: BlankRoute },
   { path: '/approve', component: BlankRoute },

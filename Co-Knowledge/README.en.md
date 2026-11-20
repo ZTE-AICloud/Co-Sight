@@ -239,7 +239,7 @@ From there: **create a knowledge base → import documents → retrieve / orches
 ### HTTP API + SSE
 
 - **One prefix only**: `/api/co-knowledge/v1`.
-- Main REST contract **OpenAPI 2.3.0**: **65 paths / 93 operations** (including `/health`), at [`contracts/openapi/rkb-api.yaml`](contracts/openapi/rkb-api.yaml).
+- Main REST contract **OpenAPI 2.4.0**: **71 paths / 100 operations** (including `/health`), at [`contracts/openapi/rkb-api.yaml`](contracts/openapi/rkb-api.yaml).
 - Agent REST contract **OpenAPI 1.4.0**: **6 paths / 6 operations**, at [`contracts/openapi/agent-api.yaml`](contracts/openapi/agent-api.yaml).
 - Success responses return the resource itself; pagination is `{items,total,page,pageSize}`; errors use RFC 9457 `application/problem+json`.
 - Q&A via `POST /query` uses standard named SSE events with buffering disabled for that nginx location.
@@ -277,7 +277,7 @@ API keys are created under **API Keys**; each key can be restricted by scope (`k
 |---|---|
 | Backend tests | **2,417 passed** / 7 deselected (~58s) |
 | Frontend tests | **936 passed** / 91 files (~35s) |
-| API contract | OpenAPI **2.3.0**: 65 paths / 93 operations (including `/health`) |
+| API contract | OpenAPI **2.4.0**: 71 paths / 100 operations (including `/health`) |
 | E2E | Playwright: 11 fast-gate tests in ~25s; full suite 148 tests / 20 specs (~10 min) |
 | Architecture check | `python3 tools/check-architecture.py --strict`: **0 violations** |
 | Retrieval baseline (2,000 queries, 2026-10-29) | Vector NDCG@10 **81.57%**, Recall@80 **95.02%**; keyword NDCG@10 59.96% |

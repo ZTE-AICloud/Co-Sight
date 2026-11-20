@@ -6,38 +6,30 @@
 标识符                形态                                         用在哪
 ===================  ==========================================  ==========================
 图谱库名              ``graph_<kbId>``                            ``graph_registry.kb_id``
-导入任务 ``kb_id``     ``graph_<kbId>``                          ``graph_import_task.kb_id``
-抽取任务 ``kb_id``     ``<kbId>``（裸的）                            ``graph_extract_task.kb_id``
+导入任务 ``kb_id``     ``graph_<kbId>``                          ``graph_import_task`` 视图
+抽取任务 ``kb_id``     ``<kbId>``（裸的）                            ``graph_extract_task`` 视图
 ===================  ==========================================  ==========================
 
 另有两张**表名本身带 uuid** 的动态表要 drop：``graph_<kbId>_chunk`` 与
 ``graph_<kbId>_vector``（都建在 ``kb_index`` schema 下）。
 
-⚠️ 表名：抽取任务是 **``graph_extract_task``（单数）**，导入任务是
-``graph_import_task``（复数）—— 一个单数一个复数，实测库里就是这么建的。
+任务行统一存在 ``task_center.task``；``kbase_id`` 是**裸 id**，删除时按
+``task_type`` 区分抽取与导入。两个兼容视图只读。
 """
 
 from __future__ import annotations
 
 from graph.constants import GRAPH_TABLE_PREFIX
 from infrastructure.db.kb import connection
+from infrastructure.tasks.pg import TASK_TABLE
 
-# 导入任务表里存的是带前缀的形态（``AsyncGraphExtractServiceV2`` 与
-# ``deleteGraph`` 两边都拼这个）
-IMPORT_TASK_KB_ID_PREFIX = 'graph_'
+EXTRACT_TASK_TYPE = 'GRAPH_EXTRACT'
+IMPORT_TASK_TYPE = 'GRAPH_IMPORT'
 
 
 def graph_db_name(kbase_id: str) -> str:
     """``graph_<kbId>``。"""
     return f'{GRAPH_TABLE_PREFIX}{kbase_id}'
-
-
-def import_task_table() -> str:
-    return 'graph_import_task'
-
-
-def extract_task_table() -> str:
-    return 'graph_extract_task'
 
 
 def chunk_table(kbase_id: str) -> str:
@@ -72,21 +64,22 @@ def delete_knowledge_graph_info(db_name: str) -> None:
 
 
 def delete_import_tasks(kbase_id: str) -> int:
-    """按 ``graph_<kbId>`` 删（**不是** bare kbId）。"""
+    """按裸 ``kbase_id`` 删统一表里的 ``GRAPH_IMPORT`` 任务。"""
     with connection() as conn:
         with conn.cursor() as cursor:
             cursor.execute(
-                f'DELETE FROM {import_task_table()} WHERE kb_id = %s',
-                (IMPORT_TASK_KB_ID_PREFIX + kbase_id,))
+                f'DELETE FROM {TASK_TABLE} WHERE task_type = %s AND kbase_id = %s',
+                (IMPORT_TASK_TYPE, kbase_id))
             return cursor.rowcount
 
 
 def delete_extract_tasks(kbase_id: str) -> int:
-    """按 **裸 kbId** 删（与导入任务那条相反）。"""
+    """按裸 ``kbase_id`` 删统一表里的 ``GRAPH_EXTRACT`` 任务。"""
     with connection() as conn:
         with conn.cursor() as cursor:
             cursor.execute(
-                f'DELETE FROM {extract_task_table()} WHERE kb_id = %s', (kbase_id,))
+                f'DELETE FROM {TASK_TABLE} WHERE task_type = %s AND kbase_id = %s',
+                (EXTRACT_TASK_TYPE, kbase_id))
             return cursor.rowcount
 
 

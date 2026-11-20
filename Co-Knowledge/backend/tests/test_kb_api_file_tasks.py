@@ -460,43 +460,20 @@ def test_large_file_busy_key_has_a_localized_message():
     assert render('RetCode.file.size.more', 'en')
 
 
-class _ResubmitQueue:
-    def __init__(self):
-        self.tasks = []
-
-    def resubmit_task(self, task):
-        self.tasks.append(task)
-        return True
-
-
-def test_busy_error_waits_before_retry(monkeypatch):
+def test_busy_error_gets_a_retry_delay():
+    """大文件闸门忙时延迟重投；延迟由引擎调度线程执行，不在 worker 里 sleep。"""
     from shared.errors.api import KbApiError
     from knowledge_base.task import executor
 
-    slept = []
-    monkeypatch.setattr(executor.time, 'sleep', lambda seconds: slept.append(seconds))
-    task = FileTask(task_id='t1', file_handle={'fileId': 'f1'})
-    queue = _ResubmitQueue()
-
-    executor.FileTaskExecutor()._retry_task(
-        queue, task, KbApiError('RetCode.file.size.more'))
-
-    assert slept == [executor.BUSY_RETRY_DELAY_SECONDS]
-    assert queue.tasks == [task]
+    assert executor.retry_delay(KbApiError('RetCode.file.size.more')) == \
+        executor.BUSY_RETRY_DELAY_SECONDS
 
 
-def test_other_errors_retry_without_delay(monkeypatch):
+def test_other_errors_retry_without_delay():
     from shared.errors.api import KbApiError
     from knowledge_base.task import executor
 
-    slept = []
-    monkeypatch.setattr(executor.time, 'sleep', lambda seconds: slept.append(seconds))
-    task = FileTask(task_id='t1', file_handle={'fileId': 'f1'})
-
-    executor.FileTaskExecutor()._retry_task(
-        _ResubmitQueue(), task, KbApiError('RetCode.operator.split.error'))
-
-    assert slept == []
+    assert executor.retry_delay(KbApiError('RetCode.operator.split.error')) == 0
 
 
 def test_large_file_keeps_the_real_error(monkeypatch):
@@ -526,3 +503,75 @@ def test_large_file_keeps_the_real_error(monkeypatch):
             ingestion_runtime.LARGE_FILE_SIZE_LIMIT + 1, 'kb1')
 
     assert caught.value.key == 'RetCode.operator.split.empty'
+
+
+# ----------------------------------------------------------------------
+# 引擎状态 → FileTask 投影
+# ----------------------------------------------------------------------
+
+
+def test_db_failure_message_matches_memory_path():
+    from infrastructure.tasks import REQUEUE_FAILED_MESSAGE
+    from knowledge_base.task.queue import _format_failure_message
+
+    assert _format_failure_message(None, 3) == 'Task failed after 3 retries. Error: null'
+    assert _format_failure_message('boom', 2) == 'Task failed after 2 retries. Error: boom'
+    assert _format_failure_message(REQUEUE_FAILED_MESSAGE, 3) == REQUEUE_FAILED_MESSAGE
+
+
+def test_engine_status_projection_keeps_file_task_shape(monkeypatch):
+    from infrastructure.tasks import TaskRecord
+    from knowledge_base.task.queue import FileTaskQueue
+
+    queue = FileTaskQueue()
+    persisted = []
+    monkeypatch.setattr(queue, '_persist_task_status',
+                        lambda task: persisted.append((task.status, task.task_id)))
+    task = FileTask(task_id='t1', file_handle={'fileId': 'f1'})
+    queue._tasks['t1'] = task
+
+    record = TaskRecord(task_id='t1', kind='file_import',
+                        payload={'task': task}, status=STATUS_RUNNING,
+                        attempt=2, error_message='boom')
+    queue._store.on_change(record)
+    assert task.status == STATUS_RUNNING
+    assert task.retry_count == 1
+
+    record.status = STATUS_FAILED
+    record.attempt = 4
+    queue._store.on_change(record)
+    assert task.error_message == 'Task failed after 3 retries. Error: boom'
+    assert persisted[-1] == (STATUS_FAILED, 't1')
+
+    from infrastructure.tasks import REQUEUE_FAILED_MESSAGE
+
+    record.error_message = REQUEUE_FAILED_MESSAGE
+    queue._store.on_change(record)
+    assert task.error_message == REQUEUE_FAILED_MESSAGE
+    queue.shutdown()
+
+
+def test_submit_runs_through_engine_and_releases_completed(monkeypatch):
+    """``FileTaskQueue`` 门面到引擎车道的完整接线。"""
+    import threading
+    import time
+
+    from knowledge_base.task import executor
+    from knowledge_base.task.queue import FileTaskQueue
+
+    done = threading.Event()
+    monkeypatch.setattr(executor, 'run_file_task',
+                        lambda record, ctx: done.set())
+
+    queue = FileTaskQueue()
+    monkeypatch.setattr(queue, '_persist_task', lambda task: None)
+    monkeypatch.setattr(queue, '_persist_task_status', lambda task: None)
+
+    task_id = queue.submit_task({'fileId': 'f1', 'kbaseId': 'kb1'})
+    assert done.wait(3.0)
+
+    deadline = time.monotonic() + 3.0
+    while time.monotonic() < deadline and task_id in queue._tasks:
+        time.sleep(0.005)
+    assert task_id not in queue._tasks
+    queue.shutdown()

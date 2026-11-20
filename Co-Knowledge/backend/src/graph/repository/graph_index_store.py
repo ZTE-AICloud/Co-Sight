@@ -43,6 +43,7 @@ from infrastructure.db.kb import connection
 from infrastructure.db import ddl
 from infrastructure.db.identifiers import SCHEMA, validate_identifier
 from infrastructure.logging.logutil import log
+from infrastructure.tasks import cancellation
 from shared.chunk_schema.vector import to_vector_literal_fast
 
 #: 一次 HTTP 请求向量化的条数（批量导入 128 比 64 吞吐高约 10%）
@@ -141,6 +142,21 @@ def edge_key_id(record: dict) -> str:
 
 def chunk_key_id(record: dict) -> str:
     return str(record.get('id') or '').strip()
+
+
+def _smallint(value):
+    """导入包的 ``type`` 可能是 ``"system"`` 这类非数字值；写 smallint 列前归一。
+
+    图谱 chunk 表的 ``type`` 是 SMALLINT；通用算子导出的 ``document_chunk.jsonl``
+    在 metadata 里带 ``type: "system"``（语义更接近 ``spilt_type``），直接写会
+    报 ``invalid input syntax for type smallint``，整段索引构建失败。
+    """
+    if value is None or isinstance(value, bool):
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
 
 
 def _labels(record: dict) -> list[str]:
@@ -530,7 +546,7 @@ def replace_chunks(base: str, kbase_id: str, records: list[dict]) -> int:
             record.get('chunk_index'),
             record.get('content_expand'),
             record.get('chunk_id'),
-            record.get('type'),
+            _smallint(record.get('type')),
             record.get('create_user'),
             record.get('update_user'),
         ))
@@ -807,6 +823,7 @@ def _embed_and_write(base: str, key_type: str, records: list[dict], key_fn, text
     next_index = 0
     try:
         for index, batch in enumerate(batches):
+            cancellation.raise_if_cancelled()
             while next_index < len(batches) and next_index < index + window:
                 futures[next_index] = pool.submit(
                     _embed_and_format, embed_many,

@@ -18,6 +18,7 @@ CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
 
 -- 动态每库表所在 schema（运行时由应用建表）。
 CREATE SCHEMA IF NOT EXISTS kb_index;
+CREATE SCHEMA IF NOT EXISTS task_center;
 
 --
 -- PostgreSQL database dump

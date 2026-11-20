@@ -3,8 +3,11 @@
  * exists (see `nav/menu.config.js`); labels with no page-level key live here.
  */
 export default {
+  knowledgeApp: 'Knowledge Applications',
+  capabilityConfig: 'Capabilities',
   chat: 'Chat Test',
   modelManagement: 'Model Management',
+  taskManagement: 'Task Management',
   remoteAccess: 'Remote Access',
   remoteAccessGuide: 'Access Methods',
   remoteAccessKeys: 'API Keys',

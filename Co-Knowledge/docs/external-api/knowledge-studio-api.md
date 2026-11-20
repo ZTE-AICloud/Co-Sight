@@ -1,5 +1,5 @@
 <!-- doc-title: Knowledge Studio 对外接口文档（集成面） -->
-<!-- doc-version: 2.3.0 -->
+<!-- doc-version: 2.4.0 -->
 
 # Knowledge Studio 对外接口文档（集成面）
 
@@ -8,8 +8,8 @@
 | 项 | 值 |
 |---|---|
 | 文档名称 | Knowledge Studio 对外接口文档（集成面） |
-| 契约版本 | 2.3.0 |
-| 文档版本 | 2.3.0（与契约对齐） |
+| 契约版本 | 2.4.0 |
+| 文档版本 | 2.4.0（与契约对齐） |
 | 更新日期 | 当前版本 |
 | 适用产品 | Knowledge Studio |
 | 读者 | 外部集成方、Agent 平台、前端与后端开发者 |
@@ -193,7 +193,7 @@ curl -sS -N -b cookies.txt \
 
 - 唯一对外前缀：`/api/co-knowledge/v1`。
 - 只使用该前缀下的路径。其他 `/api/...` 路径在部署中可能被前端静态资源接管，返回 `200` 的 HTML 而不是 `404`。
-- 当前契约版本：`2.3.0`。版本号随契约发布，新增字段/端点属于向后兼容变更；删除或改语义才升主版本。
+- 当前契约版本：`2.4.0`。版本号随契约发布，新增字段/端点属于向后兼容变更；删除或改语义才升主版本。
 - Agent 子接口另有 OpenAPI 版本 `1.4.0`，见 8.8。
 
 ### 3.2 编码与媒体类型
@@ -2133,9 +2133,9 @@ Content-Type: application/json
 
 ### 12.1 版本号
 
-- 契约版本：`2.3.0`（`contracts/VERSION`）。
+- 契约版本：`2.4.0`（`contracts/VERSION`）。
 - Agent OpenAPI 版本：`1.4.0`。
-- 文档版本：`2.3.0`（与契约对齐）。
+- 文档版本：`2.4.0`（与契约对齐）。
 
 ### 12.2 兼容承诺
 
@@ -2151,6 +2151,24 @@ Content-Type: application/json
   `status` 是字符串（第 5.1 / 8.2 节）。
 - 链路 ID 响应头是 `X-Request-Id`；客户端传入的合法值（`[A-Za-z0-9._-]`、1–64 字符）原样沿用，
   不合法则丢弃并由服务端生成。
+
+### 12.3 2.4.0 新增：任务管理
+
+管理员会话下新增统一任务管理端点，覆盖文件导入、图谱抽图、图谱导入：
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| GET | `/tasks` | 分页列表；过滤 `task_type` / `status` / `lane` / `kbase_id` / `keyword`（任务 ID、文件名称或知识库名称/ID）；含 `fileName` / `kbaseName` |
+| GET | `/tasks/groups` | 按知识库聚合（树表根行）；`keyword` 匹配知识库名称/ID |
+| GET | `/tasks/stats` | 全局与按车道/类型统计、积压深度、最老待执行年龄 |
+| GET | `/tasks/{task_id}` | 详情（含 `payload` / `extra` / `attempts`） |
+| POST | `/tasks/{task_id}/cancel` | 取消 `PENDING`/`RETRY`（立即）或 `RUNNING`（协作中止）；可选 `{"reason": "..."}` |
+| POST | `/tasks/{task_id}/retry` | 重试 `FAILED`/`CANCELLED` |
+| PATCH | `/tasks/{task_id}` | 调整排队任务 `priority`（-1000–1000，越大越先） |
+
+`RUNNING` 取消返回 `200` 且 `cancelRequested=true`，worker 在下一个安全点中止后
+任务才落 `CANCELLED`；这是尽力而为，runner 已越过最后安全点时仍可能正常完成。
+图谱任务的临时输入已被清理时，重试返回 `409 task_input_expired`。
 
 
 ## 13. 接入检查清单
@@ -2407,4 +2425,4 @@ curl -sS \
 | 503 | `rerank_model_not_configured` | `/query` | 重排模型未配置 |
 
 
-*文档结束。本文对应契约版本 2.3.0，当前版本。*
+*文档结束。本文对应契约版本 2.4.0，当前版本。*

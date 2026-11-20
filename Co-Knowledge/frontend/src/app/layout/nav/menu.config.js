@@ -1,4 +1,4 @@
-import { Document, Share, Search, ChatDotRound, Link, Key } from '@element-plus/icons-vue'
+import { Document, Share, Search, ChatDotRound, Link, Key, List } from '@element-plus/icons-vue'
 import { CubeIcon, PuzzleIcon } from '@/shared/ui/icons'
 
 /**
@@ -8,7 +8,10 @@ import { CubeIcon, PuzzleIcon } from '@/shared/ui/icons'
  * 知识库组还有「子页归到哪个入口高亮」这层映射（`resolveActiveMenu`），`meta` 表达不了。
  *
  * 左栏路径：
- *   /knowledge、/graph、/flow、/chat、/operators、/models、/access、/keys。
+ *   /knowledge、/graph、/flow、/chat、/operators、/models、/tasks、/access、/keys。
+ *
+ * 分组按用途划分：知识库（构建）、知识应用（使用）、能力配置（配置）、
+ * 远程接入（集成）；任务管理是跨知识库的后台任务中心，单独一级。
  *
  * 字段：
  *   index    el-menu 的唯一键，也是 `LeftNav.vue` 里 `activeMenu` 要比对的字符串
@@ -42,33 +45,55 @@ export const NAV_MENUS = [
       }
     ]
   },
-  // 知识检索与对话测试是同级入口：列表页、新建按钮、对话测试统一叫「知识检索」，
-  // 不再用「检索编排」作为二级菜单名（同一个对象两套叫法，测试侧会当成不一致）。
   {
-    index: '/flow',
-    labelKey: 'ragFlow.ragWorkflow',
+    // 知识应用：编排好的检索流程与对话测试，都是「用知识」的入口。
+    // 列表页、新建按钮、对话测试统一叫「知识检索」，不再用「检索编排」作为
+    // 二级菜单名（同一个对象两套叫法，测试侧会当成不一致）。
+    index: 'knowledgeApp',
+    labelKey: 'nav.knowledgeApp',
     iconComponent: Search,
-    route: { path: '/flow' }
+    children: [
+      {
+        index: '/flow',
+        labelKey: 'ragFlow.ragWorkflow',
+        iconComponent: Search,
+        route: { path: '/flow' }
+      },
+      {
+        index: '/chat',
+        labelKey: 'nav.chat',
+        iconComponent: ChatDotRound,
+        route: { path: '/chat' }
+      }
+    ]
   },
   {
-    index: '/chat',
-    labelKey: 'nav.chat',
-    iconComponent: ChatDotRound,
-    route: { path: '/chat' }
-  },
-  {
-    index: '/operators',
-    labelKey: 'modules.extendedManagement.extendedManagement',
+    // 能力配置：检索、对话与图谱抽图共用的可配置资源。
+    index: 'capability',
+    labelKey: 'nav.capabilityConfig',
     iconComponent: PuzzleIcon,
-    route: { path: '/operators' }
+    children: [
+      {
+        index: '/operators',
+        labelKey: 'modules.extendedManagement.extendedManagement',
+        iconComponent: PuzzleIcon,
+        route: { path: '/operators' }
+      },
+      {
+        // 模型管理（LLM / Embedding / Reranker 三类 OpenAI 兼容端点）。
+        index: '/models',
+        labelKey: 'nav.modelManagement',
+        iconComponent: CubeIcon,
+        route: { path: '/models' }
+      }
+    ]
   },
   {
-    // 模型管理（LLM / Embedding / Reranker 三类 OpenAI 兼容端点）。
-    // 平级入口、无 query —— 所以 `resolveActiveMenu` 不用改（走末尾的 `return path` 兜底）。
-    index: '/models',
-    labelKey: 'nav.modelManagement',
-    iconComponent: CubeIcon,
-    route: { path: '/models' }
+    // 统一任务管理（文件导入 / 图谱抽图 / 图谱导入）：跨知识库的后台任务中心。
+    index: '/tasks',
+    labelKey: 'nav.taskManagement',
+    iconComponent: List,
+    route: { path: '/tasks' }
   },
   {
     // 远程接入：接入说明与 Key 管理是两件独立的事（一个给集成方看，一个给
@@ -119,6 +144,9 @@ export function resolveActiveMenu (path) {
   // 文档知识库列表 + 其余 /knowledge/* 子页（详情/文档管理）
   if (path === '/knowledge' || path.startsWith('/knowledge/')) {
     return '/knowledge'
+  }
+  if (path === '/tasks' || path.startsWith('/tasks/')) {
+    return '/tasks'
   }
   return path
 }

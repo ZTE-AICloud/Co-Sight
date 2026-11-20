@@ -29,7 +29,9 @@ import os
 from typing import Any, Optional
 
 from infrastructure.http import binding
+from infrastructure.tasks import TaskRejectedError
 from shared.errors.api import KbApiError
+from graph import task_runtime
 from graph.service import graph_common, graph_extract_api, graph_extract_v2_service
 from graph.service import lifecycle as graph_lifecycle
 from knowledge_base.service import directory_service, file_service, kbase_v2_service
@@ -103,6 +105,7 @@ def extract_graph(files: list[UploadedFile], data_json: str, language: str,
     _validate_schema_id(dto.get('schemaId'), dto.get('operatorId'))
     # ⚠️ 在**建库之前**（避免校验失败时已创建知识库记录）
     file_service.upload_check(files, GRAPH_LIMIT_TYPE)
+    _ensure_task_capacity()
 
     kbase_vo = kbase_v2_service.create_kbase(_kbase_payload(dto), emp_no, org_id)
     dto['kbId'] = kbase_vo['id']
@@ -142,6 +145,7 @@ def update_graph(kb_id: str, files: list[UploadedFile], data_json: str,
     if str(row.get('category')) != str(CATEGORY_KNOWLEDGE_GRAPH):
         raise KbApiError('graph.export.kbase.not.graph')
 
+    _ensure_task_capacity()
     kbase_v2_service.update_kbase(kb_id, _kbase_payload(dto), org_id, emp_no)
 
     if delete_files:
@@ -168,6 +172,16 @@ def _dir_title(language: str) -> str:
 def _generate_failed() -> KbApiError:
     """生成图谱失败（0005）。"""
     return KbApiError('Retcode.generate.graph.schema.fail')
+
+
+def _ensure_task_capacity() -> None:
+    """建库/改库之前做准入，避免被拒后留下无任务的空库。"""
+    try:
+        task_runtime.ensure_extract_capacity()
+    except TaskRejectedError as error:
+        log.warning('graph extract queue is full: %s', error)
+        raise KbApiError(None, status=503,
+                         problem_code='task_queue_full') from error
 
 
 def _kbase_payload(dto: dict) -> dict:
@@ -436,16 +450,24 @@ def create_extract_task(dto: dict, files: list[UploadedFile], emp_no: str,
     tmp_dir = graph_extract_api.save_tmp_files(files)
     schema_id, schema_obj = _resolve_schema_for_task(dto.get('schemaId'),
                                                      dto.get('operatorId'))
-
+    payload = {
+        'tmpDir': tmp_dir,
+        'dto': dto,
+        'schemaObj': schema_obj,
+        'isUpdate': False,
+        'cacheSchemaId': None,
+        'schemaId': schema_id,
+        'operatorId': dto.get('operatorId'),
+        'fileCount': len(files),
+    }
     task_id = graph_extract_store.insert_task(
         kbase_id=dto.get('kbId'), schema_id=schema_id,
         operator_id=dto.get('operatorId'), file_count=len(files),
-        created_by='system')                       # **写死 system**，不是当前用户
+        payload=payload)
 
     kbase_store.update_operator_id(dto.get('operatorId'), dto.get('kbId'))
     kbase_store.update_schema(dto.get('kbId'), schema_id, schema_obj)
-    graph_extract_v2_service.submit_extract(
-        task_id, tmp_dir, dto, schema_obj, emp_no, org_id)
+    graph_extract_v2_service.submit_extract(task_id, payload)
     return task_id
 
 
@@ -453,18 +475,25 @@ def create_update_task(dto: dict, files: list[UploadedFile], row: dict, emp_no: 
                        org_id: Optional[str]) -> str:
     """``createUpdateGraphExtractTask``：schema 取**库里那份**，并先 drop 图谱库。"""
     tmp_dir = graph_extract_api.save_tmp_files(files)
-
+    payload = {
+        'tmpDir': tmp_dir,
+        'dto': dto,
+        'schemaObj': _schema_obj(row),
+        'isUpdate': True,
+        'cacheSchemaId': row.get('schema_id'),
+        'schemaId': row.get('schema_id'),
+        'operatorId': dto.get('operatorId'),
+        'fileCount': len(files),
+    }
     task_id = graph_extract_store.insert_task(
         kbase_id=dto.get('kbId'), schema_id=row.get('schema_id'),
         operator_id=dto.get('operatorId'), file_count=len(files),
-        created_by='system')
+        payload=payload)
 
     kbase_store.update_operator_id(dto.get('operatorId'), dto.get('kbId'))
     # ⚠️ 更新**不**写 schema（用库里已有的那份）
     graph_lifecycle.delete_graph_database(dto.get('kbId'))
-    graph_extract_v2_service.submit_update(
-        task_id, tmp_dir, dto, row.get('schema_id'),
-        _schema_obj(row), emp_no, org_id)
+    graph_extract_v2_service.submit_update(task_id, payload)
     return task_id
 
 

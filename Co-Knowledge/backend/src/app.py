@@ -134,6 +134,12 @@ from auth.api import register_auth_api  # noqa: E402
 
 register_auth_api(app)
 
+# 统一任务管理（{RKB_PREFIX}/tasks）：列表/统计/详情/取消/重试/优先级。
+# ⚠️ 必须在 register_rkb_api 之前：kb_api 的兜底路由会吃掉晚注册的 /tasks/*。
+from infrastructure.tasks.api import register_task_api  # noqa: E402
+
+register_task_api(app, RKB_PREFIX)
+
 # 知识库（/api/co-knowledge/v1）接口层：单前缀注册，见 http_api 与
 # 当前只有健康端点，业务端点按批次落入。
 from http_api import register_rkb_api  # noqa: E402

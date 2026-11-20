@@ -50,9 +50,24 @@ def start_background():
     log.info('知识库文件存储后端: %s', backend_name())
     storage_backend()
 
+    # 文件导入使用 DB 队列：启动时就开始认领库里已有的 PENDING/RETRY 任务，
+    # 不依赖「有人重新上传」来唤醒 worker。单测环境用 RKB_TASK_QUEUE_DB=0 关闭。
+    if os.environ.get('RKB_TASK_QUEUE_DB', '1').strip().lower() not in (
+            '0', 'false', 'no', 'off'):
+        from knowledge_base.task import runtime as task_runtime
+        from graph import task_runtime as graph_task_runtime
+
+        task_runtime.start()
+        graph_task_runtime.start()
+
 
 def stop_background():
     global _started
+    from knowledge_base.task import runtime as task_runtime
+    from graph import task_runtime as graph_task_runtime
+
+    task_runtime.shutdown()
+    graph_task_runtime.shutdown()
     _started = False
 
 

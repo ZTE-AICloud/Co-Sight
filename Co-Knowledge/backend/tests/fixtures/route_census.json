@@ -411,6 +411,41 @@
   },
   {
     "method": "GET",
+    "path": "/api/co-knowledge/v1/tasks",
+    "operation_id": "task_list_api_co_knowledge_v1_tasks_get"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/tasks/groups",
+    "operation_id": "task_groups_api_co_knowledge_v1_tasks_groups_get"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/tasks/stats",
+    "operation_id": "task_stats_api_co_knowledge_v1_tasks_stats_get"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/tasks/{task_id}",
+    "operation_id": "task_detail_api_co_knowledge_v1_tasks__task_id__get"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/co-knowledge/v1/tasks/{task_id}",
+    "operation_id": "task_patch_api_co_knowledge_v1_tasks__task_id__patch"
+  },
+  {
+    "method": "POST",
+    "path": "/api/co-knowledge/v1/tasks/{task_id}/cancel",
+    "operation_id": "task_cancel_api_co_knowledge_v1_tasks__task_id__cancel_post"
+  },
+  {
+    "method": "POST",
+    "path": "/api/co-knowledge/v1/tasks/{task_id}/retry",
+    "operation_id": "task_retry_api_co_knowledge_v1_tasks__task_id__retry_post"
+  },
+  {
+    "method": "GET",
     "path": "/api/co-knowledge/v1/workflows",
     "operation_id": "page_workflows_api_co_knowledge_v1_workflows_get"
   },

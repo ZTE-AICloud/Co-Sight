@@ -42,8 +42,8 @@ python3 tools/docs/build-external-agent-openapi.py --check   # 只校验
 
 ## 契约版本
 
-- 接口契约：`2.3.0`（`contracts/VERSION`）
-- 文档版本：`2.3.0`
+- 接口契约：`2.4.0`（`contracts/VERSION`）
+- 文档版本：`2.4.0`
 - Agent OpenAPI：`1.4.0`
 - REST 接入指南：文档版本 `1.4.0`，对应 Agent 接口契约 `1.4.0`
 

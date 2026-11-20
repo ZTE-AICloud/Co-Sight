@@ -4,7 +4,7 @@
 
 ## 状态机（两处的进度值**不一样**）
 
-| 步骤 | ``graph_extract_task`` | ``kb_kbase`` |
+| 步骤 | ``task``（``GRAPH_EXTRACT``） | ``kb_kbase`` |
 |---|---|---|
 | 开始 | RUNNING / 10 | PARSING(1) / 10，清空 failReason |
 | 落临时目录检查通过 | RUNNING / 30 | — |
@@ -38,16 +38,15 @@ from __future__ import annotations
 import os
 import shutil
 import uuid
-from concurrent.futures import ThreadPoolExecutor
 from typing import Optional
 
+from graph import task_runtime
 from graph.service import graph_extract_api, graph_import_engine
 from graph.repository import graph_extract_store, graph_import_store
 from knowledge_base.service import kbase_service as kbase_store
 from infrastructure.logging.logutil import log
-
-# ``AsyncConfig`` 的 ``GraphExtractExecuteThread``：core 3 / max 5 / queue 100 / CallerRuns
-_EXECUTOR = ThreadPoolExecutor(max_workers=5, thread_name_prefix='graph_extract_v2')
+from infrastructure.tasks import cancellation
+from infrastructure.tasks.cancellation import TaskCancelled
 
 # ``KbaseStatusEnum`` 的 code
 STATUS_PARSING = 1
@@ -68,26 +67,14 @@ FAIL_REASON_GENERATE = ('生成图谱失败：算子执行异常',
                         'Failed to generate the graph: Operator execution exception.')
 
 
-def submit_extract(task_id: str, tmp_dir: str, dto: dict, schema_obj: Optional[dict],
-                   emp_no: str, org_id: Optional[str]) -> None:
-    """建库那条的异步。"""
-    _submit(lambda: _run(task_id, tmp_dir, dto, schema_obj, is_update=False))
+def submit_extract(task_id: str, payload: dict) -> None:
+    """建库那条的异步；payload 必须可从库里重建 ``_run`` 的入参。"""
+    task_runtime.submit_extract(payload, task_id=task_id)
 
 
-def submit_update(task_id: str, tmp_dir: str, dto: dict, schema_id: Optional[str],
-                  schema_obj: Optional[dict], emp_no: str,
-                  org_id: Optional[str]) -> None:
+def submit_update(task_id: str, payload: dict) -> None:
     """更新那条的异步：schema 用库里已有的那份（``cacheSchemaId``/``cacheSchemaObj``）。"""
-    _submit(lambda: _run(task_id, tmp_dir, dto, schema_obj, is_update=True,
-                         cache_schema_id=schema_id))
-
-
-def _submit(run) -> None:
-    try:
-        _EXECUTOR.submit(run)
-    except Exception:                                              # noqa: BLE001
-        log.warning('graph extract v2 pool rejected the task; running inline')
-        run()
+    task_runtime.submit_update(payload, task_id=task_id)
 
 
 # ----------------------------------------------------------------------
@@ -99,6 +86,7 @@ def _run(task_id: str, tmp_dir: str, dto: dict, schema_obj: Optional[dict],
          is_update: bool, cache_schema_id: Optional[str] = None) -> None:
     kb_id = dto.get('kbId')
     try:
+        cancellation.raise_if_cancelled()
         graph_extract_store.update_task_status(
             task_id, graph_extract_store.STATUS_RUNNING, 10)
         kbase_store.update_process(kb_id, STATUS_PARSING, 10)
@@ -109,6 +97,7 @@ def _run(task_id: str, tmp_dir: str, dto: dict, schema_obj: Optional[dict],
             kbase_store.update_fail_reason(kb_id, *FAIL_REASON_SPLIT)
             raise ValueError('Temporary directory path is null or empty')
 
+        cancellation.raise_if_cancelled()
         graph_extract_store.update_task_status(
             task_id, graph_extract_store.STATUS_RUNNING, 30)
 
@@ -132,6 +121,7 @@ def _run(task_id: str, tmp_dir: str, dto: dict, schema_obj: Optional[dict],
         dto['args'] = args
         dto['kwargs'] = kwargs
 
+        cancellation.raise_if_cancelled()
         graph_extract_store.update_task_status(
             task_id, graph_extract_store.STATUS_RUNNING, 50)
 
@@ -148,6 +138,7 @@ def _run(task_id: str, tmp_dir: str, dto: dict, schema_obj: Optional[dict],
             kbase_store.update_fail_reason(kb_id, *FAIL_REASON_GENERATE)
             return
 
+        cancellation.raise_if_cancelled()
         kbase_store.update_process(kb_id, STATUS_STORING, 10 if not is_update else 20)
         kbase_store.update_fail_reason(kb_id, '', '')
         graph_extract_store.update_task_status(
@@ -161,16 +152,20 @@ def _run(task_id: str, tmp_dir: str, dto: dict, schema_obj: Optional[dict],
             task_id, dto, schema_obj, produced, cache_schema_id)
         kbase_store.update_schema(kb_id, actual_schema_id, schema_obj)
 
+        cancellation.raise_if_cancelled()
         try:
             import_task_id = graph_import_engine.import_from_zip(
                 f'{graph_import_store.KB_ID_PREFIX}{kb_id}', actual_schema_id, zip_path,
                 kbase_schema_obj=schema_obj)
+        except TaskCancelled:
+            raise
         except Exception:                                          # noqa: BLE001
             log.exception('graph extract task %s: import stage failed, kbId=%s',
                           task_id, kb_id)
             kbase_store.update_process(kb_id, STATUS_STORING_FAIL, 100)
             return
 
+        cancellation.raise_if_cancelled()
         if is_update:
             kbase_store.update_process(kb_id, STATUS_STORING, 90)
 
@@ -181,6 +176,12 @@ def _run(task_id: str, tmp_dir: str, dto: dict, schema_obj: Optional[dict],
         _settle_kbase_status(import_task_id, kb_id)
         log.info('graph extract task %s completed, kbId=%s', task_id, kb_id)
 
+    except TaskCancelled:
+        log.info('graph extract task %s cancelled, kbId=%s', task_id, kb_id)
+        graph_extract_store.cancel_task(task_id)
+        kbase_store.update_process(kb_id, STATUS_PARSING_FAIL, 100)
+        kbase_store.update_fail_reason(kb_id, '任务已取消', 'Task cancelled')
+        return
     except Exception as error:                                     # noqa: BLE001
         log.exception('graph extract task %s failed, kbId=%s', task_id, kb_id)
         graph_extract_store.update_task_status(

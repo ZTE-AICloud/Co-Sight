@@ -23,20 +23,19 @@
 | 知识库 `kb_kbase` | `DELETE FROM kb_kbase WHERE kbase_id = %s` | 服务层先 `DROP TABLE` 动态表：`doc_<id>_vector` / `doc_<id>_chunk`（文档库）或 `graph_<id>_*`（图谱库）；`kb_storage_registry` / `graph_registry` / ES 索引 / 磁盘目录 |
 | 目录 / 文件 `kb_directory` | `DELETE FROM kb_directory WHERE id = ANY(%s)` | 先删子节点（递归），再删属性、关系、向量行、切片行、磁盘文件 |
 | 目录属性 `kb_directory_property` | 随目录 `DELETE` | 另有孤儿清理（`file_id` 不存在） |
-| 导入任务 `kb_import_task` | `DELETE` | 无 |
+| 任务 `task_center.task` + `task_attempt` | `DELETE` | 文件导入按 `task_type='FILE_IMPORT'`；图谱抽取/导入在删库时按 `task_type + kbase_id` 删；终态任务按 90 天保留期由 `tools/ops/prune-task-history.py` 清理，尝试历史外键级联 |
 | 算子 `operator` | `DELETE FROM operator` + `operator_param` / `operator_prop` | 同事务内先删参数/属性 |
 | 节点关系 `kb_node_relation` | `DELETE` | 无 |
 | 动态向量行 | `DELETE ... WHERE node_id = ANY(...)` | 无 |
 | 动态切片行 | `DELETE ... WHERE source = ANY(文件名)` | 与向量同批 |
 | 查询轨迹 `chat_query_trace` | 按保留期 `DELETE`（运维脚本） | 无 |
 
-**静态子表有外键兜底**（10 个 FK，`NOT VALID` 后 `VALIDATE` 上线）：
+**静态子表有外键兜底**（9 个 FK，`NOT VALID` 后 `VALIDATE` 上线）：
 
 - `kb_directory.kbase_id` → `kb_kbase(kbase_id)` CASCADE；
 - `kb_directory.parent_id` → 自身 `id` CASCADE；
 - `kb_directory_property.file_id` / `kb_node_relation.directory_id` → `kb_directory(id)` CASCADE；
-- `kb_node_relation.kbase_id` / `kb_storage_registry.kbase_id` / `graph_extract_task.kb_id`
-  → `kb_kbase(kbase_id)` CASCADE；
+- `kb_node_relation.kbase_id` / `kb_storage_registry.kbase_id` → `kb_kbase(kbase_id)` CASCADE；
 - `kb_kbase.operator_id` → `operator(id)` SET NULL；
 - `operator_param.operator_id` / `operator_prop.operator_id` → `operator(id)` CASCADE。
 

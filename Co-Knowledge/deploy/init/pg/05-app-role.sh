@@ -6,7 +6,8 @@
 #   * 连接 rag_studio；
 #   * 在 kb_index 里建/删动态表（每个知识库一对表）；
 #   * 对静态表做 DML；
-#   * 建 model_registry 的索引（所以把 public/kb_index 的对象所有权交给它）。
+#   * 读写 task_center 里的统一任务表；
+#   * 建 model_registry 的索引（所以把 public/kb_index/task_center 的对象所有权交给它）。
 # 它**不能**：建扩展、建库、建角色、访问其它库。
 #
 # 本脚本只在空卷初始化时执行一次。
@@ -44,6 +45,7 @@ SELECT format('ALTER ROLE %I WITH LOGIN PASSWORD %L NOSUPERUSER NOCREATEDB NOCRE
 GRANT CONNECT, CREATE ON DATABASE :"db_name" TO :"app_user";
 GRANT USAGE, CREATE ON SCHEMA public TO :"app_user";
 GRANT USAGE, CREATE ON SCHEMA kb_index TO :"app_user";
+GRANT USAGE, CREATE ON SCHEMA task_center TO :"app_user";
 
 -- 静态表/序列：DML + 序列取号
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO :"app_user";
@@ -53,20 +55,25 @@ GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO :"app_user";
 -- ⚠️ 不能用 DO 块：psql 变量（:'app_user'）**不会**在 dollar-quoted 块里展开，
 -- 实测报 `syntax error at or near ":"`。用 \gexec 生成语句。
 SELECT format('ALTER TABLE %I.%I OWNER TO %I', schemaname, tablename, :'app_user')
-FROM pg_tables WHERE schemaname IN ('public', 'kb_index')\gexec
+FROM pg_tables WHERE schemaname IN ('public', 'kb_index', 'task_center')\gexec
 
 SELECT format('ALTER SEQUENCE %I.%I OWNER TO %I', schemaname, sequencename, :'app_user')
-FROM pg_sequences WHERE schemaname IN ('public', 'kb_index')\gexec
+FROM pg_sequences WHERE schemaname IN ('public', 'kb_index', 'task_center')\gexec
 
 -- 审计触发器函数：运行期 DDL 会 CREATE OR REPLACE 它，owner 必须是应用角色。
 SELECT format('ALTER FUNCTION public.set_updated_at() OWNER TO %I', :'app_user')
 WHERE to_regprocedure('public.set_updated_at()') IS NOT NULL\gexec
 
 ALTER SCHEMA kb_index OWNER TO :"app_user";
+ALTER SCHEMA task_center OWNER TO :"app_user";
 
 -- 以后由 superuser 建的对象也自动授权给应用角色。
 ALTER DEFAULT PRIVILEGES FOR ROLE :"db_owner" IN SCHEMA public
     GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO :"app_user";
 ALTER DEFAULT PRIVILEGES FOR ROLE :"db_owner" IN SCHEMA public
+    GRANT USAGE, SELECT ON SEQUENCES TO :"app_user";
+ALTER DEFAULT PRIVILEGES FOR ROLE :"db_owner" IN SCHEMA task_center
+    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO :"app_user";
+ALTER DEFAULT PRIVILEGES FOR ROLE :"db_owner" IN SCHEMA task_center
     GRANT USAGE, SELECT ON SEQUENCES TO :"app_user";
 SQL

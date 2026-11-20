@@ -42,7 +42,7 @@
 
 ### 1.2 表清单
 
-**`rag_studio.public`（空卷 22 张 base table）**
+**`rag_studio.public`（核心业务表）**
 
 | 表 | 用途 |
 |---|---|
@@ -50,14 +50,11 @@
 | `kb_directory` | 目录/文件树（folder 与 file 同表，自引用 `parent_id`） |
 | `kb_directory_property` | 文件/目录的键值属性 |
 | `kb_node_relation` | 「文件 → 向量行」关系（`chunkId` 的主键表） |
-| `kb_import_task` | 异步文件导入任务 |
 | `operator` | 算子注册表 |
 | `operator_param` | 算子入参定义 |
 | `operator_prop` | 算子属性（KV） |
 | `graph_schema` | 图谱 schema（本体定义） |
 | `graph_registry` | 图谱库登记 |
-| `graph_extract_task` | 抽图任务 |
-| `graph_import_task` | 图谱导入任务（实体/边计数） |
 | `flow_workflow` | 检索编排工作流元数据 |
 | `flow_draft` | 画布草稿（JSON 原样存） |
 | `flow_release` | 发布快照（运行时只读，只 INSERT） |
@@ -69,6 +66,15 @@
 | `chat_query_trace` | 查询链路耗时（仅指标，30 天保留，见 §3.10） |
 
 > 动态表随建库/删库变化；行数随数据导入变化，不在文档中维护固定值。
+
+**`rag_studio.task_center`（任务管理）**
+
+| 表 | 用途 |
+|---|---|
+| `task` | 统一异步任务表：`FILE_IMPORT` / `GRAPH_EXTRACT` / `GRAPH_IMPORT`，统一状态与进度 |
+
+`public.kb_import_task` / `public.graph_extract_task` / `public.graph_import_task`
+是它的**只读兼容视图**，写入必须走 `task_center.task`。
 
 **`rag_studio.kb_index`** 按库动态建表：
 
@@ -113,8 +119,7 @@ kb_kbase (1 行 = 1 个知识库)
   └─ category = 10 (图谱库) ──► 动态表  graph_<kbase_id> (+ _chunk)
          │
          ├─ graph_registry   (kb_id = graph_<uuid>)
-         ├─ graph_extract_task     (kb_id = 裸 uuid)
-         ├─ graph_import_task     (kb_id = graph_<uuid>)
+         ├─ task_center.task   (kbase_id = 裸 uuid，task_type 区分抽取/导入)
          └─ graph_schema           (schema_id)
 
 operator (1) ──< operator_param (N)
@@ -129,8 +134,9 @@ flow_workflow (1) ── 1 flow_draft        (草稿，workflow_id 唯一)
 | 标识 | 形态 | 用在哪 |
 |---|---|---|
 | 图谱库名 | `graph_<uuid>` | `graph_registry.kb_id` |
-| 导入任务 | `graph_<uuid>` | `graph_import_task.kb_id` |
-| 抽取任务 | 裸 `<uuid>` | `graph_extract_task.kb_id` |
+| 统一任务行 | 裸 `<uuid>` | `task_center.task.kbase_id`（抽取/导入用 `task_type` 区分） |
+| 兼容视图导入任务 | `graph_<uuid>` | `graph_import_task.kb_id`（视图拼回前缀） |
+| 兼容视图抽取任务 | 裸 `<uuid>` | `graph_extract_task.kb_id` |
 
 ---
 
@@ -212,17 +218,79 @@ flow_workflow (1) ── 1 flow_draft        (草稿，workflow_id 唯一)
 文件 → 切片的完整链路：`kb_directory(id) → kb_node_relation(directory_id) →
 .node_id → kb_index.<向量表>.node_id`。
 
-### 3.5 `kb_import_task` —— 异步文件导入任务
+### 3.5 `task_center.task` —— 统一异步任务表
+
+三类任务共用一张表，`task_type` 区分：`FILE_IMPORT` / `GRAPH_EXTRACT` / `GRAPH_IMPORT`。
 
 | 列 | 类型 | 空 | 说明 |
 |---|---|---|---|
-| `id` | varchar(32) | NO | taskId |
-| `task_type` | varchar(255) | YES | 目前只有 `FILE_IMPORT` |
-| `related_identifier_id` | char(32) | YES | 关联的 `fileId` |
-| `status` | varchar(255) | YES | `PENDING` / `RUNNING` / `RETRY` / `COMPLETED` / `FAILED`（CHECK） |
-| 4 个审计列 | — | — | — |
+| `id` | varchar(100) | NO | taskId |
+| `task_type` | varchar(32) | NO | 任务类型（CHECK） |
+| `lane` | varchar(32) | NO | 执行车道：`file_import` / `graph_extract` / `graph_import` |
+| `status` | varchar(32) | NO | 统一状态：`PENDING` / `RUNNING` / `RETRY` / `COMPLETED` / `COMPLETED_WITH_ERRORS` / `FAILED` / `CANCELLED`（CHECK） |
+| `priority` | integer | NO | 认领优先级（-1000–1000，越大越先）；默认 0 |
+| `progress` | integer | NO | 0–100 |
+| `attempt` / `max_attempts` | integer | NO | 当前尝试次数 / 总执行次数 |
+| `kbase_id` | varchar(100) | YES | **裸** kbase id |
+| `payload` | jsonb | YES | **类型私有输入**（见下表） |
+| `extra` | jsonb | YES | **类型私有产出/状态**（见下表） |
+| `error_message` | text | YES | 失败原因 |
+| `available_at` | timestamptz | NO | 最早可认领时间（延迟重投/退避） |
+| `cancel_requested` | boolean | NO | 是否已请求取消（默认 false；取消排队任务时置 true） |
+| `cancel_requested_at` | timestamptz | YES | 取消请求时间 |
+| `locked_by` / `locked_until` / `heartbeat_at` | — | YES | DB 队列的认领者 / 租约到期 / 最后心跳 |
+| `created_at` / `updated_at` / `start_time` / `finish_time` | timestamptz | — | 时间线（`created_at`/`updated_at` 固定在物理列最后两位） |
 
-索引：主键 + `(task_type, related_identifier_id)`。
+私有属性不摊成列，按任务类型放 JSONB：
+
+| `task_type` | `payload` | `extra` |
+|---|---|---|
+| `FILE_IMPORT` | `fileId` / `fileHandle`（完整任务输入，可重建） | — |
+| `GRAPH_EXTRACT` | `tmpDir` / `dto` / `schemaObj` / `isUpdate` / `cacheSchemaId` / `schemaId` / `operatorId` / `fileCount` | `resultFilePath` |
+| `GRAPH_IMPORT` | `kbIndexName` / `schemaId` / `schemaObj` / `zipPath` | `entity_total/success/failed`、`edge_*`、`failed_records` |
+
+索引：主键 + `(task_type, status)` + `(status)` + `(kbase_id)` + `(created_at)`；
+私有属性需要等值查询时用表达式索引：`((payload->>'fileId'))`、
+`((payload->>'schemaId'))`。
+认领与清理两条热点路径另有两个部分索引：
+`idx_task_claim(lane, status, available_at, priority DESC, created_at)
+WHERE status IN ('PENDING','RETRY')` 和
+`idx_task_terminal_finish(finish_time) WHERE status IN (终态)`。
+更新由 `task_set_updated_at` 触发器刷新 `updated_at`。
+
+**DB 队列**：提交后 `pg_notify('task_center_task', '<lane>')` 唤醒各实例；
+每个进程同时 `LISTEN task_center_cancel` 接收 RUNNING 取消标记。
+worker 用 `FOR UPDATE SKIP LOCKED` 认领
+`lane + PENDING/RETRY + available_at <= now()` 的行，置 `RUNNING` +
+`locked_by/locked_until`；长任务由心跳续租，过期 `RUNNING` 由回收线程放回
+`PENDING`（`attempt` 自增）或按 `max_attempts` 判 `FAILED`。5s 短轮询只作
+NOTIFY 丢失时的兜底。索引 `idx_task_claim` 与
+`idx_task_lease(status, locked_until)` 支撑这两条路径。
+
+**管理面**：`PENDING/RETRY` 可立即取消（置 `CANCELLED` + `cancel_requested`）；
+`RUNNING` 取消只置 `cancel_requested=true` 并 `pg_notify('task_center_cancel',
+'<taskId>')`，worker 在安全点确认后落 `CANCELLED`（心跳时查 `cancel_requested`
+兜底）。`FAILED/CANCELLED` 可重试（重置 `attempt=1`、清空锁与终态时间后回
+`PENDING`），排队中任务可改 `priority`。取消/重试/改优先级都会刷新 `updated_at`。
+
+**尝试历史**：`task_center.task_attempt` 每次进入 `RUNNING` 记一行，字段为
+`task_id / attempt / worker_id / status / error_message / started_at / finished_at`；
+`status` 取 `RUNNING` / `COMPLETED` / `COMPLETED_WITH_ERRORS` / `FAILED` /
+`CANCELLED` / `LOST`（租约过期被回收）。由 `task.status` 的 UPDATE 触发器
+自动写入，覆盖引擎与领域两种终态写者；任务删除时外键级联删除。任务详情
+`GET /tasks/{id}` 的 `attempts` 数组返回这段历史。
+
+兼容视图（只读，从 JSONB 还原字段）：
+
+| 视图 | 过滤 | 状态映射 |
+|---|---|---|
+| `public.kb_import_task` | `task_type='FILE_IMPORT'` | 原样 |
+| `public.graph_extract_task` | `task_type='GRAPH_EXTRACT'` | `PENDING/COMPLETED` → `INIT/SUCCESS`；`FAILED/CANCELLED` → `FAIL` |
+| `public.graph_import_task` | `task_type='GRAPH_IMPORT'` | `RUNNING` → `PROCESSING`；`CANCELLED` → `FAILED`，其余同名 |
+
+> `kb_import_task.created_by/updated_by` 与 `graph_extract_task.created_by` 在视图里
+> 固定返回 `NULL`，只为兼容旧 DTO；任务表不再存这两列。
+
 任务完成时**先移出内存表、再写库**（`task/queue.py`），所以库里的终态行是唯一可回落的来源。
 
 ### 3.6 算子三表
@@ -274,34 +342,19 @@ flow_workflow (1) ── 1 flow_draft        (草稿，workflow_id 唯一)
 
 主键 `(kb_id, schema_id)`。
 
-**`graph_extract_task`** —— 抽图任务
+**`graph_extract_task`** —— 抽图任务（**兼容视图**，源表 `task_center.task`）
 
-| 列 | 类型 | 说明 |
-|---|---|---|
-| `id` | varchar(100) | 主键 |
-| `kb_id` | varchar(100) | **裸 uuid** |
-| `schema_id` | varchar(100) | schema |
-| `operator_id` | integer | 抽图算子 |
-| `file_count` / `progress` | integer | 文件数/进度 |
-| `status` | varchar(20) | 任务状态：`INIT/RUNNING/SUCCESS/FAIL`（CHECK） |
-| `error_message` / `result_file_path` | text | 失败原因/产物路径 |
-| `created_by` / `created_at` / `updated_date` / `start_time` / `finish_time` | — | 时间线 |
+字段形状保持 `GraphExtractTaskPO`：`id`、`kb_id`（裸 uuid）、`schema_id`、
+`operator_id`、`file_count`、`status`（`INIT/RUNNING/SUCCESS/FAIL`）、`progress`、
+`error_message`、`result_file_path`、审计与时间线列。只读；写入走
+`task_center.task WHERE task_type='GRAPH_EXTRACT'`。
 
-索引：主键 + `(kb_id)` + `(status)` + `(created_at)`。
+**`graph_import_task`** —— 图谱导入任务（**兼容视图**，源表 `task_center.task`）
 
-**`graph_import_task`** —— 图谱导入任务
-
-| 列 | 类型 | 说明 |
-|---|---|---|
-| `task_id` | varchar(100) | 主键 |
-| `kb_id` | varchar(1000) | **`graph_<uuid>`** |
-| `schema_id` | varchar(100) | schema |
-| `status` | varchar(50) | 状态：`PENDING/PROCESSING/COMPLETED/COMPLETED_WITH_ERRORS/FAILED`（CHECK） |
-| `created_at` / `updated_at` | timestamptz | 审计时间 |
-| `progress` | integer | 进度 |
-| `entity_total/success/failed`、`edge_total/success/failed` | integer | 实体/边计数 |
-| `failed_records` | json | 失败明细 |
-| `error_message` | varchar(20000) | 错误 |
+字段形状保持原 DTO：`task_id`、`kb_id`（`graph_<uuid>`）、`schema_id`、`status`
+（`PENDING/PROCESSING/COMPLETED/COMPLETED_WITH_ERRORS/FAILED`）、`progress`、
+实体/边六个计数、`failed_records`、`error_message`、审计时间。只读；写入走
+`task_center.task WHERE task_type='GRAPH_IMPORT'`，计数与失败明细在 `extra` jsonb。
 
 ### 3.8 `agent_api_key` —— Agent 接口 API Key
 
@@ -687,7 +740,7 @@ graph_<uuid>_edge   (id BIGSERIAL pk, edge_id unique, edge_type, source_id, targ
 | `kb_kbase` | 物理 `DELETE`；动态表（`doc_*` / `graph_*`）由 `delete_kbase` 显式 `DROP` |
 | `kb_directory` | 物理 `DELETE`（目录树由服务层按父子顺序递归删） |
 | `kb_directory_property` | 物理 `DELETE`（随所属目录删除，或作为孤儿清理） |
-| `kb_import_task` / 算子三表 | 物理 `DELETE` |
+| `task_center.task` / 算子三表 | 物理 `DELETE` |
 | `kb_node_relation` | 物理 `DELETE` |
 | 动态向量表行 | 物理 `DELETE`（按 `node_id`） |
 | 动态切片表行 | 物理 `DELETE`（**按 `source` = 文件名**，删文件时与向量一起清） |
@@ -696,8 +749,8 @@ graph_<uuid>_edge   (id BIGSERIAL pk, edge_id unique, edge_type, source_id, targ
 读路径只面向当前存在的行。完整矩阵与安全约定见
 [`data-deletion-policy.md`](data-deletion-policy.md)。
 
-**静态子表有外键兜底**（10 个 FK，全部 `NOT VALID` 后
-`VALIDATE` 上线）：
+**静态子表有外键兜底**（9 个 FK，全部 `NOT VALID` 后
+`VALIDATE` 上线；任务表不挂 FK，删库时由 `graph_delete_store` 显式删任务行）：
 
 | 子表 | 父表 | 删除动作 |
 |---|---|---|
@@ -710,9 +763,9 @@ graph_<uuid>_edge   (id BIGSERIAL pk, edge_id unique, edge_type, source_id, targ
 | `kb_kbase.operator_id` | `operator(id)` | SET NULL |
 | `operator_param.operator_id` | `operator(id)` | CASCADE |
 | `operator_prop.operator_id` | `operator(id)` | CASCADE |
-| `graph_extract_task.kb_id` | `kb_kbase(kbase_id)` | CASCADE |
 
-动态表（`doc_*` / `graph_*`）仍由应用显式 `DROP`，不挂 FK。
+动态表（`doc_*` / `graph_*`）仍由应用显式 `DROP`，不挂 FK；任务行由
+`graph_delete_store` 在删库时按 `task_type + kbase_id` 显式删除。
 
 ### 6.4 静态表有外键，动态表删除顺序由代码保证
 
@@ -756,8 +809,11 @@ graph_<uuid>_edge   (id BIGSERIAL pk, edge_id unique, edge_type, source_id, targ
 | 对象 | 谁创建 |
 |---|---|
 | `rag_studio` database | PostgreSQL 官方镜像按 `POSTGRES_DB` 自动创建（pgdata 为空时） |
-| **22 张核心静态表**（`kb_kbase` / `kb_directory` / `kb_import_task` / `operator*` / 图谱四表等） | `deploy/init/pg/00-schema.sql`：默认 `docker-compose.yml` 挂到 `/docker-entrypoint-initdb.d/`，**只在空 PGDATA 上执行** |
-| `kb_index` schema | `00-schema.sql` 内 `CREATE SCHEMA IF NOT EXISTS`；应用侧 `ddl.ensure_schema()` 兜底 |
+| **核心业务表**（`kb_kbase` / `kb_directory` / `operator*` / 图谱四表等） | `deploy/init/pg/00-schema.sql`：默认 `docker-compose.yml` 挂到 `/docker-entrypoint-initdb.d/`，**只在空 PGDATA 上执行** |
+| `kb_index` / `task_center` schema | `00-schema.sql` 内 `CREATE SCHEMA IF NOT EXISTS`；应用侧 `ddl.ensure_schema()` 兜底 `kb_index` |
+| `task_center.task` 与三个兼容视图 | `deploy/init/pg/10-unify-task-tables.sql`（空卷时在 00 之后自动执行；已有部署手工执行） |
+| 任务管理列/索引（`priority`、`cancel_requested*`、`CANCELLED` 状态） | `deploy/init/pg/16-task-management.sql`（幂等，已有部署手工执行） |
+| 任务尝试历史 `task_center.task_attempt` 与触发器 | `deploy/init/pg/17-task-attempt-history.sql`（幂等，已有部署手工执行） |
 | 非 superuser 应用角色 `rag_app` 与对象所有权 | `deploy/init/pg/05-app-role.sh`（空卷） |
 | 动态向量/切片表 | `knowledge_base/repository/ddl.py`，建库时按需创建（新表带 `UNIQUE(node_id)`） |
 | `model_registry` | `model/repository_pg.py` 的 `_ensure_schema`（`CREATE TABLE IF NOT EXISTS`，每进程一次） |
@@ -786,8 +842,8 @@ SELECT c.relname, c.reltuples::bigint AS est_rows,
 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
 WHERE n.nspname = 'kb_index' AND c.relkind = 'r' ORDER BY 1;
 
--- 任务积压
-SELECT task_type, status, count(*) FROM kb_import_task GROUP BY 1, 2 ORDER BY 1, 2;
+-- 任务积压（统一任务表）
+SELECT task_type, status, count(*) FROM task_center.task GROUP BY 1, 2 ORDER BY 1, 2;
 
 -- 画布发布版本
 SELECT workflow_id, max(version) AS latest FROM flow_release GROUP BY 1;

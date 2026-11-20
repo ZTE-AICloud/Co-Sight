@@ -24,6 +24,13 @@ from graph.repository import graph_index_store as store  # noqa: E402
 # ----------------------------------------------------------------------
 
 
+def test_smallint_coerces_non_numeric_to_none():
+    """导入包的 chunk ``type='system'`` 不能直接写 smallint 列。"""
+    assert store._smallint('system') is None
+    assert store._smallint('3') == 3
+    assert store._smallint(None) is None
+
+
 def test_entity_text_contains_type_and_properties():
     text = store.entity_text({
         'entity_id': 'Person_001', 'entity_type': 'Person',

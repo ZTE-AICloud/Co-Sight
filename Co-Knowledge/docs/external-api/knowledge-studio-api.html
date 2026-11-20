@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light">
-<meta name="description" content="Knowledge Studio 对外接口文档（集成面）：知识库只读、检索、问答、Agent REST 与 MCP。契约版本 2.3.0。">
+<meta name="description" content="Knowledge Studio 对外接口文档（集成面）：知识库只读、检索、问答、Agent REST 与 MCP。契约版本 2.4.0。">
 <title>Knowledge Studio 对外接口文档（集成面）</title>
 <style>
 :root {
@@ -331,7 +331,7 @@ td code { white-space: normal; word-break: normal; overflow-wrap: normal; }
     <span class="brand-text">Knowledge Studio · API Reference</span>
   </div>
   <div class="topbar-meta">
-    <span class="pill">契约 v2.3.0</span>
+    <span class="pill">契约 v2.4.0</span>
     
     <button class="print-btn" id="printBtn" type="button">打印 / PDF</button>
   </div>
@@ -343,7 +343,7 @@ td code { white-space: normal; word-break: normal; overflow-wrap: normal; }
       <input id="tocSearch" type="search" placeholder="搜索目录…" autocomplete="off" aria-label="搜索目录">
       <span class="search-hint">/</span>
     </div>
-    <nav class="toc" id="toc" aria-label="文档目录"><li class="toc-item toc-h2" data-text="文档信息"><a href="#sec-1">文档信息</a></li><li class="toc-item toc-h2" data-text="1. 概述"><a href="#sec-2">1. 概述</a><ul class="toc-sub"><li class="toc-item toc-h3" data-text="1.1 接入方式对比"><a href="#sec-2-1">1.1 接入方式对比</a></li><li class="toc-item toc-h3" data-text="1.2 首次接入需要准备什么"><a href="#sec-2-2">1.2 首次接入需要准备什么</a></li></ul></li><li class="toc-item toc-h2" data-text="2. 快速开始"><a href="#sec-3">2. 快速开始</a><ul class="toc-sub"><li class="toc-item toc-h3" data-text="2.1 Agent 最小链路（推荐）"><a href="#sec-3-1">2.1 Agent 最小链路（推荐）</a></li><li class="toc-item toc-h3" data-text="2.2 原生 REST 最小链路（AUTH_MODE=local）"><a href="#sec-3-2">2.2 原生 REST 最小链路（AUTH_MODE=local）</a></li><li class="toc-item toc-h3" data-text="2.3 流式问答"><a href="#sec-3-3">2.3 流式问答</a></li></ul></li><li class="toc-item toc-h2" data-text="3. 通用约定"><a href="#sec-4">3. 通用约定</a><ul class="toc-sub"><li class="toc-item toc-h3" data-text="3.1 地址与版本"><a href="#sec-4-1">3.1 地址与版本</a></li><li class="toc-item toc-h3" data-text="3.2 编码与媒体类型"><a href="#sec-4-2">3.2 编码与媒体类型</a></li><li class="toc-item toc-h3" data-text="3.3 鉴权"><a href="#sec-4-3">3.3 鉴权</a></li><li class="toc-item toc-h3" data-text="3.4 请求头"><a href="#sec-4-4">3.4 请求头</a></li><li class="toc-item toc-h3" data-text="3.5 成功响应"><a href="#sec-4-5">3.5 成功响应</a></li><li class="toc-item toc-h3" data-text="3.6 分页、排序与筛选"><a href="#sec-4-6">3.6 分页、排序与筛选</a></li><li class="toc-item toc-h3" data-text="3.7 错误模型"><a href="#sec-4-7">3.7 错误模型</a></li><li class="toc-item toc-h3" data-text="3.8 限流与配额"><a href="#sec-4-8">3.8 限流与配额</a></li><li class="toc-item toc-h3" data-text="3.9 超时、重试与幂等"><a href="#sec-4-9">3.9 超时、重试与幂等</a></li><li class="toc-item toc-h3" data-text="3.10 追踪与日志"><a href="#sec-4-10">3.10 追踪与日志</a></li></ul></li><li class="toc-item toc-h2" data-text="4. 系统"><a href="#sec-5">4. 系统</a><ul class="toc-sub"><li class="toc-item toc-h3" data-text="4.1 健康检查"><a href="#sec-5-1">4.1 健康检查</a></li></ul></li><li class="toc-item toc-h2" data-text="5. 知识库只读"><a href="#sec-6">5. 知识库只读</a><ul class="toc-sub"><li class="toc-item toc-h3" data-text="5.1 知识库列表"><a href="#sec-6-1">5.1 知识库列表</a></li><li class="toc-item toc-h3" data-text="5.2 知识库详情"><a href="#sec-6-2">5.2 知识库详情</a></li><li class="toc-item toc-h3" data-text="5.3 目录"><a href="#sec-6-3">5.3 目录</a></li><li class="toc-item toc-h3" data-text="5.4 文档"><a href="#sec-6-4">5.4 文档</a></li><li class="toc-item toc-h3" data-text="5.5 图谱库内容"><a href="#sec-6-5">5.5 图谱库内容</a></li></ul></li><li class="toc-item toc-h2" data-text="6. 检索"><a href="#sec-7">6. 检索</a><ul class="toc-sub"><li class="toc-item toc-h3" data-text="6.1 文档检索（向量 / 关键词）"><a href="#sec-7-1">6.1 文档检索（向量 / 关键词）</a></li><li class="toc-item toc-h3" data-text="6.2 图谱检索"><a href="#sec-7-2">6.2 图谱检索</a></li></ul></li><li class="toc-item toc-h2" data-text="7. 编排问答"><a href="#sec-8">7. 编排问答</a><ul class="toc-sub"><li class="toc-item toc-h3" data-text="7.1 请求"><a href="#sec-8-1">7.1 请求</a></li><li class="toc-item toc-h3" data-text="7.2 非流式响应"><a href="#sec-8-2">7.2 非流式响应</a></li><li class="toc-item toc-h3" data-text="7.3 流式响应（SSE）"><a href="#sec-8-3">7.3 流式响应（SSE）</a></li><li class="toc-item toc-h3" data-text="7.4 检索依据（include_retrieval=true）"><a href="#sec-8-4">7.4 检索依据（include_retrieval=true）</a></li><li class="toc-item toc-h3" data-text="7.5 错误码"><a href="#sec-8-5">7.5 错误码</a></li></ul></li><li class="toc-item toc-h2" data-text="8. Agent API"><a href="#sec-9">8. Agent API</a><ul class="toc-sub"><li class="toc-item toc-h3" data-text="8.1 权限范围与知识库白名单"><a href="#sec-9-1">8.1 权限范围与知识库白名单</a></li><li class="toc-item toc-h3" data-text="8.2 列知识库"><a href="#sec-9-2">8.2 列知识库</a></li><li class="toc-item toc-h3" data-text="8.3 知识库详情"><a href="#sec-9-3">8.3 知识库详情</a></li><li class="toc-item toc-h3" data-text="8.4 检索"><a href="#sec-9-4">8.4 检索</a></li><li class="toc-item toc-h3" data-text="8.5 问答"><a href="#sec-9-5">8.5 问答</a></li><li class="toc-item toc-h3" data-text="8.6 工作流查询（只读）"><a href="#sec-9-6">8.6 工作流查询（只读）</a></li><li class="toc-item toc-h3" data-text="8.7 通用错误示例"><a href="#sec-9-7">8.7 通用错误示例</a></li><li class="toc-item toc-h3" data-text="8.8 OpenAPI 导入"><a href="#sec-9-8">8.8 OpenAPI 导入</a></li><li class="toc-item toc-h3" data-text="8.9 执行已发布工作流"><a href="#sec-9-9">8.9 执行已发布工作流</a></li></ul></li><li class="toc-item toc-h2" data-text="9. MCP 接入"><a href="#sec-10">9. MCP 接入</a><ul class="toc-sub"><li class="toc-item toc-h3" data-text="9.1 端点与协议"><a href="#sec-10-1">9.1 端点与协议</a></li><li class="toc-item toc-h3" data-text="9.2 工具"><a href="#sec-10-2">9.2 工具</a></li><li class="toc-item toc-h3" data-text="9.3 客户端配置"><a href="#sec-10-3">9.3 客户端配置</a></li><li class="toc-item toc-h3" data-text="9.4 工具错误"><a href="#sec-10-4">9.4 工具错误</a></li></ul></li><li class="toc-item toc-h2" data-text="10. 本地账号登录（AUTH_MODE=local）"><a href="#sec-11">10. 本地账号登录（AUTH_MODE=local）</a><ul class="toc-sub"><li class="toc-item toc-h3" data-text="10.1 登录状态"><a href="#sec-11-1">10.1 登录状态</a></li><li class="toc-item toc-h3" data-text="10.2 登录"><a href="#sec-11-2">10.2 登录</a></li><li class="toc-item toc-h3" data-text="10.3 退出"><a href="#sec-11-3">10.3 退出</a></li><li class="toc-item toc-h3" data-text="10.4 当前用户"><a href="#sec-11-4">10.4 当前用户</a></li><li class="toc-item toc-h3" data-text="10.5 修改密码"><a href="#sec-11-5">10.5 修改密码</a></li></ul></li><li class="toc-item toc-h2" data-text="11. 配额与调用约束速查"><a href="#sec-12">11. 配额与调用约束速查</a></li><li class="toc-item toc-h2" data-text="12. 版本与兼容性"><a href="#sec-13">12. 版本与兼容性</a><ul class="toc-sub"><li class="toc-item toc-h3" data-text="12.1 版本号"><a href="#sec-13-1">12.1 版本号</a></li><li class="toc-item toc-h3" data-text="12.2 兼容承诺"><a href="#sec-13-2">12.2 兼容承诺</a></li></ul></li><li class="toc-item toc-h2" data-text="13. 接入检查清单"><a href="#sec-14">13. 接入检查清单</a></li><li class="toc-item toc-h2" data-text="14. 常见问题"><a href="#sec-15">14. 常见问题</a><ul class="toc-sub"><li class="toc-item toc-h3" data-text="14.1 认证与权限"><a href="#sec-15-1">14.1 认证与权限</a></li><li class="toc-item toc-h3" data-text="14.2 检索与问答"><a href="#sec-15-2">14.2 检索与问答</a></li><li class="toc-item toc-h3" data-text="14.3 图谱"><a href="#sec-15-3">14.3 图谱</a></li><li class="toc-item toc-h3" data-text="14.4 其他"><a href="#sec-15-4">14.4 其他</a></li></ul></li><li class="toc-item toc-h2" data-text="附录 A：curl 速查"><a href="#sec-16">附录 A：curl 速查</a></li><li class="toc-item toc-h2" data-text="附录 B：机器可读契约"><a href="#sec-17">附录 B：机器可读契约</a></li><li class="toc-item toc-h2" data-text="附录 C：错误码总表（集成面）"><a href="#sec-18">附录 C：错误码总表（集成面）</a></li></nav>
+    <nav class="toc" id="toc" aria-label="文档目录"><li class="toc-item toc-h2" data-text="文档信息"><a href="#sec-1">文档信息</a></li><li class="toc-item toc-h2" data-text="1. 概述"><a href="#sec-2">1. 概述</a><ul class="toc-sub"><li class="toc-item toc-h3" data-text="1.1 接入方式对比"><a href="#sec-2-1">1.1 接入方式对比</a></li><li class="toc-item toc-h3" data-text="1.2 首次接入需要准备什么"><a href="#sec-2-2">1.2 首次接入需要准备什么</a></li></ul></li><li class="toc-item toc-h2" data-text="2. 快速开始"><a href="#sec-3">2. 快速开始</a><ul class="toc-sub"><li class="toc-item toc-h3" data-text="2.1 Agent 最小链路（推荐）"><a href="#sec-3-1">2.1 Agent 最小链路（推荐）</a></li><li class="toc-item toc-h3" data-text="2.2 原生 REST 最小链路（AUTH_MODE=local）"><a href="#sec-3-2">2.2 原生 REST 最小链路（AUTH_MODE=local）</a></li><li class="toc-item toc-h3" data-text="2.3 流式问答"><a href="#sec-3-3">2.3 流式问答</a></li></ul></li><li class="toc-item toc-h2" data-text="3. 通用约定"><a href="#sec-4">3. 通用约定</a><ul class="toc-sub"><li class="toc-item toc-h3" data-text="3.1 地址与版本"><a href="#sec-4-1">3.1 地址与版本</a></li><li class="toc-item toc-h3" data-text="3.2 编码与媒体类型"><a href="#sec-4-2">3.2 编码与媒体类型</a></li><li class="toc-item toc-h3" data-text="3.3 鉴权"><a href="#sec-4-3">3.3 鉴权</a></li><li class="toc-item toc-h3" data-text="3.4 请求头"><a href="#sec-4-4">3.4 请求头</a></li><li class="toc-item toc-h3" data-text="3.5 成功响应"><a href="#sec-4-5">3.5 成功响应</a></li><li class="toc-item toc-h3" data-text="3.6 分页、排序与筛选"><a href="#sec-4-6">3.6 分页、排序与筛选</a></li><li class="toc-item toc-h3" data-text="3.7 错误模型"><a href="#sec-4-7">3.7 错误模型</a></li><li class="toc-item toc-h3" data-text="3.8 限流与配额"><a href="#sec-4-8">3.8 限流与配额</a></li><li class="toc-item toc-h3" data-text="3.9 超时、重试与幂等"><a href="#sec-4-9">3.9 超时、重试与幂等</a></li><li class="toc-item toc-h3" data-text="3.10 追踪与日志"><a href="#sec-4-10">3.10 追踪与日志</a></li></ul></li><li class="toc-item toc-h2" data-text="4. 系统"><a href="#sec-5">4. 系统</a><ul class="toc-sub"><li class="toc-item toc-h3" data-text="4.1 健康检查"><a href="#sec-5-1">4.1 健康检查</a></li></ul></li><li class="toc-item toc-h2" data-text="5. 知识库只读"><a href="#sec-6">5. 知识库只读</a><ul class="toc-sub"><li class="toc-item toc-h3" data-text="5.1 知识库列表"><a href="#sec-6-1">5.1 知识库列表</a></li><li class="toc-item toc-h3" data-text="5.2 知识库详情"><a href="#sec-6-2">5.2 知识库详情</a></li><li class="toc-item toc-h3" data-text="5.3 目录"><a href="#sec-6-3">5.3 目录</a></li><li class="toc-item toc-h3" data-text="5.4 文档"><a href="#sec-6-4">5.4 文档</a></li><li class="toc-item toc-h3" data-text="5.5 图谱库内容"><a href="#sec-6-5">5.5 图谱库内容</a></li></ul></li><li class="toc-item toc-h2" data-text="6. 检索"><a href="#sec-7">6. 检索</a><ul class="toc-sub"><li class="toc-item toc-h3" data-text="6.1 文档检索（向量 / 关键词）"><a href="#sec-7-1">6.1 文档检索（向量 / 关键词）</a></li><li class="toc-item toc-h3" data-text="6.2 图谱检索"><a href="#sec-7-2">6.2 图谱检索</a></li></ul></li><li class="toc-item toc-h2" data-text="7. 编排问答"><a href="#sec-8">7. 编排问答</a><ul class="toc-sub"><li class="toc-item toc-h3" data-text="7.1 请求"><a href="#sec-8-1">7.1 请求</a></li><li class="toc-item toc-h3" data-text="7.2 非流式响应"><a href="#sec-8-2">7.2 非流式响应</a></li><li class="toc-item toc-h3" data-text="7.3 流式响应（SSE）"><a href="#sec-8-3">7.3 流式响应（SSE）</a></li><li class="toc-item toc-h3" data-text="7.4 检索依据（include_retrieval=true）"><a href="#sec-8-4">7.4 检索依据（include_retrieval=true）</a></li><li class="toc-item toc-h3" data-text="7.5 错误码"><a href="#sec-8-5">7.5 错误码</a></li></ul></li><li class="toc-item toc-h2" data-text="8. Agent API"><a href="#sec-9">8. Agent API</a><ul class="toc-sub"><li class="toc-item toc-h3" data-text="8.1 权限范围与知识库白名单"><a href="#sec-9-1">8.1 权限范围与知识库白名单</a></li><li class="toc-item toc-h3" data-text="8.2 列知识库"><a href="#sec-9-2">8.2 列知识库</a></li><li class="toc-item toc-h3" data-text="8.3 知识库详情"><a href="#sec-9-3">8.3 知识库详情</a></li><li class="toc-item toc-h3" data-text="8.4 检索"><a href="#sec-9-4">8.4 检索</a></li><li class="toc-item toc-h3" data-text="8.5 问答"><a href="#sec-9-5">8.5 问答</a></li><li class="toc-item toc-h3" data-text="8.6 工作流查询（只读）"><a href="#sec-9-6">8.6 工作流查询（只读）</a></li><li class="toc-item toc-h3" data-text="8.7 通用错误示例"><a href="#sec-9-7">8.7 通用错误示例</a></li><li class="toc-item toc-h3" data-text="8.8 OpenAPI 导入"><a href="#sec-9-8">8.8 OpenAPI 导入</a></li><li class="toc-item toc-h3" data-text="8.9 执行已发布工作流"><a href="#sec-9-9">8.9 执行已发布工作流</a></li></ul></li><li class="toc-item toc-h2" data-text="9. MCP 接入"><a href="#sec-10">9. MCP 接入</a><ul class="toc-sub"><li class="toc-item toc-h3" data-text="9.1 端点与协议"><a href="#sec-10-1">9.1 端点与协议</a></li><li class="toc-item toc-h3" data-text="9.2 工具"><a href="#sec-10-2">9.2 工具</a></li><li class="toc-item toc-h3" data-text="9.3 客户端配置"><a href="#sec-10-3">9.3 客户端配置</a></li><li class="toc-item toc-h3" data-text="9.4 工具错误"><a href="#sec-10-4">9.4 工具错误</a></li></ul></li><li class="toc-item toc-h2" data-text="10. 本地账号登录（AUTH_MODE=local）"><a href="#sec-11">10. 本地账号登录（AUTH_MODE=local）</a><ul class="toc-sub"><li class="toc-item toc-h3" data-text="10.1 登录状态"><a href="#sec-11-1">10.1 登录状态</a></li><li class="toc-item toc-h3" data-text="10.2 登录"><a href="#sec-11-2">10.2 登录</a></li><li class="toc-item toc-h3" data-text="10.3 退出"><a href="#sec-11-3">10.3 退出</a></li><li class="toc-item toc-h3" data-text="10.4 当前用户"><a href="#sec-11-4">10.4 当前用户</a></li><li class="toc-item toc-h3" data-text="10.5 修改密码"><a href="#sec-11-5">10.5 修改密码</a></li></ul></li><li class="toc-item toc-h2" data-text="11. 配额与调用约束速查"><a href="#sec-12">11. 配额与调用约束速查</a></li><li class="toc-item toc-h2" data-text="12. 版本与兼容性"><a href="#sec-13">12. 版本与兼容性</a><ul class="toc-sub"><li class="toc-item toc-h3" data-text="12.1 版本号"><a href="#sec-13-1">12.1 版本号</a></li><li class="toc-item toc-h3" data-text="12.2 兼容承诺"><a href="#sec-13-2">12.2 兼容承诺</a></li><li class="toc-item toc-h3" data-text="12.3 2.4.0 新增：任务管理"><a href="#sec-13-3">12.3 2.4.0 新增：任务管理</a></li></ul></li><li class="toc-item toc-h2" data-text="13. 接入检查清单"><a href="#sec-14">13. 接入检查清单</a></li><li class="toc-item toc-h2" data-text="14. 常见问题"><a href="#sec-15">14. 常见问题</a><ul class="toc-sub"><li class="toc-item toc-h3" data-text="14.1 认证与权限"><a href="#sec-15-1">14.1 认证与权限</a></li><li class="toc-item toc-h3" data-text="14.2 检索与问答"><a href="#sec-15-2">14.2 检索与问答</a></li><li class="toc-item toc-h3" data-text="14.3 图谱"><a href="#sec-15-3">14.3 图谱</a></li><li class="toc-item toc-h3" data-text="14.4 其他"><a href="#sec-15-4">14.4 其他</a></li></ul></li><li class="toc-item toc-h2" data-text="附录 A：curl 速查"><a href="#sec-16">附录 A：curl 速查</a></li><li class="toc-item toc-h2" data-text="附录 B：机器可读契约"><a href="#sec-17">附录 B：机器可读契约</a></li><li class="toc-item toc-h2" data-text="附录 C：错误码总表（集成面）"><a href="#sec-18">附录 C：错误码总表（集成面）</a></li></nav>
     <div class="sidebar-foot">
       <span>Knowledge Studio 对外接口文档（集成面）</span>
       <span></span>
@@ -367,11 +367,11 @@ td code { white-space: normal; word-break: normal; overflow-wrap: normal; }
 </tr>
 <tr>
 <td>契约版本</td>
-<td>2.3.0</td>
+<td>2.4.0</td>
 </tr>
 <tr>
 <td>文档版本</td>
-<td>2.3.0（与契约对齐）</td>
+<td>2.4.0（与契约对齐）</td>
 </tr>
 <tr>
 <td>更新日期</td>
@@ -603,7 +603,7 @@ Agent Key 即可，这也是「<code>/agent/workflows</code> 发现 → <code>/a
 <ul>
 <li>唯一对外前缀：<code>/api/co-knowledge/v1</code>。</li>
 <li>只使用该前缀下的路径。其他 <code>/api/...</code> 路径在部署中可能被前端静态资源接管，返回 <code>200</code> 的 HTML 而不是 <code>404</code>。</li>
-<li>当前契约版本：<code>2.3.0</code>。版本号随契约发布，新增字段/端点属于向后兼容变更；删除或改语义才升主版本。</li>
+<li>当前契约版本：<code>2.4.0</code>。版本号随契约发布，新增字段/端点属于向后兼容变更；删除或改语义才升主版本。</li>
 <li>Agent 子接口另有 OpenAPI 版本 <code>1.4.0</code>，见 8.8。</li>
 </ul>
 <h3 id="sec-4-2">3.2 编码与媒体类型<a class="heading-anchor" href="#sec-4-2" aria-label="本节链接">#</a></h3>
@@ -4352,9 +4352,9 @@ Content-Type: application/json
 <h2 id="sec-13">12. 版本与兼容性<a class="heading-anchor" href="#sec-13" aria-label="本节链接">#</a></h2>
 <h3 id="sec-13-1">12.1 版本号<a class="heading-anchor" href="#sec-13-1" aria-label="本节链接">#</a></h3>
 <ul>
-<li>契约版本：<code>2.3.0</code>（<code>contracts/VERSION</code>）。</li>
+<li>契约版本：<code>2.4.0</code>（<code>contracts/VERSION</code>）。</li>
 <li>Agent OpenAPI 版本：<code>1.4.0</code>。</li>
-<li>文档版本：<code>2.3.0</code>（与契约对齐）。</li>
+<li>文档版本：<code>2.4.0</code>（与契约对齐）。</li>
 </ul>
 <h3 id="sec-13-2">12.2 兼容承诺<a class="heading-anchor" href="#sec-13-2" aria-label="本节链接">#</a></h3>
 <ul>
@@ -4371,6 +4371,55 @@ MCP progress 通知旁路送达（第 8.9 / 9.2 节）。</li>
 <li>链路 ID 响应头是 <code>X-Request-Id</code>；客户端传入的合法值（<code>[A-Za-z0-9._-]</code>、1–64 字符）原样沿用，
 不合法则丢弃并由服务端生成。</li>
 </ul>
+<h3 id="sec-13-3">12.3 2.4.0 新增：任务管理<a class="heading-anchor" href="#sec-13-3" aria-label="本节链接">#</a></h3>
+<p>管理员会话下新增统一任务管理端点，覆盖文件导入、图谱抽图、图谱导入：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>方法</th>
+<th>路径</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>GET</td>
+<td><code>/tasks</code></td>
+<td>分页列表；过滤 <code>task_<wbr>type</code> / <code>status</code> / <code>lane</code> / <code>kbase_<wbr>id</code> / <code>keyword</code>（任务 ID、文件名称或知识库名称/ID）；含 <code>fileName</code> / <code>kbaseName</code></td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/tasks/groups</code></td>
+<td>按知识库聚合（树表根行）；<code>keyword</code> 匹配知识库名称/ID</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/tasks/stats</code></td>
+<td>全局与按车道/类型统计、积压深度、最老待执行年龄</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/tasks/{task_<wbr>id}</code></td>
+<td>详情（含 <code>payload</code> / <code>extra</code> / <code>attempts</code>）</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/tasks/{task_<wbr>id}/cancel</code></td>
+<td>取消 <code>PENDING</code>/<code>RETRY</code>（立即）或 <code>RUNNING</code>（协作中止）；可选 <code>{&quot;reason&quot;: &quot;...&quot;}</code></td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/tasks/{task_<wbr>id}/retry</code></td>
+<td>重试 <code>FAILED</code>/<code>CANCELLED</code></td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td><code>/tasks/{task_<wbr>id}</code></td>
+<td>调整排队任务 <code>priority</code>（-1000–1000，越大越先）</td>
+</tr>
+</tbody></table></div>
+<p><code>RUNNING</code> 取消返回 <code>200</code> 且 <code>cancelRequested=true</code>，worker 在下一个安全点中止后
+任务才落 <code>CANCELLED</code>；这是尽力而为，runner 已越过最后安全点时仍可能正常完成。
+图谱任务的临时输入已被清理时，重试返回 <code>409 task_input_expired</code>。</p>
 <h2 id="sec-14">13. 接入检查清单<a class="heading-anchor" href="#sec-14" aria-label="本节链接">#</a></h2>
 <ul>
 <li><input disabled="" type="checkbox"> 已确认部署地址、<code>AUTH_MODE</code> 与 TLS。</li>
@@ -4832,12 +4881,12 @@ curl -sS \
 <td>重排模型未配置</td>
 </tr>
 </tbody></table></div>
-<p><em>文档结束。本文对应契约版本 2.3.0，当前版本。</em></p>
+<p><em>文档结束。本文对应契约版本 2.4.0，当前版本。</em></p>
 
     </article>
     <footer class="doc-foot">
       <span>Knowledge Studio 对外接口文档（集成面）</span>
-      <span>契约版本 2.3.0</span>
+      <span>契约版本 2.4.0</span>
     </footer>
   </main>
 </div>

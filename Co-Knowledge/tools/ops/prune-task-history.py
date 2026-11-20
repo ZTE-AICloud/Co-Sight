@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
-"""清理三类任务表中已进入终态且超过保留期的历史行。
+"""清理统一任务表 ``task_center.task`` 中已进入终态且超过保留期的历史行。
 
 宿主侧工具：
 
     python3 tools/ops/prune-task-history.py --dry-run
     python3 tools/ops/prune-task-history.py --apply --yes --older-than-days 90
 
-只删终态任务；PENDING/RUNNING/RETRY 永不删除。图谱抽取任务有
-``fk_graph_extract_task_kbase``，但保留的是任务行，不影响 KB。
+只删终态任务；PENDING/RUNNING/RETRY 永不删除。``COMPLETED_WITH_ERRORS``
+是图谱导入的部分成功态，``CANCELLED`` 是人工取消，二者同样按保留期清理。
+尝试历史 ``task_center.task_attempt`` 通过外键级联删除。
 """
 
 from __future__ import annotations
@@ -24,9 +25,9 @@ DEFAULT_BATCH = 2000
 
 #: (table, terminal statuses, time column)
 TASKS = (
-    ('kb_import_task', ('COMPLETED', 'FAILED'), 'created_at'),
-    ('graph_import_task', ('COMPLETED', 'COMPLETED_WITH_ERRORS', 'FAILED'), 'created_at'),
-    ('graph_extract_task', ('SUCCESS', 'FAIL'), 'created_at'),
+    ('task_center.task',
+     ('COMPLETED', 'COMPLETED_WITH_ERRORS', 'FAILED', 'CANCELLED'),
+     'created_at'),
 )
 
 
@@ -53,7 +54,7 @@ def where_clause(table: str, statuses: tuple[str, ...], time_col: str,
 
 def count_rows(cur, table, statuses, time_col, days) -> int:
     where, params = where_clause(table, statuses, time_col, days)
-    cur.execute(f'SELECT count(*) FROM public.{table} WHERE {where}', params)
+    cur.execute(f'SELECT count(*) FROM {table} WHERE {where}', params)
     return int(cur.fetchone()[0])
 
 
@@ -62,9 +63,9 @@ def delete_rows(cur, table, statuses, time_col, days, batch) -> int:
     deleted = 0
     while True:
         cur.execute(f"""
-            DELETE FROM public.{table}
+            DELETE FROM {table}
             WHERE ctid IN (
-                SELECT ctid FROM public.{table} WHERE {where} LIMIT %s
+                SELECT ctid FROM {table} WHERE {where} LIMIT %s
             )
         """, (*params, batch))
         if not cur.rowcount:
@@ -76,10 +77,11 @@ def delete_rows(cur, table, statuses, time_col, days, batch) -> int:
 def verify(cur) -> bool:
     ok = True
     for table, statuses, time_col in TASKS:
+        schema, name = table.split('.', 1)
         cur.execute("""
             SELECT column_name FROM information_schema.columns
-            WHERE table_schema = 'public' AND table_name = %s
-        """, (table,))
+            WHERE table_schema = %s AND table_name = %s
+        """, (schema, name))
         columns = {row[0] for row in cur.fetchall()}
         missing = {'status', time_col} - columns
         if not columns or missing:

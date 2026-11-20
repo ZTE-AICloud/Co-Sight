@@ -27,24 +27,25 @@
 
 ## 异步
 
-异步执行用线程池（core 3 / max 5 / queue 100 / CallerRunsPolicy）。
-这里用一个模块级 ``ThreadPoolExecutor`` 同样参数，**不复用文件导入那条队列** ——
-那条队列的语义是「文件处理链 + 重试」，与「一次性图谱导入」不是一回事。
+异步执行走 ``graph.task_runtime`` 的 ``graph_import`` 车道（5 个 worker），
+**不复用文件导入那条队列** —— 那条队列的语义是「文件处理链 + 重试」，与
+「一次性图谱导入」不是一回事。
 """
 
 from __future__ import annotations
 
 import json
-import os
 import re
+import uuid
 import zipfile
-from concurrent.futures import ThreadPoolExecutor
 from typing import Optional
 
+from graph import task_runtime
+from infrastructure.tasks import TaskRejectedError
 from knowledge_base import name_lock
 from shared.errors.api import KbApiError, KbLiteralError, KbStoreError
 from shared.i18n.messages import is_base_absent
-from graph.service import graph_import_engine, graph_schema_service
+from graph.service import graph_schema_service
 from knowledge_base.service import kbase_v2_service
 from knowledge_base.service.embedding_dimension import (ensure_known_embedding_model,
                                                         resolve_embedding_dimension)
@@ -52,6 +53,7 @@ from graph.repository import graph_import_store
 from knowledge_base.service import kbase_service as kbase_store
 from knowledge_base.service.kbase_write_service import _validate_name, _validate_sizes
 from infrastructure.logging.logutil import log
+from infrastructure.storage import kb_storage as storage
 
 # ``GraphImportServiceImpl`` 的两个上限
 MAX_FILE_SIZE_MB = 500
@@ -66,9 +68,15 @@ _ID_PREFIX = 'graph_'
 _ID_LENGTHS = (16, 32)
 _HEX = re.compile(r'^[0-9a-fA-F]+$')
 
-# 线程池参数
-_GRAPH_IMPORT_POOL = ThreadPoolExecutor(
-    max_workers=5, thread_name_prefix='graph_import')
+
+def _ensure_task_capacity() -> None:
+    """建库之前做准入，避免被拒后留下空库/临时 zip。"""
+    try:
+        task_runtime.ensure_import_capacity()
+    except TaskRejectedError as error:
+        log.warning('graph import queue is full: %s', error)
+        raise KbApiError(None, status=503,
+                         problem_code='task_queue_full') from error
 
 
 def import_graph(filename: str, content: bytes, emp_no: str,
@@ -131,6 +139,7 @@ def import_graph(filename: str, content: bytes, emp_no: str,
         log.warning('schema validation failed: %s', error)
         raise KbApiError('Retcode.graph.import.fail')
 
+    _ensure_task_capacity()
     kbase = _ensure_kbase(desc, name, kbase_id, emp_no, org_id, schema)
     # 在 202 返回**之前**落「入库中」：导入引擎只在终态回写 5/104，
     # 不先标 4 的话列表刷新看到的是一条静止的「已创建」，自动刷新闸门不启动，
@@ -366,35 +375,26 @@ def _write_schema(kbase_id: str, schema: dict) -> None:
 
 
 def _submit(desc: dict, kbase: dict, schema: dict, entries: dict) -> None:
-    """把导入丢进线程池：立刻返回，后台跑。
+    """把导入丢进 DB 任务车道：立刻返回，后台跑。
 
-    ``kb_index_name`` 用 ``graph_<kbId>``（``graph_import_task.kb_id``
-    列的形状，删库时按它匹配）。
+    ``kb_index_name`` 用 ``graph_<kbId>``；统一表的 ``kbase_id`` 存裸 id，
+    store 负责去掉前缀（兼容视图 ``graph_import_task.kb_id`` 仍返回带前缀形态）。
+    payload 持久化 zip 路径与 schema，进程重启后可由 worker 重建执行。
     """
     kbase_id = kbase.get('kbase_id')
     schema_id = schema.get('schema_id')
     zip_path = _write_temp_zip(entries)
-
-    def run() -> None:
-        try:
-            graph_import_engine.import_from_zip(
-                f'{graph_import_store.KB_ID_PREFIX}{kbase_id}',
-                schema_id, zip_path, kbase_schema_obj=schema)
-        except Exception:                                          # noqa: BLE001
-            log.exception('graph import task failed for kbase %s', kbase_id)
-        finally:
-            # 临时 zip 最大 500MB；成功/失败都必须删，否则每次导入泄漏一份。
-            try:
-                os.unlink(zip_path)
-            except OSError as error:
-                log.warning('failed to remove temp graph zip %s: %s', zip_path, error)
-
-    try:
-        _GRAPH_IMPORT_POOL.submit(run)
-    except Exception:                                              # noqa: BLE001
-        # 池满/已关：**同步跑**，别把导入丢了
-        log.warning('graph import pool rejected the task; running inline')
-        run()
+    kb_index_name = f'{graph_import_store.KB_ID_PREFIX}{kbase_id}'
+    payload = {
+        'kbIndexName': kb_index_name,
+        'schemaId': schema_id,
+        'schemaObj': schema,
+        'zipPath': zip_path,
+    }
+    task_id = uuid.uuid4().hex
+    graph_import_store.create_task(
+        task_id, kb_index_name, schema_id, payload=payload)
+    task_runtime.submit_import(payload, task_id=task_id)
 
 
 #: 导入引擎真正读取的条目。``document_chunk.jsonl`` 也属于导入条目：
@@ -410,11 +410,13 @@ def _write_temp_zip(entries: dict) -> str:
 
     只保留 ``_IMPORT_ENTRIES`` 三类；同名 basename 只写一次，且优先使用
     **根目录精确名**（``entities.jsonl``），其次才是任意深度的同后缀条目。
-    """
-    import tempfile
 
-    handle, path = tempfile.mkstemp(prefix='graph_import_', suffix='.zip')
-    os.close(handle)
+    ⚠️ 必须落在共享卷 ``RKB_STORAGE_TEMP_PATH`` 下：DB 队列崩溃重试时 zip
+    还要能被新进程读到，不能放 ``/tmp``。
+    """
+    folder = storage.tmp_preview_dir(uuid.uuid4().hex)
+    folder.mkdir(parents=True, exist_ok=True)
+    path = str(folder / 'graph_import.zip')
 
     ordered: list[tuple[str, bytes]] = []
     seen: set[str] = set()

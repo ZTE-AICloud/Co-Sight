@@ -14,13 +14,13 @@
 数据来源要分清，否则会写出「重启后统计看起来正常」的假象：
 
 * ``pendingCount`` / ``runningCount`` / ``failedCount`` / ``retryCount`` / ``queueSize``
-  → **只看内存表**。重启后全是 0（队列不重投，符合既定语义）。
-* ``completedCount`` → **查库**（``kb_import_task`` 里 COMPLETED 的 FILE_IMPORT 任务）。
+  → **DB 模式查统一任务表**；内存模式只看内存表（重启后全是 0）。
+* ``completedCount`` → **查库**（统一任务表 ``task`` 里 COMPLETED 的 FILE_IMPORT 任务）。
   已完成的任务一完成就被移出内存表，所以内存里永远数不到。
-* ``getTask`` → 内存优先，**查不到回落 ``kb_import_task``**。所以任务详情在重启后仍然查得到，
+* ``getTask`` → 内存优先，**查不到回落统一任务表 ``task``**。所以任务详情在重启后仍然查得到，
   但恢复出来的对象只有 fileId：``fileName`` 是 null、``maxRetryCount`` 是 0、
   ``startTime`` / ``errorMessage`` 也是 null。
-* ``getFailedTasks`` → **只看内存**，重启后返回空数组。
+* ``getFailedTasks`` → DB 模式查统一任务表；内存模式只看内存。
 """
 
 from __future__ import annotations
@@ -29,7 +29,8 @@ from datetime import datetime
 from typing import Optional
 
 from knowledge_base.task import runtime
-from knowledge_base.task.wrapper import STATUS_COMPLETED, STATUS_FAILED
+from knowledge_base.task.wrapper import (STATUS_CANCELLED, STATUS_COMPLETED,
+                                         STATUS_FAILED)
 
 # ``TaskStatus.getDescription()``：注意**入库的是枚举名**，这里只用于展示
 STATUS_DESCRIPTIONS = {
@@ -102,7 +103,7 @@ def task_detail(task_id: str) -> Optional[dict]:
 
 
 def failed_tasks() -> list[dict]:
-    """``getFailedTasks``：**只数内存里的**，重启后是空数组。"""
+    """``getFailedTasks``：DB 模式查库，内存模式只数内存。"""
     return [build_task_info(task) for task in runtime.get_queue().failed_tasks()]
 
 
@@ -118,7 +119,7 @@ def error_text(error: BaseException) -> Optional[str]:
 
 def is_terminal(task) -> bool:
     """终态判定（供测试与排障用）。"""
-    return task.status in (STATUS_COMPLETED, STATUS_FAILED)
+    return task.status in (STATUS_COMPLETED, STATUS_FAILED, STATUS_CANCELLED)
 
 
 __all__ = [

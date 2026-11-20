@@ -205,8 +205,11 @@ Knowledge Studio 是一个可自部署的**知识工程平台**，围绕「把�
   负责首次播种与注册表不可用时的回落（见 §9.4）。
 - **认证方式**：支持 `AUTH_MODE=none|local|gateway`。`local` 使用本地账号与会话
   （见 [`auth-login.md`](auth-login.md)）；私有化部署建议按实例划分租户边界。
-- **异步任务**：使用进程内队列 + 数据库持久化，部署只需 PostgreSQL 与 OpenSearch，
-  不需要额外的消息中间件。
+- **异步任务**：统一任务表 `task_center.task` + 分车道 worker。文件入库、图谱抽图、
+  图谱导入都使用 **DB 队列**（`FOR UPDATE SKIP LOCKED` + 租约 + 心跳 + 过期回收），
+  进程重启后会继续认领 `PENDING/RETRY`。管理面 `{prefix}/tasks` 提供列表/详情/
+  统计、排队任务取消、失败任务重试与优先级调整。部署只需 PostgreSQL 与
+  OpenSearch，不需要额外的消息中间件。
 - **工作流发布**：画布保存后发布，运行时读取发布快照；发布与验证都在控制台内完成。
 - **CI 覆盖**：前端 vitest、后端 pytest（含 skip==0 断言）与 `ruff check src`；
   本地一键入口 `tools/run-tests.sh`（见 §10.4）。
@@ -271,7 +274,7 @@ Knowledge Studio 是一个可自部署的**知识工程平台**，围绕「把�
 
 | URL 前缀 | 上游 | 说明 |
 |---|---|---|
-| `/api/co-knowledge/v1/` | `rag-knowledge-base:8091` | **后端全部接口**：知识库/内容/检索/图谱/算子/工作流/模型/Agent Key，REST 契约 65 条路径 / 93 个操作，全部挂在这一条前缀下 |
+| `/api/co-knowledge/v1/` | `rag-knowledge-base:8091` | **后端全部接口**：知识库/内容/检索/图谱/算子/工作流/模型/Agent Key，REST 契约 71 条路径 / 100 个操作，全部挂在这一条前缀下 |
 | `/api/co-knowledge/v1/query` | `rag-knowledge-base:8091` | 检索编排的提问（SSE）。nginx 里**单独一段 location**（最长前缀匹配优先），带三条流式配置（见 §3.4） |
 | `/api/co-knowledge/v1/agent/` | `rag-knowledge-base:8091` | **Agent REST facade**：只读检索/问答 + OpenAPI；独立 location，`proxy_read_timeout 300s`。见 [`agent-integration.md`](agent-integration.md) |
 | `/api/co-knowledge/v1/mcp` | `rag-knowledge-base:8091` | **Agent MCP**（Streamable HTTP）：独立 location，`proxy_buffering off` + HTTP/1.1 + 300s |
@@ -366,8 +369,8 @@ POST /api/co-knowledge/v1/retrieval
 
 | 文件 | 类型 | 内容 |
 |---|---|---|
-| `contracts/VERSION` | 版本号 | 当前 **2.3.0**，与 `contracts/openapi/rkb-api.yaml` 的 `info.version` 一致 |
-| `contracts/openapi/rkb-api.yaml` | OpenAPI 3.0.3 | 全量 REST 契约：**65 条路径 / 93 个操作**，由 `tools/verify/generate-rkb-openapi.py` 从运行期路由生成 |
+| `contracts/VERSION` | 版本号 | 当前 **2.4.0**，与 `contracts/openapi/rkb-api.yaml` 的 `info.version` 一致 |
+| `contracts/openapi/rkb-api.yaml` | OpenAPI 3.0.3 | 全量 REST 契约：**71 条路径 / 100 个操作**，由 `tools/verify/generate-rkb-openapi.py` 从运行期路由生成 |
 | `contracts/openapi/agent-api.yaml` | OpenAPI 3.0.2 | Agent REST 子应用契约（6 条路径），版本独立演进（当前 1.4.0） |
 | `contracts/schemas/*.json` | JSON Schema 2020-12 | 9 个跨模块共享对象（知识库 / 文档 / 切片 / 算子 / 任务 / 检索 / problem / 分页） |
 | `contracts/model-gateway.md` | 契约文档（**非 OpenAPI**） | embedding / 生成 / rerank 的接入边界与配置 |
@@ -1049,7 +1052,7 @@ curl -s -X POST http://localhost:8080/api/co-knowledge/v1/query \
 
 - **PostgreSQL** 存实体与边：每个图谱知识库两张表 **`graph_<kbId>_vertex/_edge`**。
 - **PostgreSQL** 同时存图谱元数据：`knowledge_graph_info`（记录 `kb_id` → 图基名）、
-  `graph_schema`（Schema 定义）、`graph_import_tasks`（导入任务）。
+  `graph_schema`（Schema 定义）、`task_center.task`（统一的抽取/导入任务表）。
 
 > ⚠️ 这三张表在 `rag_studio` 库；RKB 侧曾有同名副本，现已合并为**一套**，DDL 权威是
 > `V6__merge_graph_tables.sql`。
@@ -1193,7 +1196,7 @@ Agent 接口的 `RKB_AGENT_*` 变量见 [`agent-integration.md`](agent-integrati
 见 §2.5。要点重申：
 
 - `contracts/` 是**唯一来源**，不得私造第二份定义。
-- 正式 OpenAPI 有两份：`rkb-api.yaml`（全量 REST，2.3.0）与 `agent-api.yaml`（Agent，1.4.0）。
+- 正式 OpenAPI 有两份：`rkb-api.yaml`（全量 REST，2.4.0）与 `agent-api.yaml`（Agent，1.4.0）。
 - `rkb-api.yaml` 由 `tools/verify/generate-rkb-openapi.py` 从运行期路由生成，
   并有快照测试锁定；改动接口后要重新生成。
 - 改动契约要同步更新 `contracts/VERSION`。
@@ -1238,7 +1241,7 @@ Agent 接口的 `RKB_AGENT_*` 变量见 [`agent-integration.md`](agent-integrati
 | 项 | 值 |
 |---|---|
 | 对外前缀 | **`/api/co-knowledge/v1`**（经 nginx；单点定义 `src/shared/prefixes.py`） |
-| REST 契约 | `contracts/openapi/rkb-api.yaml`：**65 条路径 / 93 个操作** |
+| REST 契约 | `contracts/openapi/rkb-api.yaml`：**71 条路径 / 100 个操作** |
 | Agent | REST `/agent/*`（6 条路径，`contracts/openapi/agent-api.yaml`）+ MCP `/mcp` |
 | 健康检查 | `GET /api/co-knowledge/v1/health`（纯文本 `ok`） |
 
@@ -1567,6 +1570,25 @@ CI（`.github/workflows/ci.yml`）三个 job：前端 vitest（**Node 22，不�
 分层入口、通用判据、边界夹具与回归闭环见
 [`docs/acceptance-handbook.md`](acceptance-handbook.md)。**测试与验收按该手册执行**：
 每条问题必须落成回归用例，判定为非缺陷的也要写明理由。
+
+### 10.7 任务指标导出（Prometheus textfile）
+
+`tools/ops/task-metrics.py` 只读 `task_center.task` / `task_center.task_attempt`，
+输出 Prometheus 文本格式：按类型/车道/状态的任务数、车道积压深度、最老待执行
+年龄、超期 RUNNING、尝试历史计数。配合 node_exporter textfile collector：
+
+```bash
+python3 tools/ops/task-metrics.py > /var/lib/node_exporter/textfile/task_center.prom
+```
+
+cron 示例（每分钟）：
+
+```cron
+* * * * * /path/to/ragstudio/tools/ops/task-metrics.py \
+  > /var/lib/node_exporter/textfile/task_center.prom
+```
+
+脚本读取 `RKB_DB_*` / `POSTGRES_*` 环境变量，与保留期脚本同源；不修改任何数据。
 
 ---
 

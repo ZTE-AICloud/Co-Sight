@@ -237,7 +237,7 @@ docker compose -f deploy/docker-compose.yml exec rag-knowledge-base \
 ### HTTP API + SSE
 
 - **只有一个前缀**：`/api/co-knowledge/v1`。
-- 主 REST 契约 **OpenAPI 2.3.0**：**65 条路径 / 93 个操作**（含 `/health`），文件 [`contracts/openapi/rkb-api.yaml`](contracts/openapi/rkb-api.yaml)。
+- 主 REST 契约 **OpenAPI 2.4.0**：**71 条路径 / 100 个操作**（含 `/health`），文件 [`contracts/openapi/rkb-api.yaml`](contracts/openapi/rkb-api.yaml)。
 - Agent REST 契约 **OpenAPI 1.4.0**：**6 条路径 / 6 个操作**，文件 [`contracts/openapi/agent-api.yaml`](contracts/openapi/agent-api.yaml)。
 - 成功响应直接返回资源本身；分页为 `{items,total,page,pageSize}`；错误为 RFC 9457 `application/problem+json`。
 - 问答 `POST /query` 使用标准 SSE 具名事件，经 nginx 单独关闭缓冲。
@@ -275,7 +275,7 @@ API Key 在「密钥管理」创建，可限制作用域（`kb:list` / `kb:searc
 |---|---|
 | 后端单测 | **2,417 passed** / 7 deselected（约 58s） |
 | 前端单测 | **936 passed** / 91 files（约 35s） |
-| 接口契约 | OpenAPI **2.3.0**：65 条路径 / 93 个操作（含 `/health`） |
+| 接口契约 | OpenAPI **2.4.0**：71 条路径 / 100 个操作（含 `/health`） |
 | E2E | Playwright：快速门禁 11 条用例约 25s；全量 148 条 / 20 个 spec（约 10 min） |
 | 架构检查 | `python3 tools/check-architecture.py --strict`：**0 违规** |
 | 检索基线（2,000 条查询，2026-10-29） | 向量 NDCG@10 **81.57%**、Recall@80 **95.02%**；关键词 NDCG@10 59.96% |

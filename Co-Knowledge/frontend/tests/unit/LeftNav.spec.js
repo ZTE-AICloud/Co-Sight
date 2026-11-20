@@ -25,12 +25,15 @@ const LANGUAGE_KEY = 'language-option'
 // vue-i18n 会把键名渲染成文案，下面的 `toEqual` 立刻红，`expectNoI18nMisses` 再点名。
 const ZH = {
   kb: '知识库',
+  knowledgeApp: '知识应用',
+  capability: '能力配置',
   rag: '知识检索',
   documentKb: '文档知识库',
   graphKb: '图谱知识库',
   chat: '对话测试',
   extended: '自定义算子',
   model: '模型管理',
+  task: '任务管理',
   remote: '远程接入',
   remoteGuide: '接入方法',
   remoteKeys: '密钥管理',
@@ -55,13 +58,15 @@ describe('LeftNav', () => {
   })
 
   describe('渲染（真 i18n 词条）', () => {
-    it('两组标题 + 八项叶子菜单都用真文案，没有渲染出 i18n 键名', async () => {
+    it('四组标题 + 九项叶子菜单都用真文案，没有渲染出 i18n 键名', async () => {
       // Act
       const wrapper = await mountWithPlugins(LeftNav, { route: '/chat' })
 
       // Assert
       expect(wrapper.findAll('.group-title').map(textOf)).toEqual([
         ZH.kb,
+        ZH.knowledgeApp,
+        ZH.capability,
         ZH.remote
       ])
       expect(leafLabels(wrapper)).toEqual([
@@ -71,20 +76,23 @@ describe('LeftNav', () => {
         ZH.chat,
         ZH.extended,
         ZH.model,
+        ZH.task,
         ZH.remoteGuide,
         ZH.remoteKeys
       ])
       expectNoI18nMisses(wrapper)
     })
 
-    it('默认展开三个分组（否则二三级入口要点一下才看得见）', async () => {
+    it('默认展开全部分组（否则二三级入口要点一下才看得见）', async () => {
       // Act
       const wrapper = await mountWithPlugins(LeftNav, { route: '/chat' })
 
-      // Assert：侧栏没有折叠子菜单，八个叶子入口始终在 DOM 里
-      const documentKb = findByText(wrapper, ZH.documentKb, '.nav-item')
-      expect(documentKb).not.toBeNull()
-      expect(documentKb.isVisible()).toBe(true)
+      // Assert：侧栏没有折叠子菜单，九个叶子入口始终在 DOM 里
+      for (const label of [ZH.documentKb, ZH.rag, ZH.extended, ZH.remoteGuide]) {
+        const item = findByText(wrapper, label, '.nav-item')
+        expect(item, label).not.toBeNull()
+        expect(item.isVisible()).toBe(true)
+      }
     })
 
     it('展开态：.sidebar 壳、显示品牌文字、收起按钮的可访问名称是「收起导航」', async () => {
@@ -294,6 +302,14 @@ describe('LeftNav', () => {
 
       // Assert
       expect(activeLabels(wrapper)).toEqual([ZH.extended])
+    })
+
+    it('/tasks（统一任务管理）高亮「任务管理」', async () => {
+      // Act
+      const wrapper = await mountWithPlugins(LeftNav, { route: '/tasks' })
+
+      // Assert
+      expect(activeLabels(wrapper)).toEqual([ZH.task])
     })
 
     it('/access 高亮「接入方法」', async () => {

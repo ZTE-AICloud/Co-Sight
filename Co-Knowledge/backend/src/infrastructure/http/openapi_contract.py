@@ -18,7 +18,7 @@ from fastapi.openapi.utils import get_openapi
 
 from shared.prefixes import AGENT_MCP_PATH, AGENT_PREFIX, RKB_PREFIX
 
-API_VERSION = '2.3.0'
+API_VERSION = '2.4.0'
 _PROBLEM_REF = '#/components/schemas/Problem'
 
 #: 成功状态不是 200 的操作。逐键显式，来源是各 router 的 ``ok_status``。

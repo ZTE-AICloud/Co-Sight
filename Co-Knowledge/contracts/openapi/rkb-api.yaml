@@ -8,7 +8,7 @@ info:
 
     协议端点（不属于本 REST 契约）：`POST /query` 的流式模式是标准 SSE、`GET /health` 是纯文本、`/mcp` 是 MCP
     Streamable HTTP（见 `contracts/openapi/agent-api.yaml` 之外另有 MCP 规范）。'
-  version: 2.3.0
+  version: 2.4.0
 paths:
   /agent-keys:
     get:
@@ -2096,6 +2096,276 @@ paths:
           $ref: '#/components/responses/Problem'
       tags:
       - system
+  /tasks:
+    get:
+      summary: Task List
+      operationId: task_list_api_co_knowledge_v1_tasks_get
+      parameters:
+      - name: task_type
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Task Type
+      - name: status
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Status
+      - name: lane
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Lane
+      - name: kbase_id
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Kbase Id
+      - name: keyword
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Keyword
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 1
+          title: Page
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 20
+          title: Size
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - tasks
+  /tasks/groups:
+    get:
+      summary: Task Groups
+      operationId: task_groups_api_co_knowledge_v1_tasks_groups_get
+      parameters:
+      - name: task_type
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Task Type
+      - name: status
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Status
+      - name: lane
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Lane
+      - name: kbase_id
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Kbase Id
+      - name: keyword
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Keyword
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 1
+          title: Page
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 20
+          title: Size
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - tasks
+  /tasks/stats:
+    get:
+      summary: Task Stats
+      operationId: task_stats_api_co_knowledge_v1_tasks_stats_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - tasks
+  /tasks/{task_id}:
+    get:
+      summary: Task Detail
+      operationId: task_detail_api_co_knowledge_v1_tasks__task_id__get
+      parameters:
+      - name: task_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Task Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - tasks
+    patch:
+      summary: Task Patch
+      operationId: task_patch_api_co_knowledge_v1_tasks__task_id__patch
+      parameters:
+      - name: task_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Task Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - tasks
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /tasks/{task_id}/cancel:
+    post:
+      summary: Task Cancel
+      operationId: task_cancel_api_co_knowledge_v1_tasks__task_id__cancel_post
+      parameters:
+      - name: task_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Task Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - tasks
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /tasks/{task_id}/retry:
+    post:
+      summary: Task Retry
+      operationId: task_retry_api_co_knowledge_v1_tasks__task_id__retry_post
+      parameters:
+      - name: task_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Task Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - tasks
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
   /workflows:
     get:
       summary: Page Workflows
@@ -2382,8 +2652,8 @@ components:
       properties:
         file:
           type: string
-          title: File
           format: binary
+          title: File
       type: object
       required:
       - file
@@ -2392,8 +2662,8 @@ components:
       properties:
         schema_file:
           type: string
-          title: Schema File
           format: binary
+          title: Schema File
       type: object
       required:
       - schema_file
@@ -2402,8 +2672,8 @@ components:
       properties:
         file:
           type: string
-          title: File
           format: binary
+          title: File
       type: object
       required:
       - file

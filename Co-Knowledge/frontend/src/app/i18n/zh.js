@@ -5,6 +5,7 @@ import workflow from './zh/workflow';
 import nav from './zh/nav';
 import chatTest from './zh/chatTest';
 import modelManagement from './zh/modelManagement';
+import taskManagement from './zh/taskManagement';
 import remoteAccess from './zh/remoteAccess';
 import graphVisualization from './zh/graphVisualization';
 import knowledgeGraphStudio from './zh/knowledgeGraphStudio';
@@ -25,6 +26,7 @@ export default {
     workflow,
     chatTest,
     modelManagement,
+    taskManagement,
     remoteAccess,
     studioDialogs,
     auth

@@ -12,6 +12,7 @@ from __future__ import annotations
 from typing import Protocol
 
 from infrastructure.logging.logutil import log
+from infrastructure.tasks import cancellation
 
 
 class FileHandler(Protocol):
@@ -37,6 +38,7 @@ class FileHandlerChain:
     def execute(self, file_handle: dict) -> None:
         for index, handler in enumerate(self._handlers):
             try:
+                cancellation.raise_if_cancelled()
                 handler.handle(file_handle)
             except Exception:
                 log.error('%s handler failed, rolling back',

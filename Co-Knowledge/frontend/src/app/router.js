@@ -69,6 +69,10 @@ const routes_kb_extended_management = [
 // 路由：/models。
 const ModelManagementIndex = () => import(/* webpackChunkName: "module.model" */'@/pages/model/ModelListPage.vue');
 
+// 统一任务管理（文件导入 / 图谱抽图 / 图谱导入）。
+// 路由：/tasks。独立 chunk：任务页不需要图谱画布/编排代码。
+const TaskManagementIndex = () => import(/* webpackChunkName: "module.tasks" */'@/pages/tasks/TaskListPage.vue');
+
 // 远程接入（MCP / REST 接入说明 + API Key 管理）。
 // 路由：/access 与 /keys（两条独立路由）。
 //
@@ -106,6 +110,16 @@ const routes_model_management = [
   }
 ]
 
+const routes_task_management = [
+  {
+    // 统一任务管理列表（只读 + 取消/重试/优先级）。
+    path: '/tasks',
+    name: 'tasks',
+    component: TaskManagementIndex,
+    meta: { hiddenBorder: true }
+  }
+]
+
 const routes_kb = [
   {
     path: '/knowledge',
@@ -136,7 +150,7 @@ const routes_kb = [
       permission: kbPermissionMeta,
       hiddenBorder: true
     }
-  },
+  }
 ]
 
 // 知识图谱的页面路由：/graph、/graph/detail/:id、/graph/edit/:id
@@ -187,6 +201,7 @@ const routes_out = [
       ...routes_kb,
       ...routes_kb_extended_management,
       ...routes_model_management,
+      ...routes_task_management,
       ...routes_remote_access,
       ...routes_kb_flow,
       ...routes_knowledge_graph,

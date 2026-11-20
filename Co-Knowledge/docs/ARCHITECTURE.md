@@ -84,6 +84,79 @@ frontend/src/
 规则：页面只做编排；feature 内部自包含；`shared/lib` 不 import Vue；`shared/ui`
 不 import 任何 feature；跨 feature 只通过对方公开入口或 `shared`。
 
+## 2.2 异步任务
+
+统一引擎在 `infrastructure/tasks/`，只负责「跑」：提交、车道、worker、重试、
+延迟重投、关停。任务行统一存 `task_center.task`（`task_type` 区分三类任务）；
+`public.kb_import_task` / `public.graph_extract_task` / `public.graph_import_task`
+是只读兼容视图。公共属性（类型/车道/状态/进度/尝试次数/kbase_id/时间线）平铺成列；
+类型私有属性放 `payload`（输入）与 `extra`（产出/状态），不随任务类型加列。
+引擎的 `TaskRecord.status` 只是进程内记忆态，落库与状态映射仍由各领域适配器负责。
+
+当前车道（互不共享 worker，长任务不会饿死短任务）：
+
+| 车道 | worker | 队列模式 | 任务 |
+|---|---|---|---|
+| `file_import` | 5 | **db** | 文档解析 → 切分 → 向量化 |
+| `graph_extract` | 5 | **db** | 图谱抽图（最长 1800s） |
+| `graph_import` | 5 | **db** | 图谱数据包导入 |
+
+**DB 队列模式**（`TaskKind.queue_mode='db'`）：
+
+- 提交只写 `task_center.task`（`PENDING` + `available_at`），随后
+  `pg_notify('task_center_task', '<lane>')` 并唤醒本实例 worker；
+- 每个进程有一条专用 LISTEN 连接，同时监听 `task_center_task`（车道唤醒）与
+  `task_center_cancel`（RUNNING 取消）；5s 短轮询只作兜底；
+- worker 用 `SELECT ... FOR UPDATE SKIP LOCKED` 认领，置 `RUNNING` + `locked_by` + `locked_until`；
+- 长任务由引擎心跳线程续租；worker 崩溃后租约过期，回收线程把 `RUNNING` 放回 `PENDING`
+  （`attempt` 自增）或按 `max_attempts` 判 `FAILED`；
+- 延迟重投用 `available_at` 持久化，不再依赖内存调度堆；
+- 认领顺序 `priority DESC, created_at`，`PENDING/RETRY` 达到车道 `capacity` 时
+  提交/建行前拒绝（文件车道默认 2000，图谱两条车道由
+  `RKB_GRAPH_EXTRACT_CAPACITY` / `RKB_GRAPH_IMPORT_CAPACITY` 配置）；
+- at-least-once 语义：runner 必须能承受崩溃后重跑。
+
+任务管理面挂 `{RKB_PREFIX}/tasks`：列表/详情/统计、取消、`FAILED/CANCELLED`
+重试、排队中任务改优先级。取消与重试都直接读写 `task_center.task`；排队任务的
+取消会通过 `infrastructure.tasks.registry` 的 `cancel_hook` 同步领域状态
+（文件行、图谱库状态），重试用 `retry_hook` 把文件行退回待处理。
+
+RUNNING 取消是**协作式**的：API 置 `cancel_requested=true` 并
+`pg_notify('task_center_cancel', '<taskId>')`，各实例监听线程把对应 worker 的
+`threading.Event` 置位；文件链在 handler/向量化批次边界、图谱在阶段/导入批次
+边界调用 `cancellation.raise_if_cancelled()`，抛 `TaskCancelled` 后由引擎落
+`CANCELLED`（不重试）。通知丢失时心跳顺带查一次 `cancel_requested` 兜底。
+取消是尽力而为：runner 若在最后一个安全点之后才看到标记，任务仍可能正常完成。
+
+每次进入 `RUNNING` 由数据库触发器写一条 `task_center.task_attempt`，任务详情
+带 `attempts` 数组；租约过期被回收的尝试标记为 `LOST`。终态任务由
+`tools/ops/prune-task-history.py`（`run-retention.sh` 每日 03:17）按 90 天清理，
+尝试行随外键级联删除。控制台侧栏「任务管理」(`/tasks`) 直接消费这套 API：
+统计卡、类型/状态过滤、详情抽屉（payload/extra/attempts）、取消/重试/优先级；
+默认按知识库聚合为树表（根行显示库名与状态计数，展开加载库内任务，可切平铺），
+文件导入行优先显示文件名称、知识库列显示库名；页面 5 秒静默轮询，隐藏标签页时暂停。
+
+单测环境用 `RKB_TASK_QUEUE_DB=0` 切换到内存车道，避免连库。三类任务的 payload
+都持久化了可重建输入：文件导入的完整 `fileHandle`、抽图的
+`tmpDir/dto/schemaObj`、图谱导入的 `zipPath/schemaObj`。图谱两条车道的终态由
+领域 `_run` 写入（`status_owner='runner'`），引擎只负责认领、续租和释放租约。
+
+新增任务类型的步骤：
+
+1. 在领域模块里 `engine.register_lane(..., mode='memory'|'db')` /
+   `register_kind(TaskKind(...), runner, store)`；
+2. `runner(record, ctx)` 执行任务，自己写领域状态表；DB 模式下 runner 必须能从
+   `record.payload` 重建输入；
+3. 需要持久化时给 `TaskKind` 配 `TaskStore` 适配器（`on_submit` / `on_change` /
+   可选 `on_reject`）；存储回调失败只记日志，不影响执行；
+4. 重试次数用 `max_attempts`（总执行次数），延迟用 `retry_delay(error)` 返回秒数；
+5. 当前三条车道都是 DB 模式，重启后会继续认领 `PENDING/RETRY`；新增任务类型建议
+   同样选 `queue_mode='db'`，并保证 payload 可重建、runner 幂等。
+
+观测入口：`GET /tasks/stats` 返回全局/按车道/按类型计数、积压深度、最老待执行
+年龄与超期 RUNNING；`TaskEngine.stats()` 仍提供进程内车道快照。
+表结构、兼容视图与队列字段见 `deploy/init/pg/10~16-*.sql`。
+
 ## 3. 依赖规则
 
 允许方向：

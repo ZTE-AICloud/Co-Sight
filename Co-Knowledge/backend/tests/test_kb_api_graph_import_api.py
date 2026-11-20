@@ -10,6 +10,7 @@
 
 import io
 import json
+import os
 import zipfile
 
 import pytest
@@ -191,9 +192,15 @@ def test_same_kbase_treats_null_desc_as_empty():
 # ----------------------------------------------------------------------
 
 
-def test_write_temp_zip_keeps_document_chunk():
-    import os
+def _patch_zip_dir(monkeypatch, tmp_path):
+    monkeypatch.setattr(api.storage, 'tmp_preview_dir',
+                        lambda tmp_id: tmp_path / tmp_id)
 
+
+def test_write_temp_zip_keeps_document_chunk(monkeypatch, tmp_path):
+    import shutil
+
+    _patch_zip_dir(monkeypatch, tmp_path)
     path = api._write_temp_zip({
         'entities.jsonl': b'{"entity_id":"E1"}',
         'edges.jsonl': b'{"edge_id":"R1"}',
@@ -205,12 +212,13 @@ def test_write_temp_zip_keeps_document_chunk():
             assert sorted(archive.namelist()) == [
                 'document_chunk.jsonl', 'edges.jsonl', 'entities.jsonl']
     finally:
-        os.unlink(path)
+        shutil.rmtree(os.path.dirname(path), ignore_errors=True)
 
 
-def test_write_temp_zip_prefers_root_and_dedupes_nested_entries():
-    import os
+def test_write_temp_zip_prefers_root_and_dedupes_nested_entries(monkeypatch, tmp_path):
+    import shutil
 
+    _patch_zip_dir(monkeypatch, tmp_path)
     path = api._write_temp_zip({
         'nested/entities.jsonl': b'{"entity_id":"nested"}',
         'entities.jsonl': b'{"entity_id":"root"}',
@@ -221,26 +229,44 @@ def test_write_temp_zip_prefers_root_and_dedupes_nested_entries():
             assert archive.namelist() == ['entities.jsonl']
             assert archive.read('entities.jsonl') == b'{"entity_id":"root"}'
     finally:
-        os.unlink(path)
+        shutil.rmtree(os.path.dirname(path), ignore_errors=True)
 
 
-def test_submit_removes_temp_zip_after_run(monkeypatch):
-    import os
+def test_submit_persists_zip_and_runner_cleans_it(monkeypatch, tmp_path):
+    from graph import task_runtime
+    from infrastructure.tasks.types import TaskRecord
 
+    _patch_zip_dir(monkeypatch, tmp_path)
     captured = {}
+    monkeypatch.setattr(api.graph_import_store, 'create_task', lambda *a, **k: None)
+
+    def fake_submit(payload, task_id):
+        captured['payload'] = payload
+        return task_id
+
+    monkeypatch.setattr(api.task_runtime, 'submit_import', fake_submit)
 
     def fake_import(*args, **kwargs):
         captured['path'] = args[2]
-        assert os.path.exists(captured['path'])
+        captured['task_id'] = kwargs.get('task_id')
 
-    monkeypatch.setattr(api.graph_import_engine, 'import_from_zip', fake_import)
-    monkeypatch.setattr(api._GRAPH_IMPORT_POOL, 'submit', lambda fn: fn())
+    from graph.service import graph_import_engine
+
+    monkeypatch.setattr(graph_import_engine, 'import_from_zip', fake_import)
 
     api._submit({'name': 'kb'}, {'kbase_id': 'a' * 32}, {'schema_id': 's'},
                 {'entities.jsonl': b'{}'})
 
-    assert captured['path'].startswith('/tmp/graph_import_')
-    assert not os.path.exists(captured['path'])
+    payload = captured['payload']
+    assert payload['zipPath'].startswith(str(tmp_path))
+    assert os.path.exists(payload['zipPath'])
+
+    task_runtime._run_import(
+        TaskRecord(task_id='t1', kind='graph_import', payload=payload), None)
+
+    assert captured['path'] == payload['zipPath']
+    assert captured['task_id'] == 't1'
+    assert not os.path.exists(os.path.dirname(payload['zipPath']))
 
 
 def test_same_kbase_rejects_document_category():
@@ -272,3 +298,19 @@ def test_mark_importing_sets_indexing_status(monkeypatch):
     api._mark_importing('')
 
     assert calls == [('abc123', '4', 0)]
+
+
+def test_import_status_maps_to_unified_table():
+    """领域状态 ``PROCESSING/COMPLETED_WITH_ERRORS`` ↔ 统一表状态。"""
+    from graph.repository import graph_import_store as store
+
+    assert store.TABLE == 'task_center.task'
+    assert store._TO_UNIFIED == {
+        'PENDING': 'PENDING',
+        'PROCESSING': 'RUNNING',
+        'COMPLETED': 'COMPLETED',
+        'COMPLETED_WITH_ERRORS': 'COMPLETED_WITH_ERRORS',
+        'FAILED': 'FAILED',
+    }
+    assert store._bare_kbase_id('graph_abc') == 'abc'
+    assert store._bare_kbase_id('abc') == 'abc'

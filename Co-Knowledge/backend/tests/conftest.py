@@ -13,6 +13,10 @@ import os
 import sys
 from pathlib import Path
 
+# 必须在任何测试模块 import 之前设置：graph.task_runtime 在模块导入时决定
+# 车道是 db 还是 memory。
+os.environ['RKB_TASK_QUEUE_DB'] = '0'
+
 import pytest
 
 SERVICE_ROOT = Path(__file__).resolve().parents[1]
