@@ -1,0 +1,153 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="13.333in" height="7.5in" viewBox="0 0 1333.3 750.0">
+<defs>
+<marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="CONTEXT"/></marker>
+</defs>
+<rect x="0" y="0" width="1333.3" height="750.0" fill="white"/>
+<text x="37.0" y="32.5" text-anchor="start" font-family="Microsoft YaHei, WenQuanYi Micro Hei">
+<tspan x="37.0" dy="0.0" font-size="31.1" font-weight="bold" fill="#101828">Drive 核心原理：长链路任务如何保证可靠执行</tspan>
+</text>
+<rect x="985.0" y="16.0" width="318.0" height="40.0" rx="0.3" fill="#EFF4FF" stroke="#84ADFF" stroke-width="1.0"/>
+<text x="1144.0" y="38.2" text-anchor="middle" font-family="Microsoft YaHei, WenQuanYi Micro Hei">
+<tspan x="1144.0" dy="0.0" font-size="14.2" font-weight="bold" fill="#175CD3">Co-Sight Harness · 5G NR 实战</tspan>
+</text>
+<rect x="30.0" y="72.0" width="320.0" height="400.0" rx="0.1" fill="#FFFFFF" stroke="#D0D5DD" stroke-width="1.2"/>
+<text x="50.0" y="94.7" text-anchor="start" font-family="Microsoft YaHei, WenQuanYi Micro Hei">
+<tspan x="50.0" dy="0.0" font-size="17.6" font-weight="bold" fill="#1D2939">真实案例 · 5G NR 需求方案域</tspan>
+</text>
+<text x="50.0" y="125.3" text-anchor="start" font-family="Microsoft YaHei, WenQuanYi Micro Hei">
+<tspan x="50.0" dy="0.0" font-size="12.8" font-weight="normal" fill="#344054">3 大阶段：需求分析/特性设计/方案设计</tspan>
+<tspan x="50.0" dy="14.7" font-size="12.8" font-weight="normal" fill="#344054">3 顶层 Skill · 39+ 子 Skill · 200+ 关键步骤</tspan>
+<tspan x="50.0" dy="6.2" font-size="5.4" font-weight="normal" fill="#344054"></tspan>
+<tspan x="50.0" dy="15.5" font-size="13.5" font-weight="bold" fill="#101828">改造前：无人干预完成率仅 50%</tspan>
+<tspan x="50.0" dy="14.7" font-size="12.8" font-weight="normal" fill="#344054">· Skill 过多 → 意图漂移，混淆需求 ID</tspan>
+<tspan x="50.0" dy="14.7" font-size="12.8" font-weight="normal" fill="#344054">· 上下文腐化 → 流程不稳定</tspan>
+<tspan x="50.0" dy="14.7" font-size="12.8" font-weight="normal" fill="#344054">· 无验证环节 → 错误直达末端</tspan>
+<tspan x="50.0" dy="14.7" font-size="12.8" font-weight="normal" fill="#344054">· 场景召回 68% · 检索召回 56%</tspan>
+<tspan x="50.0" dy="14.7" font-size="12.8" font-weight="normal" fill="#344054">· 单需求 2h+，结果不可直接交付</tspan>
+</text>
+<rect x="48.0" y="350.0" width="284.0" height="106.0" rx="0.1" fill="#1D2939" stroke="#1D2939" stroke-width="1.0"/>
+<text x="190.0" y="389.6" text-anchor="middle" font-family="Microsoft YaHei, WenQuanYi Micro Hei">
+<tspan x="190.0" dy="0.0" font-size="13.5" font-weight="bold" fill="#FFFFFF">误差沿链路连乘</tspan>
+<tspan x="190.0" dy="16.3" font-size="14.2" font-weight="bold" fill="#FFFFFF">单步质量 95% → 10 步 ≈ 60%</tspan>
+<tspan x="190.0" dy="14.7" font-size="12.8" font-weight="normal" fill="#E4E7EC">200+ 步 → 完成率腰斩</tspan>
+</text>
+<polyline points="350.0,272.0 375.0,272.0" fill="none" stroke="#667085" stroke-width="1.9250000000000003" marker-end="url(#arr-667085)"/>
+<rect x="375.0" y="72.0" width="560.0" height="400.0" rx="0.1" fill="#F9FAFB" stroke="#D0D5DD" stroke-width="1.2"/>
+<text x="655.0" y="94.7" text-anchor="middle" font-family="Microsoft YaHei, WenQuanYi Micro Hei">
+<tspan x="655.0" dy="0.0" font-size="17.6" font-weight="bold" fill="#101828">核心设计：控制数据外置于模型</tspan>
+</text>
+<text x="655.0" y="121.3" text-anchor="middle" font-family="Microsoft YaHei, WenQuanYi Micro Hei">
+<tspan x="655.0" dy="0.0" font-size="12.8" font-weight="normal" fill="#344054">状态 / 约束 / 验收标准由 Harness 结构保证，不靠 LLM 自觉</tspan>
+</text>
+<rect x="390.0" y="162.0" width="98.0" height="52.0" rx="0.1" fill="#F2F4F7" stroke="#D0D5DD" stroke-width="1.0"/>
+<text x="439.0" y="190.1" text-anchor="middle" font-family="Microsoft YaHei, WenQuanYi Micro Hei">
+<tspan x="439.0" dy="0.0" font-size="13.5" font-weight="bold" fill="#1D2939">Start</tspan>
+</text>
+<polyline points="488.0,188.0 498.0,188.0" fill="none" stroke="#667085" stroke-width="1.6500000000000001" marker-end="url(#arr-667085)"/>
+<text x="439.0" y="227.8" text-anchor="middle" font-family="Microsoft YaHei, WenQuanYi Micro Hei">
+<tspan x="439.0" dy="0.0" font-size="10.8" font-weight="normal" fill="#667085">建 .drive/ 骨架</tspan>
+<tspan x="439.0" dy="12.4" font-size="10.8" font-weight="normal" fill="#667085">写 intent.md</tspan>
+</text>
+<rect x="498.0" y="162.0" width="98.0" height="52.0" rx="0.1" fill="#F2F4F7" stroke="#D0D5DD" stroke-width="1.0"/>
+<text x="547.0" y="190.1" text-anchor="middle" font-family="Microsoft YaHei, WenQuanYi Micro Hei">
+<tspan x="547.0" dy="0.0" font-size="13.5" font-weight="bold" fill="#1D2939">Analysis</tspan>
+</text>
+<polyline points="596.0,188.0 606.0,188.0" fill="none" stroke="#667085" stroke-width="1.6500000000000001" marker-end="url(#arr-667085)"/>
+<text x="547.0" y="227.8" text-anchor="middle" font-family="Microsoft YaHei, WenQuanYi Micro Hei">
+<tspan x="547.0" dy="0.0" font-size="10.8" font-weight="normal" fill="#667085">调研员澄清需求</tspan>
+<tspan x="547.0" dy="12.4" font-size="10.8" font-weight="normal" fill="#667085">→ manifest.md</tspan>
+</text>
+<rect x="606.0" y="162.0" width="98.0" height="52.0" rx="0.1" fill="#F2F4F7" stroke="#D0D5DD" stroke-width="1.0"/>
+<text x="655.0" y="190.1" text-anchor="middle" font-family="Microsoft YaHei, WenQuanYi Micro Hei">
+<tspan x="655.0" dy="0.0" font-size="13.5" font-weight="bold" fill="#1D2939">Plan</tspan>
+</text>
+<polyline points="704.0,188.0 714.0,188.0" fill="none" stroke="#667085" stroke-width="1.6500000000000001" marker-end="url(#arr-667085)"/>
+<text x="655.0" y="227.8" text-anchor="middle" font-family="Microsoft YaHei, WenQuanYi Micro Hei">
+<tspan x="655.0" dy="0.0" font-size="10.8" font-weight="normal" fill="#667085">200+ 步拆成</tspan>
+<tspan x="655.0" dy="12.4" font-size="10.8" font-weight="normal" fill="#667085">taskRecord + waves</tspan>
+</text>
+<rect x="714.0" y="162.0" width="98.0" height="52.0" rx="0.1" fill="#EFF4FF" stroke="#175CD3" stroke-width="1.5"/>
+<text x="763.0" y="190.1" text-anchor="middle" font-family="Microsoft YaHei, WenQuanYi Micro Hei">
+<tspan x="763.0" dy="0.0" font-size="13.5" font-weight="bold" fill="#175CD3">Executor</tspan>
+</text>
+<polyline points="812.0,188.0 822.0,188.0" fill="none" stroke="#667085" stroke-width="1.6500000000000001" marker-end="url(#arr-667085)"/>
+<text x="763.0" y="227.8" text-anchor="middle" font-family="Microsoft YaHei, WenQuanYi Micro Hei">
+<tspan x="763.0" dy="0.0" font-size="10.8" font-weight="normal" fill="#667085">11 个原子</tspan>
+<tspan x="763.0" dy="12.4" font-size="10.8" font-weight="normal" fill="#667085">SubAgent 分波调度</tspan>
+</text>
+<rect x="822.0" y="162.0" width="98.0" height="52.0" rx="0.1" fill="#F2F4F7" stroke="#D0D5DD" stroke-width="1.0"/>
+<text x="871.0" y="190.1" text-anchor="middle" font-family="Microsoft YaHei, WenQuanYi Micro Hei">
+<tspan x="871.0" dy="0.0" font-size="13.5" font-weight="bold" fill="#1D2939">Evaluation</tspan>
+</text>
+<text x="871.0" y="227.8" text-anchor="middle" font-family="Microsoft YaHei, WenQuanYi Micro Hei">
+<tspan x="871.0" dy="0.0" font-size="10.8" font-weight="normal" fill="#667085">L0/L1/L2 质检</tspan>
+<tspan x="871.0" dy="12.4" font-size="10.8" font-weight="normal" fill="#667085">DOD 门禁 verdict</tspan>
+</text>
+<polyline points="915.0,214.0 930.0,214.0 930.0,282.0 483.0,282.0 483.0,214.0" fill="none" stroke="#D92D20" stroke-width="1.6500000000000001" marker-end="url(#arr-D92D20)"/>
+<text x="742.0" y="266.8" text-anchor="middle" font-family="Microsoft YaHei, WenQuanYi Micro Hei">
+<tspan x="742.0" dy="0.0" font-size="12.2" font-weight="bold" fill="#D92D20">评估不通过 → 带证据回炉重做</tspan>
+</text>
+<rect x="390.0" y="328.0" width="530.0" height="62.0" rx="0.1" fill="#FFFFFF" stroke="#D0D5DD" stroke-width="1.0"/>
+<text x="655.0" y="354.1" text-anchor="middle" font-family="Microsoft YaHei, WenQuanYi Micro Hei">
+<tspan x="655.0" dy="0.0" font-size="13.5" font-weight="bold" fill="#1D2939">状态机 executeState.json + 文件锁</tspan>
+<tspan x="655.0" dy="14.0" font-size="12.2" font-weight="normal" fill="#475467">状态只允许合法迁移，跨会话续跑不丢</tspan>
+</text>
+<rect x="390.0" y="400.0" width="530.0" height="62.0" rx="0.1" fill="#FFFFFF" stroke="#D0D5DD" stroke-width="1.0"/>
+<text x="655.0" y="426.1" text-anchor="middle" font-family="Microsoft YaHei, WenQuanYi Micro Hei">
+<tspan x="655.0" dy="0.0" font-size="13.5" font-weight="bold" fill="#1D2939">Hook 防护层强制不变量</tspan>
+<tspan x="655.0" dy="14.0" font-size="12.2" font-weight="normal" fill="#1D2939">.drive/ 写盘 default-deny · 每次流转审计留痕 run-log.jsonl</tspan>
+</text>
+<polyline points="935.0,272.0 960.0,272.0" fill="none" stroke="#667085" stroke-width="1.9250000000000003" marker-end="url(#arr-667085)"/>
+<rect x="960.0" y="72.0" width="343.0" height="400.0" rx="0.1" fill="#FFFFFF" stroke="#D0D5DD" stroke-width="1.2"/>
+<text x="980.0" y="94.7" text-anchor="start" font-family="Microsoft YaHei, WenQuanYi Micro Hei">
+<tspan x="980.0" dy="0.0" font-size="17.6" font-weight="bold" fill="#1D2939">改造效果 · 4.30 穿刺实测</tspan>
+</text>
+<text x="980.0" y="133.3" text-anchor="start" font-family="Microsoft YaHei, WenQuanYi Micro Hei">
+<tspan x="980.0" dy="0.0" font-size="12.8" font-weight="normal" fill="#175CD3">无人干预任务完成率</tspan>
+</text>
+<text x="980.0" y="164.7" text-anchor="start" font-family="Microsoft YaHei, WenQuanYi Micro Hei">
+<tspan x="980.0" dy="0.0" font-size="23.0" font-weight="bold" fill="#175CD3">50% → 100%</tspan>
+</text>
+<text x="980.0" y="205.3" text-anchor="start" font-family="Microsoft YaHei, WenQuanYi Micro Hei">
+<tspan x="980.0" dy="0.0" font-size="12.8" font-weight="normal" fill="#175CD3">端到端时延（攻关全程）</tspan>
+</text>
+<text x="980.0" y="236.7" text-anchor="start" font-family="Microsoft YaHei, WenQuanYi Micro Hei">
+<tspan x="980.0" dy="0.0" font-size="23.0" font-weight="bold" fill="#175CD3">440 → 159 分钟</tspan>
+</text>
+<text x="980.0" y="277.3" text-anchor="start" font-family="Microsoft YaHei, WenQuanYi Micro Hei">
+<tspan x="980.0" dy="0.0" font-size="12.8" font-weight="normal" fill="#175CD3">场景分析 F1（9 条测试集）</tspan>
+</text>
+<text x="980.0" y="308.7" text-anchor="start" font-family="Microsoft YaHei, WenQuanYi Micro Hei">
+<tspan x="980.0" dy="0.0" font-size="23.0" font-weight="bold" fill="#175CD3">68% → 91.25%</tspan>
+</text>
+<rect x="978.0" y="354.0" width="310.0" height="102.0" rx="0.1" fill="#EFF4FF" stroke="#84ADFF" stroke-width="1.0"/>
+<text x="1133.0" y="398.4" text-anchor="middle" font-family="Microsoft YaHei, WenQuanYi Micro Hei">
+<tspan x="1133.0" dy="0.0" font-size="15.5" font-weight="bold" fill="#1849A9">模型未更换，</tspan>
+<tspan x="1133.0" dy="17.8" font-size="15.5" font-weight="bold" fill="#1849A9">改变的是运行时控制结构</tspan>
+</text>
+<text x="37.0" y="500.2" text-anchor="start" font-family="Microsoft YaHei, WenQuanYi Micro Hei">
+<tspan x="37.0" dy="0.0" font-size="16.9" font-weight="bold" fill="#101828">能力定位：预置能力 + 可编排能力</tspan>
+</text>
+<rect x="30.0" y="524.0" width="632.0" height="195.0" rx="0.1" fill="#EFF4FF" stroke="#84ADFF" stroke-width="1.2"/>
+<text x="54.0" y="547.8" text-anchor="start" font-family="Microsoft YaHei, WenQuanYi Micro Hei">
+<tspan x="54.0" dy="0.0" font-size="16.2" font-weight="bold" fill="#175CD3">预置能力 —— 开箱即用的可靠执行底座</tspan>
+</text>
+<text x="54.0" y="581.3" text-anchor="start" font-family="Microsoft YaHei, WenQuanYi Micro Hei">
+<tspan x="54.0" dy="0.0" font-size="12.8" font-weight="normal" fill="#344054">· 7 个岗位 agent：调研 / 规划 / 工头 / 质检 + 2 个只读审查者 + HITL 中介</tspan>
+<tspan x="54.0" dy="14.7" font-size="12.8" font-weight="normal" fill="#344054">· phase 默认五阶段流水线，每阶段结束 HITL 闸门，人审不过不往下走</tspan>
+<tspan x="54.0" dy="14.7" font-size="12.8" font-weight="normal" fill="#344054">· 8 个 Hook 防护脚本：写盘白名单 default-deny · 合法迁移 · 审计</tspan>
+<tspan x="54.0" dy="14.7" font-size="12.8" font-weight="normal" fill="#344054">· 3 层质检：L0 文件存在 / L1 lint·类型 / L2 LLM Judge + 5 维 rubric</tspan>
+</text>
+<rect x="672.0" y="524.0" width="632.0" height="195.0" rx="0.1" fill="#F9FAFB" stroke="#D0D5DD" stroke-width="1.2"/>
+<text x="696.0" y="547.8" text-anchor="start" font-family="Microsoft YaHei, WenQuanYi Micro Hei">
+<tspan x="696.0" dy="0.0" font-size="16.2" font-weight="bold" fill="#101828">可编排能力 —— workflow.yaml 声明即流程</tspan>
+</text>
+<text x="696.0" y="581.3" text-anchor="start" font-family="Microsoft YaHei, WenQuanYi Micro Hei">
+<tspan x="696.0" dy="0.0" font-size="12.8" font-weight="normal" fill="#344054">· 增删环节 / 换 agent / 调 gate，校验过即用，不改插件代码</tspan>
+<tspan x="696.0" dy="14.7" font-size="12.8" font-weight="normal" fill="#344054">· DAG 模式：depends_on 自定义拓扑 + 节点级 HITL gate + 复杂度策略</tspan>
+<tspan x="696.0" dy="14.7" font-size="12.8" font-weight="normal" fill="#344054">· 4 种 agent 地址混用：drive: 内置 / 项目本地 / @CC 子 agent / plugin:</tspan>
+<tspan x="696.0" dy="14.7" font-size="12.8" font-weight="normal" fill="#344054">· 5G NR：三层控制配置由 Harness 从口语化需求自动生成，无需人工编写</tspan>
+</text>
+<marker id="arr-667085" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#667085"/></marker>
+<marker id="arr-D92D20" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#D92D20"/></marker>
+</svg>
