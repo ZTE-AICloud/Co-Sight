@@ -89,11 +89,17 @@ def _modules(profile):
     if profile == "agent-exit":
         # g023 两形态均从 argv 读 --build-plan/--output-dir（stdin INPUT 不覆盖该形态）
         # batch(全量声明文件) = 逐文件 invariants 清单契约首查; cross = 跨文件一致性
-        return [("g005", []), ("g014", []), ("g021", []),
+        mods = [("g005", []), ("g014", []),
                 ("g023", ["--mode", "batch", "--build-plan", data["build_plan"],
                           "--output-dir", data["output_dir"]]),
                 ("g023", ["--mode", "cross", "--build-plan", data["build_plan"],
                           "--output-dir", data["output_dir"]])]
+        # host_extend 豁免（host-context 方案 §3.6）: 形态④宿主增补后测——宿主运行面
+        # 无"运行时主交付 CLAUDE.md"概念, g021 地板不适用; g005/g014/g023 仍对极简
+        # build-plan 声明文件生效（豁免 ≠ 跳检）
+        if not data.get("host_extend"):
+            mods.insert(2, ("g021", []))
+        return mods
     if profile == "skill-build":
         # g014 条件启用: 仅当 skills_dir 提供时（纯 skill 交付物无 .claude/ 子目录, 见 PROFILE_REQUIRE 注）
         mods = [("g005", [])]
@@ -138,7 +144,9 @@ for prefix, extra_argv in _modules(PROFILE):
 # DC-001 却被要求 proposal-spec.md）。标准（agent-output-standard.yaml）回归纯
 # 设计期输入，由 planner/builder 编制方案时消费，人审（DC-001/T2）把关方案质量。
 # 地板白名单只此一条（agent 线运行时入口，plan-independent）；再扩须过方案评审。
-if PROFILE == "agent-exit" and os.path.isdir(OUTPUT_DIR):
+# 豁免: stdin host_extend=true（形态④宿主增补后测, host-context 方案 §3.6——宿主
+# 项目根的 CLAUDE.md 属宿主本体, 非本管线交付物; 豁免评审留痕 = 该方案 §0/§3.6）
+if PROFILE == "agent-exit" and os.path.isdir(OUTPUT_DIR) and not data.get("host_extend"):
     entry = os.path.join(OUTPUT_DIR, "CLAUDE.md")
     if not os.path.isfile(entry):
         failures.append({"module": "file_list", "type": "missing_entry_file",

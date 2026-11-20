@@ -94,3 +94,42 @@ dc010_channel:
   type: string
   enum: [fast, full]
   description: "skill 通道通过标准: confidence ≥ 70 / Q1-Q4 决策+触发场景+验收标准均非空 / blocked ≤ 1"
+
+# === 宿主语境三段（host-context 方案 §3.2; 与 clarified-agent.schema 同构）===
+# 全部可选——存量 fixture 缺字段合法; 普通代码仓/抑制场景可整段省略
+intent:
+  type: string
+  enum: [host_extend, modify_existing, explicit_create]
+  description: "宿主语境意图判定（阶段 1 语义判定; 项目内'加个 skill'默认 host_extend——向宿主运行面增补）"
+target_match:
+  type: object
+  properties:
+    detected: {type: boolean}
+    matched_targets:
+      type: array
+      items:
+        name: "string"
+        path: "string"
+        kind: "agent | skill"
+        similarity_evidence: "string"
+    suggested_route:
+      type: string
+      enum: [optimize, create_replace, create_new]
+  description: "需求与宿主已有 skill/agent 的相关性判定; detected=true 时 matched_targets 非空"
+project_context:
+  type: object
+  properties:
+    in_project: {type: boolean}
+    project_kind:
+      type: string
+      enum: [claude_code, dsh, none]
+    summary: {type: "string"}
+    conventions: {type: array, items: "string"}
+    relevant_assets:
+      type: array
+      items:
+        path: "string"
+        kind: "string"
+        role: "string"
+    suppressed_by: {type: "string"}
+  description: "宿主项目画像; 抑制场景 = {in_project: false, project_kind: none, suppressed_by: non_interactive}"

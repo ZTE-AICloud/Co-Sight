@@ -39,6 +39,10 @@ SubAgent 销毁后知识即释放。
 
 - `clarified-agent-requirements.yaml`（Step 1 / DC-010 产出；含 knowledge_sources[] 与
   build_mode——C4 显式证据与增量模式判定的一手来源）
+- `clarified-agent-requirements.yaml` 的 `project_context` 段（host-context 方案 §3.5,
+  可选——存在才消费）: 宿主项目画像。匹配时**宿主已有形态优先**（如项目已有 rules/ →
+  优先 rules 落点形态; 已有 skills/ → 落点避让撞名）; `intent` 段仅供背景, 路由已由
+  入口语境路由节决定, 本步骤不改写
 - `knowledge/INDEX.yaml` + 知识文件本体（行数/offset 一律以 INDEX 为准，本 prompt 不内联）：
   `shared/cascading-matcher.yaml` / `shared/pattern-catalog.yaml` /
   `agent-creation/pattern-matcher.yaml` / `agent-creation/harness-design-principles.yaml` /

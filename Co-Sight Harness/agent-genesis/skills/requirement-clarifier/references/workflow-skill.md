@@ -37,6 +37,20 @@ D1 → D2 → D3 → D4 → G1 → 去重, 共 5+1 = 6 主题（具体话术与 
 如果阶段 1 发现已有 Skill 目录（`output/skills/{name}/v1/SKILL.md` 存在）, 设置 `build_mode: incremental`。
 否则 `build_mode: greenfield`。
 
+### 宿主语境三段（host-context 方案 §3.2; 可选, 阶段 1 语义判定产出, 与 agent 线同构）
+
+`in_project: true` 时按 schema 写 `intent` / `target_match` / `project_context` 三段:
+
+- skill 线典型映射: "给我项目加个 skill" → `intent: host_extend`（指宿主运行面增补,
+  落点语义由入口编排层按 optimize 形态④处理, 本层不改写路由）；
+  "改一下 xx-skill" → `intent: modify_existing` + `target_match.detected: true`
+  （matched_targets[].kind: skill, evidence 引用 existing_skills 枚举项）；
+  dedup_check 候选与 target_match 命中为同一目标时合并写, evidence 相互引用
+- 抑制场景（host_project.suppressed: true）→ `project_context` 只写
+  `{in_project: false, project_kind: none, suppressed_by: non_interactive}`，
+  `intent`/`target_match` 省略
+- 普通代码仓 → 三段省略（不写 none 占位, 消费方以字段存在为契约）
+
 ## 与下游 skill-planner 的契约
 
 `clarified-skill-requirements.yaml` 是 skill-planner step-s1 的**直接输入**。skill-planner 必须:

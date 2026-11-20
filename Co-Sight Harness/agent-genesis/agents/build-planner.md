@@ -39,6 +39,10 @@ human-review 判断段 fragment（human-review.md 由 main agent step-3 收尾�
 ## 输入
 
 - `clarified-agent-requirements.yaml`（Step 1 / DC-010 产出；task_mode/acceptance_criteria 一手来源）
+- `clarified-agent-requirements.yaml` 的 `project_context` 段（host-context 方案 §3.5,
+  可选——存在才消费）: 产物落点/命名适配宿主项目约定（conventions/relevant_assets），
+  适配关系写进 per-file invariants 且 `derived_from` 可追溯至 project_context
+  （= goal-condition 追溯链同类要求）; 段缺失 → 通用形态, 行为与现状一致
 - `phase1-matching-decision.md`（frontmatter selected_patterns/rejected[]/build_type +
   「结构决策」build_type_decision + 「决策物化」表——只读不改）
 - `knowledge/INDEX.yaml` + 本体: agent-output-standard / assets-INDEX / harness-design-principles /

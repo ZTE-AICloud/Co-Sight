@@ -28,9 +28,12 @@
   （既有 s1+ 管线零改动）; 用户显式语句（"样例"/"走 full"）优先于判定（user_override）
 
 **optimize 车道 6（裁定 6: skill optimize 默认路由 fast——T1 判据 = skill_optimize 段）**:
-- `delta_files_le_2`: 改动点名文件 ≤2（澄清段收敛为"方向+点名"）
-- `no_structural_change`: 无结构性变更（不拆分/不合并章节骨架、不改 frontmatter 必需字段集）
-- `target_statically_locatable`: 目标 Skill 静态可定位（路径明确, 不需运行时探测）
+- `delta_files_le_2`: 改动点名文件 ≤2（澄清段收敛为"方向+点名";
+  **形态④宿主增补**: 点名=新增文件路径 ≤2, 目标=宿主项目运行面）
+- `no_structural_change`: 无结构性变更（不拆分/不合并章节骨架、不改 frontmatter 必需字段集;
+  **形态④映射**: 只新增不修改不删除）
+- `target_statically_locatable`: 目标 Skill 静态可定位（路径明确, 不需运行时探测;
+  **形态④映射**: host_project.in_project 已由探针机械验证）
 - T1 全过 → 直接 fast（D-04 不再确认; 用户显式拒绝 → 终止改走手动, decided_by: user_override）
 - **T1 任一不过 → 不进 full optimize（R6 条款②: full optimize 维护态不作 fallback）**——
   告知超范围项 + 去处（拆成 create 重建 / 手动修改）, 由用户选, 绝不静默降级
@@ -76,10 +79,15 @@ decided_by 区分 t1_auto/user_override/noninteractive_fallback/scope_blocked_op
 
 ## fast 驱动 — optimize（step-sf2-fast-optimize 到尾, 安全三件接线）
 
-**optimize 安全三件（§4.0 共用规格, 不可裁——R6）**: 快照回滚 → 就地修订 →
-改动范围机检 → G028 后测, 四步全过才交付。
+**optimize 安全三件（§4.0 共用规格, 不可裁——R6）**: 快照回滚 → 就地增量变更（含新增,
+形态④宿主增补）→ 改动范围机检 → G028 后测, 四步全过才交付。
+**形态④约束（host-context 方案 §3.4, 叠加共用规格之上）**: 目标 = 宿主运行面
+（claude_code: `.claude/skills/{name}/`; dsh: customSkillDirs 挂载, 权威 = platforms/dsh.yaml）,
+快照目标 = 宿主落点目录; **只新增红线: 宿主已有文件一律不碰**——check-delta-scope 追加断言
+deletions=0 且 modifications=∅; 极简 build-plan 声明全部新增文件; G028 后测 output_dir 指
+宿主落点子目录（skill-verify 档仅 g005, 无地板检查）。
 
-1. init + lane-decision（decided_by 含 scope 判定）
+1. init + lane-decision（decided_by 含 scope 判定; 形态④含 host_extend 标识）
 2. **安全件①快照**: 就地修订前 main agent 快照——
    ```bash
    mkdir -p ".agent-genesis/work/{name}/fast-lane/snapshot"

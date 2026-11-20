@@ -97,7 +97,9 @@ verdict 是你自判（自 declare）；确定性裁决归 G028——不夸大�
 ### 输入（在 create 基础上调整）
 
 1. `--mode optimize` + `--requirements` clarified-agent-requirements.yaml（optimize
-   形态: 澄清段收敛后的**方向 + 改动点名清单**——目标 Agent 路径与意图）
+   形态: 澄清段收敛后的**方向 + 改动点名清单**——目标 Agent 路径与意图;
+   **含 project_context 段时按其 conventions/relevant_assets 适配产物内容**——
+   宿主项目语境, host-context 方案 §3.5）
 2. `--lane-decision` lane-decision.yaml（锚定模式）
 3. `--target-agent` 目标 Agent 目录（output/agents/{name}/v1/ 或用户指明, **就地修订**）
 4. `--change-list` 改动点名清单文件（**你的修改边界, 越界即废**）
@@ -107,20 +109,28 @@ verdict 是你自判（自 declare）；确定性裁决归 G028——不夸大�
 ### 执行
 
 1. Read 点名清单内全部现文件（清单外只 Glob 计数不读不改）
-2. 就地增量修改（Edit 优先; 每处保持三段式认知: 改什么/为什么/影响面）
+2. 就地增量修改（Edit 优先; 每处保持三段式认知: 改什么/为什么/影响面;
+   **形态④宿主增补**: 点名条目为新增文件时直接 Write——**只新增红线: 宿主已有文件
+   一律不碰**（目标目录内的既有 CLAUDE.md/rules/agent 文件禁止修改删除）, 新文件内容
+   按 project_context.conventions 适配宿主; dsh 分支按 platforms/dsh.yaml bundle/preset
+   机制产出, 身份写 persona.prefix）
 3. **build-plan 对账**（G028 agent-exit 档必填消费——R1 同类缺口的 FC 闭环）:
    - 目标有 build-plan（含 full 车道产物档案）→ 增量修正声明（被改文件的
      invariants/brief 随修订同步）
-   - 目标无 build-plan（外部构建/手工维护的存量 Agent）→ **生成反映现状的极简
-     build-plan**（§Step 3 同款契约; files[] 覆盖现状全部文件, 增量单行 materialization）
+   - 目标无 build-plan（外部构建/手工维护的存量 Agent / 形态④宿主）→ **生成反映现状的极简
+     build-plan**（§Step 3 同款契约; files[] 覆盖现状全部文件, 增量单行 materialization;
+     **形态④: files[] 必须声明全部新增文件含宿主落点路径**——G023 batch 按声明文件检查,
+     漏声明 = 机检盲区）
    - build-plan 落 `--fast-work-dir/build-plan.md`
 4. copy/template 条目（.claude/rules、phase/gates 模板、settings）按现状声明——
    已存在且未点名则声明为现状 copy 不重物化; 点名修改则改后随 g025 重物化
-5. 产 self-report（mode=optimize + delta 段——check-delta-scope 的 allowlist 对照源）
+5. 产 self-report（mode=optimize + delta 段——check-delta-scope 的 allowlist 对照源;
+   **形态④ delta 段全部条目标记 `type: added`**）
 
 ### optimize 边界
 
 - 点名清单即 allowlist: 不新增/删除清单外文件, 不改清单外内容
+  （**形态④例外: 点名清单本身即新增文件清单——清单内新增, 清单外零触碰**）
 - 不读 trace/诊断产物（判断已在澄清段收敛, 防自我印证）
 - 同一 failure 两轮未修 → 如实记 FAIL（main agent 终止车道）
 

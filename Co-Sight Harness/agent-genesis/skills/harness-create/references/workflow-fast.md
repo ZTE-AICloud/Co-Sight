@@ -153,10 +153,23 @@ bash {PLUGIN_ROOT}/scripts/main-agent-helpers.sh step_complete step-f1-fast-buil
 | ① 提议方向 | "把 X 改成 Y" / "调 Z 的阈值" | clarifier 直取方向 → 追问点名清单（改哪些文件）→ 确认 |
 | ② 提供 trace | session JSONL 路径 | main agent 派 **trace-analyzer**（agents/trace-analyzer.md, 只诊断不动手）→ `fast-lane/trace-diagnosis.md`（执行观察/问题发现/候选方向/建议点名 ≤3）→ **AskUserQuestion 请用户确认方向与点名**（可改可选）→ 收敛 |
 | ③ 仅"要优化" | 无方向无 trace | 澄清器现状描摹: 派既有 **readiness-verifier** 对目标出证据（零新件）→ 澄清器按证据推荐 1-2 个方向 → 用户确认追问（一次, 带推荐答案）→ 收敛; 两轮仍无方向 → 如实告知"暂无可收敛的优化点"终止（不硬造） |
+| ④ 宿主增补（host-context 方案 §3.4） | 项目内"加一个智能体/skill"（clarified `intent: host_extend`, 经语境路由节判定即执行进入） | 目标 = 宿主项目运行面（探针已验, "目标静态可定位"判据即此）→ 点名清单 = **新增文件路径**（claude_code: `.claude/agents/{name}.md`, skill 诉求随轮落 `.claude/skills/{name}/`; dsh: 按 platforms/dsh.yaml bundle/preset 机制）→ 收敛（无追问, R-6） |
 
 收敛产物: clarified-agent-requirements.yaml（optimize 形态: 方向描述 + 点名文件清单 +
 目标路径）+ change-list.txt（点名清单 = allowlist）。点名 >2 或涉结构变更 → 告知超
 fast 判据 + 去处（create 重建/手动）, 不进 step-f2。
+**形态④判据映射**: 点名 ≤2 = 新增文件 ≤2; "无结构变更" = 只新增不修改不删除;
+"目标静态可定位" = host_project.in_project 已由探针机械验证。
+
+### 形态④安全约束（只新增红线, 叠加在 §4.0 共用规格之上）
+
+- 快照目标 = 宿主落点目录（`.claude/` 或 dsh 对应目录）; **禁止修改/删除宿主已有文件**
+  （CLAUDE.md/rules/既有 agent 一律不碰——它们已存在, 遮蔽即事故）
+- 安全件② check-delta-scope 追加断言: 快照 diff 中 `deletions=0 且 modifications=∅`
+  （changed ⊆ allowlist 之外再验 changed 全为新增——违者按越界同规格终止+快照恢复）
+- G028 后测 stdin context 加 `"host_extend": true` 豁免键（agent-exit 档跳过 CLAUDE.md
+  地板/g021——宿主仅 .claude/ 无根 CLAUDE.md 为合法场景; g005/frontmatter/g023 仍对
+  极简 build-plan 声明文件生效）; dsh 分支后测追加直调 G030
 
 ### step-f2 步骤（安全三件 = §4.0 共用规格, 与 skill 线 sf2 同款禁变体）
 
@@ -165,8 +178,8 @@ fast 判据 + 去处（create 重建/手动）, 不进 step-f2。
    点名清单落 `fast-lane/change-list.txt`
 3. Agent(fast-lane-builder): `--mode optimize` / `--requirements`（方向+点名）/
    `--lane-decision` / `--target-agent <目标目录>` / `--change-list` / `--fast-work-dir`
-   ——builder 就地修订 + **build-plan 对账**（目标有→增量修正声明; 无→生成反映现状的
-   极简 build-plan, G028 agent-exit 档必填消费）; self-report 含 delta 段
+   ——builder 就地增量变更（含新增, 形态④） + **build-plan 对账**（目标有→增量修正声明; 无→生成反映现状的
+   极简 build-plan, **形态④须声明全部新增文件含宿主落点路径**, G028 agent-exit 档必填消费）; self-report 含 delta 段
 4. **安全件②范围机检**: `bash {PLUGIN_ROOT}/scripts/check-delta-scope.sh --snapshot
    .../fast-lane/snapshot --target <目标目录> --allowlist .../fast-lane/change-list.txt`
    ——越界 FAIL → 终止 + 快照自动恢复 + 失败报告（builder 越权不走修复轮）

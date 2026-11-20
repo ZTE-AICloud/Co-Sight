@@ -30,6 +30,9 @@ color: blue
 
 - `--mode create|optimize|diagnose`（必传）
 - create: 用户需求文本 + 已有 Skill 清单（自己 Glob `skills/*/SKILL.md`）
+- create 附加: clarified yaml 的 `project_context` 段（host-context 方案 §3.5, 可选——
+  存在才消费）: 宿主项目画像, skill-design 的落点/触发场景/命名适配宿主约定;
+  段缺失 → 通用形态, 行为与现状一致
 - optimize / diagnose: 目标 SKILL.md 路径 + 用户反馈
 - mode-specific 细则:
   - `rules/skill/skill-design-rules.md`（create, 含去重 + SF-6 + 阶段1契约）

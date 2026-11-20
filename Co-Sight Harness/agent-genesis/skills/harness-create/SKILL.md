@@ -98,6 +98,30 @@ python {PLUGIN_ROOT}/scripts/inject-input-assets.py \
   Lane 判定、build-planner、executor、G029 均读该文件判定，不另写 state 标记
 - 之后 build-planner 必须把该 skill 标为 `generation: pre_staged`（见 `agents/build-planner.md`），executor 不重新生成
 
+## 语境路由（host-context 方案 §3.3; Step 1 后、Lane 判定前单点执行）
+
+数据源: env-readiness.yaml `host_project` 段 + clarified yaml `intent`/`target_match` 段
+（澄清器产出; 任一缺失 → 本节整体跳过, 零行为变化——fail-open, 与 lane 判定兜底同款）。
+
+按 `intent` 分派（用户已显式指定目标路径/trace/模式时以显式为准, 本节不介入）:
+
+| intent | 动作 |
+|---|---|
+| `host_extend`（默认新增语义） | **判定即执行, 不调 AskUserQuestion**（R-6, D-04 同款）:
+  mode=optimize 形态④宿主增补——开场一行明示 `将以增补形态新增 → <落点路径>`（claude_code:
+  `.claude/agents/{name}.md` + skill 诉求随轮落 `.claude/skills/{name}/`; dsh: 按
+  platforms/dsh.yaml bundle/preset 机制）; 用户插话即改道（要完整工程 → 转 create 全量） |
+| `modify_existing` 且 target_match.detected | AskUserQuestion **一次确认**（R-1, 复用澄清器
+  D 格式）: A 优化既有⭐（mode=optimize 形态①③, 目标=matched_targets[0]）/ B 重建替换
+  （mode=create, matched target 记入留痕并对旧产物快照）/ C 另建新的（mode=create, {name} 避让） |
+| `explicit_create` | 照旧 create 全量; clarified 的 `project_context` 段照常全链注入 |
+
+- 留痕: `.agent-genesis/work/{name}/route-decision.yaml` `{route, decided_by:
+  context_confirm|context_execute|user_explicit, matched_target, decided_at}`
+  （lane-decision 同待遇: 主 agent 直写, 不进 gate triggers）
+- 本节问询为新增合法问询点（意图分流 ≠ D-04 约束的 lane 判定）; 全流程除上表外
+  不新增交互
+
 ## 第 1.5 步：Lane 判定（experimental——详见 `references/workflow-fast.md` §Lane 判定节）
 
 Step 1 澄清完成并收敛后单点执行, 只增不改 full 车道任何行为（红线 R7）。
@@ -122,9 +146,12 @@ Step 1 澄清完成并收敛后单点执行, 只增不改 full 车道任何行�
    用户明示"样例"/"走 full" 等则照办
 4. **optimize 维度（FC）**: 用户意图为优化既有 Agent 时, 澄清段按三输入形态分流
    （方向直取 / trace→派 trace-analyzer / 仅"要优化"→现状描摹, 详见 workflow-fast.md
-   optimize 段）收敛为"方向+点名"; T1 对照 skill_optimize 同款语义（点名 ≤2 /
-   无结构变更 / 目标静态可定位）——全过 → 直接 fast（D-04 不问询; 裁定 6: agent 线
-   optimize **只走 fast**, 用户显式拒绝 → 终止不改道）; 不过 → 告知超范围与去处（create 重建/手动）,
+   optimize 段）; **形态④宿主增补**（host-context 方案 §3.4）: 目标=宿主项目本身,
+   点名清单=新增文件路径, 经语境路由节（R-6 判定即执行）进入本维度——判据语义映射
+   见 workflow-fast.md 形态④行。收敛为"方向+点名"; T1 对照 skill_optimize 同款语义
+   （点名 ≤2 / 无结构变更 / 目标静态可定位; 形态④"目标静态可定位"= 探针已验宿主运行面）
+   ——全过 → 直接 fast（D-04 不问询; 裁定 6: agent 线 optimize **只走 fast**, 用户显式拒绝 → 终止不改道）;
+   不过 → 告知超范围与去处（create 重建/手动）,
    **无 full optimize 可去**（agent-optimize-diagnose-mode.md 已缩水取代）
 5. **留痕**: 判定写 `.agent-genesis/work/{name}/fast-lane/lane-decision.yaml`（走 full 也落）
 6. **分道**: full → 原第二步（一切照旧）; fast → fast 驱动节（下方对应 mode）
@@ -143,9 +170,12 @@ fast 车道不走 DC-010 通道建议消费 / DC-001 人审（G028 为唯一交�
 
 三输入形态在澄清段分流（trace 形态先派 trace-analyzer 出诊断再请用户确认）, 收敛为
 "方向 + 点名清单"后走安全三件（同 skill 线规格, §4.0 禁各自变体）: 快照（目标 → fast-lane/snapshot/）
-→ Agent(fast-lane-builder --mode optimize, 就地修订 + build-plan 对账——目标无 build-plan
-则生成反映现状的极简 build-plan) → check-delta-scope（越界即终止+快照恢复）→ G024（按实际
-形态传 outputs 子集——形态②含 trace-diagnosis.md）+ G028 agent-exit 档后测 → 合并 verdict
+→ Agent(fast-lane-builder --mode optimize, 就地增量变更（含新增, 形态④） + build-plan 对账——目标无 build-plan
+则生成反映现状的极简 build-plan, **形态④极简 build-plan 须声明全部新增文件含宿主落点路径**)
+→ check-delta-scope（越界即终止+快照恢复; 形态④红线: 只新增——快照 diff 断言 deletions=0
+且 modifications=∅）→ G024（按实际形态传 outputs 子集——形态②含 trace-diagnosis.md）+ G028
+agent-exit 档后测（**形态④ context 加 `host_extend: true` 豁免键**——跳过 CLAUDE.md 地板/g021,
+保留 g005/frontmatter/g023 对声明文件; dsh 分支追加直调 G030）→ 合并 verdict
 + step_complete step-f2-fast-optimize → 分叉（修复轮仅修 FAIL 项; 终止出失败报告三要素）。
 
 ## 第二步：按 workflow.md Step 序列驱动

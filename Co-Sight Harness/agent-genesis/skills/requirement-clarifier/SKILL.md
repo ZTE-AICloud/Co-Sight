@@ -102,6 +102,32 @@ Main Agent 最终以 DC-010 的判定为准——本字段只是建议, 供 AskU
 
 ## 通用阶段 1: 上下文加载（两 mode 共用, 资产类型按 mode 参数化）
 
+### 宿主语境判定（host-context 方案 §3.2; 先于资产探索执行）
+
+1. Read `.agent-genesis/work/{name}/env-readiness.yaml` 的 `host_project` 段
+   （入口探针产物; 文件或段缺失 / `project_kind: none` → 本节余下步骤跳过, 零行为变化）
+2. `suppressed: "true"`（selftest/e2e 注入抑制）→ 按 none 处理: 探索扩展与语义判定全部跳过,
+   三段输出按 none 缺省（详见阶段 4）
+3. `in_project: true` → 执行:
+   - 开场白固定告知一句: "检测到当前项目（{project_kind}），已有: {existing_agents /
+     existing_skills 名称清单}"（无资产则只报项目与类型; 仅告知, 不构成问询）
+   - 探索范围扩展到宿主项目本体: README.md / 目录结构 / 技术栈标记文件 / 已有 MCP 与
+     工具配置 → 产出项目摘要（供 project_context.summary）
+   - **语义判定**（R-9: 语义理解非关键词匹配; 与"修改当前项目"同语境原则）:
+     - `intent: host_extend` — in_project 下"增加/新建/加一个 + 智能体/agent/skill/助手"
+       类表述的**默认**解释（指宿主运行面增量, 不是新建完整工程）
+     - `intent: modify_existing` — 需求与 existing_agents/skills 同名或同用途;
+       同时 `target_match.detected: true` + matched_targets[]（附 similarity_evidence）
+     - `intent: explicit_create` — 明确工程级暗示（"独立的项目/完整 harness/放到别的
+       目录用/全新的"）
+     - 判定不确定 → 澄清访谈中顺势一问（计入既有问询, **不新增问询节点**）
+   - **判定红线**: 语义判定只产建议, 路由最终由入口编排层的语境路由节决定; 用户已显式
+     指定目标路径 / trace / 模式时以显式为准, 本节不改写、不覆盖
+4. 普通代码仓（in_project=false）→ 原探索流程照旧; 语义判定三段按缺省填写, 不产生
+   host_extend/modify_existing 建议
+
+### 资产探索（原有流程, 语境判定后执行）
+
 提问前先加载已知信息, 跳过已回答的问题。使用 Explore 内置 Agent 探索项目目录:
 
 ```
@@ -151,6 +177,15 @@ Main Agent 最终以 DC-010 的判定为准——本字段只是建议, 供 AskU
 `build_mode` 判定（两 mode 通用）:
 - 阶段 1 发现已有完整配置 → `build_mode: incremental`
 - 否则 → `build_mode: greenfield`
+
+宿主语境三段（两 mode 通用, 字段契约见各 mode schema; 全部可选段, 语义判定产出）:
+- `intent`: host_extend | modify_existing | explicit_create（阶段 1 判定; 项目外/抑制场景
+  缺省 explicit_create 语义但不阻塞原流程——字段可缺省不写）
+- `target_match`: {detected: bool, matched_targets: [{name, path, kind, similarity_evidence}],
+  suggested_route: optimize | create_replace | create_new}
+- `project_context`: {in_project: bool, project_kind, summary, conventions: [string],
+  relevant_assets: [{path, kind, role}]}; 抑制场景强制
+  `{in_project: false, project_kind: none, suppressed_by: non_interactive}` 并省略其余键
 
 按完成状态协议报告状态。
 

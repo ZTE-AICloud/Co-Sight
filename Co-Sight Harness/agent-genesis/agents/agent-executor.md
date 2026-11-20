@@ -72,6 +72,8 @@ gate 证据唯一落点, 禁止写 output_dir 下的 gate-results/）
      `.claude/agents/*`、`.claude/skills/*`（build-plan 已按 platforms/dsh.yaml 剔除；
      若仍出现此类条目 → 记 blocker `dsh_forbidden_artifact`，不写盘）
 2. 读 goal-condition.yaml 锁定终止条件
+   （build-plan 中 `derived_from` 指向 project_context.conventions 的 invariants 视同
+   goal-condition 同级约束——宿主项目适配声明, host-context 方案 §3.5; 偏离 = 不一致）
 3. 续跑: output_dir 中已存在的声明文件视为已完成（跳过）——文件系统即账本，
    无独立进度文件；末置校验兜底检查全部文件
 

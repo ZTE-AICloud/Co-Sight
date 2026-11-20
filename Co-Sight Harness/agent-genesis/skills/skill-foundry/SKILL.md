@@ -27,11 +27,23 @@ description: 统一 Skill 工厂（创建/优化/诊断三模式）。接收自�
 | "帮我做一个 X Skill""新建/生成/创建 Skill""一个能力" | create |
 | "优化/改进/增强这个 Skill" + 目标路径 | optimize |
 | "排查/诊断/看看哪里有问题" + 目标路径（不要求修改） | diagnose |
+| 项目内"加一个 skill"（clarified `intent: host_extend`） | optimize（**形态④宿主增补**, host-context 方案 §3.4——与"修改当前项目"同语境, 判定即执行） |
 
 - Goal（Create/Improve/Diagnose）或目标不明确 → 一次一个问题追问, 带推荐答案, 最多 2 个:
   1. "你是想创建新的, 还是优化/诊断已有的？"
   2. "目标 Skill 的路径是？（优化/诊断需要）"
 - mode 与 {name}（kebab-case, 向用户确认）确定后代入路径模板; diagnose 无 {name} 时用目标 Skill 目录名
+
+## 语境路由（host-context 方案 §3.3; s0 澄清后、Lane 判定前单点执行, 与 harness-create 同规格）
+
+数据源: env-readiness.yaml `host_project` 段 + clarified yaml `intent`/`target_match`
+（缺失 → 本节跳过, 零行为变化）。用户已显式指定目标路径/模式时不介入:
+
+- `intent: host_extend` → **判定即执行**（R-6）: mode=optimize 形态④宿主增补——开场一行
+  明示落点（claude_code: `.claude/skills/{name}/`; dsh: customSkillDirs 挂载机制, 权威 =
+  platforms/dsh.yaml）; 插话即改道
+- `intent: modify_existing` 且 target_match.detected → 一次确认（R-1 同款三选项）
+- 留痕 `route-decision.yaml`（lane-decision 同待遇, 不进 gate triggers）
 
 ## 第 1.5 步：Lane 判定（experimental——详见 `references/workflow-fast.md` §Lane 判定节）
 
@@ -45,7 +57,9 @@ s0 澄清（create）/目标确认（optimize）后单点执行, 只增不改 fu
    - create: skill_create 段单判据 `fast_path_hit`（v1.3 D-03, OR 三分支任一命中:
      light 单职责+知识内联/单文件 / template_form 标准形态 / sampled 池有实例包）——
      命中 → 直接 fast（D-04 不问询, 一行陈述告知, 留痕注明分支）; 全不命中 → 静默走 full
-   - optimize: skill_optimize 段三条（点名 ≤2 / 无结构变更 / 目标静态可定位）——
+   - optimize: skill_optimize 段三条（点名 ≤2 / 无结构变更 / 目标静态可定位;
+     **形态④宿主增补判据映射**: 点名=新增文件路径 ≤2 / "无结构变更"=只新增 /
+     "目标静态可定位"=探针已验 host_project.in_project）——
      全过 → 直接 fast（D-04 不问询, 裁定 6; 用户显式拒绝 → 终止改手动）; 任一不过 →
      **不进 full optimize**（维护态不作 fallback, R6）——告知超范围项与去处
      （create 重建 / 手动）, 由用户选
@@ -60,10 +74,12 @@ Read `references/workflow-fast.md` 按对应 mode 驱动到尾:
   G028 直调（skill-build 档, 无 build-plan 不走 g025）→ 合并 verdict + step_complete →
   按 action 分叉（PASS → 交付汇报; FAIL → 修复轮一轮 → 再 FAIL 终止+失败报告三要素）
 - **optimize（step-sf2, 安全三件不可裁——R6）**: init → **快照**（cp -r 目标 → fast-lane/snapshot/,
-  点名清单落 change-list.txt）→ Agent(fast-skill-builder --mode optimize, 就地修订) →
-  **check-delta-scope**（diff ⊆ 点名集; 越界即终止+快照恢复, 不走修复轮）→ G024 +
-  **G028 后测**（skill-verify 档）→ 合并 verdict + step_complete → 分叉（修复轮仅修
-  G028/自报 FAIL 项）
+  点名清单落 change-list.txt）→ Agent(fast-skill-builder --mode optimize, 就地增量变更（含新增,
+  形态④宿主增补: 落宿主运行面, 只新增红线——宿主已有文件一律不碰, 极简 build-plan 声明新增文件）) →
+  **check-delta-scope**（diff ⊆ 点名集; 形态④追加断言 deletions=0 且 modifications=∅;
+  越界即终止+快照恢复, 不走修复轮）→ G024 +
+  **G028 后测**（skill-verify 档; 形态④ output_dir 指宿主落点子目录——该档仅 g005, 无地板检查）→
+  合并 verdict + step_complete → 分叉（修复轮仅修 G028/自报 FAIL 项）
 - 交付汇报四要素: 模式明示 / 质量门禁提示（concerns 语义转述）/ 评测未运行 /
   产物位置（optimize 另含 delta 摘要与快照位置）。fast 车道不走 DC-002。
 

@@ -93,7 +93,121 @@ if [ -n "${PYTHON_BIN:-}" ]; then
   PYTHON_DESC="$("$PYTHON_BIN" -c 'import sys; print("%s %d.%d.%d" % (sys.executable, *sys.version_info[:3]))' 2>/dev/null || echo "$PYTHON_BIN")"
 fi
 
-# 写 env-readiness.yaml
+# ── 宿主项目语境探测（host-context 方案 §3.1; 纯机械枚举, 语义判定归澄清器）──
+# 判定收窄（方案 R-4）: 只有 claude/dsh 项目才算项目语境; 普通代码仓/空目录 = none
+#   claude_code: CLAUDE.md 或 .claude/ 任一存在
+#   dsh:         .dsh/ 或 AGENTS.md 或 cordis.patch.yml
+#                （特征锚定 knowledge/agent-creation/platforms/dsh.yaml host_constraints
+#                 ——该文件是 DSH 事实唯一权威, 特征变更时同步本处）
+# fail-open: 本段任何异常不阻断探针主流程, kind 回落 none（与 lane 判定
+#   criteria.yaml 缺失静默 full 同款兜底）
+# 抑制开关: AG_SUPPRESS_HOST_CONTEXT=1 → 强制 none + suppressed 标记
+#   （selftest/e2e 注入抑制的确定性入口, 方案 §3.7; 非交互判定的运行时
+#    语义判定仍归编排层, 此环境变量只服务确定性测试环境）
+HOST_PROJECT_KIND="none"
+HOST_CTX_SECTION_FILE="${WORK_DIR}/host-project-section.yaml"
+rm -f "$HOST_CTX_SECTION_FILE"
+if [ -n "${PYTHON_BIN:-}" ]; then
+  HOST_SUPPRESSED="${AG_SUPPRESS_HOST_CONTEXT:+true}" \
+  HOST_CTX_OUT="$HOST_CTX_SECTION_FILE" \
+  "$PYTHON_BIN" - > /dev/null 2>&1 <<'PY' && HOST_PROJECT_KIND="$(grep -m1 'project_kind' "$HOST_CTX_SECTION_FILE" 2>/dev/null | sed 's/.*"\(.*\)"/\1/')"
+import os
+
+def detect_kind():
+    # 判定收窄（方案 R-4）; dsh 特征锚定 platforms/dsh.yaml host_constraints
+    if os.path.isfile("CLAUDE.md") or os.path.isdir(".claude"):
+        return "claude_code"
+    if os.path.isdir(".dsh") or os.path.isfile("AGENTS.md") or os.path.isfile("cordis.patch.yml"):
+        return "dsh"
+    return "none"
+
+def describe(path):
+    # 机械截取 frontmatter description, 失败留空（fail-open）
+    try:
+        with open(path, encoding="utf-8", errors="replace") as f:
+            in_fm = False
+            for raw in f:
+                line = raw.strip()
+                if line == "---":
+                    if in_fm:
+                        break
+                    in_fm = True
+                    continue
+                if in_fm and line.startswith("description:"):
+                    return line.split(":", 1)[1].strip().strip('"')[:120]
+        return ""
+    except OSError:
+        return ""
+
+def yaml_list(entries, indent):
+    lines = []
+    for e in entries:
+        lines.append(f"{indent}- name: \"{e['name']}\"")
+        lines.append(f"{indent}  path: \"{e['path']}\"")
+        lines.append(f"{indent}  description: \"{e['description']}\"")
+    return lines
+
+def scan_agents(base):
+    out = []
+    try:
+        for name in sorted(os.listdir(base)):
+            p = os.path.join(base, name)
+            if os.path.isdir(p):
+                out.append({"name": name, "path": p, "description": describe(os.path.join(p, "CLAUDE.md"))})
+            elif name.endswith(".md"):
+                out.append({"name": name[:-3], "path": p, "description": describe(p)})
+    except OSError:
+        pass
+    return out
+
+def scan_skills(base):
+    out = []
+    try:
+        for name in sorted(os.listdir(base)):
+            p = os.path.join(base, name)
+            if os.path.isdir(p):
+                out.append({"name": name, "path": p, "description": describe(os.path.join(p, "SKILL.md"))})
+    except OSError:
+        pass
+    return out
+
+suppressed = os.environ.get("HOST_SUPPRESSED") == "true"
+kind = "none" if suppressed else detect_kind()
+agents, skills = [], []
+if kind != "none":
+    seen = set()
+    for base in ("output/agents", ".claude/agents"):
+        for e in scan_agents(base):
+            if e["path"] not in seen:
+                seen.add(e["path"])
+                agents.append(e)
+    seen = set()
+    for base in ("output/skills", ".claude/skills"):
+        for e in scan_skills(base):
+            if e["path"] not in seen:
+                seen.add(e["path"])
+                skills.append(e)
+
+out_path = os.environ.get("HOST_CTX_OUT", "host-project-section.yaml")
+with open(out_path, "w", encoding="utf-8") as f:
+    f.write("host_project:\n")
+    f.write("  in_project: %s\n" % ("true" if kind != "none" else "false"))
+    f.write("  project_kind: \"%s\"\n" % kind)
+    f.write("  suppressed: \"%s\"\n" % ("true" if suppressed else "false"))
+    if agents:
+        f.write("  existing_agents:\n")
+        f.write("\n".join(yaml_list(agents, "    ")) + "\n")
+    else:
+        f.write("  existing_agents: []\n")
+    if skills:
+        f.write("  existing_skills:\n")
+        f.write("\n".join(yaml_list(skills, "    ")) + "\n")
+    else:
+        f.write("  existing_skills: []\n")
+PY
+fi
+
+# 写 env-readiness.yaml（host_project 段独立生成后拼入, 段失败不影响主体——fail-open）
 {
   printf 'env_readiness:\n'
   printf '  generated_at: "%s"\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
@@ -106,11 +220,14 @@ fi
   printf '  failures: [%s]\n' "$(IFS=,; echo "${failures[*]}")"
   printf '  recommended_missing: [%s]\n' "$(IFS=,; echo "${recommended_missing[*]}")"
 } > "$OUT"
+if [ -f "$HOST_CTX_SECTION_FILE" ]; then
+  cat "$HOST_CTX_SECTION_FILE" >> "$OUT"
+fi
 
 if [[ ${#failures[@]} -gt 0 ]]; then
-  printf '{"env_readiness_path": "%s", "status": "FAIL", "host": "%s", "failures": [%s]}\n' \
-    "$OUT" "$HOST" "$(IFS=,; echo "${failures[*]}")"
+  printf '{"env_readiness_path": "%s", "status": "FAIL", "host": "%s", "host_project_kind": "%s", "failures": [%s]}\n' \
+    "$OUT" "$HOST" "$HOST_PROJECT_KIND" "$(IFS=,; echo "${failures[*]}")"
   exit 2
 fi
 
-printf '{"env_readiness_path": "%s", "status": "PASS", "host": "%s", "failures": []}\n' "$OUT" "$HOST"
+printf '{"env_readiness_path": "%s", "status": "PASS", "host": "%s", "host_project_kind": "%s", "failures": []}\n' "$OUT" "$HOST" "$HOST_PROJECT_KIND"

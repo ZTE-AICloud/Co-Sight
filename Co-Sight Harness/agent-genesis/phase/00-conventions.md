@@ -75,6 +75,7 @@ ${PLUGIN_ROOT}/                # 插件安装目录（只读，禁止写入）
 | **fast 车道过程产物** | `${ROOT}/.agent-genesis/work/{name}/fast-lane/`（{name} 层, 与 agent-creation//skill-foundry/ 平级） | 临时 (30 天) | fast 驱动节 / fast builder。契约件: `lane-decision.yaml`（判定节留痕: 判据评估结果 + 模式锚定 + 用户裁定）、`build-plan.md`（FA 极简 build-plan, schema 全字段）、`revision-request.json`（G028 failures[] 机读修复指令）、`self-report.md`（fast-lane-report.schema）、`snapshot/`（optimize 就地修订前快照）。来源: fast-lane-implementation.md §4.0 |
 | **gate 证据** | `${ROOT}/.agent-genesis/work/{name}/gate-results/{step_id}.json` | 临时 | main agent（跑完 gate 即落盘, 无自动引擎） |
 | **状态文件** | `${ROOT}/.agent-genesis/work/{name}/orchestrator-state.yaml` | 临时 | main agent (每 step 后) |
+| **语境路由留痕** | `${ROOT}/.agent-genesis/work/{name}/route-decision.yaml` | 临时 | main agent（语境路由节直写, lane-decision 同待遇: 不进 gate triggers）。字段: `route` / `decided_by: context_confirm\|context_execute\|user_explicit` / `matched_target` / `decided_at`。来源: host-context 方案 §3.3 |
 
 ## output/ vs work/ 决策
 

@@ -62,10 +62,15 @@ skill 线 fast **无 build-plan、不走 g025**（其契约需 --build-plan）; 
 ### 执行
 
 1. Read 点名清单内全部现文件（点名外文件只 Glob 计数不读不改）
-2. 就地增量修改（Edit 优先; 每处修改保持三段式认知: 改什么/为什么/影响面）
+2. 就地增量修改（Edit 优先; 每处修改保持三段式认知: 改什么/为什么/影响面;
+   **形态④宿主增补**: 点名条目为新增文件时直接 Write 落宿主运行面（claude_code:
+   `.claude/skills/{name}/`; dsh: customSkillDirs 挂载机制, 权威 = platforms/dsh.yaml）
+   ——**只新增红线: 宿主已有文件一律不碰**; 新 SKILL.md 内容按 requirements 的
+   project_context.conventions 适配宿主）
 3. **不新增清单外文件、不删除清单外文件、不改清单外内容**——点名即 allowlist
+   （**形态④例外: 点名清单本身即新增文件清单——清单内新增, 清单外零触碰**）
 4. 产 self-report: mode=optimize + **delta 段**（每文件: path/change_type[modify|add|delete]/
-   before/after 摘要——check-delta-scope 的 allowlist 对照源）
+   before/after 摘要——check-delta-scope 的 allowlist 对照源; **形态④全部条目 change_type: add**）
 
 ## 修复轮（--revision-request 出现时）
 

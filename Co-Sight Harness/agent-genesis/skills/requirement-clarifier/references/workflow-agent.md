@@ -65,6 +65,19 @@
 如果阶段 1 发现已有 Agent 配置（CLAUDE.md + skills/ + rules/）, 设置 `build_mode: incremental`。
 否则 `build_mode: greenfield`。
 
+### 宿主语境三段（host-context 方案 §3.2; 可选, 阶段 1 语义判定产出）
+
+`in_project: true` 时按 schema 写 `intent` / `target_match` / `project_context` 三段:
+
+- agent 线典型映射: "给我项目加个审查 agent" → `intent: host_extend`；
+  "改一下 review-bot" → `intent: modify_existing` + `target_match.detected: true`
+  （matched_targets[].kind: agent, evidence 引用 existing_agents 枚举项）；
+  "做一个独立的部署 agent 项目" → `intent: explicit_create`
+- 抑制场景（host_project.suppressed: true）→ `project_context` 只写
+  `{in_project: false, project_kind: none, suppressed_by: non_interactive}`，
+  `intent`/`target_match` 省略
+- 普通代码仓 → 三段省略（不写 none 占位, 消费方以字段存在为契约）
+
 ### 输出示例（好的）
 
 ```yaml
