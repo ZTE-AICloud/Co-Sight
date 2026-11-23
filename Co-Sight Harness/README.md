@@ -16,6 +16,7 @@
 ![Runtime](https://img.shields.io/badge/runtime-Claude_Code_%7C_Codex_%7C_DSH-46d4e8?style=flat-square)
 ![Local-first](https://img.shields.io/badge/Local--first-%E2%9C%94-4ade80?style=flat-square)
 ![License](https://img.shields.io/badge/license-Apache--2.0-blue?style=flat-square)
+[![arXiv](https://img.shields.io/badge/arXiv-2611.17696-b31b1b?style=flat-square)](https://arxiv.org/abs/2611.17696)
 
 </div>
 
@@ -317,6 +318,24 @@ pnpm dev:all
 （MIT License，Copyright (c) 2026 - Now, Son Nguyen）的部分代码。谨向该项目及其作者、社区致以谢意。
 
 按 MIT 许可证要求，上游版权声明与许可声明已完整保留于 [`cosight-viewer/NOTICE`](cosight-viewer/NOTICE)。
+
+---
+
+## 论文
+
+如果您在研究中使用 Co-Sight Harness Studio，请引用我们的论文：
+
+```bibtex
+@article{wang2026cosightharness,
+  title={Co-Sight Harness: Externalized Control Assets and Deterministic Enforcement for Long-Horizon Business Agents},
+  author={Wang, Luyao and Zhu, Xijun and Hao, Zhaohui and Zhang, Xiwen and Wen, Xingyu and Li, Weishan and Liao, Yuyang and Gao, Yanqin and Du, Yongsheng and Huang, Lingjun and Zhao, Shaowei and Li, Gang and Yu, Qifan and Wang, Baoli},
+  journal={arXiv preprint arXiv:2611.17696},
+  year={2026},
+  url={https://arxiv.org/abs/2611.17696}
+}
+```
+
+论文地址：https://arxiv.org/abs/2611.17696
 
 ---
 

@@ -16,6 +16,7 @@
 ![Runtime](https://img.shields.io/badge/runtime-Claude_Code_%7C_Codex_%7C_DSH-46d4e8?style=flat-square)
 ![Local-first](https://img.shields.io/badge/Local--first-%E2%9C%94-4ade80?style=flat-square)
 ![License](https://img.shields.io/badge/license-Apache--2.0-blue?style=flat-square)
+[![arXiv](https://img.shields.io/badge/arXiv-2611.17696-b31b1b?style=flat-square)](https://arxiv.org/abs/2611.17696)
 
 </div>
 
@@ -325,6 +326,24 @@ community.
 
 As required by the MIT License, the upstream copyright and permission notices are preserved in full
 in [`cosight-viewer/NOTICE`](cosight-viewer/NOTICE).
+
+---
+
+## Paper
+
+If you use Co-Sight Harness Studio in your research, please cite our paper:
+
+```bibtex
+@article{wang2026cosightharness,
+  title={Co-Sight Harness: Externalized Control Assets and Deterministic Enforcement for Long-Horizon Business Agents},
+  author={Wang, Luyao and Zhu, Xijun and Hao, Zhaohui and Zhang, Xiwen and Wen, Xingyu and Li, Weishan and Liao, Yuyang and Gao, Yanqin and Du, Yongsheng and Huang, Lingjun and Zhao, Shaowei and Li, Gang and Yu, Qifan and Wang, Baoli},
+  journal={arXiv preprint arXiv:2611.17696},
+  year={2026},
+  url={https://arxiv.org/abs/2611.17696}
+}
+```
+
+Paper: https://arxiv.org/abs/2611.17696
 
 ---
 
