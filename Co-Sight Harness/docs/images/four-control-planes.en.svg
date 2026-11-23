@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="620" viewBox="0 0 960 620" font-family="system-ui,'Segoe UI','Helvetica Neue',Arial,sans-serif">
+  <rect width="960" height="620" fill="#ffffff"/>
+  <text x="480" y="40" text-anchor="middle" font-size="24" font-weight="700" fill="#1a1a1a">Four Control Planes: Runtime Control Around a Probabilistic Core</text>
+  <text x="480" y="66" text-anchor="middle" font-size="14" fill="#727272">Four questions every agent execution must answer — what · next step · experience · proof</text>
+
+  <!-- center -->
+  <circle cx="480" cy="318" r="86" fill="#1a1a1a"/>
+  <circle cx="480" cy="318" r="86" fill="none" stroke="#b7b7b7" stroke-width="3"/>
+  <text x="480" y="308" text-anchor="middle" font-size="17" font-weight="700" fill="#ffffff">Probabilistic</text>
+  <text x="480" y="330" text-anchor="middle" font-size="17" font-weight="700" fill="#ffffff">core</text>
+  <text x="480" y="356" text-anchor="middle" font-size="20" font-weight="800" fill="#b7b7b7">LLM</text>
+
+  <!-- connectors -->
+  <g stroke="#d4d4d4" stroke-width="2" stroke-dasharray="6 5">
+    <line x1="300" y1="160" x2="416" y2="262"/>
+    <line x1="660" y1="160" x2="544" y2="262"/>
+    <line x1="300" y1="476" x2="416" y2="374"/>
+    <line x1="660" y1="476" x2="544" y2="374"/>
+  </g>
+
+  <!-- panel 01 top-left -->
+  <g>
+    <rect x="60" y="90" width="240" height="150" rx="12" fill="#ffffff" stroke="#b7b7b7" stroke-width="2"/>
+    <text x="80" y="122" font-size="13" font-weight="700" fill="#767676">01 BUSINESS PLANE</text>
+    <text x="80" y="146" font-size="15" font-weight="700" fill="#1a1a1a">What must be done?</text>
+    <text x="80" y="172" font-size="12.5" fill="#3f3f3f">Goal · Constraint · Acceptance · Risk</text>
+    <text x="80" y="192" font-size="12.5" fill="#3f3f3f">Orchestrator dispatch · checklist-driven</text>
+    <text x="80" y="212" font-size="12.5" fill="#3f3f3f">Independent reviewer · eval isolated</text>
+  </g>
+  <!-- panel 02 top-right -->
+  <g>
+    <rect x="660" y="90" width="240" height="150" rx="12" fill="#ffffff" stroke="#b7b7b7" stroke-width="2"/>
+    <text x="680" y="122" font-size="13" font-weight="700" fill="#767676">02 EXECUTION PLANE</text>
+    <text x="680" y="146" font-size="15" font-weight="700" fill="#1a1a1a">What's the next step?</text>
+    <text x="680" y="172" font-size="12.5" fill="#3f3f3f">Orchestrator · Loop · Graph · State</text>
+    <text x="680" y="192" font-size="12.5" fill="#3f3f3f">State externalised · resume checkpoints</text>
+    <text x="680" y="212" font-size="12.5" fill="#3f3f3f">Failed eval loops back with evidence</text>
+  </g>
+  <!-- panel 03 bottom-left -->
+  <g>
+    <rect x="60" y="406" width="240" height="150" rx="12" fill="#ffffff" stroke="#b8b8b8" stroke-width="2"/>
+    <text x="80" y="438" font-size="13" font-weight="700" fill="#7f7f7f">03 ASSET PLANE</text>
+    <text x="80" y="462" font-size="15" font-weight="700" fill="#1a1a1a">What experience helps?</text>
+    <text x="80" y="488" font-size="12.5" fill="#3f3f3f">Knowledge · Memory · Tool · Skill</text>
+    <text x="80" y="508" font-size="12.5" fill="#3f3f3f">Runtime retrieval: findable</text>
+    <text x="80" y="528" font-size="12.5" fill="#3f3f3f">Production-time building: complete</text>
+  </g>
+  <!-- panel 04 bottom-right -->
+  <g>
+    <rect x="660" y="406" width="240" height="150" rx="12" fill="#ffffff" stroke="#b8b8b8" stroke-width="2"/>
+    <text x="680" y="438" font-size="13" font-weight="700" fill="#7f7f7f">04 EVIDENCE PLANE</text>
+    <text x="680" y="462" font-size="15" font-weight="700" fill="#1a1a1a">How do we prove it's right?</text>
+    <text x="680" y="488" font-size="12.5" fill="#3f3f3f">Trace · Eval · Review · Version</text>
+    <text x="680" y="508" font-size="12.5" fill="#3f3f3f">3-level metrics: task/milestone/step</text>
+    <text x="680" y="528" font-size="12.5" fill="#3f3f3f">Merge only after regression passes</text>
+  </g>
+
+  <rect x="180" y="580" width="600" height="30" rx="8" fill="#1a1a1a"/>
+  <text x="480" y="600" text-anchor="middle" font-size="13.5" font-weight="700" fill="#ffffff">One principle: control data lives outside the model — structure, not LLM diligence</text>
+</svg>

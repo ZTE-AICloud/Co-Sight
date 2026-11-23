@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="620" viewBox="0 0 960 620" font-family="'PingFang SC','Microsoft YaHei','Noto Sans CJK SC',sans-serif">
+  <rect width="960" height="620" fill="#ffffff"/>
+  <text x="480" y="40" text-anchor="middle" font-size="24" font-weight="700" fill="#1a1a1a">四个控制面：围绕概率核心的运行时控制结构</text>
+  <text x="480" y="66" text-anchor="middle" font-size="14" fill="#727272">回答 Agent 执行的四个问题 —— 要做什么 · 怎么走 · 用什么经验 · 怎么证明做对了</text>
+
+  <!-- center -->
+  <circle cx="480" cy="318" r="86" fill="#1a1a1a"/>
+  <circle cx="480" cy="318" r="86" fill="none" stroke="#b7b7b7" stroke-width="3"/>
+  <text x="480" y="308" text-anchor="middle" font-size="17" font-weight="700" fill="#ffffff">概率核心</text>
+  <text x="480" y="334" text-anchor="middle" font-size="20" font-weight="800" fill="#b7b7b7">LLM</text>
+
+  <!-- connectors -->
+  <g stroke="#d4d4d4" stroke-width="2" stroke-dasharray="6 5">
+    <line x1="300" y1="160" x2="416" y2="262"/>
+    <line x1="660" y1="160" x2="544" y2="262"/>
+    <line x1="300" y1="476" x2="416" y2="374"/>
+    <line x1="660" y1="476" x2="544" y2="374"/>
+  </g>
+
+  <!-- panel 01 top-left -->
+  <g>
+    <rect x="60" y="90" width="240" height="150" rx="12" fill="#ffffff" stroke="#b7b7b7" stroke-width="2"/>
+    <text x="80" y="122" font-size="13" font-weight="700" fill="#767676">01 业务控制面</text>
+    <text x="80" y="146" font-size="15" font-weight="700" fill="#1a1a1a">要完成什么？</text>
+    <text x="80" y="172" font-size="12.5" fill="#3f3f3f">Goal · Constraint · Acceptance · Risk</text>
+    <text x="80" y="192" font-size="12.5" fill="#3f3f3f">协调者调度 · 执行者清单驱动</text>
+    <text x="80" y="212" font-size="12.5" fill="#3f3f3f">校验者独立 · 生成与评估隔离</text>
+  </g>
+  <!-- panel 02 top-right -->
+  <g>
+    <rect x="660" y="90" width="240" height="150" rx="12" fill="#ffffff" stroke="#b7b7b7" stroke-width="2"/>
+    <text x="680" y="122" font-size="13" font-weight="700" fill="#767676">02 执行控制面</text>
+    <text x="680" y="146" font-size="15" font-weight="700" fill="#1a1a1a">下一步怎么走？</text>
+    <text x="680" y="172" font-size="12.5" fill="#3f3f3f">Orchestrator · Loop · Graph · State</text>
+    <text x="680" y="192" font-size="12.5" fill="#3f3f3f">状态外置 · 断点续传</text>
+    <text x="680" y="212" font-size="12.5" fill="#3f3f3f">评估不过带证据回炉</text>
+  </g>
+  <!-- panel 03 bottom-left -->
+  <g>
+    <rect x="60" y="406" width="240" height="150" rx="12" fill="#ffffff" stroke="#b8b8b8" stroke-width="2"/>
+    <text x="80" y="438" font-size="13" font-weight="700" fill="#7f7f7f">03 资产控制面</text>
+    <text x="80" y="462" font-size="15" font-weight="700" fill="#1a1a1a">可以用什么经验？</text>
+    <text x="80" y="488" font-size="12.5" fill="#3f3f3f">Knowledge · Memory · Tool · Skill</text>
+    <text x="80" y="508" font-size="12.5" fill="#3f3f3f">运行态检索：让 Agent 找得到</text>
+    <text x="80" y="528" font-size="12.5" fill="#3f3f3f">生产态构建：让知识补得全</text>
+  </g>
+  <!-- panel 04 bottom-right -->
+  <g>
+    <rect x="660" y="406" width="240" height="150" rx="12" fill="#ffffff" stroke="#b8b8b8" stroke-width="2"/>
+    <text x="680" y="438" font-size="13" font-weight="700" fill="#7f7f7f">04 证据控制面</text>
+    <text x="680" y="462" font-size="15" font-weight="700" fill="#1a1a1a">怎么证明做对了？</text>
+    <text x="680" y="488" font-size="12.5" fill="#3f3f3f">Trace · Eval · Review · Version</text>
+    <text x="680" y="508" font-size="12.5" fill="#3f3f3f">三级指标体系：任务/里程碑/STEP</text>
+    <text x="680" y="528" font-size="12.5" fill="#3f3f3f">回归通过才允许合入</text>
+  </g>
+
+  <rect x="230" y="580" width="500" height="30" rx="8" fill="#1a1a1a"/>
+  <text x="480" y="600" text-anchor="middle" font-size="13.5" font-weight="700" fill="#ffffff">原则只有一条：控制数据外置于模型 —— 不靠 LLM 自觉，靠 Harness 结构保证</text>
+</svg>
