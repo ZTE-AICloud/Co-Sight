@@ -9,7 +9,7 @@ and each component's README; for the full acceptance checklist of the distribute
 
 ```text
 Artifact  : unzip → install (preflight + plugins) → start (framework + modules) → open 127.0.0.1:4300
-From source: clone → pnpm install → pnpm dev (framework) / pnpm dev:all (+ modules) → open localhost:4310
+From source: clone → pnpm install → module setup → pnpm dev:all (framework + every module) → open localhost:4310
 ```
 
 ---
@@ -140,7 +140,7 @@ corepack enable      # once: aligns pnpm with the packageManager field
 pnpm install         # installs shared / server / web for the framework
 ```
 
-### 3.2 Start the framework
+### 3.2 Start the framework (framework only)
 
 ```bash
 pnpm dev             # API 4300 + web dev server 4310
@@ -151,6 +151,10 @@ In development Vite proxies `/api` to 4300, so application code only ever uses r
 **Do not** point the front end straight at `http://127.0.0.1:4300`: that makes cookie behaviour
 diverge between development and production.
 
+> This starts the **framework only**. The sidebar entries (New chat, Experts · Skills,
+> Observability) still render, but they lead to "module not connected" — neither module service nor
+> its manifest is up. To see the module pages, continue with 3.3.
+
 One side only:
 
 ```bash
@@ -158,23 +162,35 @@ pnpm dev:server      # back end only: 127.0.0.1:4300
 pnpm dev:web         # front end only: 127.0.0.1:4310 (the back end must be up, or every /api call is 502)
 ```
 
-### 3.3 Start the modules too
+### 3.3 Start the modules too (recommended: one command for everything)
 
-Install each module's dependencies first — **the aggregate launcher never installs them for you**;
-it only reports what is missing and points at the module's README:
+Module dependencies are installed separately and **only once**; `pnpm dev:all` only orchestrates
+startup and **never installs dependencies for you**. Run this at the repository root:
 
 ```bash
-# smart-factory: dependencies + .env + Prisma Client + database
+# smart-factory: server / web dependencies + server/.env + Prisma Client + database
 cd smart-factory && node scripts/dev.mjs setup && cd ..
 
-# cosight-viewer: install dependencies as described in its README
-cd cosight-viewer && npm install && cd ..
+# cosight-viewer: server + client dependencies
+cd cosight-viewer && npm install --ignore-scripts && cd client && npm install && cd ../..
 ```
 
-Then, at the repository root:
+The `--ignore-scripts` flag for cosight-viewer is required, for two reasons:
+
+- its `postinstall` **starts the service on 4830** (a background daemon) as soon as installation
+  finishes; `pnpm dev:all`'s port preflight then classifies 4830 as somebody else's process and
+  refuses to start, and the page is not managed by the aggregate launcher.
+- its `prepare` runs `git config core.hooksPath .husky`, rewriting this repository's hook
+  configuration and silently disabling Gerrit's `commit-msg` hook.
+
+With install scripts skipped, the client build is left to `pnpm dev:all`, which rebuilds
+`client/dist` on demand before starting the module.
+
+Then start everything at the repository root:
 
 ```bash
 pnpm dev:all         # framework + cosight-viewer + smart-factory, each step waits for readiness; Ctrl-C stops all
+# open http://localhost:4310
 ```
 
 | Order | Service | Port | Readiness probe |
@@ -184,6 +200,28 @@ pnpm dev:all         # framework + cosight-viewer + smart-factory, each step wai
 | 3 | `cosight-viewer` | 4830 | `/health` |
 | 4 | `smart-factory:server` | 4100 | `/api/smart-factory/v1/health` |
 | 5 | `smart-factory:web` | 4110 | `/` |
+
+**Sidebar entry to service mapping** (each entry embeds an iframe; if the module is not running you
+only get "module not connected"):
+
+| Sidebar entry | Module | Direct address |
+|:---|:---|:---|
+| New chat | `cosight-viewer` (conversation) | <http://localhost:4830/?capability=conversation> |
+| Observability | `cosight-viewer` (observability) | <http://localhost:4830/?capability=observability> |
+| Experts · Skills | `smart-factory` (experts → `/agents`) | <http://localhost:4110/agents> |
+
+**Verify that all five services are up**:
+
+```bash
+curl -s http://localhost:4300/api/health                    # framework
+curl -s http://localhost:4830/health                        # cosight-viewer
+curl -s http://localhost:4100/api/smart-factory/v1/health   # smart-factory back end
+curl -s -o /dev/null -w '%{http_code}\n' http://localhost:4110/   # smart-factory front end → 200
+curl -s http://localhost:4300/api/modules                   # should list cosight-viewer and smart-factory
+```
+
+> If you previously ran a plain `npm install` following the old instructions, a background viewer
+> may already hold 4830. Stop it with `cd cosight-viewer && npm run stop`, then run `pnpm dev:all`.
 
 Useful flags: `--home <dir>` (framework data directory), `--reuse` (reuse an instance already
 listening on the port — it is not owned by the launcher and will not be stopped by Ctrl-C),
@@ -253,7 +291,10 @@ Whichever path you took, tick these off:
 - [ ] Install exits `0` and all five plugins report "installed"
 - [ ] The start log says ready; `curl -s 127.0.0.1:4300/api/health` returns `status=ok`
 - [ ] `curl -s 127.0.0.1:4300/api/modules` lists `cosight-viewer` and `smart-factory`
-- [ ] The home page opens and the sidebar switches pages
+- [ ] Source path: both `curl -s localhost:4830/health` and
+      `curl -s localhost:4100/api/smart-factory/v1/health` return `ok`
+- [ ] The home page opens and the sidebar switches pages; "New chat", "Experts · Skills" and
+      "Observability" all render content instead of "module not connected"
 - [ ] After Ctrl-C, `ss -ltn | grep -E ':(4300|4830|4100|4110)'` prints nothing
 
 ---
@@ -331,7 +372,9 @@ Which modules ship is decided by `framework/docs/modules/<id>.artifact.json`.
 | Installer cannot find `claude` | Claude Code missing or not on PATH | `npm i -g @anthropic-ai/claude-code`, or `./install.sh --skip-plugins` |
 | Missing `python3` | Plugin hooks need it | Install Python 3 and put it on PATH |
 | Start exits with **13**, port busy | Leftover process on 4300 / 4830 / 4100 / 4110 | Find it with `ss -ltn` and stop it, or `./start.sh --port <new port>` |
-| A `pnpm dev:all` service keeps reporting "not ready" | The module's dependencies are not installed (the launcher does not install them) | Install them in that module's directory, then retry |
+| "New chat", "Experts · Skills" or "Observability" shows "module not connected" | You ran `pnpm dev` (framework only); neither the module services nor their manifests are up | Install the modules' dependencies as in [3.3](#33-start-the-modules-too-recommended-one-command-for-everything), then use `pnpm dev:all` |
+| A `pnpm dev:all` service keeps reporting "not ready" | The module's dependencies are not installed (the launcher does not install them) | Install them as in [3.3](#33-start-the-modules-too-recommended-one-command-for-everything), then retry |
+| `pnpm dev:all` preflight says 4830 is busy although you never opened the viewer | A previous plain `npm install` in cosight-viewer started the service in the background via `postinstall` | `cd cosight-viewer && npm run stop`, then retry; install with `--ignore-scripts` from now on |
 | The page loads but every request is 502 | Front end started without the back end | Start `pnpm dev:server` before `pnpm dev:web` |
 | cosight-viewer UI unchanged after `git pull` | It serves `client/dist` in production mode, and `dist` is not tracked | Run `npm run build` in that module, or let `pnpm dev:all` rebuild it |
 | Start log shows `[WARN]` | Non-blocking item (e.g. disk warning) | Safe to continue; only `[FAIL]` needs action |

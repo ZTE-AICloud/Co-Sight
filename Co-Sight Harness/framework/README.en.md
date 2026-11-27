@@ -122,11 +122,22 @@ frontend code only ever uses relative paths. **Do not** point the frontend direc
 `SameSite=Lax` bridge cookie travel (`server/src/routes/bridge.ts`). A direct connection would make
 cookie behaviour differ between development and production.
 
-To bring the modules (smart-factory, cosight-viewer, …) up as well, use the orchestrator:
+To bring the modules (smart-factory, cosight-viewer, …) up as well, use the orchestrator.
+Install each module's dependencies once first — `dev:all` only orchestrates startup and **never
+installs dependencies for you**:
 
 ```bash
+# 1) Module dependencies (once; run at the repository root)
+cd smart-factory && node scripts/dev.mjs setup && cd ..
+cd cosight-viewer && npm install --ignore-scripts && cd client && npm install && cd ../..
+
+# 2) Start everything with one command
 pnpm dev:all          # framework first, then modules by priority, waiting for readiness; Ctrl-C stops everything in reverse
 ```
+
+`--ignore-scripts` skips cosight-viewer's `postinstall` (otherwise it starts its own service on 4830
+and rewrites this repository's git hook configuration). Full explanation:
+[QUICKSTART.en.md 3.3](../QUICKSTART.en.md#33-start-the-modules-too-recommended-one-command-for-everything).
 
 ### Running frontend and backend separately
 

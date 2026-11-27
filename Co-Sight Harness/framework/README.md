@@ -109,11 +109,21 @@ pnpm dev              # 并行起后端 4300 + 前端 4310
 相对路径。**不要**把前端改成直连 `http://127.0.0.1:4300`：代理顺带让两端同源，`SameSite=Lax` 的桥接
 cookie 才会被带上（`server/src/routes/bridge.ts`）；直连会让开发态与生产态的 cookie 行为分叉。
 
-想让各模块（smart-factory、cosight-viewer…）一起起来，用总启动：
+想让各模块（smart-factory、cosight-viewer…）一起起来，用总启动。
+模块依赖要先各装一次——`dev:all` 只编排启动，**不会代装依赖**：
 
 ```bash
+# 1) 模块依赖（只需一次；在仓库根执行）
+cd smart-factory && node scripts/dev.mjs setup && cd ..
+cd cosight-viewer && npm install --ignore-scripts && cd client && npm install && cd ../..
+
+# 2) 一条命令起全部
 pnpm dev:all          # 先框架、再按优先级拉模块，每步等就绪；Ctrl-C 按逆序全停
 ```
+
+`--ignore-scripts` 跳过 cosight-viewer 的 `postinstall`（否则它会自行在 4830 起服务、并改写
+仓库的 git 钩子配置）。完整说明见仓库根
+[QUICKSTART.md 3.3](../QUICKSTART.md#33-连模块一起起推荐一条命令起全部)。
 
 ### 前后端分开启动
 

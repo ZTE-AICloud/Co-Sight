@@ -8,7 +8,7 @@
 
 ```text
 分发包：解压 → install（检查 + 装插件）→ start（起框架与模块）→ 打开 127.0.0.1:4300
-源码态：clone → pnpm install → pnpm dev（框架）/ pnpm dev:all（连模块）→ 打开 localhost:4310
+源码态：clone → pnpm install → 模块 setup → pnpm dev:all（框架 + 全部模块）→ 打开 localhost:4310
 ```
 
 ---
@@ -135,7 +135,7 @@ corepack enable      # 只需一次：按 packageManager 对齐 pnpm 版本
 pnpm install         # 一次装齐 framework 的 shared / server / web
 ```
 
-### 3.2 起框架
+### 3.2 起框架（只起框架）
 
 ```bash
 pnpm dev             # 后端 4300 + 前端热更新 4310
@@ -145,6 +145,9 @@ pnpm dev             # 后端 4300 + 前端热更新 4310
 前端开发态由 Vite 把 `/api` 代理到 4300，所以代码里只写相对路径；
 **不要**改成直连 `http://127.0.0.1:4300`，否则开发态与生产态的 cookie 行为会分叉。
 
+> 这一条**只起框架**。侧栏的「新建对话」「专家·技能」「观测」照常显示，但点进去是
+> 「模块尚未接入」——模块服务没起、模块清单也没同步。要看模块页面，继续做 3.3。
+
 只想起一边：
 
 ```bash
@@ -152,22 +155,33 @@ pnpm dev:server      # 仅后端：127.0.0.1:4300
 pnpm dev:web         # 仅前端：127.0.0.1:4310（后端必须先起来，否则 /api 全部 502）
 ```
 
-### 3.3 连模块一起起
+### 3.3 连模块一起起（推荐：一条命令起全部）
 
-先按各模块自己的 README 装好依赖——**总启动脚本不会替你装依赖**，缺了只会报错并给出指引：
+模块依赖要单独装，**只需一次**；`pnpm dev:all` 只负责编排启动，**不会代你装依赖**。
+在仓库根执行：
 
 ```bash
-# smart-factory：装依赖 + 生成 .env + Prisma Client + 建库
+# smart-factory：server / web 依赖 + server/.env + Prisma Client + 建库
 cd smart-factory && node scripts/dev.mjs setup && cd ..
 
-# cosight-viewer：按其 README 安装依赖
-cd cosight-viewer && npm install && cd ..
+# cosight-viewer：server + client 依赖
+cd cosight-viewer && npm install --ignore-scripts && cd client && npm install && cd ../..
 ```
 
-然后在仓库根：
+cosight-viewer 必须加 `--ignore-scripts`，原因有两条：
+
+- 它的 `postinstall` 会在安装结束时**顺手把服务起在 4830**（后台 daemon）；`pnpm dev:all`
+  预检端口时会把它判成「别人的进程」并拒绝启动，页面也不会归总启动脚本管。
+- 它的 `prepare` 会执行 `git config core.hooksPath .husky`，改写本仓库的钩子配置，
+  静默关掉 Gerrit 的 `commit-msg` 钩子。
+
+跳过安装脚本后，前端构建交给 `pnpm dev:all`：它会在启动前按需构建 `client/dist`。
+
+然后在仓库根启动全部：
 
 ```bash
 pnpm dev:all         # 框架 + cosight-viewer + smart-factory，每步等就绪；Ctrl-C 逆序全停
+# 打开 http://localhost:4310
 ```
 
 | 顺序 | 服务 | 端口 | 就绪探测 |
@@ -177,6 +191,27 @@ pnpm dev:all         # 框架 + cosight-viewer + smart-factory，每步等就绪
 | 3 | `cosight-viewer` | 4830 | `/health` |
 | 4 | `smart-factory:server` | 4100 | `/api/smart-factory/v1/health` |
 | 5 | `smart-factory:web` | 4110 | `/` |
+
+**侧栏菜单与服务的对应关系**（菜单点进去是 iframe，模块没起就只有「模块尚未接入」）：
+
+| 侧栏菜单 | 来自模块 | 直接地址 |
+|:---|:---|:---|
+| 新建对话 | `cosight-viewer`（conversation） | <http://localhost:4830/?capability=conversation> |
+| 观测 | `cosight-viewer`（observability） | <http://localhost:4830/?capability=observability> |
+| 专家·技能 | `smart-factory`（experts → `/agents`） | <http://localhost:4110/agents> |
+
+**验证五个服务都在**：
+
+```bash
+curl -s http://localhost:4300/api/health                    # 框架
+curl -s http://localhost:4830/health                        # cosight-viewer
+curl -s http://localhost:4100/api/smart-factory/v1/health   # smart-factory 后端
+curl -s -o /dev/null -w '%{http_code}\n' http://localhost:4110/   # smart-factory 前端 → 200
+curl -s http://localhost:4300/api/modules                   # 应列出 cosight-viewer 与 smart-factory
+```
+
+> 之前按旧文档跑过普通 `npm install` 的话，4830 可能已被后台观测服务占用。
+> 先 `cd cosight-viewer && npm run stop`，再执行 `pnpm dev:all`。
 
 常用参数：`--home <dir>`（框架数据目录）、`--reuse`（端口被占时复用已有实例，
 复用的实例不归脚本管，Ctrl-C 不会停它）、`--live`（不隔离模块数据目录，使用真实的 `~/.claude`）。
@@ -244,7 +279,10 @@ pnpm verify          # typecheck + oxlint + 全部测试（覆盖率阈值 80%�
 - [ ] 安装退出码 `0`，五个插件显示「已安装」
 - [ ] 启动日志出现「已就绪」，`curl -s 127.0.0.1:4300/api/health` 返回 `status=ok`
 - [ ] `curl -s 127.0.0.1:4300/api/modules` 能看到 `cosight-viewer`、`smart-factory`
-- [ ] 浏览器打开首页，左侧栏可切换页面
+- [ ] 源码路径：`curl -s localhost:4830/health` 与
+      `curl -s localhost:4100/api/smart-factory/v1/health` 都返回 `ok`
+- [ ] 浏览器打开首页，左侧栏可切换页面；「新建对话」「专家·技能」「观测」都能打开内容，
+      不显示「模块尚未接入」
 - [ ] Ctrl-C 后 `ss -ltn | grep -E ':(4300|4830|4100|4110)'` 无输出
 
 ---
@@ -321,7 +359,9 @@ pnpm smoke:package  # 可选：独立解压、模拟安装启动，断言各端�
 | 安装提示 `claude` 找不到 | Claude Code 未装或不在 PATH | `npm i -g @anthropic-ai/claude-code`，或 `./install.sh --skip-plugins` |
 | 提示缺 `python3` | 插件 hooks 需要 | 安装 Python 3 并确保在 PATH 上 |
 | 启动退出码 **13**、提示端口被占 | 4300 / 4830 / 4100 / 4110 有残留进程 | `ss -ltn` 找到占用进程停掉；或 `./start.sh --port <新端口>` |
-| `pnpm dev:all` 某服务反复「未就绪」 | 模块依赖没装（脚本不会代装） | 到模块目录按其 README 装依赖后重试 |
+| 点「新建对话」「专家·技能」「观测」显示「模块尚未接入」 | 只跑了 `pnpm dev`（框架），模块服务和清单都没起 | 按 [3.3](#33-连模块一起起推荐一条命令起全部) 装好模块依赖，改用 `pnpm dev:all` |
+| `pnpm dev:all` 某服务反复「未就绪」 | 模块依赖没装（脚本不会代装） | 按 [3.3](#33-连模块一起起推荐一条命令起全部) 装依赖后重试 |
+| `pnpm dev:all` 预检报 4830 被占，但你没起过观测页 | 之前 `cd cosight-viewer && npm install` 的 postinstall 把服务起在了后台 | `cd cosight-viewer && npm run stop` 后重试；以后安装加 `--ignore-scripts` |
 | 前端页面能开，但请求全是 502 | 单独起了前端而后端没起 | 先 `pnpm dev:server` 再 `pnpm dev:web` |
 | `git pull` 后 cosight-viewer 界面没变 | 它以生产模式托管 `client/dist`，`dist` 不随仓库更新 | 在该模块内 `npm run build`，或用 `pnpm dev:all` 让它自动重建 |
 | 启动日志有 `[WARN]` | 非阻塞项（如磁盘告警） | 可继续；有 `[FAIL]` 才需要处理 |

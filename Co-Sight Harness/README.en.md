@@ -33,8 +33,12 @@ What it builds is **the control structure around the model**.
 > DSH is one of the runtimes it hosts — they are not the same thing.
 
 ```bash
-# From source: two commands to bring the framework up (see QUICKSTART.en.md)
+# From source (framework only): two commands (see QUICKSTART.en.md)
 pnpm install && pnpm dev
+
+# From source (framework + every module): install the modules' dependencies as in
+# "Quick start → Path B", then
+pnpm dev:all
 
 # From the distributed artifact: unzip, then two commands
 ./install.sh && ./start.sh
@@ -206,16 +210,49 @@ On Windows, double-click `install.cmd`, then `start.cmd`.
 git clone https://github.com/ZTE-AICloud/Co-Sight.git
 cd "Co-Sight/Co-Sight Harness"
 corepack enable && pnpm install        # Node ^22.19.0 || >=24.0.0, pnpm 11.28.5
-pnpm dev                               # framework: API 4300 + web dev server 4310
-# open http://localhost:4310
 ```
 
-To bring the modules (cosight-viewer, smart-factory) up as well, use the aggregate launcher.
-Install each module's dependencies first, following its README:
+Then install both modules' dependencies (once; `pnpm dev:all` only orchestrates, it **never installs
+dependencies for you** — these are the commands):
+
+```bash
+# smart-factory: server / web dependencies + server/.env + Prisma Client + database
+cd smart-factory && node scripts/dev.mjs setup && cd ..
+
+# cosight-viewer: server + client dependencies (see the note below on --ignore-scripts)
+cd cosight-viewer && npm install --ignore-scripts && cd client && npm install && cd ../..
+```
+
+Then one command starts everything (framework + cosight-viewer + smart-factory, each service waits
+for readiness before the next; Ctrl-C stops all in reverse order):
 
 ```bash
 pnpm dev:all
+# open http://localhost:4310
 ```
+
+| Sidebar entry | Module | Local address |
+|:---|:---|:---|
+| New chat, Observability | `cosight-viewer` | `http://localhost:4830` |
+| Experts · Skills | `smart-factory` | `http://localhost:4110` |
+
+Verify that all five services are up:
+
+```bash
+curl -s http://localhost:4300/api/health                    # framework
+curl -s http://localhost:4830/health                        # cosight-viewer
+curl -s http://localhost:4100/api/smart-factory/v1/health   # smart-factory back end
+curl -s http://localhost:4300/api/modules                   # should list cosight-viewer and smart-factory
+```
+
+> **`pnpm dev` starts the framework only** (4300 + 4310). The sidebar still renders, but its entries
+> lead to "module not connected" because neither module service nor its manifest is up. Use
+> `pnpm dev:all` for the full workbench.
+>
+> `npm install --ignore-scripts` for cosight-viewer skips its `postinstall`, which would start the
+> service on 4830 right away and rewrite this repository's git hook configuration — both conflict
+> with `pnpm dev:all`'s port orchestration. If you already ran a plain `npm install`, stop the
+> background instance with `cd cosight-viewer && npm run stop`, then run `pnpm dev:all`.
 
 ---
 

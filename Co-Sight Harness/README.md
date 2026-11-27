@@ -32,8 +32,11 @@ Co-Sight Harness Studio 是一个**本地优先**的 Agent 宿主：把 Claude C
 > 运行时之一，两者不是同一个东西。
 
 ```bash
-# 源码态：两条命令起框架（详见 QUICKSTART.md）
+# 源码态（只要框架）：两条命令（详见 QUICKSTART.md）
 pnpm install && pnpm dev
+
+# 源码态（框架 + 全部模块）：先按「快速开始 → 路径 B」装好模块依赖，再
+pnpm dev:all
 
 # 分发包：解压后，两条命令跑起来
 ./install.sh && ./start.sh
@@ -199,15 +202,47 @@ Windows 下依次双击 `install.cmd`、`start.cmd`。
 git clone https://github.com/ZTE-AICloud/Co-Sight.git
 cd "Co-Sight/Co-Sight Harness"
 corepack enable && pnpm install        # Node ^22.19.0 || >=24.0.0，pnpm 11.28.5
-pnpm dev                               # 框架：后端 4300 + 前端热更新 4310
-# 打开 http://localhost:4310
 ```
 
-想让模块（cosight-viewer、smart-factory）一起起来，用总启动（需先按各模块 README 装好依赖）：
+再装两个模块的依赖（只需一次；`pnpm dev:all` 只负责编排启动，**不会代你装依赖**，安装命令如下）：
+
+```bash
+# smart-factory：server / web 依赖 + server/.env + Prisma Client + 建库
+cd smart-factory && node scripts/dev.mjs setup && cd ..
+
+# cosight-viewer：server + client 依赖（--ignore-scripts 的作用见下方说明）
+cd cosight-viewer && npm install --ignore-scripts && cd client && npm install && cd ../..
+```
+
+然后一条命令启动全部（框架 + cosight-viewer + smart-factory，每个服务等就绪才起下一个，
+Ctrl-C 一次逆序全停）：
 
 ```bash
 pnpm dev:all
+# 打开 http://localhost:4310
 ```
+
+| 侧栏菜单 | 来自模块 | 本地地址 |
+|:---|:---|:---|
+| 新建对话、观测 | `cosight-viewer` | `http://localhost:4830` |
+| 专家·技能 | `smart-factory` | `http://localhost:4110` |
+
+验证五个服务都起来了：
+
+```bash
+curl -s http://localhost:4300/api/health                    # 框架
+curl -s http://localhost:4830/health                        # cosight-viewer
+curl -s http://localhost:4100/api/smart-factory/v1/health   # smart-factory 后端
+curl -s http://localhost:4300/api/modules                   # 应列出 cosight-viewer 与 smart-factory
+```
+
+> **只跑 `pnpm dev` 只会起框架**（4300 + 4310）。侧栏菜单照样显示，但点进去是「模块尚未接入」——
+> 因为两个模块的服务和清单都没起来。要完整功能就用 `pnpm dev:all`。
+>
+> cosight-viewer 的 `npm install --ignore-scripts` 用来跳过它的 `postinstall`：那段脚本会把服务
+> 直接起在 4830 上，还会改写本仓库的 git 钩子配置，和 `pnpm dev:all` 的端口编排冲突。
+> 如果你之前已经跑过普通 `npm install`，先用 `cd cosight-viewer && npm run stop` 停掉后台实例，
+> 再执行 `pnpm dev:all`。
 
 ---
 

@@ -372,12 +372,25 @@ CLI 源目录在两种模式下都是真实的，区别只在 viewer 自有数�
 | 模块页面白屏、显示「模块尚未接入」 | `useModules()` 的 `staleTime` 是 `Infinity`——刚同步过清单的话需要**硬刷新**整页 |
 | `http://127.0.0.1:4310` 打不开但 `localhost` 可以 | 见上文"两个回环地址都探"，这是 Vite 只绑 IPv6 的正常表现 |
 | 提示"上一次的启动仍在运行" | 另一个终端里还跑着一套。去那边 Ctrl-C，或加 `--reuse` |
+| 预检报 4830 被占，但你没起过观测页 | 多半是之前 `cd cosight-viewer && npm install` 的 `postinstall` 把服务起在了后台（本脚本不认识的进程，不会自动回收）。处理：`cd cosight-viewer && npm run stop` 后再启动；以后装依赖用 `npm install --ignore-scripts`，同时避免 `prepare` 改写本仓库的 `core.hooksPath` |
 | Ctrl-C 之后端口还被占 | 先再按一次 Ctrl-C（第二次是强杀）。仍不行就 `pnpm dev:all`，下一次会按残留自动回收 |
 | 某个服务反复 `✗ 未就绪` | 看它那几行前缀日志；通常是模块自己依赖没装（脚本不会替你装） |
 | 改了模块源码、页面却没变 | 这个模块的开发态入口是产物（`dist`）而清单里没声明 `build`。补上；临时验证可先 `pnpm dev:all --rebuild` |
 | `⊘ 未启动（产物没准备好）` | 该模块的构建失败了，往上翻它带前缀的日志。缺依赖就先去那个目录装依赖；确要用当前产物启动，加 `--no-build` |
 | 每次启动都在重建，明明没改代码 | `inputs` 太宽（多半写成了 `["."]`），把构建缓存当成了输入。改成具体的源码路径 |
 | 构建报"inputs 里的 X 不存在" | 清单里的输入路径写错了。这是**故意报错**的：写错的输入会让"改了源码却不重建" |
+
+**缺依赖时怎么装**（`dev:all` 只报错、不代装；两条命令各执行一次，在仓库根）：
+
+```bash
+# smart-factory：server / web 依赖 + server/.env + Prisma Client + 建库
+cd smart-factory && node scripts/dev.mjs setup && cd ..
+
+# cosight-viewer：server + client 依赖（--ignore-scripts 的理由见上表 4830 那条）
+cd cosight-viewer && npm install --ignore-scripts && cd client && npm install && cd ../..
+```
+
+新接入的模块以自己的 README / `launch.json` 为准。
 
 ## 故障策略
 
