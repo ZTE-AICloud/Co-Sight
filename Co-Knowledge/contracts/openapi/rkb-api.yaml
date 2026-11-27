@@ -3329,6 +3329,7 @@ components:
             type: object
             required:
             - baseList
+            - priority
             properties:
               baseList:
                 type: array

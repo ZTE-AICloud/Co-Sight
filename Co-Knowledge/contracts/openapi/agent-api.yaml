@@ -314,22 +314,20 @@ paths:
         in: query
         required: false
         schema:
-          anyOf:
-          - type: string
-            maxLength: 255
-          - type: 'null'
+          type: string
+          maxLength: 255
           title: Keyword
+          nullable: true
       - name: publishType
         in: query
         required: false
         schema:
-          anyOf:
-          - type: integer
-            maximum: 2
-            minimum: 0
-          - type: 'null'
+          type: integer
+          maximum: 2
+          minimum: 0
           description: 0=unpublished, 1=published, 2=published with draft changes
           title: Publishtype
+          nullable: true
         description: 0=unpublished, 1=published, 2=published with draft changes
       responses:
         '200':
@@ -361,35 +359,31 @@ components:
     AnswerData:
       properties:
         answer:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
           title: Answer
+          nullable: true
         citations:
           items:
             $ref: '#/components/schemas/Citation'
           type: array
           title: Citations
         model:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
           title: Model
+          nullable: true
         usage:
-          anyOf:
-          - additionalProperties: true
-            type: object
-          - type: 'null'
+          additionalProperties: true
+          type: object
           title: Usage
+          nullable: true
         no_results:
           type: boolean
           title: No Results
           default: false
         reason:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
           title: Reason
+          nullable: true
         warnings:
           items:
             $ref: '#/components/schemas/WarningItem'
@@ -405,13 +399,12 @@ components:
           minLength: 1
           title: Question
         knowledge_base_ids:
-          anyOf:
-          - items:
-              type: string
-            type: array
-          - type: 'null'
+          items:
+            type: string
+          type: array
           title: Knowledge Base Ids
           description: Document knowledge base IDs; omitted/empty = all accessible
+          nullable: true
         mode:
           type: string
           enum:
@@ -429,12 +422,11 @@ components:
           description: Number of sources; upper bound is configurable (default 20)
           default: 8
         model:
-          anyOf:
-          - type: string
-            maxLength: 255
-          - type: 'null'
+          type: string
+          maxLength: 255
           title: Model
           description: Optional registered LLM name
+          nullable: true
       additionalProperties: false
       type: object
       required:
@@ -465,20 +457,17 @@ components:
           type: string
           title: Knowledge Base Id
         document_id:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
           title: Document Id
+          nullable: true
         source:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
           title: Source
+          nullable: true
         chunk_id:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
           title: Chunk Id
+          nullable: true
         text:
           type: string
           title: Text
@@ -506,30 +495,25 @@ components:
           type: string
           title: Name
         description:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
           title: Description
+          nullable: true
         type:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
           title: Type
+          nullable: true
         embedding_model:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
           title: Embedding Model
+          nullable: true
         status:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
           title: Status
+          nullable: true
         created_date:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
           title: Created Date
+          nullable: true
       type: object
       required:
       - id
@@ -553,10 +537,9 @@ components:
           type: string
           title: Code
         instance:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
           title: Instance
+          nullable: true
       additionalProperties: true
       type: object
       required:
@@ -604,13 +587,12 @@ components:
           title: Query
           description: Natural-language query
         knowledge_base_ids:
-          anyOf:
-          - items:
-              type: string
-            type: array
-          - type: 'null'
+          items:
+            type: string
+          type: array
           title: Knowledge Base Ids
           description: Document knowledge base IDs; omitted/empty = all accessible
+          nullable: true
         mode:
           type: string
           enum:
@@ -648,44 +630,38 @@ components:
           type: string
           title: Knowledge Base Id
         knowledge_base_name:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
           title: Knowledge Base Name
+          nullable: true
         chunk_id:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
           title: Chunk Id
+          nullable: true
         document_id:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
           title: Document Id
+          nullable: true
         source:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
           title: Source
+          nullable: true
         score:
           type: number
           title: Score
         scores:
-          anyOf:
-          - additionalProperties:
-              type: number
-            type: object
-          - type: 'null'
+          additionalProperties:
+            type: number
+          type: object
           title: Scores
+          nullable: true
         text:
           type: string
           title: Text
         metadata:
-          anyOf:
-          - additionalProperties: true
-            type: object
-          - type: 'null'
+          additionalProperties: true
+          type: object
           title: Metadata
+          nullable: true
       type: object
       required:
       - citation_id
@@ -723,10 +699,9 @@ components:
           type: string
           title: Message
         knowledge_base_id:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
           title: Knowledge Base Id
+          nullable: true
       type: object
       required:
       - code
@@ -735,45 +710,35 @@ components:
     WorkflowBoundKnowledgeBase:
       properties:
         name:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
           title: Name
+          nullable: true
         type:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
           title: Type
+          nullable: true
         status:
-          anyOf:
-          - {}
-          - type: 'null'
           title: Status
+          nullable: true
         assetId:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
           title: Assetid
+          nullable: true
         kbasePkId:
-          anyOf:
-          - {}
-          - type: 'null'
           title: Kbasepkid
+          nullable: true
         tableName:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
           title: Tablename
+          nullable: true
         dbTableName:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
           title: Dbtablename
+          nullable: true
         embeddingModel:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
           title: Embeddingmodel
+          nullable: true
       type: object
       title: WorkflowBoundKnowledgeBase
       description: 工作流列表回显的绑定库（与画布下拉同一份字段）。
@@ -786,44 +751,37 @@ components:
           type: string
           title: Name
         description:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
           title: Description
+          nullable: true
         template:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
           title: Template
+          nullable: true
         knowledgeType:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
           title: Knowledgetype
+          nullable: true
         publishType:
           type: integer
           title: Publishtype
           default: 0
         status:
-          anyOf:
-          - type: integer
-          - type: 'null'
+          type: integer
           title: Status
+          nullable: true
         createdBy:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
           title: Createdby
+          nullable: true
         createdDate:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
           title: Createddate
+          nullable: true
         lastUpdatedDate:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
           title: Lastupdateddate
+          nullable: true
         kbPkIds:
           items:
             $ref: '#/components/schemas/WorkflowBoundKnowledgeBase'
@@ -869,16 +827,14 @@ components:
           type: string
           title: Conversation Id
         answer:
-          anyOf:
-          - type: string
-          - type: 'null'
+          type: string
           title: Answer
+          nullable: true
         retrieval:
-          anyOf:
-          - additionalProperties: true
-            type: object
-          - type: 'null'
+          additionalProperties: true
+          type: object
           title: Retrieval
+          nullable: true
       type: object
       required:
       - conversation_id
@@ -912,12 +868,11 @@ components:
           title: Include Retrieval
           default: false
         chat_history:
-          anyOf:
-          - items:
-              $ref: '#/components/schemas/ChatHistoryItem'
-            type: array
-          - type: 'null'
+          items:
+            $ref: '#/components/schemas/ChatHistoryItem'
+          type: array
           title: Chat History
+          nullable: true
       additionalProperties: false
       type: object
       required:
