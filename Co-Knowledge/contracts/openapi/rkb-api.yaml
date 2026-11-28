@@ -2498,6 +2498,70 @@ paths:
           $ref: '#/components/responses/Problem'
       tags:
       - text2sql
+  /text2sql/datasources/{datasource_id}/assist:
+    post:
+      summary: Assist
+      description: AI 辅助：只返回建议，不落库；采纳仍走各 PATCH 接口。
+      operationId: assist_api_co_knowledge_v1_text2sql_datasources__datasource_id__assist_post
+      parameters:
+      - name: datasource_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Datasource Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - text2sql
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /text2sql/datasources/{datasource_id}/assist/stream:
+    post:
+      summary: Assist Stream
+      description: 'AI 辅助的 SSE 版：``stage`` 帧上报进度（采集/样本/生成批次），
+
+        ``result`` 帧是完整建议体。语义与同步 ``/assist`` 一致。'
+      operationId: assist_stream_api_co_knowledge_v1_text2sql_datasources__datasource_id__assist_stream_post
+      parameters:
+      - name: datasource_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Datasource Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - text2sql
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
   /text2sql/datasources/{datasource_id}/columns/{column_id}:
     patch:
       summary: Update Column

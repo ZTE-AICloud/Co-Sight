@@ -475,6 +475,16 @@
     "operation_id": "update_datasource_api_co_knowledge_v1_text2sql_datasources__datasource_id__patch"
   },
   {
+    "method": "POST",
+    "path": "/api/co-knowledge/v1/text2sql/datasources/{datasource_id}/assist",
+    "operation_id": "assist_api_co_knowledge_v1_text2sql_datasources__datasource_id__assist_post"
+  },
+  {
+    "method": "POST",
+    "path": "/api/co-knowledge/v1/text2sql/datasources/{datasource_id}/assist/stream",
+    "operation_id": "assist_stream_api_co_knowledge_v1_text2sql_datasources__datasource_id__assist_stream_post"
+  },
+  {
     "method": "PATCH",
     "path": "/api/co-knowledge/v1/text2sql/datasources/{datasource_id}/columns/{column_id}",
     "operation_id": "update_column_api_co_knowledge_v1_text2sql_datasources__datasource_id__columns__column_id__patch"
