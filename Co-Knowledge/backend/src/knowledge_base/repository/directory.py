@@ -70,18 +70,61 @@ def find_folder_by_title(cursor, kbase_id: str, parent_id: Optional[str], title:
     return rows[0] if rows else None
 
 
-def count_children_folders(cursor, kbase_id: str, parent_id: Optional[str]) -> int:
-    """``createDirectory`` 里的层级限额判据（``getChildrenDirectoryList`` 的条数）。"""
+def _count_children(cursor, kbase_id: str, parent_id: Optional[str], dir_type: str,
+                    exclude_ids: Optional[Iterable[str]] = None) -> int:
+    """目录下指定类型的直接子项数。
+
+    ``exclude_ids`` 给「移动」用：这批文件已经在目标目录里时不能重复计入。
+    """
+    sql = ('SELECT count(*) FROM kb_directory '
+           'WHERE kbase_id = %s AND type = %s AND ')
+    params: list[Any] = [kbase_id, dir_type]
     if parent_id:
-        cursor.execute(
-            "SELECT count(*) FROM kb_directory WHERE kbase_id = %s AND parent_id = %s",
-            (kbase_id, parent_id),
-        )
+        sql += 'parent_id = %s'
+        params.append(parent_id)
     else:
-        cursor.execute(
-            "SELECT count(*) FROM kb_directory WHERE kbase_id = %s AND parent_id IS NULL",
-            (kbase_id,),
-        )
+        sql += 'parent_id IS NULL'
+    ids = [item for item in (exclude_ids or []) if item]
+    if ids:
+        sql += ' AND id <> ALL(%s)'
+        params.append(ids)
+    cursor.execute(sql, tuple(params))
+    return int(cursor.fetchone()[0])
+
+
+def count_children_folders(cursor, kbase_id: str, parent_id: Optional[str]) -> int:
+    """建文件夹时的限额判据：**只数文件夹**。
+
+    文件不参与 —— 目录里堆满文件不应挡住建子文件夹（文件数由上传侧的
+    ``FILE_LIMIT`` 单独限制）。
+    """
+    return _count_children(cursor, kbase_id, parent_id, TYPE_FOLDER)
+
+
+def count_children_files(cursor, kbase_id: str, parent_id: Optional[str],
+                         exclude_ids: Optional[Iterable[str]] = None) -> int:
+    """目录下的文件数（上传 / 移动的限额判据）。"""
+    return _count_children(cursor, kbase_id, parent_id, TYPE_FILE, exclude_ids)
+
+
+def count_children_files_by_title(cursor, kbase_id: str, parent_id: Optional[str],
+                                  titles: Iterable[str]) -> int:
+    """目录下与给定文件名同名的文件数（按 ``title`` 去重）。
+
+    覆盖上传只替换同名行，不占文件数额度；用它把「会被替换掉的行」从计数里减掉。
+    """
+    names = list(dict.fromkeys(item for item in titles if item))
+    if not names:
+        return 0
+    sql = ('SELECT count(DISTINCT title) FROM kb_directory '
+           'WHERE kbase_id = %s AND type = %s AND title = ANY(%s) AND ')
+    params: list[Any] = [kbase_id, TYPE_FILE, names]
+    if parent_id:
+        sql += 'parent_id = %s'
+        params.append(parent_id)
+    else:
+        sql += 'parent_id IS NULL'
+    cursor.execute(sql, tuple(params))
     return int(cursor.fetchone()[0])
 
 

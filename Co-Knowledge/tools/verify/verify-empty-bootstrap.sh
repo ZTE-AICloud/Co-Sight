@@ -42,17 +42,20 @@ foreign_keys="$(run_sql "SELECT count(*) FROM pg_constraint WHERE connamespace='
 table_comments="$(run_sql "SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relkind='r' AND c.relname NOT LIKE 'pg_%' AND obj_description(c.oid,'pg_class') IS NOT NULL;")"
 new_names="$(run_sql "SELECT count(*) FROM pg_constraint WHERE conname IN ('operator_param_pkey','flow_draft_workflow_id_uidx','flow_release_workflow_version_uidx','flow_workflow_workflow_id_uidx');")"
 checks="$(run_sql "SELECT count(*) FROM pg_constraint WHERE connamespace='public'::regnamespace AND contype='c';")"
+# 10/15 仍会建三个任务兼容视图，20 负责删掉：空卷链路跑到最后不该留下它们。
+compat_views="$(run_sql "SELECT count(*) FROM information_schema.tables WHERE table_schema='public' AND table_name IN ('kb_import_task','graph_extract_task','graph_import_task');")"
 
 fail=0
-[[ "$public_tables" == "22" ]] || { echo "FAIL public tables: $public_tables != 22"; fail=1; }
+[[ "$public_tables" == "19" ]] || { echo "FAIL public tables: $public_tables != 19"; fail=1; }
 [[ "$kb_index_schema" == "1" ]] || { echo "FAIL kb_index schema: $kb_index_schema != 1"; fail=1; }
 [[ "$unique_indexes" == "2" ]] || { echo "FAIL unique indexes: $unique_indexes != 2"; fail=1; }
-[[ "$foreign_keys" == "11" ]] || { echo "FAIL foreign keys: $foreign_keys != 11"; fail=1; }
-[[ "$table_comments" == "22" ]] || { echo "FAIL table comments: $table_comments != 22"; fail=1; }
+[[ "$foreign_keys" == "10" ]] || { echo "FAIL foreign keys: $foreign_keys != 10"; fail=1; }
+[[ "$table_comments" == "19" ]] || { echo "FAIL table comments: $table_comments != 19"; fail=1; }
 [[ "$new_names" == "4" ]] || { echo "FAIL new constraint names: $new_names != 4"; fail=1; }
-[[ "$checks" == "15" ]] || { echo "FAIL check constraints: $checks != 15"; fail=1; }
+[[ "$checks" == "12" ]] || { echo "FAIL check constraints: $checks != 12"; fail=1; }
+[[ "$compat_views" == "0" ]] || { echo "FAIL task compat views: $compat_views != 0"; fail=1; }
 
 if [[ "$fail" -eq 0 ]]; then
-    echo "PASS empty bootstrap: public=22, kb_index=1, unique_indexes=2, fks=11, comments=22, checks=15"
+    echo "PASS empty bootstrap: public=19, kb_index=1, unique_indexes=2, fks=10, comments=19, checks=12, compat_views=0"
 fi
 exit "$fail"

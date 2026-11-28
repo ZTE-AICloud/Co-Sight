@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test'
 import { BasePage } from './base.page'
 
-/** 对话测试页（`#/chat`）。 */
+/** 对话测试页（`/chat`）。 */
 export class ChatPage extends BasePage {
   readonly root = this.page.locator('.chat-page')
   readonly workflowSelect = this.root.locator('.chat-workflow-select')
@@ -23,7 +23,7 @@ export class ChatPage extends BasePage {
   }
 
   async goto (): Promise<void> {
-    await this.gotoHash('/#/chat')
+    await this.gotoPath('/chat')
     await expect(this.root).toBeVisible()
   }
 

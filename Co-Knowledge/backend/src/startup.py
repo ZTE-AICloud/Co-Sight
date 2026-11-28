@@ -60,6 +60,21 @@ def start_background():
         task_runtime.start()
         graph_task_runtime.start()
 
+    # Text2SQL 查询结果预览的保留期清理（默认 30 天，0 表示关闭）。
+    from text_to_sql import retention as text2sql_retention
+
+    text2sql_retention.start()
+
+    # 其余 Query Operator 在导入时注册进 knowledge_engine.operator.registry。
+    from text_to_sql import build_queue as text2sql_queue
+
+    text2sql_queue.start()
+
+    import api_operator  # noqa: F401  (注册 nl2api)
+    import dsl_operator  # noqa: F401  (注册 nl2dsl)
+    import graph_operator  # noqa: F401  (注册 nl2graph)
+    import search_operator  # noqa: F401  (注册 nl2search)
+
 
 def stop_background():
     global _started
@@ -68,6 +83,14 @@ def stop_background():
 
     task_runtime.shutdown()
     graph_task_runtime.shutdown()
+
+    from text_to_sql import retention as text2sql_retention
+
+    text2sql_retention.stop()
+
+    from text_to_sql import build_queue as text2sql_queue
+
+    text2sql_queue.stop()
     _started = False
 
 

@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test'
 import { BasePage } from './base.page'
 
-/** 新建图谱知识库页（`#/graph/create`）。 */
+/** 新建图谱知识库页（`/graph/create`）。 */
 export class GraphCreatePage extends BasePage {
   readonly root = this.page.locator('.create-knowledge-graph-page')
   readonly nameInput = this.root.getByPlaceholder('请输入知识图谱名称')
@@ -11,7 +11,7 @@ export class GraphCreatePage extends BasePage {
   readonly fileRows = this.root.locator('.file-list-table .el-table__body tbody tr')
 
   async goto (): Promise<void> {
-    await this.gotoHash('/#/graph/create')
+    await this.gotoPath('/graph/create')
     await expect(this.root).toBeVisible({ timeout: 30_000 })
   }
 
@@ -60,6 +60,6 @@ export class GraphCreatePage extends BasePage {
 
   async build (): Promise<void> {
     await this.buildButton.click()
-    await expect(this.page).toHaveURL(/#\/graph/, { timeout: 60_000 })
+    await expect(this.page).toHaveURL(/\/graph/, { timeout: 60_000 })
   }
 }

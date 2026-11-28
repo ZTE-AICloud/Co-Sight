@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test'
 import { BasePage } from './base.page'
 
-/** 图谱详情页（`#/graph/detail/:id`）：可视化 + 基本信息。 */
+/** 图谱详情页（`/graph/detail/:id`）：可视化 + 基本信息。 */
 export class GraphDetailPage extends BasePage {
   readonly root = this.page.locator('.knowledge-graph-detail-page')
   readonly canvas = this.root.locator('.graph-canvas-vis-core canvas')
@@ -12,7 +12,7 @@ export class GraphDetailPage extends BasePage {
   readonly fileTable = this.root.locator('.gi-table .list-table')
 
   async goto (kbId: string): Promise<void> {
-    await this.gotoHash(`/#/graph/detail/${kbId}`)
+    await this.gotoPath(`/graph/detail/${kbId}`)
     await expect(this.root).toBeVisible({ timeout: 30_000 })
     await expect(this.controls).toBeVisible({ timeout: 30_000 })
   }

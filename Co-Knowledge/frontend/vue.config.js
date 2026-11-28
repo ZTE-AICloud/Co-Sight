@@ -71,6 +71,10 @@ const _legacyConfig_ = {
     client: {
       overlay: false
     },
+    // history 路由的深链（/knowledge、/text2sql）在开发态回退到 index.html。
+    // 只认浏览器导航的 `text/html`：默认值还包含 `*/*`，会把未代理的 /api 请求
+    // 也改写成 index.html（JSON 请求拿到 HTML，表现为「无报错的空数据」）。
+    historyApiFallback: { htmlAcceptHeaders: ['text/html'] },
     proxy: devProxy()
   }
 }

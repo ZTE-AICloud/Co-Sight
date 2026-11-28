@@ -1,4 +1,14 @@
 /* Creation and editing dialogs use the same palette, type roles and spacing. */
+/* Drawer shell follows the existing entity drawer and workspace detail panels. */
+.el-drawer.studio-drawer { border-left: 1px solid var(--rs-border); background: var(--rs-bg-card); }
+.studio-drawer .el-drawer__header { margin: 0; padding: 24px; border-bottom: 1px solid var(--rs-border); }
+.studio-drawer .el-drawer__header h2 { overflow-wrap: anywhere; }
+.studio-drawer .el-drawer__body { padding: 0 24px; min-width: 0; overflow: auto; }
+.studio-drawer .el-drawer__footer { padding: 16px 24px; border-top: 1px solid var(--rs-border); }
+.studio-status { display: grid; grid-template-columns: 9px minmax(0, 1fr); align-items: start; gap: 4px 8px; margin: 12px 0 0; color: var(--rs-text-2); }
+.studio-status > .status-dot { flex-shrink: 0; margin: calc((1.6em - 9px) / 2) 0 0; }
+.studio-status-label { min-width: 0; overflow-wrap: anywhere; }
+.studio-status > .studio-field-help { grid-column: 2; margin: 0; }
 .el-dialog.studio-dialog { --el-dialog-padding-primary: 0; width: min(var(--studio-dialog-width, 760px), calc(100vw - 32px)); padding: 0; max-height: calc(100dvh - 48px); display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--rs-border); box-shadow: 0 24px 80px #0c153826; }
 .studio-dialog .el-dialog__header { padding: 24px 32px; margin: 0; border-bottom: 1px solid var(--rs-border-soft); }
 .studio-dialog .el-dialog__headerbtn { top: 20px; right: 18px; width: 32px; height: 32px; }
@@ -31,6 +41,8 @@
 .studio-form .el-textarea__inner:focus { box-shadow: 0 0 0 1px var(--rs-primary) inset; }
 .studio-form .el-textarea .el-input__count { background: var(--rs-bg-card); bottom: 5px; right: 12px; }
 .studio-form .el-select, .studio-form .el-input-number, .studio-form .el-date-editor.el-input { width: 100%; }
+.studio-form .el-checkbox { max-width: 100%; height: auto; min-height: 32px; white-space: normal; }
+.studio-form .el-checkbox__label { min-width: 0; white-space: normal; overflow-wrap: anywhere; line-height: 1.6; }
 .studio-field-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; }
 .studio-field-grid > .el-form-item { min-width: 0; margin-bottom: 0; }
 .studio-field-grid + .el-form-item, .studio-field-grid + .studio-field-grid { margin-top: 20px; }
@@ -71,6 +83,9 @@
   .studio-dialog .el-dialog__header { padding: 20px; }
   .studio-dialog .el-dialog__body { padding: 0 20px; }
   .studio-dialog .el-dialog__footer { padding: 14px 20px; }
+  .studio-drawer .el-drawer__header { padding: 20px 16px; }
+  .studio-drawer .el-drawer__body { padding: 0 16px; }
+  .studio-drawer .el-drawer__footer { padding: 14px 16px; }
   .studio-field-grid, .studio-switch-grid { grid-template-columns: minmax(0, 1fr); }
   .studio-choice-grid { grid-template-columns: minmax(0, 1fr); gap: 8px; }
   .studio-choice-grid.two-columns { grid-template-columns: repeat(2, minmax(0, 1fr)); }

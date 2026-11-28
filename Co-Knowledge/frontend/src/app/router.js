@@ -34,6 +34,8 @@ const CustomizedAdvancedFlow = () => import(/* webpackChunkName: "module.flow" *
 const WorkFlowIndex = () => import(/* webpackChunkName: "module.flow" */'@/pages/workflow/WorkflowListPage.vue');
 // 对话测试页（视图 + lib + composables）
 const ChatTest = () => import(/* webpackChunkName: "module.flow" */'@/pages/chat/ChatPage.vue');
+// Text2SQL 演示工作区（浏览器本地演示数据，不调用后端接口）
+const Text2SQL = () => import(/* webpackChunkName: "module.text2sql" */'@/pages/text2sql/Text2SQLPage.vue');
 
 const routes_kb_flow = [
   {
@@ -54,6 +56,12 @@ const routes_kb_flow = [
     path: '/chat',
     name: 'chat',
     component: ChatTest
+  },
+  {
+    // Text2SQL 演示工作区：数据源、提问、历史与反馈全部保存在浏览器本地。
+    path: '/text2sql',
+    name: 'text2sql',
+    component: Text2SQL
   }
 ]
 
@@ -79,6 +87,10 @@ const TaskManagementIndex = () => import(/* webpackChunkName: "module.tasks" */'
 // 两条路由共用 AgentLayout 这层布局（面包屑/标题/状态只取一次）：布局组件按
 // `route.name` 渲染对应子页；未注册的地址由全局兜底处理。
 const RemoteAccessIndex = () => import(/* webpackChunkName: "module.remoteAccess" */'@/pages/agent/AgentLayout.vue');
+
+// 版本更新（/release）：发布记录时间线。左栏「版本更新」入口与底部版本号、
+// 登录页页脚、登录后的更新提醒都指向这里/读同一份数据。
+const ReleaseNotesIndex = () => import(/* webpackChunkName: "module.release" */'@/pages/release/ReleasePage.vue');
 
 const routes_remote_access = [
   {
@@ -107,6 +119,15 @@ const routes_model_management = [
     component: ModelManagementIndex,
     // hiddenBorder：列表页约定，去掉主面板那条边框（与 /knowledge、/operators 一致）
     meta: { hiddenBorder: true }
+  }
+]
+
+const routes_release = [
+  {
+    // 版本更新：发布记录与当前构建信息。
+    path: '/release',
+    name: 'release',
+    component: ReleaseNotesIndex
   }
 ]
 
@@ -205,6 +226,7 @@ const routes_out = [
       ...routes_remote_access,
       ...routes_kb_flow,
       ...routes_knowledge_graph,
+      ...routes_release,
       {
         // 全局兜底（必须放最后一条）：hash 路由 + SPA 回退下，任何匹配不到的地址
         // 既不会 404 也不会提示，只会渲染成空白页（`#app` 里只剩

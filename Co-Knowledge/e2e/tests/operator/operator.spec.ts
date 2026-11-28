@@ -72,7 +72,7 @@ async function importCustomZip (api: ApiClient, displayNameEn: string, code: str
 
 test.describe('自定义算子', () => {
   test('@p0 OP-01 算子列表与页签', async ({ page }) => {
-    await page.goto('/#/operators')
+    await page.goto('/operators')
     await expect(page.locator('.operators-page')).toBeVisible()
     await expect(page.getByRole('tab', { name: '我的算子' })).toBeVisible()
     await expect(page.getByRole('tab', { name: '公开算子' })).toBeVisible()
@@ -84,7 +84,7 @@ test.describe('自定义算子', () => {
     let operator: OperatorRow | undefined
     try {
       await removeExistingSample(api)
-      await page.goto('/#/operators')
+      await page.goto('/operators')
       await page.getByRole('button', { name: '导入算子文件' }).click()
       const dialog = page.locator('.el-dialog').filter({ hasText: '导入算子文件' })
       await dialog.locator('input[type=file]').first().setInputFiles(SAMPLE_ZIP)
@@ -188,7 +188,7 @@ test.describe('自定义算子', () => {
     test.setTimeout(120_000)
     const operator = await importSample(api)
     try {
-      await page.goto('/#/operators')
+      await page.goto('/operators')
       // 「我的 / 公开」两个 tabpanel 同时留在 DOM 里；只取可见的那张表。
       const row = page.locator('.operators-page .operator-table tbody tr:visible')
         .filter({ hasText: SAMPLE_NAME })

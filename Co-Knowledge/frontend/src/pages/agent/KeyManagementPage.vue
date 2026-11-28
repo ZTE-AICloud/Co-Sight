@@ -208,7 +208,7 @@
                     <div class="entity-title">
                       {{ row.name }}
                     </div>
-                    <div class="entity-sub">
+                    <div class="entity-sub" :title="`${row.createdBy || '--'} · ${formatDateTime(row.createdAt) || '--'}`">
                       {{ row.createdBy || '--' }} · {{ formatDateTime(row.createdAt) || '--' }}
                     </div>
                     <div v-if="row.description" class="entity-sub">
@@ -874,11 +874,28 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.keys-table { min-width: 1320px; table-layout: auto; }
-.keys-table .entity-title { white-space: nowrap; }
-.keys-table .entity-sub { max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.keys-table th:nth-child(2) { width: 20%; }
-.keys-table .permission-cell { white-space: nowrap; }
+.keys-table { min-width: 0; table-layout: fixed; }
+.keys-table td:nth-child(2) { overflow: hidden; }
+.keys-table .entity { min-width: 0; }
+.keys-table .entity > div:last-child { min-width: 0; overflow: hidden; }
+.keys-table .entity-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.keys-table .entity-sub { max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.keys-table th { white-space: nowrap; }
+.keys-table th, .keys-table td { padding-left: 10px; padding-right: 10px; }
+.keys-table th:nth-child(1) { width: 44px; }
+.keys-table th:nth-child(2) { width: 14.5%; }
+.keys-table th:nth-child(3) { width: 11%; }
+.keys-table th:nth-child(4) { width: 14%; }
+.keys-table th:nth-child(5) { width: 7%; }
+.keys-table th:nth-child(6) { width: 6%; }
+.keys-table th:nth-child(7) { width: 8.7%; }
+.keys-table th:nth-child(8) { width: 7.5%; }
+.keys-table th:nth-child(9) { width: 8%; }
+.keys-table th:nth-child(10) { width: 5%; }
+.keys-table th:nth-child(11) { width: 14%; }
+.keys-table .permission-cell { white-space: normal; }
+.keys-table .permission-cell .tag-soft { margin: 0 4px 4px 0; }
+@media (max-width: 1100px) { .keys-table { min-width: 1000px; } }
 
 .key-management__alert { margin-bottom: 16px; }
 </style>

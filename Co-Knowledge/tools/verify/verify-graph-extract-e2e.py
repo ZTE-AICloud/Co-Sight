@@ -77,7 +77,8 @@
 
 ## 残留
 
-跑完库里留：固定的 KB 若干、每轮一行 `graph_extract_task` + 一行 `graph_import_task`。
+跑完库里留：固定的 KB 若干、每轮在 `task_center.task` 各留一行
+`GRAPH_EXTRACT` 与 `GRAPH_IMPORT`。
 文件行在 `finally` 里删掉，**不会留任何新库**（中途失败也不留 —— 处理是 reset-then-run，
 下一步跑会自愈）。`cleanup-probe-kbs.py` 仍能扫掉它。
 
@@ -302,7 +303,7 @@ def query_entity_num(kb_id):
 # 轮询 + 账单
 # ---------------------------------------------------------------------------
 def _parse(value):
-    """DB 时间戳 → datetime。`graph_import_task` 那两列是 varchar（ISO 形状）。"""
+    """DB 时间戳 → datetime。统一任务表给 timestamptz；ISO 字符串形态也认。"""
     if value is None:
         return None
     if isinstance(value, dt.datetime):
@@ -317,28 +318,53 @@ def _iso(value):
 
 def newest_task_id(kb_id):
     with connection() as conn, conn.cursor() as cursor:
-        cursor.execute('SELECT id FROM graph_extract_task WHERE kb_id=%s '
-                       'ORDER BY created_at DESC LIMIT 1', (kb_id,))
+        cursor.execute(
+            "SELECT id FROM task_center.task WHERE task_type='GRAPH_EXTRACT' "
+            "AND kbase_id=%s ORDER BY created_at DESC LIMIT 1", (kb_id,))
         row = cursor.fetchone()
         return row[0] if row else None
 
 
 def snapshot_task(task_id):
-    """一条 SQL 拿全：任务行 + 库构建状态 + 最近一条导入任务。"""
+    """一条 SQL 拿全：任务行 + 库构建状态 + 最近一条导入任务。
+
+    状态列沿用领域语义（抽取 ``INIT/RUNNING/SUCCESS/FAIL``，导入
+    ``PENDING/PROCESSING/COMPLETED/...``），映射就地下沉到 SQL —— 库里存的是
+    统一状态机，断言侧不必跟着改。
+    """
     sql = """
-        SELECT t.status, t.progress, t.error_message, t.created_at, t.start_time,
-               t.finish_time, t.schema_id,
+        SELECT CASE t.status
+                   WHEN 'PENDING' THEN 'INIT'
+                   WHEN 'RUNNING' THEN 'RUNNING'
+                   WHEN 'COMPLETED' THEN 'SUCCESS'
+                   ELSE 'FAIL'
+               END AS status,
+               t.progress, t.error_message, t.created_at, t.start_time,
+               t.finish_time, t.payload ->> 'schemaId' AS schema_id,
                k.status AS kb_status, k.process AS kb_process, k.schema_obj,
-               i.status AS imp_status, i.created_at AS imp_create, i.updated_at AS imp_update,
-               i.entity_total, i.entity_success, i.entity_failed,
-               i.edge_total, i.edge_success, i.edge_failed,
-               i.failed_records, i.error_message AS imp_error
-        FROM graph_extract_task t
-        LEFT JOIN kb_kbase k ON k.kbase_id = t.kb_id
+               CASE i.status
+                   WHEN 'PENDING' THEN 'PENDING'
+                   WHEN 'RUNNING' THEN 'PROCESSING'
+                   WHEN 'COMPLETED' THEN 'COMPLETED'
+                   WHEN 'COMPLETED_WITH_ERRORS' THEN 'COMPLETED_WITH_ERRORS'
+                   ELSE 'FAILED'
+               END AS imp_status,
+               i.created_at AS imp_create, i.updated_at AS imp_update,
+               COALESCE((i.extra ->> 'entity_total')::int, 0) AS entity_total,
+               COALESCE((i.extra ->> 'entity_success')::int, 0) AS entity_success,
+               COALESCE((i.extra ->> 'entity_failed')::int, 0) AS entity_failed,
+               COALESCE((i.extra ->> 'edge_total')::int, 0) AS edge_total,
+               COALESCE((i.extra ->> 'edge_success')::int, 0) AS edge_success,
+               COALESCE((i.extra ->> 'edge_failed')::int, 0) AS edge_failed,
+               i.extra -> 'failed_records' AS failed_records,
+               i.error_message AS imp_error
+        FROM task_center.task t
+        LEFT JOIN kb_kbase k ON k.kbase_id = t.kbase_id
         LEFT JOIN LATERAL (
-            SELECT * FROM graph_import_task WHERE kb_id = 'graph_' || t.kb_id
+            SELECT * FROM task_center.task
+            WHERE task_type = 'GRAPH_IMPORT' AND kbase_id = t.kbase_id
             ORDER BY created_at DESC LIMIT 1) i ON TRUE
-        WHERE t.id = %s
+        WHERE t.id = %s AND t.task_type = 'GRAPH_EXTRACT'
     """
     with connection() as conn, conn.cursor() as cursor:
         cursor.execute(sql, (task_id,))

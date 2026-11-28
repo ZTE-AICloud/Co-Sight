@@ -250,6 +250,7 @@ def _build_key_specs() -> dict[str, ProblemSpec]:
         }),
         (LIMIT_EXCEEDED, {
             'directory.folder.size.over.limit',
+            'directory.file.size.over.limit',
             'directory.level.limit',
         }),
         # ---- 415 ------------------------------------------------------
@@ -665,15 +666,18 @@ class ApiError(Exception):
 # ----------------------------------------------------------------------
 
 
-def problem_response(
+def problem_body(
     spec: ProblemSpec,
     detail: str,
     *,
     instance: Optional[str] = None,
-    headers: Optional[Mapping[str, str]] = None,
     extensions: Optional[Mapping[str, Any]] = None,
-) -> JSONResponse:
-    """构造 ``application/problem+json`` 响应（HTTP 状态码 = ``spec.status``）。"""
+) -> dict[str, Any]:
+    """problem+json 的正文。
+
+    单独暴露是因为 SSE 的 ``event: error`` 只能把问题放进 **200 响应的帧体**
+    里（HTTP 状态码已经发出去了），但正文必须和普通错误响应同形。
+    """
 
     body: dict[str, Any] = {
         'type': PROBLEM_TYPE_PREFIX + spec.code,
@@ -686,9 +690,23 @@ def problem_response(
         body['instance'] = instance
     if extensions:
         body.update(extensions)
+    return body
+
+
+def problem_response(
+    spec: ProblemSpec,
+    detail: str,
+    *,
+    instance: Optional[str] = None,
+    headers: Optional[Mapping[str, str]] = None,
+    extensions: Optional[Mapping[str, Any]] = None,
+) -> JSONResponse:
+    """构造 ``application/problem+json`` 响应（HTTP 状态码 = ``spec.status``）。"""
+
     return JSONResponse(
         status_code=spec.status,
-        content=body,
+        content=problem_body(spec, detail, instance=instance,
+                             extensions=extensions),
         media_type=PROBLEM_MEDIA_TYPE,
         headers=dict(headers or {}),
     )

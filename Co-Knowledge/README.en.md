@@ -224,17 +224,17 @@ From there: **create a knowledge base → import documents → retrieve / orches
 
 | Entry | Route | Purpose |
 |---|---|---|
-| Knowledge bases → Document KBs | `/#/knowledge`; detail `/#/knowledge/detail/:id`; documents `/#/knowledge/detail/:id/documents` | List, dataset/basic info, directory and document management |
-| Knowledge bases → Graph KBs | `/#/graph`; detail `/#/graph/detail/:id`, edit `/#/graph/edit/:id`, create `/#/graph/create`, template `/#/graph/createTemplate/:templateId` | List, detail, edit, creation and template designer |
-| Retrieval orchestration | `/#/flow`; canvas `/#/flow/detail/:id` | Workflow list, canvas editing, save and publish |
-| Chat playground | `/#/chat` | Streaming Q&A, multi-turn sessions, evidence and stage timings |
-| Custom operators | `/#/operators` | Upload, template download, publish/visibility and export |
-| Model management | `/#/models` | LLM / embedding / reranker registry, connection tests and thinking configuration |
-| Remote access → Access methods | `/#/access` | Agent REST + MCP integration guide |
-| Remote access → API keys | `/#/keys` | Agent API keys, scopes, allowlists and rate limits |
-| Login / password change | `/#/login`, `/#/change-password` | Local account sign-in and forced password change |
+| Knowledge bases → Document KBs | `/knowledge`; detail `/knowledge/detail/:id`; documents `/knowledge/detail/:id/documents` | List, dataset/basic info, directory and document management |
+| Knowledge bases → Graph KBs | `/graph`; detail `/graph/detail/:id`, edit `/graph/edit/:id`, create `/graph/create`, template `/graph/createTemplate/:templateId` | List, detail, edit, creation and template designer |
+| Retrieval orchestration | `/flow`; canvas `/flow/detail/:id` | Workflow list, canvas editing, save and publish |
+| Chat playground | `/chat` | Streaming Q&A, multi-turn sessions, evidence and stage timings |
+| Custom operators | `/operators` | Upload, template download, publish/visibility and export |
+| Model management | `/models` | LLM / embedding / reranker registry, connection tests and thinking configuration |
+| Remote access → Access methods | `/access` | Agent REST + MCP integration guide |
+| Remote access → API keys | `/keys` | Agent API keys, scopes, allowlists and rate limits |
+| Login / password change | `/login`, `/change-password` | Local account sign-in and forced password change |
 
-> The frontend uses **hash routing**: page URLs look like `/#/knowledge`. `/` redirects to `/#/login`, and unknown paths fall back to `/#/knowledge`.
+> The frontend uses **history routing**: page URLs look like `/knowledge`. `/` redirects to `/login`, and unknown paths fall back to `/knowledge` (legacy `#/` links are rewritten to paths).
 
 ### HTTP API + SSE
 

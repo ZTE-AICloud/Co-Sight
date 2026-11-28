@@ -68,8 +68,10 @@ Rules:
 - `shared/lib` must not import Vue; `shared/ui` must not import any feature.
 - Import paths use the `@/` alias (`@` -> `src`).
 
-The router uses hash history; page URLs look like `/#/knowledge`, `/#/flow`,
-`/#/chat`, `/#/operators`, `/#/models`, `/#/access` and `/#/keys`.
+The router uses history mode by default; page URLs look like `/knowledge`,
+`/flow`, `/chat`, `/operators`, `/models`, `/access` and `/keys`. Set
+`VUE_APP_ROUTE_MODE=hash` only when the hosting environment cannot serve the
+SPA fallback for deep links.
 
 ## Lint and tests
 

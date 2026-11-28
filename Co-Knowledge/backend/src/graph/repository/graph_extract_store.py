@@ -1,8 +1,7 @@
 """抽图任务的读写（统一任务表 ``task_center.task``，``task_type='GRAPH_EXTRACT'``）。
 
-对外仍暴露 ``GraphExtractTaskPO`` 的字段形状与 ``INIT/RUNNING/SUCCESS/FAIL``
+对外返回原 ``GraphExtractTaskPO`` 的字段形状与 ``INIT/RUNNING/SUCCESS/FAIL``
 状态：统一表内部用 ``PENDING/RUNNING/COMPLETED/FAILED``，本模块负责双向映射。
-``graph_extract_task`` 是只读兼容视图。
 
 这张表是**物理删**（全库统一硬删除）。
 """
@@ -92,11 +91,14 @@ def insert_task(kbase_id: str, schema_id: str, operator_id: int, file_count: int
 
 
 def update_task_status(task_id: str, status: str, progress: int,
-                       error_message: Optional[str] = None) -> None:
+                       error_message: Optional[str] = None,
+                       extra: Optional[dict] = None) -> None:
     """``GraphExtractTaskDao.updateTaskStatus``。
 
     ⚠️ 两个**只在特定状态才写**的时间戳（保持）：
     ``startTime`` 仅在 ``RUNNING`` 时写、``finishTime`` 仅在 ``SUCCESS``/``FAIL`` 时写。
+
+    ``extra`` 传入时与已有值合并，用于写结果摘要（实体/边计数、schema、模型等）。
     """
     unified = _TO_UNIFIED.get(status, 'FAILED')
     sets = ['status = %s', 'progress = %s', 'error_message = %s', 'updated_at = NOW()']
@@ -105,6 +107,9 @@ def update_task_status(task_id: str, status: str, progress: int,
         sets.append('start_time = NOW()')
     elif status in (STATUS_SUCCESS, STATUS_FAIL):
         sets.append('finish_time = NOW()')
+    if extra is not None:
+        sets.append("extra = COALESCE(extra, '{}'::jsonb) || %s::jsonb")
+        params.append(json.dumps(extra, ensure_ascii=False, default=str))
     params.extend([task_id, TASK_TYPE])
     with connection() as conn:
         with conn.cursor() as cursor:

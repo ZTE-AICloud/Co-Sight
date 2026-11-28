@@ -176,7 +176,7 @@ def test_file_success(s):
         row = wait_file(s, kb_id, file_name)
         assert row.get('status') == 1, row
         task = wait_task(
-            "SELECT id, status, payload, locked_by, locked_until "
+            "SELECT id, status, payload, locked_by, locked_until, extra "
             "FROM task_center.task WHERE task_type='FILE_IMPORT' "
             "AND payload->>'fileId'=%s ORDER BY created_at DESC LIMIT 1",
             (file_id,))
@@ -184,6 +184,11 @@ def test_file_success(s):
         assert task[1] == 'COMPLETED', task
         assert task[2].get('fileHandle'), task
         wait_unlocked(task_id)
+        extra = task[5] or {}
+        assert int(extra.get('chunkCount') or 0) > 0, extra
+        assert int(extra.get('vectorCount') or 0) > 0, extra
+        assert int(extra.get('indexDocCount') or 0) > 0, extra
+        assert set(extra.get('stageTimingsMs') or {}) >= {'parse', 'split', 'embed'}, extra
         chunks = s.get(f'{BASE}/knowledge-bases/{kb_id}/chunks?page=1&size=100',
                        timeout=10).json()
         assert int(chunks.get('total') or 0) > 0, chunks
@@ -237,14 +242,17 @@ def graph_extract(s, embedding):
     assert kb_id, r.headers
     try:
         task = wait_task(
-            "SELECT id, status, progress, locked_by, locked_until, error_message "
+            "SELECT id, status, progress, locked_by, locked_until, error_message, extra "
             "FROM task_center.task WHERE task_type='GRAPH_EXTRACT' "
             "AND kbase_id=%s ORDER BY created_at DESC LIMIT 1",
             (kb_id,), timeout=300)
         assert task[1] == 'COMPLETED', task
         wait_unlocked(task[0])
-        view = one('SELECT status FROM public.graph_extract_task WHERE id=%s', (task[0],))
-        assert view and view[0] == 'SUCCESS', view
+        extra = task[6] or {}
+        assert extra.get('importTaskId'), extra
+        assert extra.get('schemaId'), extra
+        assert int(extra.get('entity_total') or 0) > 0, extra
+        assert int(extra.get('vector_entities') or 0) > 0, extra
         kbase = one('SELECT status, schema_id FROM kb_kbase WHERE kbase_id=%s', (kb_id,))
         assert kbase and kbase[0] == 5, kbase
         query = s.post(f'{BASE}/knowledge-bases/{kb_id}/graph/query',
@@ -294,20 +302,20 @@ def graph_import(s, export_bytes):
     kb_id = new_id[len('graph_'):]
     try:
         task = wait_task(
-            "SELECT id, status, progress, locked_by, locked_until, error_message "
+            "SELECT id, status, progress, locked_by, locked_until, error_message, extra "
             "FROM task_center.task WHERE task_type='GRAPH_IMPORT' "
             "AND kbase_id=%s ORDER BY created_at DESC LIMIT 1",
             (kb_id,), timeout=300)
         assert task[1] in ('COMPLETED', 'COMPLETED_WITH_ERRORS'), task
         wait_unlocked(task[0])
-        view = one('SELECT status, entity_total FROM public.graph_import_task '
-                   'WHERE task_id=%s', (task[0],))
-        assert view and view[0] in ('COMPLETED', 'COMPLETED_WITH_ERRORS'), view
-        assert int(view[1] or 0) > 0, view
+        extra = task[6] or {}
+        assert int(extra.get('vector_entities') or 0) > 0, extra
+        assert int(extra.get('vector_edges') or 0) > 0, extra
+        assert int(extra.get('entity_total') or 0) > 0, extra
         query = s.post(f'{BASE}/knowledge-bases/{kb_id}/graph/query',
                        json={'query_type': 'entity'}, timeout=30).json()
         assert int(query.get('entity_num') or 0) > 0, query
-        print('REAL graph import:', view[0], 'entities=', query.get('entity_num'),
+        print('REAL graph import:', task[1], 'entities=', query.get('entity_num'),
               'warning=', (task[5] or '')[:80])
         return kb_id
     finally:

@@ -191,7 +191,7 @@ Knowledge Studio 是一个可自部署的**知识工程平台**，围绕「把�
 | **知识检索** | 向量检索（`type=0`）与关键词检索（`type=1`），支持多库分组与优先级 |
 | **自定义算子** | 上传算子包 → 注册 → 在导入时指定 → 沙箱执行 |
 | **检索编排** | 画布编排 → 保存 → 发布 → 运行时执行（改写→检索→重排→合成） |
-| **对话测试** | 编排运行时的产品内入口（`/#/chat`）：流式（SSE）问答、多轮会话、Markdown 渲染 |
+| **对话测试** | 编排运行时的产品内入口（`/chat`）：流式（SSE）问答、多轮会话、Markdown 渲染 |
 | **知识图谱** | 图谱库、Schema 管理、实体/关系抽取、图谱查询与检索（生成端点由使用方配置） |
 
 ### 1.2 运行前提与配套
@@ -208,8 +208,10 @@ Knowledge Studio 是一个可自部署的**知识工程平台**，围绕「把�
 - **异步任务**：统一任务表 `task_center.task` + 分车道 worker。文件入库、图谱抽图、
   图谱导入都使用 **DB 队列**（`FOR UPDATE SKIP LOCKED` + 租约 + 心跳 + 过期回收），
   进程重启后会继续认领 `PENDING/RETRY`。管理面 `{prefix}/tasks` 提供列表/详情/
-  统计、排队任务取消、失败任务重试与优先级调整。部署只需 PostgreSQL 与
-  OpenSearch，不需要额外的消息中间件。
+  统计、排队任务取消、失败任务重试与优先级调整；详情页的 `extra` 是各类型的
+  **结果摘要**（文件：切片/向量/索引文档数与阶段耗时；抽图：输入文件数、schema、
+  模型、实体/边与关联导入任务；导入：图数据与向量索引计数、失败明细），原始
+  JSON 仍完整可查。部署只需 PostgreSQL 与 OpenSearch，不需要额外的消息中间件。
 - **工作流发布**：画布保存后发布，运行时读取发布快照；发布与验证都在控制台内完成。
 - **CI 覆盖**：前端 vitest、后端 pytest（含 skip==0 断言）与 `ruff check src`；
   本地一键入口 `tools/run-tests.sh`（见 §10.4）。
@@ -218,7 +220,7 @@ Knowledge Studio 是一个可自部署的**知识工程平台**，围绕「把�
 
 | 层 | 技术 |
 |---|---|
-| 前端 | Vue 3.5 + Element Plus 2.14.7 + Vue Router 4（**hash 路由**）+ Vuex 4 + @antv/x6（画布） |
+| 前端 | Vue 3.5 + Element Plus 2.14.7 + Vue Router 4（**history 路由**）+ Vuex 4 + @antv/x6（画布） |
 | Python 服务 | Python 3.11；FastAPI 0.111（全部后端能力都在这一个服务里） |
 | 检索编排 | **自研编排原语层**（`engine/primitives/`）：检索/查询/重排/合成/LLM 抽象与数据模型；含 vendor 的 tiktoken 词表（离线可用） |
 | 存储 | PostgreSQL 16 + pgvector（业务表 + 向量 + 图谱实体/边）、OpenSearch 2.19（关键词索引） |
@@ -278,10 +280,10 @@ Knowledge Studio 是一个可自部署的**知识工程平台**，围绕「把�
 | `/api/co-knowledge/v1/query` | `rag-knowledge-base:8091` | 检索编排的提问（SSE）。nginx 里**单独一段 location**（最长前缀匹配优先），带三条流式配置（见 §3.4） |
 | `/api/co-knowledge/v1/agent/` | `rag-knowledge-base:8091` | **Agent REST facade**：只读检索/问答 + OpenAPI；独立 location，`proxy_read_timeout 300s`。见 [`agent-integration.md`](agent-integration.md) |
 | `/api/co-knowledge/v1/mcp` | `rag-knowledge-base:8091` | **Agent MCP**（Streamable HTTP）：独立 location，`proxy_buffering off` + HTTP/1.1 + 300s |
-| 其余（`/`） | SPA `index.html` | hash 路由回退 |
+| 其余（`/`） | SPA `index.html` | history 路由回退 |
 
-> ⚠️ **前端是 hash 路由**，页面地址形如 `/#/knowledge`、`/#/flow`，**不是** `/knowledge`、`/flow`。
-> 直接访问不带 `#` 的路径会命中 SPA 回退拿到 `index.html`，然后因为匹配不到路由而表现为「点不动 / 白屏」。
+> **前端是 history 路由**，页面地址形如 `/knowledge`、`/flow`；nginx 的 `try_files ... index.html`
+> 负责深链回退。旧 `#/knowledge` 链接会在应用启动时原地改写为 `/knowledge`。
 >
 > ⚠️ 后端**只有一个前缀** `/api/co-knowledge/v1`（编排的 `/query` 也在其下）。
 > RKB 默认不向宿主发布 8091。
@@ -333,7 +335,7 @@ POST /api/co-knowledge/v1/retrieval
 #### 链路 C：检索编排（画布 → 发布 → 执行）
 
 ```
-前端 /#/flow 列表 → 新建/编辑 → 画布 /#/flow/detail/<appId>
+前端 /flow 列表 → 新建/编辑 → 画布 /flow/detail/<appId>
   └─ 拖节点连线 → 保存（写草稿）→ 点「发布」（写已发布快照）
 
 发布快照落 rag_studio 库的 flow_published 表
@@ -495,7 +497,7 @@ src/
 
 ### 3.4 `frontend`（compose 服务名 `web`）— 统一前端（Vue 3 → nginx）
 
-- **技术**：Vue 3.5 + Element Plus 2.14.7 + Vue Router（hash）+ Vuex + @antv/x6
+- **技术**：Vue 3.5 + Element Plus 2.14.7 + Vue Router（history）+ Vuex + @antv/x6
 - **构建**：`node:22.23.3-alpine` 构建 → `nginx:1.27.5-alpine` 运行；**宿主默认 8080 → 容器 80**。
   根路径部署：`frontend/.env` 与 `.env.production` 均为 `BASE_URL=/`，直接
   `npm run build` 即可，产物资源路径为 `/js/...`、`/css/...`。
@@ -510,25 +512,25 @@ src/
   SSE 指令（`proxy_buffering off` / `proxy_http_version 1.1` / `Connection ""`），
   少任何一条都表现为「卡住不动、然后一次性全出来」。
 
-**页面路由**（hash）：
+**页面路由**（history）：
 
 | 路由 | 页面 |
 |---|---|
-| `/#/login` | 登录页（**默认页**：`/` 重定向到此，与 UX 原型一致） |
-| `/#/knowledge` | **文档知识库**列表 |
-| `/#/knowledge/detail/:id` | 知识库详情（数据集/分块 + 基本信息） |
-| `/#/knowledge/detail/:id/documents` | 文档管理（目录 + 文件表格） |
-| `/#/graph` | **图谱知识库**列表（页内「知识图谱 / 知识图谱模版」子页签，`?subTab=` 直达） |
-| `/#/graph/detail/:id`、`/#/graph/edit/:id`、`/#/graph/create` | 图谱详情 / 编辑 / 新建 |
-| `/#/graph/createTemplate/:templateId` | 图谱模板设计器 |
-| `/#/flow`、`/#/flow/detail/:id` | 知识检索列表 / 画布 |
-| `/#/chat` | **对话测试页**：SSE 流式问答、多段历史、多轮会话、Markdown 渲染 |
-| `/#/operators` | 自定义算子 |
-| `/#/models` | 模型管理 |
-| `/#/access`、`/#/keys` | 接入方法 / 密钥管理 |
-| `/#/change-password` | 强制改密 |
+| `/login` | 登录页（**默认页**：`/` 重定向到此，与 UX 原型一致） |
+| `/knowledge` | **文档知识库**列表 |
+| `/knowledge/detail/:id` | 知识库详情（数据集/分块 + 基本信息） |
+| `/knowledge/detail/:id/documents` | 文档管理（目录 + 文件表格） |
+| `/graph` | **图谱知识库**列表（页内「知识图谱 / 知识图谱模版」子页签，`?subTab=` 直达） |
+| `/graph/detail/:id`、`/graph/edit/:id`、`/graph/create` | 图谱详情 / 编辑 / 新建 |
+| `/graph/createTemplate/:templateId` | 图谱模板设计器 |
+| `/flow`、`/flow/detail/:id` | 知识检索列表 / 画布 |
+| `/chat` | **对话测试页**：SSE 流式问答、多段历史、多轮会话、Markdown 渲染 |
+| `/operators` | 自定义算子 |
+| `/models` | 模型管理 |
+| `/access`、`/keys` | 接入方法 / 密钥管理 |
+| `/change-password` | 强制改密 |
 
-> 未注册的地址没有重定向也没有别名，由全局兜底落到 `/#/knowledge`。
+> 未注册的地址没有重定向也没有别名，由全局兜底落到 `/knowledge`。
 
 **左栏导航**：知识库（分组）、知识检索、对话测试、自定义算子、模型管理、远程接入（分组），
 唯一真值是 `frontend/src/app/layout/nav/menu.config.js`（不从 router 的 `meta` 生成：
@@ -702,7 +704,7 @@ GENERATION_HOST=<端点主机>                     # 让容器 NO_PROXY 排除�
 > —— **HTTP 200、看起来成功，其实没答案**。
 >
 > ⚠️ **模型清单的权威来源 = `model_registry` 表**：在「模型管理」页
-> （`#/models`）注册，或调 `{RKB_PREFIX}/models`。保存即生效，**不需要重启**。
+> （`/models`）注册，或调 `{RKB_PREFIX}/models`。保存即生效，**不需要重启**。
 > `deploy/.env` 的 `GENERATION_MODELS` 降级为**首次播种 + 回落**：
 > 首次启动把它播种进注册表；注册表读不到时逐项回落它。
 > 格式仍是 `模型名=显示名;模型名=显示名`，**值必须带引号**：用 `set -a; . deploy/.env`
@@ -839,7 +841,7 @@ nginx 已配 `client_max_body_size 650m`，与业务侧按格式的上传上限�
 
 #### 5.1.1 建库
 
-界面：`/#/knowledge` → 「新建知识库」弹窗（旧整页表单路由已重定向到 `/#/knowledge`）。
+界面：`/knowledge` → 「新建知识库」弹窗（旧整页表单路由已重定向到 `/knowledge`）。
 
 后端 `POST /api/co-knowledge/v1/knowledge-bases` 会连带创建：
 
@@ -992,7 +994,7 @@ def file_split(file_path: str, **args) -> list:
 #### 5.4.1 操作路径
 
 ```
-/#/flow（列表）→ 新建/编辑 → 画布 /#/flow/detail/<appId>
+/flow（列表）→ 新建/编辑 → 画布 /flow/detail/<appId>
   → 拖节点、连线、配置
   → 「保存」（写草稿）
   → 「发布」（写已发布快照）★ 必须点这一步
@@ -1002,7 +1004,7 @@ def file_split(file_path: str, **args) -> list:
 Blended 的图谱变体（只绑图谱库 → `Blended_graph`；普通库 + 图谱库 →
 `Blended_normal_graph`），画布里出现 `KnowledgeGraphRetriever`，发布后即可在对话页使用。
 
-跑起来之后，**对话测试页 `/#/chat`** 是这个运行时的产品内入口：
+跑起来之后，**对话测试页 `/chat`** 是这个运行时的产品内入口：
 流式（SSE）问答、`<think>` 段先铺开结束后收起、Markdown 渲染；**左侧历史会话列表**可切换/
 删除多段会话（localStorage，按工作流隔离），刷新后恢复并记住上次选择的工作流。
 每条回答上方还有**知识库依据**：展示本轮重排后实际提供给模型的片段（来源文件、知识库、
@@ -1298,7 +1300,7 @@ Agent 接口的 `RKB_AGENT_*` 变量见 [`agent-integration.md`](agent-integrati
 | 答案正常但没走检索 | 重排把 token 预算烧光（推理模型）→ 重排异常 → 空节点 → 兜底回答。把 `GENERATION_MAX_TOKENS` 给足 |
 | `/query` 一直卡住 | 容器 `no_proxy` 没排除生成端点 → 请求被宿主代理接走 |
 | 画布下拉里没有知识库 | `RKB_FLOW_KBASE_OPTIONS_URL` 被设成了非空（应留空，见 §8.6）；或库本身没有 `tableName`（会被跳过并记日志） |
-| 页面点不动 / 接口全 404 | 前端是 **hash 路由**，地址应是 `/#/knowledge` 而不是 `/knowledge` |
+| 页面点不动 / 接口全 404 | 前端是 **history 路由**，地址应是 `/knowledge`；直接访问深链应由 nginx SPA 回退拿到 `index.html` |
 | 接口报 `Tunnel connection failed: 302 Moved` | `NO_PROXY` 没排除该域名，请求被代理接走。**看响应体的内容类型，别只看状态码**（代理对不存在的主机名回 302，跟过去是一页「DNS 解析失败」的 HTML） |
 | 关键词检索查什么都能命中（误报） | 分词器问题，见 §9.1 |
 | 向量检索恒定返回空 | 维度冲突（768 维库 vs 当前 1024），见 §9.2 |
@@ -1434,7 +1436,7 @@ python3 tools/rag-metrics/reindex_es.py --kb-id <kbId> --apply
 
 ### 9.4 模型管理
 
-**运行时注册/纳管**：页面上（`#/models`）注册 OpenAI 兼容端点，保存即生效，
+**运行时注册/纳管**：页面上（`/models`）注册 OpenAI 兼容端点，保存即生效，
 不需要改配置或重启。清单的权威来源是 `model_registry` 表，`deploy/.env`
 负责首次播种与回落。
 

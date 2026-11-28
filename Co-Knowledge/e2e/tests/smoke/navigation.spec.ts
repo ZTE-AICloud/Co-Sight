@@ -7,7 +7,7 @@ test.describe('冒烟：平台入口与导航', () => {
   test('@smoke @fast @p0 SMK-01 首页加载并重定向到登录页（UX 原型默认）', async ({ page }) => {
     // UX 原型 router.js：`/` → `/login`（登录页是默认首页）。
     await page.goto('/')
-    await expect(page).toHaveURL(/#\/login$/)
+    await expect(page).toHaveURL(/\/login$/)
     await expect(page).toHaveTitle('Knowledge Studio')
     await expect(page.locator('html')).toHaveAttribute('lang', /zh/i)
     await expect(page.locator('.login-page')).toBeVisible()
@@ -15,7 +15,7 @@ test.describe('冒烟：平台入口与导航', () => {
 
   test('@smoke @fast @p0 SMK-02 左栏四个入口可达', async ({ page }) => {
     const nav = new NavPage(page)
-    await page.goto('/#/knowledge')
+    await page.goto('/knowledge')
     await nav.expectMenus()
 
     await nav.openDocKb()
@@ -46,27 +46,27 @@ test.describe('冒烟：平台入口与导航', () => {
   })
 
   test('@smoke @fast @p0 SMK-04 未知路由回退到文档知识库', async ({ page }) => {
-    await page.goto('/#/not-exist')
-    await expect(page).toHaveURL(/#\/knowledge$/)
+    await page.goto('/not-exist')
+    await expect(page).toHaveURL(/\/knowledge$/)
     await expect(page.locator('.knowledge-page')).toBeVisible()
   })
 
   test('@smoke @fast @p0 SMK-05 未注册地址按未知地址兜底', async ({ page }) => {
-    for (const hash of ['/#/kb/knowledgeGraph', '/#/model', '/#/remoteAccess/keys']) {
+    for (const hash of ['/kb/knowledgeGraph', '/model', '/remoteAccess/keys']) {
       await page.goto(hash)
-      await expect(page).toHaveURL(/#\/knowledge$/)
+      await expect(page).toHaveURL(/\/knowledge$/)
       await expect(page.locator('.knowledge-page')).toBeVisible()
     }
   })
 
   test('@smoke @fast @p0 SMK-06 主要页面加载无 console error', async ({ page }) => {
     const pages = [
-      { hash: '/#/knowledge', root: '.knowledge-page' },
-      { hash: '/#/graph', root: '.knowledge-page' },
-      { hash: '/#/flow', root: '.flow-page' },
-      { hash: '/#/chat', root: '.chat-page' },
-      { hash: '/#/operators', root: '.operators-page' },
-      { hash: '/#/models', root: '.models-page' }
+      { hash: '/knowledge', root: '.knowledge-page' },
+      { hash: '/graph', root: '.knowledge-page' },
+      { hash: '/flow', root: '.flow-page' },
+      { hash: '/chat', root: '.chat-page' },
+      { hash: '/operators', root: '.operators-page' },
+      { hash: '/models', root: '.models-page' }
     ]
     for (const item of pages) {
       await page.goto(item.hash)
@@ -84,18 +84,18 @@ test.describe('冒烟：平台入口与导航', () => {
     await flow.root.waitFor({ state: 'visible' })
 
     await page.reload()
-    await expect(page).toHaveURL(/#\/flow$/)
+    await expect(page).toHaveURL(/\/flow$/)
     await expect(flow.root).toBeVisible()
 
     await page.goBack()
-    await expect(page).toHaveURL(/#\/knowledge$/)
+    await expect(page).toHaveURL(/\/knowledge$/)
     await expect(kb.root).toBeVisible()
   })
 
   test('@p1 SMK-08 关键断点无横向溢出', async ({ page }) => {
     for (const width of [320, 375, 768, 1024, 1440, 1920]) {
       await page.setViewportSize({ width, height: 900 })
-      await page.goto('/#/knowledge')
+      await page.goto('/knowledge')
       await expect(page.locator('.knowledge-page')).toBeVisible()
       const overflow = await page.evaluate(
         () => document.documentElement.scrollWidth - document.documentElement.clientWidth
@@ -112,7 +112,7 @@ test.describe('冒烟：平台入口与导航', () => {
     await expect(kb.root.locator('.empty-row')).toBeVisible({ timeout: 20_000 })
 
     // 图谱模版列表：客户端过滤后空态
-    await page.goto('/#/graph?subTab=knowledgeGraphTemplate')
+    await page.goto('/graph?subTab=knowledgeGraphTemplate')
     const templateSearch = page.locator('.knowledge-graph-template-page')
       .getByPlaceholder('搜索图谱模版名称')
     await templateSearch.fill(`E2E-NO-DATA-${Date.now()}`)
@@ -149,7 +149,7 @@ test.describe('冒烟：平台入口与导航', () => {
         failures.push(`${response.status()} ${response.url()}`)
       }
     })
-    for (const hash of ['/#/knowledge', '/#/flow', '/#/chat', '/#/models']) {
+    for (const hash of ['/knowledge', '/flow', '/chat', '/models']) {
       await page.goto(hash)
       await page.waitForLoadState('networkidle')
     }
@@ -157,7 +157,7 @@ test.describe('冒烟：平台入口与导航', () => {
   })
 
   test('@p1 SMK-11 页面标题与语言属性', async ({ page }) => {
-    for (const hash of ['/#/knowledge', '/#/flow', '/#/chat', '/#/models']) {
+    for (const hash of ['/knowledge', '/flow', '/chat', '/models']) {
       await page.goto(hash)
       expect(await page.title()).toBe('Knowledge Studio')
       expect(await page.locator('html').getAttribute('lang')).toMatch(/zh/i)
@@ -167,7 +167,7 @@ test.describe('冒烟：平台入口与导航', () => {
   test('@p1 SMK-13 折叠态左栏图标导航可用', async ({ page }) => {
     // 折叠态隐藏文字标签，只留图标 + title；点击图标仍应能导航。
     await page.addInitScript(() => localStorage.setItem('ragstudio-nav-collapse', '1'))
-    await page.goto('/#/flow')
+    await page.goto('/flow')
     const sidebar = page.locator('.sidebar')
     await expect(sidebar).toHaveClass(/collapsed/)
 
@@ -176,6 +176,6 @@ test.describe('冒烟：平台入口与导航', () => {
     await expect(chatItem.locator('span')).toBeHidden()
     await expect(chatItem).toHaveAttribute('title', '对话测试')
     await chatItem.click()
-    await expect(page).toHaveURL(/#\/chat$/)
+    await expect(page).toHaveURL(/\/chat$/)
   })
 })

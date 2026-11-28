@@ -46,7 +46,7 @@ test.describe('安全', () => {
         if (request.url().includes('evil.invalid')) external.push(request.url())
       })
 
-      await page.goto(`${env.baseURL}/#/knowledge/detail/${kb.id}/documents`)
+      await page.goto(`${env.baseURL}/knowledge/detail/${kb.id}/documents`)
       await expect(page.getByText(fileName).first()).toBeVisible({ timeout: 60_000 })
 
       expect(await page.locator('img[src="x"]').count()).toBe(0)

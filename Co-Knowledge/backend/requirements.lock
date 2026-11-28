@@ -44,6 +44,7 @@ packaging==26.3
 pandas==2.2.3
 pdfminer.six==20260107
 pdfplumber==0.11.10
+pglast==8.7
 pillow==13.0.0
 pluggy==1.6.0
 psycopg2-binary==2.9.9

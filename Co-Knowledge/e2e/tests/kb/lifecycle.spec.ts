@@ -94,7 +94,7 @@ test.describe('文档知识库生命周期', () => {
       await expect(page.getByRole('tab', { name: '数据集' })).toBeVisible()
       await expect(page.getByRole('tab', { name: '基本信息' })).toBeVisible()
       await page.getByRole('button', { name: '文档管理' }).click()
-      await expect(page).toHaveURL(/#\/knowledge\/detail\/[^/]+\/documents$/)
+      await expect(page).toHaveURL(/\/knowledge\/detail\/[^/]+\/documents$/)
     } finally {
       await cleanup(api, seeded.kbId)
     }

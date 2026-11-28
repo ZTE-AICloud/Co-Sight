@@ -222,17 +222,17 @@ docker compose -f deploy/docker-compose.yml exec rag-knowledge-base \
 
 | 入口 | 路径 | 用途 |
 |---|---|---|
-| 知识库 → 文档知识库 | `/#/knowledge`；详情 `/#/knowledge/detail/:id`；文档 `/#/knowledge/detail/:id/documents` | 列表、数据集/基本信息、目录与文档管理 |
-| 知识库 → 图谱知识库 | `/#/graph`；详情 `/#/graph/detail/:id`、编辑 `/#/graph/edit/:id`、新建 `/#/graph/create`、模板 `/#/graph/createTemplate/:templateId` | 列表、详情、编辑、建库与模板设计器 |
-| 知识检索 | `/#/flow`；画布 `/#/flow/detail/:id` | 知识检索列表、画布编排、保存与发布 |
-| 对话测试 | `/#/chat` | 流式问答、多轮会话、知识库依据与阶段耗时 |
-| 自定义算子 | `/#/operators` | 上传、模板下载、发布/可见性与导出 |
-| 模型管理 | `/#/models` | LLM / Embedding / Reranker 注册、连接测试与思考配置 |
-| 远程接入 → 接入方法 | `/#/access` | Agent REST + MCP 接入说明 |
-| 远程接入 → 密钥管理 | `/#/keys` | Agent API Key、作用域、白名单与限流 |
-| 登录 / 改密 | `/#/login`、`/#/change-password` | 本地账号登录与强制改密 |
+| 知识库 → 文档知识库 | `/knowledge`；详情 `/knowledge/detail/:id`；文档 `/knowledge/detail/:id/documents` | 列表、数据集/基本信息、目录与文档管理 |
+| 知识库 → 图谱知识库 | `/graph`；详情 `/graph/detail/:id`、编辑 `/graph/edit/:id`、新建 `/graph/create`、模板 `/graph/createTemplate/:templateId` | 列表、详情、编辑、建库与模板设计器 |
+| 知识检索 | `/flow`；画布 `/flow/detail/:id` | 知识检索列表、画布编排、保存与发布 |
+| 对话测试 | `/chat` | 流式问答、多轮会话、知识库依据与阶段耗时 |
+| 自定义算子 | `/operators` | 上传、模板下载、发布/可见性与导出 |
+| 模型管理 | `/models` | LLM / Embedding / Reranker 注册、连接测试与思考配置 |
+| 远程接入 → 接入方法 | `/access` | Agent REST + MCP 接入说明 |
+| 远程接入 → 密钥管理 | `/keys` | Agent API Key、作用域、白名单与限流 |
+| 登录 / 改密 | `/login`、`/change-password` | 本地账号登录与强制改密 |
 
-> 前端使用 **hash 路由**：页面地址形如 `/#/knowledge`。`/` 重定向到 `/#/login`，未知地址兜底到 `/#/knowledge`。
+> 前端使用 **history 路由**：页面地址形如 `/knowledge`。`/` 重定向到 `/login`，未知地址兜底到 `/knowledge`（旧 `#/` 链接会自动改写为 path）。
 
 ### HTTP API + SSE
 

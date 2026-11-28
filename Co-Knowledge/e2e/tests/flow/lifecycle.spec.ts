@@ -79,7 +79,7 @@ test.describe('检索编排生命周期', () => {
       await dialog.getByRole('textbox', { name: '检索名称' }).click()
       await dialog.getByRole('button', { name: '创建并编排' }).click()
 
-      await expect(page).toHaveURL(/#\/flow\/detail\//, { timeout: 30_000 })
+      await expect(page).toHaveURL(/\/flow\/detail\//, { timeout: 30_000 })
       workFlowId = decodeURIComponent(page.url().split('/flow/detail/')[1])
       const canvas = new FlowCanvasPage(page)
       await expect(canvas.canvas).toBeVisible({ timeout: 30_000 })
@@ -401,7 +401,7 @@ test.describe('检索编排生命周期', () => {
       await expect(page.getByText(/此名称已存在/).first()).toBeVisible({
         timeout: 20_000
       })
-      await expect(page).toHaveURL(/#\/flow$/)
+      await expect(page).toHaveURL(/\/flow$/)
       const rows = await api.flow.findAll()
       expect(rows.filter(row => row.name === seeded.name)).toHaveLength(1)
     } finally {

@@ -1,0 +1,1462 @@
+/* Text2SQL workspace: shared type roles, controls and spacing from the design system. */
+
+/* ------------------------------------------------------------------ */
+/* Workspace navigation                                                */
+/* ------------------------------------------------------------------ */
+.t2s-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 28px;
+  border-bottom: 1px solid var(--rs-border);
+  margin-bottom: 14px;
+}
+.t2s-nav > button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0 0 12px;
+  border: 0;
+  background: none;
+  color: var(--rs-text-2);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.t2s-nav > button > svg {
+  width: 18px;
+  height: 18px;
+}
+.t2s-nav > button > span {
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: var(--rs-bg-soft);
+  color: var(--rs-text-3);
+  font-size: var(--rs-font-size-secondary);
+  line-height: 1.6;
+  font-variant-numeric: tabular-nums;
+}
+.t2s-nav > button:hover:not(:disabled) {
+  color: var(--rs-primary);
+}
+.t2s-nav > button.active {
+  color: var(--rs-primary);
+}
+.t2s-nav > button.active::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  border-radius: 2px 2px 0 0;
+  background: var(--rs-primary);
+}
+.t2s-storage-warning {
+  margin-bottom: 20px;
+}
+
+/* ------------------------------------------------------------------ */
+/* Panels and tabs                                                     */
+/* ------------------------------------------------------------------ */
+.t2s-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+.t2s-panel {
+  min-width: 0;
+  border: 1px solid var(--rs-border);
+  background: var(--rs-bg-card);
+  overflow: hidden;
+  border-radius: var(--rs-radius);
+}
+.t2s-panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 18px;
+  min-height: 52px;
+  border-bottom: 1px solid var(--rs-border-soft);
+}
+.t2s-panel h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--rs-text);
+}
+.t2s-panel-heading h2 > svg {
+  width: 16px;
+  height: 16px;
+  color: var(--rs-primary);
+}
+.t2s-panel h3 {
+  margin: 0;
+  color: var(--rs-text);
+}
+.t2s-panel-heading p {
+  margin: 8px 0 0;
+  color: var(--rs-text-2);
+}
+.t2s-inline-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.t2s-inline-actions .danger-action.el-button.is-link {
+  min-height: 0;
+  padding: 3px 0;
+  border: 1px solid transparent;
+  background: transparent;
+  line-height: var(--rs-font-size-secondary);
+}
+.t2s-output-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--el-component-size);
+  padding-inline: 18px;
+  border-bottom: 1px solid var(--rs-border-soft);
+}
+.t2s-output-controls .t2s-tabs {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+}
+.t2s-output-controls :deep(.el-tabs__nav-wrap::after) {
+  display: none;
+}
+.t2s-output-menu {
+  margin-left: auto;
+}
+.t2s-output-menu .t2s-output-menu-icon {
+  display: none;
+}
+.t2s-tabs {
+  padding-inline: 24px;
+}
+.t2s-tabs :deep(.el-tabs__content) {
+  display: none;
+}
+
+/* ------------------------------------------------------------------ */
+/* Source bar                                                          */
+/* ------------------------------------------------------------------ */
+.t2s-source-bar.toolbar {
+  justify-content: flex-start;
+  gap: 8px 12px;
+  margin: 0 0 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--rs-border-soft);
+}
+.t2s-source-picker {
+  width: 210px;
+  max-width: 100%;
+}
+:global(.t2s-source-popover.el-popover.el-popper) {
+  max-width: calc(100vw - 24px);
+}
+.t2s-source-details {
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  overflow-wrap: anywhere;
+}
+.t2s-source-details p {
+  margin: 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* Query composer                                                      */
+/* ------------------------------------------------------------------ */
+.t2s-query-body,
+.t2s-output-body {
+  padding: 14px 18px;
+  min-width: 0;
+}
+.t2s-flow + .t2s-output-body {
+  padding-block-start: 4px;
+}
+.t2s-question-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin-bottom: 8px;
+}
+.t2s-question-heading h2 > svg {
+  color: var(--rs-primary);
+}
+.t2s-composer-footer,
+.t2s-composer-actions,
+.t2s-composer-tools,
+.t2s-topic-questions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+.t2s-composer-footer {
+  margin-top: 10px;
+}
+.t2s-composer-actions {
+  margin-inline-start: auto;
+  justify-content: flex-end;
+}
+.t2s-run-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.t2s-run-actions > .el-button--primary {
+  flex: 1;
+}
+.t2s-draft-note {
+  margin: 8px 0 0;
+  overflow-wrap: anywhere;
+}
+.t2s-feedback-categories {
+  gap: 4px 16px;
+}
+.t2s-feedback-categories :deep(.el-radio) {
+  margin-inline-end: 0;
+}
+.t2s-index-warning {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  color: var(--rs-warning);
+  margin: 12px 0 0;
+}
+.t2s-index-warning svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* ------------------------------------------------------------------ */
+/* Output states                                                       */
+/* ------------------------------------------------------------------ */
+.t2s-issue {
+  display: flex;
+  gap: 12px;
+  margin: 16px 18px;
+  padding: 16px;
+  border: 1px solid var(--rs-border);
+  border-radius: 8px;
+  background: var(--rs-bg-soft);
+  color: var(--rs-text-2);
+}
+.t2s-issue > div {
+  min-width: 0;
+  flex: 1;
+}
+.t2s-issue > svg {
+  width: 16px;
+  height: 16px;
+  margin-top: 3px;
+  color: var(--rs-primary);
+}
+.t2s-issue.warning {
+  border-color: color-mix(in srgb, var(--rs-warning) 45%, var(--rs-border));
+}
+.t2s-issue.error {
+  border-color: color-mix(in srgb, var(--rs-danger) 40%, var(--rs-border));
+}
+.t2s-issue.warning > svg {
+  color: var(--rs-warning);
+}
+.t2s-issue.error > svg {
+  color: var(--rs-danger);
+}
+.t2s-issue p {
+  margin: 8px 0 12px;
+  overflow-wrap: anywhere;
+}
+.t2s-context-strip {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 16px 18px;
+  padding: 12px 16px;
+  background: var(--rs-bg-soft);
+  border: 1px solid var(--rs-border-soft);
+  border-radius: 8px;
+  color: var(--rs-text-2);
+}
+.t2s-context-strip > svg {
+  width: 16px;
+  height: 16px;
+  color: var(--rs-warning);
+}
+.t2s-context-strip > span {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+/* 查询流程：运行中展开、完成后折叠成一行摘要（点开可看每个阶段的真实耗时）。
+   版式对齐 5173 原型 Text2SQLQueryTimeline。 */
+.t2s-flow {
+  margin: 12px 18px;
+  overflow: hidden;
+  border: 1px solid var(--rs-border);
+  border-radius: var(--rs-radius);
+  background: var(--rs-bg-card);
+}
+.t2s-flow-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 14px;
+  border: 0;
+  background: transparent;
+  color: var(--rs-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.t2s-flow-head:focus-visible {
+  outline: 2px solid var(--rs-primary);
+  outline-offset: -2px;
+}
+.t2s-flow.is-running .t2s-flow-head {
+  cursor: default;
+}
+.t2s-flow-icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--rs-tint-blue);
+  color: var(--rs-primary);
+}
+.t2s-flow-icon > svg {
+  width: 14px;
+  height: 14px;
+}
+.t2s-flow.is-failed .t2s-flow-icon {
+  background: color-mix(in srgb, var(--rs-danger) 12%, var(--rs-bg-card));
+  color: var(--rs-danger);
+}
+.t2s-flow-title {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  min-width: 0;
+}
+.t2s-flow-name {
+  font-weight: 600;
+}
+.t2s-flow-sep {
+  margin-inline: 5px;
+  color: var(--rs-text-2);
+}
+.t2s-flow-summary {
+  color: var(--rs-text-2);
+}
+.t2s-flow-meta {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 10px;
+}
+.t2s-flow-time {
+  color: var(--rs-text-2);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.t2s-flow-action {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 6px;
+  border-radius: 4px;
+  color: var(--rs-primary);
+  transition: background 150ms ease;
+}
+.t2s-flow-head:hover .t2s-flow-action,
+.t2s-flow.is-open .t2s-flow-action {
+  background: var(--rs-tint-blue);
+}
+.t2s-flow-chevron {
+  width: 12px;
+  height: 12px;
+  transition: transform 150ms ease;
+}
+.t2s-flow.is-open .t2s-flow-chevron {
+  transform: rotate(180deg);
+}
+/* 折叠态的 8 段小条：一眼看出哪段慢/哪段失败 */
+.t2s-flow-ribbon {
+  display: flex;
+  gap: 3px;
+}
+.t2s-flow-ribbon > i {
+  width: 12px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--rs-border);
+}
+.t2s-flow-ribbon > i.is-success {
+  background: var(--rs-primary);
+}
+.t2s-flow-ribbon > i.is-error {
+  background: var(--rs-danger);
+}
+.t2s-flow-ribbon > i.is-skipped {
+  background: var(--rs-border-soft);
+}
+.t2s-flow-body {
+  padding: 4px 10px 12px;
+}
+/* 已有上一次结果时，运行中的步骤条改成浮层：不参与文档流，页面高度不变，
+   避免运行中长出一条滚动条、完成收起后又消失。 */
+.t2s-flow.has-overlay {
+  position: relative;
+  z-index: 2;
+  overflow: visible;
+  border-bottom-color: transparent;
+  border-radius: var(--rs-radius) var(--rs-radius) 0 0;
+}
+.t2s-flow-body.is-overlay {
+  position: absolute;
+  top: 100%;
+  right: -1px;
+  left: -1px;
+  border: 1px solid var(--rs-border);
+  border-top: 0;
+  border-radius: 0 0 var(--rs-radius) var(--rs-radius);
+  background: var(--rs-bg-card);
+  box-shadow: 0 16px 28px -18px rgba(15, 30, 60, .35);
+}
+.t2s-flow-hint {
+  margin: 2px 3px 0;
+}
+/* 步骤条：连线按左右半段画在 li 上，dot 用卡片底色盖住穿过它的那一段。 */
+.t2s-stages {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.t2s-stages > li {
+  position: relative;
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-width: 56px;
+  padding: 0 3px;
+  color: var(--rs-text-2);
+  text-align: center;
+}
+.t2s-stages > li::before,
+.t2s-stages > li::after {
+  content: '';
+  position: absolute;
+  top: 9px;
+  width: 50%;
+  height: 1px;
+  background: var(--rs-border);
+}
+.t2s-stages > li::before {
+  left: 0;
+}
+.t2s-stages > li::after {
+  right: 0;
+}
+.t2s-stages > li:first-child::before,
+.t2s-stages > li:last-child::after {
+  display: none;
+}
+.t2s-stages > li.is-success::before,
+.t2s-stages > li.is-success::after,
+.t2s-stages > li.is-running::before,
+.t2s-stages > li.is-error::before {
+  background: var(--rs-primary-border);
+}
+.t2s-stage-dot {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--rs-bg-card);
+}
+.t2s-stage-dot > svg {
+  width: 14px;
+  height: 14px;
+  color: var(--rs-primary);
+}
+.t2s-stages > li.is-error .t2s-stage-dot > svg {
+  color: var(--rs-danger);
+}
+.t2s-stage-hollow {
+  width: 9px;
+  height: 9px;
+  border: 1px solid var(--rs-border);
+  border-radius: 50%;
+}
+.t2s-stage-pulse {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--rs-primary);
+  animation: t2s-stage-halo 1.4s ease-out infinite;
+}
+.t2s-stage-name {
+  color: inherit;
+  white-space: nowrap;
+}
+.t2s-stages > li.is-success .t2s-stage-name,
+.t2s-stages > li.is-error .t2s-stage-name {
+  color: var(--rs-text);
+  font-weight: 600;
+}
+.t2s-stages > li.is-running .t2s-stage-name {
+  color: var(--rs-primary);
+  font-weight: 600;
+}
+.t2s-stages small {
+  line-height: 1.2;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.t2s-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+@keyframes t2s-stage-halo {
+  0% {
+    box-shadow: 0 0 0 4px var(--rs-tint-blue);
+  }
+  70%,
+  100% {
+    box-shadow: 0 0 0 8px transparent;
+  }
+}
+.t2s-blocked,
+.t2s-small-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 240px;
+  padding: 25px 15px;
+  text-align: center;
+  color: var(--rs-text-3);
+}
+.t2s-small-empty {
+  min-height: 200px;
+}
+.t2s-blocked > svg {
+  width: 30px;
+  height: 30px;
+  color: var(--rs-text-3);
+  margin-bottom: 16px;
+}
+.t2s-blocked h3 {
+  color: var(--rs-text-2);
+}
+.t2s-blocked p {
+  margin: 8px 0 20px;
+}
+.t2s-small-empty {
+  gap: 12px;
+  min-height: 200px;
+}
+.t2s-small-empty > svg {
+  width: 30px;
+  height: 30px;
+  margin-bottom: 0;
+}
+.t2s-small-empty > p {
+  margin: 0;
+}
+.t2s-unavailable {
+  padding: 16px;
+  background: var(--rs-bg-soft);
+  border-radius: 8px;
+  color: var(--rs-text-3);
+}
+
+/* ------------------------------------------------------------------ */
+/* Answer details                                                      */
+/* ------------------------------------------------------------------ */
+.t2s-output-body > .studio-callout {
+  margin-bottom: 12px;
+}
+.t2s-result-question {
+  margin: 0 0 8px;
+  overflow-wrap: anywhere;
+}
+.t2s-explanation-text {
+  white-space: pre-wrap;
+}
+.t2s-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.t2s-section-heading .el-button svg {
+  width: 14px;
+  height: 14px;
+}
+.t2s-spaced {
+  margin-top: 24px;
+}
+.t2s-table-hit {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--rs-border);
+  border-radius: 8px;
+  margin-top: 8px;
+  padding: 12px;
+}
+.t2s-table-hit > .tinted-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+}
+.t2s-table-hit > .tinted-icon > svg {
+  width: 16px;
+  height: 16px;
+}
+.t2s-table-hit > div {
+  flex: 1;
+  min-width: 0;
+}
+.t2s-table-hit small {
+  display: block;
+  color: var(--rs-text-3);
+  margin-top: 4px;
+}
+.t2s-score {
+  color: var(--rs-primary);
+  font-variant-numeric: tabular-nums;
+}
+.t2s-context-columns {
+  border: 1px solid var(--rs-border);
+  border-radius: 8px;
+  padding: 0 12px;
+}
+.t2s-context-columns > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  padding: 12px 0;
+}
+.t2s-context-columns > div + div {
+  border-top: 1px solid var(--rs-border-soft);
+}
+.t2s-context-columns code {
+  color: var(--rs-text-3);
+  overflow-wrap: anywhere;
+}
+.t2s-context-columns code b {
+  color: var(--rs-text-2);
+}
+.t2s-context-columns > div > span {
+  display: block;
+  width: 100%;
+  color: var(--rs-text-3);
+  order: 2;
+}
+.t2s-context-columns small {
+  color: var(--rs-text-3);
+  margin-left: auto;
+}
+.t2s-relation {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: var(--rs-bg-soft);
+  padding: 12px;
+  border-radius: 8px;
+  margin-top: 8px;
+}
+.t2s-relation > svg {
+  width: 14px;
+  height: 14px;
+  margin-top: 3px;
+  color: var(--rs-tone-purple);
+}
+.t2s-relation code {
+  overflow-wrap: anywhere;
+}
+.t2s-relation code span {
+  color: var(--rs-tone-purple);
+}
+.t2s-value-hit {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--rs-border);
+  border-radius: 8px;
+  margin-top: 8px;
+}
+.t2s-value-hit > code {
+  color: var(--rs-text-2);
+}
+.t2s-value-hit > span {
+  display: flex;
+  gap: 8px;
+  color: var(--rs-text-3);
+}
+.t2s-value-hit b {
+  color: var(--rs-primary);
+}
+
+/* ------------------------------------------------------------------ */
+/* SQL tab                                                             */
+/* ------------------------------------------------------------------ */
+.t2s-sql-editor {
+  margin: 24px 0;
+}
+.t2s-sql-editor :deep(.el-textarea__inner) {
+  font-family: var(--rs-font-family-mono);
+  font-size: var(--rs-font-size-secondary);
+  line-height: 1.7;
+  padding: 12px 14px;
+  border-radius: 6px;
+  background: var(--rs-bg-card);
+  box-shadow: 0 0 0 1px var(--rs-border) inset;
+}
+.t2s-sql-editor :deep(.el-textarea__inner:focus) {
+  box-shadow: 0 0 0 1px var(--rs-primary) inset;
+}
+.t2s-checks {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.t2s-checks > div {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--rs-border-soft);
+  border-radius: 8px;
+  min-width: 0;
+}
+.t2s-checks > div > svg {
+  width: 14px;
+  height: 14px;
+  margin-top: 3px;
+}
+.t2s-checks strong {
+  display: block;
+}
+.t2s-checks small {
+  display: block;
+  color: var(--rs-text-3);
+  margin-top: 4px;
+}
+.t2s-passed-icon {
+  color: var(--rs-success);
+}
+.t2s-failed-icon {
+  color: var(--rs-danger);
+}
+.t2s-limit-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: var(--rs-text-3);
+  margin-top: 16px;
+  padding: 12px;
+  border: 1px solid var(--rs-border-soft);
+  border-radius: 8px;
+  background: var(--rs-bg-soft);
+}
+.t2s-limit-note > svg {
+  width: 14px;
+  height: 14px;
+  margin-top: 3px;
+}
+
+/* ------------------------------------------------------------------ */
+/* Plan tab                                                            */
+/* ------------------------------------------------------------------ */
+.t2s-plan-callout {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--rs-border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  color: var(--rs-text-2);
+}
+.t2s-plan-callout > svg {
+  width: 18px;
+  height: 18px;
+  color: var(--rs-primary);
+}
+.t2s-plan-callout > span:first-of-type {
+  flex: 1;
+}
+.t2s-plan-callout small {
+  display: block;
+  color: var(--rs-text-3);
+  margin-top: 4px;
+}
+.t2s-plan-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin: 20px 0 24px;
+}
+.t2s-plan-metrics > div {
+  padding: 0 16px;
+  border-right: 1px solid var(--rs-border);
+}
+.t2s-plan-metrics > div:first-child {
+  padding-left: 0;
+}
+.t2s-plan-metrics > div:last-child {
+  border-right: 0;
+  padding-right: 0;
+}
+.t2s-plan-metrics span {
+  color: var(--rs-text-3);
+}
+.t2s-plan-metrics strong {
+  display: block;
+  font-variant-numeric: tabular-nums;
+  color: var(--rs-text);
+  margin: 8px 0;
+}
+.t2s-plan-metrics small {
+  color: var(--rs-text-3);
+}
+.t2s-plan-tree {
+  border: 1px solid var(--rs-border);
+  border-radius: 8px;
+  padding: 4px 12px;
+}
+.t2s-plan-tree > div {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 0 12px calc(var(--node-depth) * 12px);
+  border-bottom: 1px solid var(--rs-border-soft);
+}
+.t2s-plan-tree > div:last-child {
+  border-bottom: 0;
+}
+.t2s-plan-branch {
+  color: var(--rs-primary);
+}
+.t2s-plan-tree strong {
+  display: block;
+}
+.t2s-plan-tree code {
+  display: block;
+  color: var(--rs-text-3);
+  margin-top: 4px;
+  overflow-wrap: anywhere;
+}
+.t2s-plan-tree small {
+  color: var(--rs-text-3);
+  white-space: nowrap;
+  margin-left: auto;
+  padding-left: 8px;
+  text-align: right;
+}
+.t2s-json {
+  margin-top: 24px;
+  color: var(--rs-text-3);
+}
+.t2s-json summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  list-style: none;
+}
+.t2s-json summary svg {
+  width: 12px;
+  height: 12px;
+}
+.t2s-json pre {
+  margin-top: 12px;
+  max-height: 400px;
+  overflow: auto;
+}
+
+/* ------------------------------------------------------------------ */
+/* Debug tab                                                           */
+/* ------------------------------------------------------------------ */
+.t2s-debug-stages > div {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--rs-border-soft);
+}
+.t2s-debug-stages > div > svg {
+  width: 14px;
+  height: 14px;
+  color: var(--rs-success);
+}
+.t2s-debug-stages > div.error > svg {
+  color: var(--rs-danger);
+}
+.t2s-debug-stages > div.skipped {
+  opacity: .5;
+}
+.t2s-debug-stages > div.skipped > svg {
+  color: var(--rs-text-3);
+}
+.t2s-debug-stages > div > span {
+  min-width: 130px;
+}
+.t2s-debug-stages strong {
+  display: block;
+  color: var(--rs-text-2);
+}
+.t2s-debug-stages small {
+  display: block;
+  margin-top: 2px;
+  color: var(--rs-text-3);
+}
+.t2s-debug-stages > div > b {
+  min-width: 56px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--rs-text-2);
+}
+.t2s-duration-track {
+  flex: 1;
+  min-width: 0;
+  height: 6px;
+  background: var(--rs-bg-soft);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.t2s-duration-track > i {
+  display: block;
+  height: 100%;
+  background: var(--rs-primary);
+  opacity: .5;
+  border-radius: 3px;
+}
+.t2s-duration-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 0;
+  color: var(--rs-text-2);
+}
+.t2s-duration-total > strong {
+  color: var(--rs-text);
+  font-variant-numeric: tabular-nums;
+}
+.t2s-duration-total small {
+  color: var(--rs-text-3);
+}
+.t2s-token-usage {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border: 1px solid var(--rs-border);
+  border-radius: 8px;
+  padding: 16px;
+}
+.t2s-token-usage > div + div {
+  border-left: 1px solid var(--rs-border);
+  padding-left: 16px;
+}
+.t2s-token-usage span {
+  color: var(--rs-text-3);
+}
+.t2s-token-usage strong {
+  display: block;
+  margin-top: 8px;
+  color: var(--rs-text);
+  font-variant-numeric: tabular-nums;
+}
+.t2s-debug-meta {
+  margin: 24px 0 0;
+}
+.t2s-debug-meta > div {
+  display: grid;
+  grid-template-columns: 100px minmax(0, 1fr);
+  gap: 12px;
+  padding: 8px 0;
+}
+.t2s-debug-meta dt {
+  color: var(--rs-text-3);
+}
+.t2s-debug-meta dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--rs-text-2);
+}
+.t2s-output-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: auto;
+  padding: 12px 18px;
+  border-top: 1px solid var(--rs-border-soft);
+  color: var(--rs-text-3);
+  background: var(--rs-bg-soft);
+}
+.t2s-output-footer > span:first-child {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.t2s-output-footer svg {
+  width: 12px;
+  height: 12px;
+}
+.t2s-output-footer .el-button svg {
+  width: 14px;
+  height: 14px;
+}
+.t2s-output-footer > .el-button {
+  margin-right: auto;
+}
+
+/* ------------------------------------------------------------------ */
+/* Sources workspace                                                   */
+/* ------------------------------------------------------------------ */
+.t2s-management-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.t2s-management-heading h2 {
+  margin: 0;
+}
+.t2s-management-heading p {
+  margin: 8px 0 0;
+}
+.t2s-source-table {
+  min-width: 960px;
+}
+
+/* ------------------------------------------------------------------ */
+/* History workspace                                                   */
+/* ------------------------------------------------------------------ */
+.t2s-history-list {
+  padding: 0 18px;
+}
+.t2s-history-list > .toolbar {
+  margin: 24px 0 20px;
+}
+.t2s-history-list + .t2s-history-list {
+  padding-top: 0;
+}
+.t2s-history-table {
+  table-layout: fixed;
+}
+.t2s-history-table th:first-child {
+  width: 30%;
+}
+.t2s-history-table th:nth-child(2) {
+  width: 15%;
+}
+.t2s-history-table th:nth-child(3) {
+  width: 18%;
+}
+.t2s-history-table th:nth-child(4) {
+  width: 12%;
+}
+.t2s-history-table .t2s-history-duration {
+  width: 96px;
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.t2s-history-table .t2s-history-actions {
+  width: 220px;
+  text-align: right;
+}
+.t2s-history-actions .t2s-inline-actions {
+  justify-content: flex-end;
+  flex-wrap: nowrap;
+  gap: 12px;
+}
+.t2s-history-actions .el-button + .el-button {
+  margin-left: 0;
+}
+.t2s-history-question {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 520px;
+  border: 0;
+  padding: 4px 0;
+  background: none;
+  text-align: left;
+  white-space: normal;
+  color: var(--rs-text);
+}
+.t2s-history-question > svg {
+  flex-shrink: 0;
+}
+.t2s-history-question > span,
+.t2s-history-source > span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.t2s-history-question:hover:not(:disabled) {
+  color: var(--rs-primary);
+}
+.t2s-history-question:focus-visible {
+  outline: 2px solid var(--rs-primary);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+.t2s-history-time {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.t2s-history-outcome .tag-soft {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.t2s-history-count {
+  margin: 12px 0 0;
+}
+.t2s-history-mobile-meta,
+.t2s-history-mobile-duration {
+  display: none;
+}
+.t2s-record-list {
+  padding: 0 18px 24px;
+}
+.t2s-record {
+  padding: 20px 0;
+  border-bottom: 1px solid var(--rs-border-soft);
+}
+.t2s-record:last-child {
+  border-bottom: 0;
+}
+.t2s-record-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  background: none;
+  border: 0;
+  padding: 0;
+  text-align: left;
+  color: var(--rs-text);
+}
+.t2s-record-main > span {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.t2s-record-main small {
+  display: block;
+  margin-top: 8px;
+}
+.t2s-record-main p {
+  margin: 8px 0;
+}
+.t2s-record-main > svg {
+  margin-top: 3px;
+}
+.t2s-record > .t2s-inline-actions {
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+.t2s-history-footnote {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 18px;
+  border-top: 1px solid var(--rs-border-soft);
+  color: var(--rs-text-2);
+}
+.t2s-history-footnote svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* Interaction states                                                  */
+/* ------------------------------------------------------------------ */
+button:disabled {
+  cursor: not-allowed;
+}
+.t2s-nav button:focus-visible,
+.t2s-examples button:focus-visible {
+  outline: 2px solid var(--rs-primary);
+  outline-offset: 3px;
+}
+.t2s-panel summary:focus-visible {
+  outline: 2px solid var(--rs-primary);
+  outline-offset: -2px;
+  border-radius: 4px;
+}
+
+/* Dialogs are teleported out of the management container, so their responsive
+   rules must follow the viewport instead of the page container. */
+@media (max-width: 700px) {
+  .t2s-examples.studio-choice-grid.two-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Responsive                                                          */
+/* ------------------------------------------------------------------ */
+@container management (max-width: 300px) {
+  .t2s-output-menu .t2s-output-menu-label {
+    display: none;
+  }
+  .t2s-output-menu .t2s-output-menu-icon {
+    display: block;
+  }
+}
+@container management (max-width: 250px) {
+  .t2s-output-controls .t2s-tabs :deep(.el-tabs__item) {
+    padding-inline: 5px !important;
+  }
+  .t2s-question-heading h2 > svg {
+    display: none;
+  }
+}
+@container management (max-width: 900px) {
+  .t2s-shortcut {
+    display: none;
+  }
+}
+@container management (max-width: 560px) {
+  .t2s-nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 12px;
+  }
+  .t2s-nav > button {
+    height: auto;
+    justify-content: center;
+    padding: 12px 0;
+    min-width: 0;
+  }
+  .t2s-nav > button > svg {
+    display: none;
+  }
+  .t2s-panel-heading {
+    padding: 16px;
+  }
+  .t2s-query-body,
+  .t2s-output-body,
+  .t2s-issue,
+  .t2s-context-strip {
+    padding: 12px;
+  }
+  .t2s-flow {
+    margin-inline: 12px;
+  }
+  .t2s-flow-head {
+    padding: 8px 10px;
+  }
+  /* 折叠态先只保留耗时与展开入口，避免和标题挤在一起。 */
+  .t2s-flow-ribbon {
+    display: none;
+  }
+  /* 窄容器放不下 8 个节点的一行连线：折成两行四列，只保留行内连线。 */
+  .t2s-stages {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px 4px;
+  }
+  .t2s-stages > li {
+    min-width: 0;
+  }
+  .t2s-stages > li:nth-child(4n + 1)::before,
+  .t2s-stages > li:nth-child(4n)::after {
+    display: none;
+  }
+  .t2s-stage-name {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .t2s-issue,
+  .t2s-context-strip {
+    margin: 12px;
+  }
+  .t2s-output-controls {
+    padding-inline: 12px;
+  }
+  .t2s-composer-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .t2s-run-actions {
+    margin-left: auto;
+  }
+  .t2s-tabs {
+    padding-inline: 8px;
+  }
+  .t2s-tabs :deep(.el-tabs__item) {
+    padding-inline: 10px !important;
+  }
+  .t2s-checks {
+    grid-template-columns: 1fr;
+  }
+  .t2s-plan-metrics {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .t2s-plan-metrics > div {
+    padding: 0;
+    border-right: 0;
+  }
+  .t2s-plan-metrics > div + div {
+    padding-top: 12px;
+    border-top: 1px solid var(--rs-border-soft);
+  }
+  .t2s-token-usage {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .t2s-token-usage > div + div {
+    padding-left: 0;
+    padding-top: 12px;
+    border-left: 0;
+    border-top: 1px solid var(--rs-border-soft);
+  }
+  .t2s-plan-tree > div {
+    padding-left: calc(var(--node-depth) * 5px);
+    flex-wrap: wrap;
+  }
+  .t2s-debug-stages > div > span {
+    min-width: 0;
+    flex: 1;
+  }
+  .t2s-duration-track {
+    display: none;
+  }
+  .t2s-history-page .t2s-panel-heading {
+    align-items: flex-start;
+  }
+  .t2s-history-list,
+  .t2s-record-list {
+    padding-inline: 16px;
+  }
+  .t2s-record {
+    padding: 16px 0;
+  }
+  .t2s-record-main {
+    gap: 10px;
+  }
+  .t2s-record > .t2s-inline-actions {
+    justify-content: flex-start;
+  }
+  .t2s-examples {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .t2s-history-table .t2s-history-row > td.t2s-history-outcome,
+  .t2s-history-table .t2s-history-row > td.t2s-history-actions {
+    grid-column: 1 / -1;
+  }
+  .t2s-history-table th,
+  .t2s-history-table td {
+    padding-inline: 10px;
+  }
+}
+@container management (max-width: 1000px) {
+  .t2s-history-table,
+  .t2s-history-table tbody {
+    display: block;
+  }
+  .t2s-history-table thead {
+    display: none;
+  }
+  .t2s-history-table .t2s-history-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px 12px;
+    padding: 12px;
+    border-bottom: 1px solid var(--rs-border-soft);
+  }
+  .t2s-history-table .t2s-history-row:last-child {
+    border-bottom: 0;
+  }
+  .t2s-history-table .t2s-history-row > td {
+    display: block;
+    height: auto;
+    padding: 0;
+    border: 0;
+    min-width: 0;
+  }
+  .t2s-history-table .t2s-history-question-cell {
+    grid-column: 1 / -1;
+  }
+  .t2s-history-mobile-meta {
+    display: block;
+    margin-top: 4px;
+    overflow-wrap: anywhere;
+  }
+  .t2s-history-table .t2s-history-row > td.t2s-history-source,
+  .t2s-history-table .t2s-history-row > td.t2s-history-time,
+  .t2s-history-table .t2s-history-row > td.t2s-history-duration {
+    display: none;
+  }
+  .t2s-history-table .t2s-history-row > td.t2s-history-outcome {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .t2s-history-mobile-duration {
+    display: inline;
+  }
+  .t2s-history-table .t2s-history-actions {
+    width: auto;
+    align-self: center;
+  }
+  .t2s-history-row:hover {
+    background: var(--rs-bg-hover);
+  }
+}

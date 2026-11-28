@@ -140,6 +140,12 @@ from infrastructure.tasks.api import register_task_api  # noqa: E402
 
 register_task_api(app, RKB_PREFIX)
 
+# Text2SQL（{RKB_PREFIX}/text2sql）：数据源、结构目录与语义维护。
+# ⚠️ 必须在 register_rkb_api 之前：kb_api 的兜底路由会吃掉晚注册的同前缀路径。
+from text_to_sql import register_text_to_sql_api  # noqa: E402
+
+register_text_to_sql_api(app)
+
 # 知识库（/api/co-knowledge/v1）接口层：单前缀注册，见 http_api 与
 # 当前只有健康端点，业务端点按批次落入。
 from http_api import register_rkb_api  # noqa: E402

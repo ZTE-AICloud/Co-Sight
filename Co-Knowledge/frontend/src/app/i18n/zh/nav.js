@@ -10,6 +10,7 @@ export default {
   knowledgeApp: '知识应用',
   capabilityConfig: '能力配置',
   chat: '对话测试',
+  text2sql: 'Text2SQL',
   modelManagement: '模型管理',
   taskManagement: '任务管理',
   remoteAccess: '远程接入',

@@ -874,11 +874,26 @@ function setFlow (scope) {
 
 </script>
 <style scoped>
+.flow-page .toolbar-right { flex-wrap: nowrap; }
+.flow-page .toolbar-right .search-field { width: 240px; }
 .flow-source-types { display: flex; flex-wrap: wrap; gap: 4px; }
 .flow-source-types .tag-soft { white-space: nowrap; }
-.flow-table { min-width: 1250px; }
-.flow-table th:nth-child(3) { width: 36%; }
-@media (max-width: 1450px) { .flow-table { min-width: 1230px; } }
+.flow-table { min-width: 0; table-layout: fixed; }
+.flow-table th:nth-child(1) { width: 44px; }
+.flow-table th:nth-child(2) { width: 20%; }
+.flow-table th:nth-child(3) { width: 40%; }
+.flow-table th:nth-child(4) { width: 8%; }
+.flow-table th:nth-child(5) { width: 5%; }
+.flow-table th:nth-child(6) { width: 8%; }
+.flow-table th:nth-child(7) { width: 10%; }
+.flow-table th:nth-child(8) { width: 5%; }
+.flow-table .entity { min-width: 0; }
+.flow-table .entity > div:last-child { min-width: 0; }
+.flow-table .mini-flow { flex-wrap: wrap; white-space: normal; gap: 4px; }
+.flow-table .flow-chip { padding: 6px 8px; gap: 4px; }
+.flow-table .flow-chip svg { width: 15px; height: 15px; }
+.flow-table .flow-arrow { width: 10px; height: 10px; }
+@media (max-width: 1100px) { .flow-table { min-width: 980px; } }
 
 /* 业务补充：publishType=2 的提示图标 */
 /* 圆点/文字/提示图标按视觉中线对齐；行内基线对齐会让 18px 图标高出文字约 4px */

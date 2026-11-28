@@ -2,7 +2,7 @@ import { expect } from '@playwright/test'
 import { BasePage } from './base.page'
 import { confirmDeletion } from './delete-confirm.page'
 
-/** 文档知识库列表页（`#/knowledge`）。 */
+/** 文档知识库列表页（`/knowledge`）。 */
 export class KbListPage extends BasePage {
   readonly root = this.page.locator('.knowledge-page')
   readonly createButton = this.root.getByRole('button', { name: '新建知识库', exact: true })
@@ -12,7 +12,7 @@ export class KbListPage extends BasePage {
   readonly rows = this.root.locator('tbody tr').filter({ has: this.page.locator('.entity-title') })
 
   async goto (): Promise<void> {
-    await this.gotoHash('/#/knowledge')
+    await this.gotoPath('/knowledge')
     await this.expectLoaded()
   }
 

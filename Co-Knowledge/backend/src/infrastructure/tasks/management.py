@@ -181,6 +181,7 @@ def list_task_groups(*, task_type: Optional[str] = None, status: Optional[str] =
             task_total = int(cursor.fetchone()[0])
             cursor.execute(
                 f'SELECT t.kbase_id, k.name AS kbase_name, count(*) AS total, '
+                f'string_agg(DISTINCT t.task_type, \',\') AS task_types, '
                 f'max(t.created_at) AS latest_created_at, {status_counts} '
                 f'FROM {_TASK_FROM}{where} '
                 'GROUP BY t.kbase_id, k.name '
@@ -197,6 +198,9 @@ def _group_dict(row: dict) -> dict[str, Any]:
     return {
         'kbaseId': row.get('kbase_id'),
         'kbaseName': row.get('kbase_name'),
+        # T2S_INDEX 的 kbase_id 记的是数据源 id，没有知识库名称可显示；
+        # 前端据此把这类分组标成「数据源」而不是裸 UUID。
+        'taskTypes': sorted(set(filter(None, (row.get('task_types') or '').split(',')))),
         'total': int(row.get('total') or 0),
         'byStatus': by_status,
         'latestCreatedAt': _iso(row.get('latest_created_at')),

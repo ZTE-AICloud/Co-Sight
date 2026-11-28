@@ -22,6 +22,11 @@ cachetools==5.3.2
 # 数据库
 psycopg2-binary==2.9.9
 
+# SQL 语法树（libpg_query）：Text2SQL 的结构安全边界依赖它做 AST 校验。
+# 必须是 PostgreSQL 官方语法，不能用通用解析器替代——校验器与目标库的语法
+# 一旦不一致，就会出现「放过了库不认的语句」或「拒了库认的语句」。
+pglast==8.7
+
 # 加密：模型凭据与 API Key 的静态加密
 pycryptodome==3.20.0
 cryptography==50.0.2

@@ -41,6 +41,15 @@
     </div>
 
     <div class="side-footer">
+      <RouterLink
+        v-if="currentRelease"
+        :to="{ name: 'release' }"
+        class="sidebar-version text-code"
+        :aria-label="$t('modules.release.sidebarVersionAria', { version: currentRelease.version })"
+        :title="$t('modules.release.sidebarVersionTitle', { version: currentRelease.version })"
+      >
+        v{{ currentRelease.version }}
+      </RouterLink>
       <div class="footer-preferences">
         <!-- 本地账号已登录时显示用户菜单（修改密码/退出）；否则显示登录入口：
              配置了 VUE_APP_UAC（appState.loginUrl）时外链，没有时指向站内 /login。 -->
@@ -142,6 +151,7 @@ import { useRoute } from 'vue-router'
 import { ArrowUp, Check, DArrowLeft, DArrowRight, Moon, Setting, Sunny, User } from '@/shared/lib/icons'
 import { useTheme } from '@/shared/lib/theme'
 import appState from '@/app/state'
+import { currentRelease } from '@/shared/constants/releases'
 import { NAV_MENUS, resolveActiveMenu } from './menu.config'
 import { isChineseLanguage, switchLanguage } from '@/shared/lib/language'
 import BrandMark from '@/shared/ui/BrandMark.vue'
@@ -241,7 +251,14 @@ function toggleCollapse () {
    全局设计系统（tokens.css / theme.css 的 --rs-*、base.css 的 .icon-button
    与 `button, input, textarea, select { font: inherit }`、body 的 line-height）
    由 main.js 统一引入 —— 这里不再复制副本。 */
-.sidebar{width:240px;flex-shrink:0;background:var(--rs-bg-card);border-right:1px solid var(--rs-border);height:100vh;padding:24px 14px 0;display:flex;flex-direction:column;transition:width .2s;overflow:hidden}.sidebar nav{min-height:0;overflow-y:auto}.brand{display:flex;align-items:center;gap:13px;padding:0 9px 20px;color:var(--rs-text);white-space:nowrap}.brand>.brand-mark{width:40px;height:40px}.brand-title{font-size:18px;font-weight:750;letter-spacing:-.5px}.brand-sub{font-size:10px;color:var(--rs-text-3);margin-top:2px}.group{margin:6px 0 22px}.group-title{display:flex;align-items:center;justify-content:space-between;font-size:13px;color:var(--rs-text-2);padding:0 12px 14px}.group-title svg{width:12px;height:12px;color:var(--rs-text-3)}.nav-item{height:43px;padding:0 22px;display:flex;align-items:center;gap:17px;border-radius:9px;color:var(--rs-text-2);text-decoration:none;font-size:14px;margin:3px 0;position:relative;white-space:nowrap}.nav-item svg{width:20px;height:20px;stroke:currentColor;stroke-width:.3}.nav-item:hover{background:var(--rs-bg-hover)}.nav-item.router-link-active{background:linear-gradient(100deg,var(--rs-bg-selected),var(--rs-bg-selected));color:var(--rs-primary);font-weight:600}.nav-item.router-link-active:before{content:"";position:absolute;left:-2px;width:3px;height:22px;border-radius:3px;background:var(--rs-primary)}.single{margin-top:-4px;margin-bottom:24px}.promo{margin-top:auto;min-height:86px;background:linear-gradient(130deg,var(--rs-bg-selected),var(--rs-bg-selected));border-radius:10px;padding:16px 12px;position:relative;display:flex;align-items:center;font-size:11px;line-height:1.8;color:var(--rs-text-2);font-weight:550;flex-shrink:0}.promo>div{position:relative;z-index:1;white-space:nowrap}.promo>svg{position:absolute;right:-2px;bottom:0;width:84px;height:91px}.side-footer{display:flex;align-items:center;justify-content:space-between;color:var(--rs-text-2);font-size:13px;padding:8px 18px;margin:12px -14px 0;border-top:1px solid var(--rs-border-soft);height:48px;flex-shrink:0}.collapsed{width:78px}.collapsed .brand{padding-left:5px}.collapsed .brand-copy,.collapsed .nav-item span,.collapsed .group-title,.collapsed .promo{display:none}.collapsed .nav-item{padding:0;justify-content:center}.collapsed .group{margin-bottom:20px}.collapsed .side-footer{margin-top:auto;justify-content:center}
+.sidebar{width:240px;flex-shrink:0;background:var(--rs-bg-card);border-right:1px solid var(--rs-border);height:100vh;padding:24px 14px 0;display:flex;flex-direction:column;transition:width .2s;overflow:hidden}.sidebar nav{min-height:0;overflow-y:auto}
+/* 菜单超出可视高度时用细跟主题的滚动条，不再露出浏览器默认的宽灰条。 */
+.sidebar nav::-webkit-scrollbar{width:6px}
+.sidebar nav::-webkit-scrollbar-track{background:transparent}
+.sidebar nav::-webkit-scrollbar-thumb{background:var(--rs-border-soft);border-radius:6px}
+.sidebar nav::-webkit-scrollbar-thumb:hover{background:var(--rs-text-3)}
+@supports (-moz-appearance:none){.sidebar nav{scrollbar-width:thin;scrollbar-color:var(--rs-border-soft) transparent}}
+.brand{display:flex;align-items:center;gap:13px;padding:0 9px 20px;color:var(--rs-text);white-space:nowrap}.brand>.brand-mark{width:40px;height:40px}.brand-title{font-size:18px;font-weight:750;letter-spacing:-.5px}.brand-sub{font-size:10px;color:var(--rs-text-3);margin-top:2px}.group{margin:6px 0 22px}.group-title{display:flex;align-items:center;justify-content:space-between;font-size:13px;color:var(--rs-text-2);padding:0 12px 14px}.group-title svg{width:12px;height:12px;color:var(--rs-text-3)}.nav-item{height:43px;padding:0 22px;display:flex;align-items:center;gap:17px;border-radius:9px;color:var(--rs-text-2);text-decoration:none;font-size:14px;margin:3px 0;position:relative;white-space:nowrap}.nav-item svg{width:20px;height:20px;stroke:currentColor;stroke-width:.3}.nav-item:hover{background:var(--rs-bg-hover)}.nav-item.router-link-active{background:linear-gradient(100deg,var(--rs-bg-selected),var(--rs-bg-selected));color:var(--rs-primary);font-weight:600}.nav-item.router-link-active:before{content:"";position:absolute;left:-2px;width:3px;height:22px;border-radius:3px;background:var(--rs-primary)}.single{margin-top:-4px;margin-bottom:24px}.promo{margin-top:auto;min-height:86px;background:linear-gradient(130deg,var(--rs-bg-selected),var(--rs-bg-selected));border-radius:10px;padding:16px 12px;position:relative;display:flex;align-items:center;font-size:11px;line-height:1.8;color:var(--rs-text-2);font-weight:550;flex-shrink:0}.promo>div{position:relative;z-index:1;white-space:nowrap}.promo>svg{position:absolute;right:-2px;bottom:0;width:84px;height:91px}.side-footer{display:flex;align-items:center;gap:8px;color:var(--rs-text-2);font-size:13px;padding:8px 14px;margin:12px -14px 0;border-top:1px solid var(--rs-border-soft);min-height:48px;flex-shrink:0}.side-footer>.icon-button{flex-shrink:0}.collapsed{width:78px}.collapsed .brand{padding-left:5px}.collapsed .brand-copy,.collapsed .nav-item span,.collapsed .group-title,.collapsed .promo{display:none}.collapsed .nav-item{padding:0;justify-content:center}.collapsed .group{margin-bottom:20px}.collapsed .side-footer{margin-top:auto;justify-content:center}
 @media(max-height:800px){.sidebar{padding-top:20px}.brand{padding-bottom:19px}.group{margin-bottom:18px}.single{margin-bottom:20px}.nav-item{height:40px}}
 /* ── 英文界面专用：允许换行，避免长标签把侧栏撑出横向滚动条。
    中文界面必须保持上面的排版；英文标签宽度超出 240px 侧栏，
@@ -256,7 +273,7 @@ function toggleCollapse () {
 .sidebar.is-en.collapsed .nav-item{padding:0}
 @media(max-height:800px){.sidebar.is-en .nav-item{height:auto;min-height:40px}}
 @media(max-width:1100px){.sidebar{width:206px;padding-left:10px;padding-right:10px}.brand{gap:9px;padding-left:7px}.brand-title{font-size:17px}.brand-sub{font-size:9px}.brand>.brand-mark{width:32px;height:32px}.nav-item{padding-left:16px;gap:12px}.sidebar.is-en .nav-item{padding-left:16px;gap:12px}.promo{font-size:10px}.promo>svg{width:66px}.side-footer{margin-left:-10px;margin-right:-10px}.sidebar.collapsed{width:70px}}
-.footer-preferences{display:flex;align-items:center;gap:8px}
+.footer-preferences{display:flex;align-items:center;flex-shrink:0;gap:4px;margin-inline-start:auto}
 .theme-button svg{width:16px;height:16px}
 .theme-button[aria-pressed="true"]{color:var(--rs-primary)}
 .settings-button svg{width:16px;height:16px}
@@ -270,10 +287,43 @@ function toggleCollapse () {
 .language-option svg{width:15px;height:15px}
 .language-option:disabled{cursor:not-allowed;color:var(--rs-text-3)}
 .language-pending{font-size:11px;background:var(--rs-bg-soft);padding:2px 6px;border-radius:4px}
-.collapsed .side-footer{padding:8px 6px;height:auto;min-height:48px;flex-direction:column;justify-content:center;gap:8px}
-.collapsed .footer-preferences{flex-direction:column;gap:4px}
+.sidebar-version{min-width:0;max-width:100%;padding:4px 6px;border:1px solid var(--rs-border);border-radius:6px;color:var(--rs-text-2);font-size:calc(var(--rs-font-size-caption) - 1px);font-weight:550;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sidebar-version:hover,.sidebar-version.router-link-active{border-color:var(--rs-primary-border);background:var(--rs-bg-selected);color:var(--rs-primary)}
+@media (max-width:1100px){.side-footer{gap:4px;padding-inline:10px}.footer-preferences{gap:3px}.sidebar-version{padding-inline:4px}}
+.collapsed .side-footer{flex-direction:column;justify-content:center;gap:6px;margin-top:auto;padding-inline:6px}
+.collapsed .footer-preferences{flex-direction:column;gap:4px;margin-inline-start:0}
 .group-title{cursor:pointer;list-style:none}
 .group-title::-webkit-details-marker{display:none}
 .group-title:focus-visible{outline:2px solid var(--rs-primary-border);outline-offset:2px;border-radius:4px}
 .group:not([open]) .group-title svg{transform:rotate(180deg)}
+/* ── 矮屏：宣传卡压成 72px 窄卡而不是整块消失，导航同步收紧，
+   保证 1440×900 下 11 项菜单完整可见。 ─────────────────────────────── */
+@media(max-height:999px){
+  .promo{min-height:72px;padding:12px;line-height:1.6}
+  .promo>svg{width:68px;height:74px;right:0;bottom:0}
+  .sidebar nav{padding-bottom:10px}
+  .group{margin-bottom:16px}
+  .single{margin-bottom:14px}
+  .group-title{padding-bottom:10px}
+  .nav-item{margin:1px 0}
+}
+/* 中间档：行高与分组留白让一档，覆盖 880–930 附近的窗口。 */
+@media(max-height:929px){
+  .nav-item{height:40px}
+  .group{margin-bottom:14px}
+  .group-title{padding-bottom:9px}
+  .single{margin-bottom:13px}
+}
+/* ≤880px 高度档（1366×768 笔记本）：宣传卡再矮 8px，行高与留白都让一步。 */
+@media(max-height:880px){
+  .promo{min-height:64px;padding:8px 12px}
+  .promo>svg{width:56px;height:60px}
+  .group{margin-bottom:9px}
+  .single{margin-bottom:10px}
+  .group-title{padding-bottom:6px}
+  .nav-item{height:35px}
+  /* 折叠态页脚竖排占掉一大块，图标行与分组间距再收一档才不滚动。 */
+  .collapsed .group{margin-bottom:9px}
+  .collapsed .nav-item{height:35px}
+}
 </style>

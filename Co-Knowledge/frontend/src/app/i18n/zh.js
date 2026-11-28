@@ -13,6 +13,7 @@ import kbWorkspace from './zh/kbWorkspace';
 import commonUi from './zh/commonUi';
 import studioDialogs from './zh/studioDialogs';
 import auth from './zh/auth';
+import release from './zh/release';
 
 export default {
   modules: {
@@ -29,7 +30,8 @@ export default {
     taskManagement,
     remoteAccess,
     studioDialogs,
-    auth
+    auth,
+    release
   },
   nav,
   // 产品品牌副标题：侧栏与登录页共用；品牌名 Knowledge Studio 是专有名词，不随语言变化。

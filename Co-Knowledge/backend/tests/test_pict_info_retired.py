@@ -76,6 +76,7 @@ def test_unreleased_retirement_ships_without_migration():
 
 
 def test_bootstrap_expectation_matches_new_table_count():
+    """00 快照建 22 张，任务表收敛后（10 号迁移 drop 三张旧任务表）剩 19 张。"""
     text = BOOTSTRAP.read_text(encoding='utf-8')
-    assert '== "22"' in text
-    assert 'public=22' in text
+    assert '== "19"' in text
+    assert 'public=19' in text

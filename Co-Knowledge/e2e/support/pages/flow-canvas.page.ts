@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test'
 import { BasePage } from './base.page'
 
-/** 检索编排画布（`#/flow/detail/:appId`）。 */
+/** 检索编排画布（`/flow/detail/:appId`）。 */
 export class FlowCanvasPage extends BasePage {
   readonly canvas = this.page.locator('#advancedFLow')
   readonly saveButton = this.page.getByRole('button', { name: '保存', exact: true })
@@ -10,7 +10,7 @@ export class FlowCanvasPage extends BasePage {
   readonly libraryDrawer = this.page.locator('.flow-library-drawer')
 
   async goto (appId: string): Promise<void> {
-    await this.gotoHash(`/#/flow/detail/${appId}`)
+    await this.gotoPath(`/flow/detail/${appId}`)
     await expect(this.canvas).toBeVisible({ timeout: 30_000 })
   }
 

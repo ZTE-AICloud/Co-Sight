@@ -378,7 +378,7 @@ def _submit(desc: dict, kbase: dict, schema: dict, entries: dict) -> None:
     """把导入丢进 DB 任务车道：立刻返回，后台跑。
 
     ``kb_index_name`` 用 ``graph_<kbId>``；统一表的 ``kbase_id`` 存裸 id，
-    store 负责去掉前缀（兼容视图 ``graph_import_task.kb_id`` 仍返回带前缀形态）。
+    store 返回时再拼回 ``graph_<kbId>``。
     payload 持久化 zip 路径与 schema，进程重启后可由 worker 重建执行。
     """
     kbase_id = kbase.get('kbase_id')

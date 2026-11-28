@@ -36,9 +36,10 @@ def test_snapshot_table_count_is_22():
     assert '22 张业务表' in text
 
 
-def test_bootstrap_expects_22_tables():
+def test_bootstrap_expects_final_table_count():
+    """00 快照建 22 张，任务表收敛后（10 号迁移 drop 三张旧任务表）剩 19 张。"""
     bootstrap = BOOTSTRAP.read_text(encoding='utf-8')
-    assert '== "22"' in bootstrap
-    assert '!= 22' in bootstrap
+    assert '== "19"' in bootstrap
+    assert '!= 19' in bootstrap
     # pg_stat_statements 会在 public 建视图；必须只数 BASE TABLE
     assert "table_type='BASE TABLE'" in bootstrap

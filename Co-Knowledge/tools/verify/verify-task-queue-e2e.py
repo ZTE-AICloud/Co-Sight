@@ -105,15 +105,15 @@ def check_schema():
             "ORDER BY ordinal_position DESC LIMIT 2")
     ]
     assert last_two == ['updated_at', 'created_at'], last_two
-    views = {
+    # 旧任务表的兼容视图已退役（20-drop-task-compat-views.sql）：public 下不该再出现。
+    retired = {
         row[0] for row in _all(
             "SELECT table_name FROM information_schema.tables "
             "WHERE table_schema='public' AND table_name IN "
-            "('kb_import_task','graph_extract_task','graph_import_task') "
-            "AND table_type='VIEW'")
+            "('kb_import_task','graph_extract_task','graph_import_task')")
     }
-    assert views == {'kb_import_task', 'graph_extract_task', 'graph_import_task'}, views
-    print('schema/views ok')
+    assert not retired, retired
+    print('schema ok (task compat views retired)')
 
 
 def _all(sql, params=()):
@@ -220,8 +220,8 @@ def check_file_import(session: requests.Session):
         assert status == 'COMPLETED', task
         assert payload.get('fileHandle'), payload
         assert locked_by is None and locked_until is None, task
-        view = _one('SELECT status FROM public.kb_import_task WHERE id = %s', (task_id,))
-        assert view and view[0] == 'COMPLETED', view
+        unified = _one('SELECT status FROM task_center.task WHERE id = %s', (task_id,))
+        assert unified and unified[0] == 'COMPLETED', unified
         print('file import -> task_center.task ok')
     finally:
         try:
@@ -272,9 +272,6 @@ def check_graph_lane():
             raise AssertionError(f'graph lane did not fail the task: {row}')
         assert row[1] is None and row[2] is None, row
         assert row[3], row
-        view = _one(
-            "SELECT status FROM public.graph_extract_task WHERE id = %s", (task_id,))
-        assert view and view[0] == 'FAIL', view
         print('graph_extract lane claim -> FAILED ok')
     finally:
         _delete_task(task_id)

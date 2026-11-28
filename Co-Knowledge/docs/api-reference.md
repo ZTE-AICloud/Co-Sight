@@ -187,7 +187,7 @@
 | `title` | string | 是 | 2–30 字符；允许中文、字母、数字、`_ . -` 与空白；不能全空白 |
 | `parentId` | string \| null | 否 | 父目录 ID；省略/空串 = 根目录 |
 
-- 同一父目录下重名 → `409 directory_exists`；同级文件夹数或层级超限 → `422 limit_exceeded`。
+- 同一父目录下重名 → `409 directory_exists`；同级**文件夹**数（上限 100，文件不计入）或层级超限（最大 3 级）→ `422 limit_exceeded`。
 - 成功 `201` + `Location`。
 
 ### 4.2 改目录名 `PATCH /knowledge-bases/{kb_id}/directories/{directory_id}`
@@ -230,6 +230,9 @@ curl -sS -b cookies.txt \
 
 成功返回 `{文件名: fileId}`；上传后由后台任务解析/切分（见 `GET /knowledge-bases/{kb_id}/documents` 的 `status`）。
 
+单目录文件数上限 **500**（只数文件，不含子文件夹）：现有文件数 + 本次上传数超过上限 →
+`422 limit_exceeded`。`coverFlag=true` 时同名旧文件被替换，不占新增额度。
+
 ### 4.4 移动文档 `PATCH /knowledge-bases/{kb_id}/documents`
 
 ```json
@@ -241,7 +244,8 @@ curl -sS -b cookies.txt \
 | `ids` | string[] | 是 | 文档 ID 列表；去重后不能为空 |
 | `parentId` | string | 是 | 目标文件夹 ID；不存在 → `404 directory_not_found` |
 
-成功返回 `{"moved": 2}`；目标目录已有同名文档 → `409 file_name_conflict`。
+成功返回 `{"moved": 2}`；目标目录已有同名文档 → `409 file_name_conflict`；
+移动后目标目录文件数超过 500 → `422 limit_exceeded`（同目录内移动不重复计数）。
 
 ### 4.5 手工新增切片 `POST /knowledge-bases/{kb_id}/chunks`
 
@@ -1034,6 +1038,16 @@ Cookie：`ragstudio_session`，`HttpOnly; Path=/; SameSite=Lax; Max-Age=<ttl>[; 
 `errorMessage`、`createdAt`、`cancelRequested` 等）；分页体为
 `{items, total, page, pageSize}`。
 
+`extra` 是**结果摘要**（详情页「产出 extra」的结构化部分，原始 JSON 完整保留）：
+
+- 文件导入：`fileName` / `fileSize` / `format` / `embeddingModel` /
+  `splitOperatorId`、`chunkCount` / `vectorCount` / `indexDocCount`、
+  `stageTimingsMs`（`parse` / `split` / `embed`）；
+- 图谱抽图：`fileCount` / `operatorId` / `schemaId` / `llm` / `importTaskId`、
+  实体与边的 `*_total/success/failed`、`vector_*`；失败时带 `failedStage`；
+- 图谱导入：实体与边的 `*_total/success/failed`、`failed_records`、
+  `vector_entities/edges/chunks/chunk_rows/skipped/collisions`、`index_error`。
+
 取消排队中的任务会同步领域状态：文件行落失败原因 `Task cancelled`，图谱库落
 解析/入库失败。取消 `RUNNING` 任务返回 `200`，响应里 `status` 可能仍是
 `RUNNING`、`cancelRequested=true`；worker 在下一个安全点（文件 handler/向量化
@@ -1043,3 +1057,85 @@ Cookie：`ragstudio_session`，`HttpOnly; Path=/; SameSite=Lax; Max-Age=<ttl>[; 
 常见错误码：`task_not_found`(404)、`task_not_cancellable`(409)、
 `task_not_retryable`(409)、`task_input_expired`(409)、`task_not_queued`(409)、
 `validation_failed`(422)、`task_queue_full`(503，建库/导入入口的准入拒绝)。
+
+## 13. Text2SQL（`/text2sql`）
+
+前缀：`{RKB_PREFIX}/text2sql`（`RKB_PREFIX` 默认 `/api/co-knowledge/v1`）。
+请求/响应体一律 camelCase；`credential_ref` 与明文密码**永不出现在响应里**，
+`passwordConfigured` 表示是否已存凭据。时间字段是 `YYYY-MM-DD HH24:MI:SS`。
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| GET | `/datasources` | 数据源列表 `{items,total}`；每项含 `status`（`configured/scanned/indexed`，由同步时间与「当前修订的活动版本」推导）、`revision`、`selectedTables` |
+| POST | `/datasources` | 新建；必填 `name` / `host` / `database` / `username` / `password`；`schemas` 默认 `['public']`；返回 `201 + Location` |
+| GET | `/datasources/{id}` | 单个数据源 |
+| PATCH | `/datasources/{id}` | 局部更新。连接/schema/凭据/时区/查询策略变化才递增 `revision`；只改名、主题或示例问题（`queryExamples`，最多 8 条 `{question,hint}`）不改 |
+| DELETE | `/datasources/{id}` | 软删除（`enabled=false`、`deleted_at=now()`、清空活动版本与凭据），并解除工作台/常用查询绑定；`204` |
+| POST | `/datasources/{id}/connection-test` | 真实连接 + `SELECT 1`；成功记录 `connectionTestedAt`，不改变索引就绪状态 |
+| POST | `/datasources/{id}/scan` | 只读扫描外部库（表/字段/注释/主键唯一约束/外键列对）并合并目录；新表默认 `enabled=false`；返回 `{datasource,summary,revisionChanged}`。已启用表的有效结构变化才递增 `revision`。取值只为「已启用表 + 已启用列」采样 |
+| POST | `/datasources/{id}/assist` | AI 辅助：`{"kind":"descriptions|tables|values|relations|metrics|questions","tableIds":[],"includeSamples":true,"question":"","model":""}` → `{suggestions,model,usage,sampled,batches}`。只返回建议、不落库；建议只引用目录里真实存在的 id；指标表达式先过 `sql_ast` 白名单（必须含聚合函数），关联建议自动跳过已存在的列对并生成唯一名称。表多时按批调用模型（说明 4 表/批、指标 1 表/批、枚举 60 值/批）。采纳仍走各 `PATCH`/`POST` 接口。管理员 |
+| POST | `/datasources/{id}/assist/stream` | 同上 SSE 版：`stage` 帧上报 `collect` / `sample` / `generate`（含 `batch`/`batches`），`result` 帧是完整建议体，`error` 为终态。 |
+| GET | `/datasources/{id}/tables` | 目录（表 + 字段），含 `enabled` / `missingSince` / 业务名称/说明/别名 |
+| PATCH | `/datasources/{id}/tables/{tableId}` | `enabled` / `businessName` / `businessDescription` / `aliases`；实际变化才递增 `revision` |
+| PATCH | `/datasources/{id}/columns/{columnId}` | 同上，另加 `semanticType`（`identifier/measure/dimension/time/category`） |
+| GET/POST | `/datasources/{id}/relations` | 关联列表 / 新建人工关联（`name`、`sourceTableId`、`targetTableId`、`cardinality`、`columnPairs`） |
+| PATCH/DELETE | `/datasources/{id}/relations/{relationId}` | 改说明/基数/启用/列对（外键关联的列对只读）；删除 |
+| POST | `/datasources/{id}/relations/{relationId}/verification` | `{"verified": true/false}`；管理员 |
+| GET/POST | `/datasources/{id}/values` | 枚举列表（可按 `columnId` 过滤）/ 新建 |
+| PATCH/DELETE | `/datasources/{id}/values/{valueId}` | 业务名称、同义词、说明、启用 |
+| GET/POST | `/datasources/{id}/metrics` | 指标列表 / 新建（表达式、过滤 AST、时间字段、单位、可加性、列/关联依赖） |
+| PATCH/DELETE | `/datasources/{id}/metrics/{metricId}` | 局部更新（依赖变更会清除审核状态）；删除 |
+| POST | `/datasources/{id}/metrics/{metricId}/status` | `{"status": "APPROVED"\|"DISABLED"}`；管理员 |
+| POST | `/datasources/{id}/versions` | 按当前修订冻结快照并生成知识清单；首次返回 `201`，同修订已有版本返回 `200` |
+| GET | `/datasources/{id}/versions` | 版本列表（含 `indexedCount` / `failedCount`） |
+| GET | `/datasources/{id}/versions/{versionId}` | 版本详情（`snapshot`、按类型/状态的知识计数、任务尝试） |
+| POST | `/datasources/{id}/versions/{versionId}/build` | 逐条向量化并写 `text2sql_index`，全部成功置 `READY`，否则 `FAILED` |
+| POST | `/datasources/{id}/publication` | `{"versionId","expectedRevision"}`；原子切换活动版本；管理员 |
+| GET | `/datasources/{id}/publications` | 发布审计（前后版本、操作者、时间） |
+| POST | `/datasources/{id}/query` | 一次自然语言查询：绑定当前活动版本、检索语义、生成 SQL、只读执行并落历史；返回 `sql` / `retrieval` / `validation` / `result` / `timing` / `stages` / `error`（失败也可能是 200 + `error`） |
+| POST | `/datasources/{id}/query/stream` | 同 `/query` 的 SSE 版本：`stage` 帧实时上报 `{id,status,ms}`（`running/success/skipped`），`result` 帧是完整响应体（与同步响应同形），`done` 为终态；进入流式后的失败是终态 `error` 帧（problem+json 同形） |
+| GET | `/runs` | 当前用户的查询历史；过滤 `datasourceId` / `status` / `page` / `size` |
+| GET | `/runs/{runId}` | 单条查询快照 |
+| DELETE | `/runs/{runId}` | 删除当前用户的一条历史 |
+| DELETE | `/runs` | 清空历史（可带 `datasourceId`） |
+| POST | `/runs/{runId}/feedback` | 提交反馈：`category=helpful/meaning/sql/data`；非 helpful 必须带 `notes` |
+| GET | `/feedback?datasourceId=` | 数据源的反馈列表 |
+| GET | `/favorites` | 当前用户的常用查询 |
+| POST | `/favorites` | 新建常用查询（`name` / `question` / `datasourceId` / `datePolicy` / `parameters`） |
+| PATCH / DELETE | `/favorites/{favoriteId}` | 修改 / 删除常用查询 |
+| GET / PUT | `/workspace` | 当前用户的查询草稿与 UI 偏好（`questionDraft` / `sqlDraft` / `preferences`） |
+
+新建数据源请求示例：
+
+```json
+{
+  "name": "电商业务库",
+  "host": "127.0.0.1",
+  "port": 5432,
+  "database": "commerce_demo",
+  "username": "demo_readonly",
+  "password": "******",
+  "schemas": ["public"],
+  "topic": {"name": "电商经营分析", "description": "按城市统计支付", "owner": "数据组"},
+  "businessDescription": "只读分析库",
+  "businessTimezone": "Asia/Shanghai",
+  "queryPolicy": {"read_only": true, "max_rows": 1000, "timeout_ms": 30000}
+}
+```
+
+
+版本流程：`POST /versions`（冻结快照，版本进入 `BUILDING`）→ `POST /versions/{id}/build`
+（向量化；`READY` 需要知识数量匹配且全部 `INDEXED`）→ `POST /publication`
+（`expectedRevision` 必须等于当前 `config_revision`）。构建失败保留 `FAILED` 版本与任务尝试；
+配置再次变化会用新的 `revision` 创建新版本。向量按数据源分表存放：
+`text2sql_index.t2s_vec_<datasourceId>`（`vector(N)` + HNSW，N 为数据源
+`embeddingModel` 的维度；首次构建时建表，后续版本按 `version_id` 隔离）。
+`POST /versions/cleanup` 把可回收的旧 READY 版本归档为 `ARCHIVED` 并清掉知识
+（管理员；活动版本与被查询历史引用的版本不动）。
+
+`status` 推导：活动版本 `READY` 且 `active_version.revision == config_revision`
+→ `indexed`（`indexedAt = ready_at`）；否则有 `lastSyncAt` → `scanned`；否则
+`configured`。`requiresPublication` 即 `status != indexed`。
+
+错误码：`text2sql.validation_failed`(422)、`text2sql.not_found`(404)、
+`text2sql.conflict`(409，重名)、`text2sql.upstream_unavailable`(502，外部库不可达)。

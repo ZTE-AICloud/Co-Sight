@@ -50,7 +50,8 @@ CREATE TABLE IF NOT EXISTS task_center.task (
     CONSTRAINT ck_task_type CHECK (
         (task_type)::text = ANY ((ARRAY['FILE_IMPORT'::character varying,
                                         'GRAPH_EXTRACT'::character varying,
-                                        'GRAPH_IMPORT'::character varying])::text[])),
+                                        'GRAPH_IMPORT'::character varying,
+                                        'T2S_INDEX'::character varying])::text[])),
     CONSTRAINT ck_task_status CHECK (
         (status)::text = ANY ((ARRAY['PENDING'::character varying,
                                      'RUNNING'::character varying,

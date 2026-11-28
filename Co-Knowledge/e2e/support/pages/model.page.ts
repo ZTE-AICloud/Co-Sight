@@ -2,7 +2,7 @@ import { expect } from '@playwright/test'
 import { BasePage } from './base.page'
 import { confirmDeletion } from './delete-confirm.page'
 
-/** 模型管理页（`#/models`）。 */
+/** 模型管理页（`/models`）。 */
 export class ModelPage extends BasePage {
   readonly root = this.page.locator('.models-page')
   readonly tabs = this.root.getByRole('tab')
@@ -12,7 +12,7 @@ export class ModelPage extends BasePage {
   readonly dialog = this.page.locator('.el-dialog:visible').last()
 
   async goto (): Promise<void> {
-    await this.gotoHash('/#/models')
+    await this.gotoPath('/models')
     await this.expectLoaded()
   }
 

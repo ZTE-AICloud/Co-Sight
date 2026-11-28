@@ -87,9 +87,8 @@ frontend/src/
 ## 2.2 异步任务
 
 统一引擎在 `infrastructure/tasks/`，只负责「跑」：提交、车道、worker、重试、
-延迟重投、关停。任务行统一存 `task_center.task`（`task_type` 区分三类任务）；
-`public.kb_import_task` / `public.graph_extract_task` / `public.graph_import_task`
-是只读兼容视图。公共属性（类型/车道/状态/进度/尝试次数/kbase_id/时间线）平铺成列；
+延迟重投、关停。任务行统一存 `task_center.task`（`task_type` 区分三类任务）。
+公共属性（类型/车道/状态/进度/尝试次数/kbase_id/时间线）平铺成列；
 类型私有属性放 `payload`（输入）与 `extra`（产出/状态），不随任务类型加列。
 引擎的 `TaskRecord.status` 只是进程内记忆态，落库与状态映射仍由各领域适配器负责。
 

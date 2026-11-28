@@ -154,6 +154,14 @@ class TaskContext:
         if callback is not None:
             callback(self.record, int(percent))
 
+    def set_result(self, **fields: Any) -> None:
+        """记录结果摘要；引擎成功落停时写入 ``task_center.task.extra``。
+
+        只应包含 JSON 可序列化的值。失败/重试不写 —— 文件链失败会回滚，
+        半成品计数会被误读成真实产出。
+        """
+        self.record.extra = {**(self.record.extra or {}), **fields}
+
     def is_cancelled(self) -> bool:
         return bool(self.cancel_event is not None and self.cancel_event.is_set())
 

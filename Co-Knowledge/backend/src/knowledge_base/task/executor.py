@@ -46,20 +46,20 @@ def retry_delay(error: BaseException) -> float:
     return BUSY_RETRY_DELAY_SECONDS if _is_large_file_busy(error) else 0.0
 
 
-def process_file(file_handle: dict) -> None:
-    """跑处理链，成功后把状态推到「全链成功」。
+def process_file(file_handle: dict) -> dict:
+    """跑处理链，成功后把状态推到「全链成功」，并返回结果摘要。
 
     ⚠️ 链抛异常时 ``updateFileStatus(..., 1)`` **不会执行**（异常直接上抛给
     引擎去重试/判失败）—— 顺序不能反。
     """
     if not file_handle:
-        return
+        return {}
     chain = FileHandlerChain()
     chain.add_handler(FileParseHandler())
     chain.add_handler(FileSplitHandler())
     chain.add_handler(FileEmbeddingHandler())
     try:
-        chain.execute(file_handle)
+        stage_timings = chain.execute(file_handle)
 
         from knowledge_base.repository import directory as directory_store
 
@@ -69,6 +69,33 @@ def process_file(file_handle: dict) -> None:
     finally:
         # MinIO 后端在解析/切片前会把对象物化成临时文件，无论成功失败都要清掉。
         storage.cleanup_task_files(file_handle)
+    return _result_summary(file_handle, stage_timings)
+
+
+def _result_summary(file_handle: dict, stage_timings: dict[str, int]) -> dict:
+    """文件导入的结果摘要（写入 ``task_center.task.extra``）。
+
+    计数取自链的中间产物：``chunks`` 是知识分块，``results`` 是待向量化的节点
+    （三写里向量表与 ES 各一条）。空值不落库，避免详情页出现一排 ``null``。
+    """
+    split_result = file_handle.get('splitResult') or {}
+    chunks = split_result.get('chunks') or []
+    nodes = split_result.get('results') or []
+    operator_id = (file_handle.get('operatorSplitDTO') or {}).get('operatorId')
+    if operator_id in ('', None):
+        operator_id = None
+    fields = {
+        'fileName': file_handle.get('fileName'),
+        'fileSize': file_handle.get('fileSize'),
+        'format': file_handle.get('format'),
+        'embeddingModel': file_handle.get('modelName'),
+        'splitOperatorId': operator_id,
+        'chunkCount': len(chunks),
+        'vectorCount': len(nodes),
+        'indexDocCount': len(nodes),
+        'stageTimingsMs': stage_timings,
+    }
+    return {key: value for key, value in fields.items() if value is not None}
 
 
 def run_file_task(record, ctx) -> None:
@@ -81,6 +108,6 @@ def run_file_task(record, ctx) -> None:
     handle = task.file_handle if task is not None else record.payload.get('fileHandle')
     if not handle:
         raise RuntimeError('file task has no handle')
-    process_file(handle)
+    ctx.set_result(**process_file(handle))
     # 成功路径才标「已修改」—— 失败不该动知识库状态
     kbase_store.set_kbase_status_modified(handle.get('kbaseId'))

@@ -81,7 +81,7 @@ def test_extract_status_maps_to_unified_table():
 
 
 def test_extract_task_uses_unified_table():
-    """三类任务统一写 ``task_center.task``；``graph_extract_task`` 只是兼容视图。"""
+    """三类任务统一写 ``task_center.task``；旧的 ``graph_extract_task`` 表/视图已退役。"""
     from graph.repository import graph_extract_store as store
 
     assert store.TABLE == 'task_center.task'
@@ -122,4 +122,14 @@ def test_store_columns_exist_in_unified_schema():
     }.isdisjoint(columns)
     assert "payload ->> 'schemaId'" in text
     assert "extra ->> 'resultFilePath'" in text
-    assert 'CREATE OR REPLACE VIEW public.graph_extract_task' in text
+
+
+def test_task_compat_views_retired():
+    """旧任务表只剩 ``task_center.task``，三个兼容视图必须被退役迁移删掉。"""
+    from pathlib import Path
+
+    migration = (Path(__file__).resolve().parents[2]
+                 / 'deploy' / 'init' / 'pg' / '20-drop-task-compat-views.sql')
+    text = migration.read_text(encoding='utf-8')
+    for name in ('kb_import_task', 'graph_extract_task', 'graph_import_task'):
+        assert f'DROP VIEW IF EXISTS public.{name};' in text, name

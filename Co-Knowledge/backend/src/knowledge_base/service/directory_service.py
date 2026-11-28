@@ -33,6 +33,9 @@ MAX_PAGE_SIZE = 100
 # ``${folder.limit}`` / ``${directory.level.limit}``（application.yml:189-191）
 FOLDER_LIMIT = 100
 LEVEL_LIMIT = 3
+# 单个目录的文件数上限（只数文件，不含子文件夹）。建文件夹只受 FOLDER_LIMIT 约束，
+# 文件走这条：上传 / 移动进目录时校验「现有 + 本次 > FILE_LIMIT」。
+FILE_LIMIT = 500
 
 # ``SysGlobalConst``
 FILE_FAIL_STATUS = 2
@@ -413,6 +416,12 @@ def move_files(kbase_id: str, file_ids: list[str], parent_id: str,
             if conflicts:
                 raise KbApiError('file.upload.rename', ', '.join(sorted(conflicts)))
 
+            # 与上传同口径：重名冲突（409）先报；文件数限额放在它后面。
+            current = directory_store.count_children_files(
+                cursor, kbase_id, parent_id, exclude_ids=ids)
+            if current + len(ids) > FILE_LIMIT:
+                raise KbApiError('directory.file.size.over.limit', FILE_LIMIT)
+
             cursor.execute(
                 "UPDATE kb_directory SET parent_id = %s, parent_path = %s, "
                 "updated_by = %s, updated_at = NOW() "
@@ -464,6 +473,8 @@ def delete_directory_keep_files(kbase_id: str, directory_id: str,
             if conflicts:
                 raise KbApiError('file.upload.rename', ', '.join(sorted(conflicts)))
 
+            # 这里**不判** FILE_LIMIT：删目录是保数据动作，不能因为目标目录满了就
+            # 让用户既删不掉目录、也移不走文件。超限只拦「主动往里放」。
             if file_ids:
                 cursor.execute(
                     "UPDATE kb_directory SET parent_id = %s, parent_path = %s, "

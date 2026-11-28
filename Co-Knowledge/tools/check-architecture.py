@@ -35,7 +35,7 @@ from pathlib import Path
 #: never another domain's ``repository`` package.
 DOMAINS = frozenset({
     'knowledge_base', 'graph', 'operators', 'workflow', 'engine', 'chat',
-    'model', 'retrieval', 'agent', 'ingestion', 'system', 'auth',
+    'model', 'retrieval', 'agent', 'ingestion', 'system', 'auth', 'text_to_sql',
 })
 
 #: Packages that must never import a domain.

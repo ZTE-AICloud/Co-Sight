@@ -297,6 +297,10 @@ MESSAGES = {
         'zh': '文件夹个数超出限制',
         'en': 'upload folder size over limit',
     },
+    'directory.file.size.over.limit': {
+        'zh': '目录内文件个数超出限制，最多 {0} 个',
+        'en': 'The number of files in the directory exceeds the limit, maximum: {0}',
+    },
     'directory.level.limit': {
         'zh': '文件夹层级超过限制，最大层级: {0}',
         'en': 'The folder directory exceeds the limit, maximum level: {0}',

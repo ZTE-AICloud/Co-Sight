@@ -1,9 +1,9 @@
 """图谱导入任务的读写（统一任务表 ``task_center.task``，``task_type='GRAPH_IMPORT'``）。
 
-对外仍暴露 ``graph_import_task`` 的字段形状与
+对外返回原 ``graph_import_task`` DTO 的字段形状与
 ``PENDING/PROCESSING/COMPLETED/COMPLETED_WITH_ERRORS/FAILED`` 状态：
-统一表内部用 ``PENDING/RUNNING/COMPLETED/COMPLETED_WITH_ERRORS/FAILED``。
-``graph_import_task`` 是只读兼容视图。
+统一表内部用 ``PENDING/RUNNING/COMPLETED/COMPLETED_WITH_ERRORS/FAILED``，
+映射在本模块完成。
 
 三处与直觉不符的地方：
 
@@ -113,10 +113,17 @@ def cancel_task(task_id: str, reason: str = 'Cancelled by user') -> None:
             )
 
 
-def update_progress(task_id: str, progress: int, entity: Any, edge: Any) -> None:
-    """``updateProgress``：六个计数 + ``failed_records``（空列表写 NULL）。"""
+def update_progress(task_id: str, progress: int, entity: Any, edge: Any, *,
+                    index_stats: Optional[dict] = None,
+                    index_error: Optional[str] = None) -> None:
+    """``updateProgress``：六个计数 + ``failed_records``（空列表写 NULL）。
+
+    ``index_stats`` 是 ``graph_index_store.build_index`` 的产出计数，随最终进度
+    一并写入，用于观测「图数据入库」与「向量索引」两条产出线；``index_error``
+    记录索引失败原因（图数据仍可用，任务会落 ``COMPLETED_WITH_ERRORS``）。
+    """
     failed = list(entity.failed_records) + list(edge.failed_records)
-    extra = json.dumps({
+    payload = {
         'entity_total': entity.total,
         'entity_success': entity.success,
         'entity_failed': entity.failed,
@@ -124,7 +131,19 @@ def update_progress(task_id: str, progress: int, entity: Any, edge: Any) -> None
         'edge_success': edge.success,
         'edge_failed': edge.failed,
         'failed_records': failed or None,
-    }, ensure_ascii=False, default=str)
+    }
+    if index_stats is not None:
+        payload.update({
+            'vector_entities': index_stats.get('entities', 0),
+            'vector_edges': index_stats.get('edges', 0),
+            'vector_chunks': index_stats.get('chunks', 0),
+            'vector_chunk_rows': index_stats.get('chunk_rows', 0),
+            'vector_skipped': index_stats.get('skipped', 0),
+            'vector_collisions': index_stats.get('collisions', 0),
+        })
+    if index_error:
+        payload['index_error'] = index_error
+    extra = json.dumps(payload, ensure_ascii=False, default=str)
     with connection() as conn:
         with conn.cursor() as cursor:
             cursor.execute(
@@ -162,6 +181,13 @@ def select_task(task_id: str) -> Optional[dict]:
         'edge_success': extra.get('edge_success', 0),
         'edge_failed': extra.get('edge_failed', 0),
         'failed_records': extra.get('failed_records'),
+        'vector_entities': extra.get('vector_entities', 0),
+        'vector_edges': extra.get('vector_edges', 0),
+        'vector_chunks': extra.get('vector_chunks', 0),
+        'vector_chunk_rows': extra.get('vector_chunk_rows', 0),
+        'vector_skipped': extra.get('vector_skipped', 0),
+        'vector_collisions': extra.get('vector_collisions', 0),
+        'index_error': extra.get('index_error'),
         'error_message': error_message,
         'created_at': created_at,
         'updated_at': updated_at,

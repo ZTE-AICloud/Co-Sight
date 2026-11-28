@@ -96,11 +96,18 @@ def test_group_dict_zero_fills_status_counts():
 
     assert item['kbaseId'] == 'kb1'
     assert item['kbaseName'] == 'Demo KB'
+    assert item['taskTypes'] == []          # 没有 task_types 列时是空清单
     assert item['total'] == 3
     assert item['byStatus']['PENDING'] == 1
     assert item['byStatus']['RUNNING'] == 2
     assert item['byStatus']['FAILED'] == 0
     assert item['latestCreatedAt'] == '2026-11-10T12:00:00+00:00'
+
+
+def test_group_dict_reports_task_types():
+    # Text2SQL 索引任务的 kbase_id 是数据源 id，前端靠 taskTypes 区分分组标题。
+    item = management._group_dict({'kbase_id': 'ds1', 'task_types': 'T2S_INDEX,T2S_INDEX'})
+    assert item['taskTypes'] == ['T2S_INDEX']
 
 
 def test_task_dict_includes_payload_for_detail():

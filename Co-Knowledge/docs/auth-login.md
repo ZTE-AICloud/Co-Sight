@@ -135,6 +135,6 @@ BASE_URL=/ npm run build
 
 # 手动
 AUTH_MODE=local RKB_ADMIN_PASSWORD='ChangeMe-123' docker compose -f deploy/docker-compose.yml up -d
-# #/knowledge → #/login；错误密码内联报错；正确密码回 /knowledge；刷新保持；退出回 /login；
+# /knowledge → /login；错误密码内联报错；正确密码回 /knowledge；刷新保持；退出回 /login；
 # 连续 5 次错误 → 429；直接 GET /api/co-knowledge/v1/knowledge-bases → 401 problem+json。
 ```

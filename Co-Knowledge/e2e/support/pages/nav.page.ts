@@ -11,27 +11,27 @@ export class NavPage extends BasePage {
   readonly nav = this.page.getByRole('navigation', { name: '主导航' })
 
   async openDocKb (): Promise<void> {
-    await this.openLink('文档知识库', '#/knowledge')
+    await this.openLink('文档知识库', '/knowledge')
   }
 
   async openGraphKb (): Promise<void> {
-    await this.openLink('图谱知识库', '#/graph')
+    await this.openLink('图谱知识库', '/graph')
   }
 
   async openFlow (): Promise<void> {
-    await this.openLink('知识检索', '#/flow')
+    await this.openLink('知识检索', '/flow')
   }
 
   async openChat (): Promise<void> {
-    await this.openLink('对话测试', '#/chat')
+    await this.openLink('对话测试', '/chat')
   }
 
   async openOperator (): Promise<void> {
-    await this.openLink('自定义算子', '#/operators')
+    await this.openLink('自定义算子', '/operators')
   }
 
   async openModel (): Promise<void> {
-    await this.openLink('模型管理', '#/models')
+    await this.openLink('模型管理', '/models')
   }
 
   async expectMenus (): Promise<void> {
@@ -43,6 +43,6 @@ export class NavPage extends BasePage {
 
   private async openLink (name: string, hash: string): Promise<void> {
     await this.nav.getByRole('link', { name }).first().click()
-    await this.expectHash(hash)
+    await this.expectPath(hash)
   }
 }

@@ -60,6 +60,8 @@ class FileParseHandler:
     物化文件记录在 ``_materialized_files`` 上，任务链结束时统一清理。
     """
 
+    stage = 'parse'
+
     def handle(self, file_handle: dict) -> None:
         parse_dto = file_handle.get('operatorParseDTO')
         try:
@@ -124,6 +126,8 @@ def _normalized_operator_id(value):
 class FileSplitHandler:
     """切分：``operatorId > 0`` 取库里的 pythonPath；``< 0`` 注入默认参数。"""
 
+    stage = 'split'
+
     def handle(self, file_handle: dict) -> None:
         split_dto = file_handle.get('operatorSplitDTO')
         try:
@@ -172,6 +176,8 @@ def _with_default_split_args(args, kbase_id) -> list:
 
 class FileEmbeddingHandler:
     """向量化 + 三写（chunk 表 / 向量表 / ES）。"""
+
+    stage = 'embed'
 
     def handle(self, file_handle: dict) -> None:
         split_result = file_handle.get('splitResult')

@@ -446,6 +446,236 @@
   },
   {
     "method": "GET",
+    "path": "/api/co-knowledge/v1/text2sql/datasources",
+    "operation_id": "list_datasources_api_co_knowledge_v1_text2sql_datasources_get"
+  },
+  {
+    "method": "POST",
+    "path": "/api/co-knowledge/v1/text2sql/datasources",
+    "operation_id": "create_datasource_api_co_knowledge_v1_text2sql_datasources_post"
+  },
+  {
+    "method": "POST",
+    "path": "/api/co-knowledge/v1/text2sql/datasources/connection-test",
+    "operation_id": "test_connection_payload_api_co_knowledge_v1_text2sql_datasources_connection_test_post"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/co-knowledge/v1/text2sql/datasources/{datasource_id}",
+    "operation_id": "delete_datasource_api_co_knowledge_v1_text2sql_datasources__datasource_id__delete"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/text2sql/datasources/{datasource_id}",
+    "operation_id": "get_datasource_api_co_knowledge_v1_text2sql_datasources__datasource_id__get"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/co-knowledge/v1/text2sql/datasources/{datasource_id}",
+    "operation_id": "update_datasource_api_co_knowledge_v1_text2sql_datasources__datasource_id__patch"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/co-knowledge/v1/text2sql/datasources/{datasource_id}/columns/{column_id}",
+    "operation_id": "update_column_api_co_knowledge_v1_text2sql_datasources__datasource_id__columns__column_id__patch"
+  },
+  {
+    "method": "POST",
+    "path": "/api/co-knowledge/v1/text2sql/datasources/{datasource_id}/connection-test",
+    "operation_id": "test_connection_api_co_knowledge_v1_text2sql_datasources__datasource_id__connection_test_post"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/text2sql/datasources/{datasource_id}/metrics",
+    "operation_id": "list_metrics_api_co_knowledge_v1_text2sql_datasources__datasource_id__metrics_get"
+  },
+  {
+    "method": "POST",
+    "path": "/api/co-knowledge/v1/text2sql/datasources/{datasource_id}/metrics",
+    "operation_id": "create_metric_api_co_knowledge_v1_text2sql_datasources__datasource_id__metrics_post"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/co-knowledge/v1/text2sql/datasources/{datasource_id}/metrics/{metric_id}",
+    "operation_id": "delete_metric_api_co_knowledge_v1_text2sql_datasources__datasource_id__metrics__metric_id__delete"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/co-knowledge/v1/text2sql/datasources/{datasource_id}/metrics/{metric_id}",
+    "operation_id": "update_metric_api_co_knowledge_v1_text2sql_datasources__datasource_id__metrics__metric_id__patch"
+  },
+  {
+    "method": "POST",
+    "path": "/api/co-knowledge/v1/text2sql/datasources/{datasource_id}/metrics/{metric_id}/status",
+    "operation_id": "set_metric_status_api_co_knowledge_v1_text2sql_datasources__datasource_id__metrics__metric_id__status_post"
+  },
+  {
+    "method": "POST",
+    "path": "/api/co-knowledge/v1/text2sql/datasources/{datasource_id}/publication",
+    "operation_id": "publish_version_api_co_knowledge_v1_text2sql_datasources__datasource_id__publication_post"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/text2sql/datasources/{datasource_id}/publications",
+    "operation_id": "list_publications_api_co_knowledge_v1_text2sql_datasources__datasource_id__publications_get"
+  },
+  {
+    "method": "POST",
+    "path": "/api/co-knowledge/v1/text2sql/datasources/{datasource_id}/query",
+    "operation_id": "run_query_api_co_knowledge_v1_text2sql_datasources__datasource_id__query_post"
+  },
+  {
+    "method": "POST",
+    "path": "/api/co-knowledge/v1/text2sql/datasources/{datasource_id}/query/stream",
+    "operation_id": "run_query_stream_api_co_knowledge_v1_text2sql_datasources__datasource_id__query_stream_post"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/text2sql/datasources/{datasource_id}/relations",
+    "operation_id": "list_relations_api_co_knowledge_v1_text2sql_datasources__datasource_id__relations_get"
+  },
+  {
+    "method": "POST",
+    "path": "/api/co-knowledge/v1/text2sql/datasources/{datasource_id}/relations",
+    "operation_id": "create_relation_api_co_knowledge_v1_text2sql_datasources__datasource_id__relations_post"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/co-knowledge/v1/text2sql/datasources/{datasource_id}/relations/{relation_id}",
+    "operation_id": "delete_relation_api_co_knowledge_v1_text2sql_datasources__datasource_id__relations__relation_id__delete"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/co-knowledge/v1/text2sql/datasources/{datasource_id}/relations/{relation_id}",
+    "operation_id": "update_relation_api_co_knowledge_v1_text2sql_datasources__datasource_id__relations__relation_id__patch"
+  },
+  {
+    "method": "POST",
+    "path": "/api/co-knowledge/v1/text2sql/datasources/{datasource_id}/relations/{relation_id}/verification",
+    "operation_id": "verify_relation_api_co_knowledge_v1_text2sql_datasources__datasource_id__relations__relation_id__verification_post"
+  },
+  {
+    "method": "POST",
+    "path": "/api/co-knowledge/v1/text2sql/datasources/{datasource_id}/scan",
+    "operation_id": "scan_datasource_api_co_knowledge_v1_text2sql_datasources__datasource_id__scan_post"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/text2sql/datasources/{datasource_id}/tables",
+    "operation_id": "list_tables_api_co_knowledge_v1_text2sql_datasources__datasource_id__tables_get"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/co-knowledge/v1/text2sql/datasources/{datasource_id}/tables/{table_id}",
+    "operation_id": "update_table_api_co_knowledge_v1_text2sql_datasources__datasource_id__tables__table_id__patch"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/text2sql/datasources/{datasource_id}/values",
+    "operation_id": "list_values_api_co_knowledge_v1_text2sql_datasources__datasource_id__values_get"
+  },
+  {
+    "method": "POST",
+    "path": "/api/co-knowledge/v1/text2sql/datasources/{datasource_id}/values",
+    "operation_id": "create_value_api_co_knowledge_v1_text2sql_datasources__datasource_id__values_post"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/co-knowledge/v1/text2sql/datasources/{datasource_id}/values/{value_id}",
+    "operation_id": "delete_value_api_co_knowledge_v1_text2sql_datasources__datasource_id__values__value_id__delete"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/co-knowledge/v1/text2sql/datasources/{datasource_id}/values/{value_id}",
+    "operation_id": "update_value_api_co_knowledge_v1_text2sql_datasources__datasource_id__values__value_id__patch"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/text2sql/datasources/{datasource_id}/versions",
+    "operation_id": "list_versions_api_co_knowledge_v1_text2sql_datasources__datasource_id__versions_get"
+  },
+  {
+    "method": "POST",
+    "path": "/api/co-knowledge/v1/text2sql/datasources/{datasource_id}/versions",
+    "operation_id": "create_version_api_co_knowledge_v1_text2sql_datasources__datasource_id__versions_post"
+  },
+  {
+    "method": "POST",
+    "path": "/api/co-knowledge/v1/text2sql/datasources/{datasource_id}/versions/cleanup",
+    "operation_id": "cleanup_versions_api_co_knowledge_v1_text2sql_datasources__datasource_id__versions_cleanup_post"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/text2sql/datasources/{datasource_id}/versions/{version_id}",
+    "operation_id": "get_version_api_co_knowledge_v1_text2sql_datasources__datasource_id__versions__version_id__get"
+  },
+  {
+    "method": "POST",
+    "path": "/api/co-knowledge/v1/text2sql/datasources/{datasource_id}/versions/{version_id}/build",
+    "operation_id": "build_version_api_co_knowledge_v1_text2sql_datasources__datasource_id__versions__version_id__build_post"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/text2sql/favorites",
+    "operation_id": "list_favorites_api_co_knowledge_v1_text2sql_favorites_get"
+  },
+  {
+    "method": "POST",
+    "path": "/api/co-knowledge/v1/text2sql/favorites",
+    "operation_id": "create_favorite_api_co_knowledge_v1_text2sql_favorites_post"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/co-knowledge/v1/text2sql/favorites/{favorite_id}",
+    "operation_id": "delete_favorite_api_co_knowledge_v1_text2sql_favorites__favorite_id__delete"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/co-knowledge/v1/text2sql/favorites/{favorite_id}",
+    "operation_id": "update_favorite_api_co_knowledge_v1_text2sql_favorites__favorite_id__patch"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/text2sql/feedback",
+    "operation_id": "list_feedback_api_co_knowledge_v1_text2sql_feedback_get"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/co-knowledge/v1/text2sql/runs",
+    "operation_id": "clear_runs_api_co_knowledge_v1_text2sql_runs_delete"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/text2sql/runs",
+    "operation_id": "list_runs_api_co_knowledge_v1_text2sql_runs_get"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/co-knowledge/v1/text2sql/runs/{run_id}",
+    "operation_id": "delete_run_api_co_knowledge_v1_text2sql_runs__run_id__delete"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/text2sql/runs/{run_id}",
+    "operation_id": "get_run_api_co_knowledge_v1_text2sql_runs__run_id__get"
+  },
+  {
+    "method": "POST",
+    "path": "/api/co-knowledge/v1/text2sql/runs/{run_id}/feedback",
+    "operation_id": "create_feedback_api_co_knowledge_v1_text2sql_runs__run_id__feedback_post"
+  },
+  {
+    "method": "GET",
+    "path": "/api/co-knowledge/v1/text2sql/workspace",
+    "operation_id": "get_workspace_api_co_knowledge_v1_text2sql_workspace_get"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/co-knowledge/v1/text2sql/workspace",
+    "operation_id": "save_workspace_api_co_knowledge_v1_text2sql_workspace_put"
+  },
+  {
+    "method": "GET",
     "path": "/api/co-knowledge/v1/workflows",
     "operation_id": "page_workflows_api_co_knowledge_v1_workflows_get"
   },

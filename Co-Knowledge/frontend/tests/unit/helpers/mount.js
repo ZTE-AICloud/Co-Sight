@@ -177,6 +177,7 @@ export const DEFAULT_ROUTES = [
   { path: '/tasks', name: 'tasks', component: BlankRoute },
   { path: '/access', name: 'access', component: BlankRoute },
   { path: '/keys', name: 'keys', component: BlankRoute },
+  { path: '/release', name: 'release', component: BlankRoute },
   { path: '/approve', component: BlankRoute },
   { path: '/:pathMatch(.*)*', component: BlankRoute }
 ]

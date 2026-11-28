@@ -55,6 +55,10 @@ class _FakeCursor:
     def fetchone(self):
         if self._sql.startswith('SELECT id FROM kb_directory'):
             return ('row-exists',)
+        if self._sql.startswith('SELECT count(*) FROM kb_directory'):
+            return (0,)      # 目录文件数：空目录，限额检查放行
+        if self._sql.startswith('SELECT count(DISTINCT title) FROM kb_directory'):
+            return (0,)      # 覆盖上传时已被替换的同名行数
         return None
 
     def fetchall(self):

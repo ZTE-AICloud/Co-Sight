@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test'
 import { BasePage } from './base.page'
 
-/** 自定义算子页（`#/operators`）。 */
+/** 自定义算子页（`/operators`）。 */
 export class OperatorPage extends BasePage {
   readonly root = this.page.locator('.operators-page')
   readonly tabs = this.root.getByRole('tab')
@@ -9,7 +9,7 @@ export class OperatorPage extends BasePage {
   readonly rows = this.root.locator('.operator-table tbody tr').filter({ has: this.page.locator('.entity-title') })
 
   async goto (): Promise<void> {
-    await this.gotoHash('/#/operators')
+    await this.gotoPath('/operators')
     await expect(this.root).toBeVisible()
     await expect(this.importButton).toBeVisible()
   }

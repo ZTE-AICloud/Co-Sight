@@ -93,6 +93,7 @@ def _run_extract(record: TaskRecord, ctx: TaskContext) -> None:
         payload.get('schemaObj'),
         bool(payload.get('isUpdate')),
         payload.get('cacheSchemaId'),
+        payload.get('fileCount'),
     )
 
 

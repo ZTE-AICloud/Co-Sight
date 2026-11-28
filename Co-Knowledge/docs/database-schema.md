@@ -25,20 +25,23 @@
 
 ## 1. 总览
 
-### 1.1 一个 database + 两个 schema
+### 1.1 一个 database + 五个 schema
 
 | database | 角色 | 谁在读写 | 连接开关 |
 |---|---|---|---|
-| **`rag_studio`** | **全栈唯一业务库**：库/目录/切片关系/任务/算子/图谱元数据 + 动态向量表 + `flow_*` 编排三表 + `model_registry` | `rag-knowledge-base`（唯一业务进程） | `POSTGRES_DB`（默认 `rag_studio`）；应用侧 `RKB_DB_NAME` 同值 |
+| **`rag_studio`** | **全栈唯一业务库**：库/目录/切片关系/任务/算子/图谱元数据 + 动态向量表 + `flow_*` 编排三表 + `model_registry` + Text2SQL 元数据 | `rag-knowledge-base`（唯一业务进程） | `POSTGRES_DB`（默认 `rag_studio`）；应用侧 `RKB_DB_NAME` 同值 |
 
 **单库部署**：整栈只有一个业务库 `rag_studio`。**本栈不存在跨库查询**。
 
-三个 schema：
+五个 schema：
 
 | schema | 内容 |
 |---|---|
 | `public` | 固定表：元数据、任务、算子、画布、模型注册表 |
 | `kb_index` | **动态表**：每个知识库一对「向量表 + 切片表」；图谱库导入后另有 `_vector` 检索索引 |
+| `task_center` | 统一任务队列与尝试历史（文件导入 / 图谱抽图 / 图谱导入 / Text2SQL 索引） |
+| `text2sql` | Text2SQL 数据源、结构目录、语义指标、版本化检索知识与查询工作台 |
+| `text2sql_index` | Text2SQL 按数据源分表的向量索引（`t2s_vec_<datasourceId>`，构建时建表） |
 
 ### 1.2 表清单
 
@@ -73,8 +76,9 @@
 |---|---|
 | `task` | 统一异步任务表：`FILE_IMPORT` / `GRAPH_EXTRACT` / `GRAPH_IMPORT`，统一状态与进度 |
 
-`public.kb_import_task` / `public.graph_extract_task` / `public.graph_import_task`
-是它的**只读兼容视图**，写入必须走 `task_center.task`。
+旧的 `public.kb_import_task` / `public.graph_extract_task` / `public.graph_import_task`
+已退役（`deploy/init/pg/20-drop-task-compat-views.sql`），三类任务只剩
+`task_center.task` 一个入口。
 
 **`rag_studio.kb_index`** 按库动态建表：
 
@@ -86,6 +90,30 @@
 | 实体表 | 图谱库 | `graph_<kbaseId>_vertex` |
 | 边表 | 图谱库 | `graph_<kbaseId>_edge` |
 | 检索索引 | 图谱库 | `graph_<kbaseId>_vector`（导入时懒建） |
+
+**`rag_studio.text2sql`（Text2SQL 元数据，18 表）**
+
+| 层次 | 表 | 用途 |
+|---|---|---|
+| 连接 | `t2s_datasource` | 外部库连接（`credential_ref` 存 `enc:v1:` 密文）、schema 范围、主题、查询策略、`config_revision`、活动版本、`embedding_model`、`llm_model`（SQL 生成模型，可随时改，NULL = 部署默认） |
+| 结构 | `t2s_table` / `t2s_column` | 扫描得到的原始注释与人工语义分开；`enabled` 是查询范围；`missing_since` 标记源对象消失；`value_cardinality`（LOW/HIGH/UNKNOWN）与 `distinct_value_count` 标记值基数，**只对已启用表上的已启用列**自动收录取值 |
+| 关联 | `t2s_relation` / `t2s_relation_column` | 外键/逻辑关联与**有序**列对；人工关联修改会清除核对标记 |
+| 枚举 | `t2s_value` | 封闭小字典的人工名称/同义词，加上扫描自动发现的低基数值（`source_type=DATABASE`）；标识类列（id/uuid/hash/邮箱/路径等）与 UUID/文件名取值不收录；城市、商品等开放维度不预置，查询时回库解析 |
+| 指标 | `t2s_metric` / `t2s_metric_column` / `t2s_metric_relation` | 指标表达式、过滤 AST、时间字段、可加性与依赖列/关联 |
+| 版本 | `t2s_config_version` | 冻结配置快照、内容 hash、embedding 模型/维度、构建状态 |
+| 检索知识 | `t2s_knowledge` | 按版本保存 TABLE/COLUMN/VALUE/RELATION/METRIC/NOTE 文本与外部向量引用；`index_status` 是各存储的汇总态 |
+| 存储绑定 | `t2s_knowledge_binding` | 每个知识对象在每种存储（VECTOR / ES）里的索引状态与外部标识 |
+| 异步 | `t2s_index_job` | SCHEMA_SYNC / KNOWLEDGE_BUILD / EMBEDDING 的幂等任务与尝试 |
+| 发布 | `t2s_publication` | 活动版本切换审计 |
+| 查询 | `t2s_query_run` | 固定版本/日期边界的问题、SQL、口径、结果预览与失败记录 |
+| 工作台 | `t2s_favorite` / `t2s_feedback` / `t2s_workspace` | 常用查询、反馈流转、草稿与偏好 |
+
+约束与触发器（`guard_config_version` / `guard_index_job` / `guard_query_run` /
+`guard_knowledge_write` / `guard_active_version` / `publish_version` /
+`archive_versions` / `purge_archived_knowledge`）在
+`deploy/init/pg/18-text2sql.sql`；向量表 `text2sql_index.t2s_vec_<datasourceId>`
+在版本构建时按数据源的固定维度创建（`vector(N)` + HNSW），不预先建表。
+接口层见 `backend/src/text_to_sql/`。
 
 ### 1.3 非关系存储（不在本文范围）
 
@@ -135,8 +163,8 @@ flow_workflow (1) ── 1 flow_draft        (草稿，workflow_id 唯一)
 |---|---|---|
 | 图谱库名 | `graph_<uuid>` | `graph_registry.kb_id` |
 | 统一任务行 | 裸 `<uuid>` | `task_center.task.kbase_id`（抽取/导入用 `task_type` 区分） |
-| 兼容视图导入任务 | `graph_<uuid>` | `graph_import_task.kb_id`（视图拼回前缀） |
-| 兼容视图抽取任务 | 裸 `<uuid>` | `graph_extract_task.kb_id` |
+
+导入任务对外返回的 `kb_id` 仍带 `graph_` 前缀，但那只是 store 返回时拼的，不进库。
 
 ---
 
@@ -245,9 +273,15 @@ flow_workflow (1) ── 1 flow_draft        (草稿，workflow_id 唯一)
 
 | `task_type` | `payload` | `extra` |
 |---|---|---|
-| `FILE_IMPORT` | `fileId` / `fileHandle`（完整任务输入，可重建） | — |
-| `GRAPH_EXTRACT` | `tmpDir` / `dto` / `schemaObj` / `isUpdate` / `cacheSchemaId` / `schemaId` / `operatorId` / `fileCount` | `resultFilePath` |
-| `GRAPH_IMPORT` | `kbIndexName` / `schemaId` / `schemaObj` / `zipPath` | `entity_total/success/failed`、`edge_*`、`failed_records` |
+| `FILE_IMPORT` | `fileId` / `fileHandle`（完整任务输入，可重建） | `fileName` / `fileSize` / `format` / `embeddingModel` / `splitOperatorId`、`chunkCount` / `vectorCount` / `indexDocCount`、`stageTimingsMs` |
+| `GRAPH_EXTRACT` | `tmpDir` / `dto` / `schemaObj` / `isUpdate` / `cacheSchemaId` / `schemaId` / `operatorId` / `fileCount` | `fileCount` / `operatorId` / `schemaId` / `llm` / `importTaskId`、实体与边的 `*_total/success/failed`、`vector_*`、`failedRecordCount`；失败时 `failedStage` |
+| `GRAPH_IMPORT` | `kbIndexName` / `schemaId` / `schemaObj` / `zipPath` | `entity_total/success/failed`、`edge_*`、`failed_records`、`vector_entities/edges/chunks/chunk_rows/skipped/collisions`、`index_error` |
+
+`extra` 同时承担**结果摘要**：`FILE_IMPORT` 在成功落停时由引擎合并 runner 通过
+`TaskContext.set_result` 收集的计数（失败/重试不写，避免回滚后的半成品被误读）；
+`GRAPH_EXTRACT` / `GRAPH_IMPORT` 由领域 runner 在写终态时合并。`vector_*` 是
+`graph_index_store.build_index` 的实际产出；索引失败不判死导入，任务落
+`COMPLETED_WITH_ERRORS` 并把原因写进 `index_error`。
 
 索引：主键 + `(task_type, status)` + `(status)` + `(kbase_id)` + `(created_at)`；
 私有属性需要等值查询时用表达式索引：`((payload->>'fileId'))`、
@@ -280,16 +314,11 @@ NOTIFY 丢失时的兜底。索引 `idx_task_claim` 与
 自动写入，覆盖引擎与领域两种终态写者；任务删除时外键级联删除。任务详情
 `GET /tasks/{id}` 的 `attempts` 数组返回这段历史。
 
-兼容视图（只读，从 JSONB 还原字段）：
-
-| 视图 | 过滤 | 状态映射 |
-|---|---|---|
-| `public.kb_import_task` | `task_type='FILE_IMPORT'` | 原样 |
-| `public.graph_extract_task` | `task_type='GRAPH_EXTRACT'` | `PENDING/COMPLETED` → `INIT/SUCCESS`；`FAILED/CANCELLED` → `FAIL` |
-| `public.graph_import_task` | `task_type='GRAPH_IMPORT'` | `RUNNING` → `PROCESSING`；`CANCELLED` → `FAILED`，其余同名 |
-
-> `kb_import_task.created_by/updated_by` 与 `graph_extract_task.created_by` 在视图里
-> 固定返回 `NULL`，只为兼容旧 DTO；任务表不再存这两列。
+> 旧的 `public.kb_import_task` / `public.graph_extract_task` / `public.graph_import_task`
+> 兼容视图已退役（`20-drop-task-compat-views.sql`）：运行期代码只走 `task_center.task`，
+> 视图没有 `INSTEAD OF` 触发器、写入本来就报错，留着只会让每次改表都要跟着重写。
+> 领域状态（`INIT/RUNNING/SUCCESS/FAIL`、`PENDING/PROCESSING/...`）的映射在
+> `graph/repository/*_store.py` 里完成，不再由视图承担。
 
 任务完成时**先移出内存表、再写库**（`task/queue.py`），所以库里的终态行是唯一可回落的来源。
 
@@ -342,19 +371,17 @@ NOTIFY 丢失时的兜底。索引 `idx_task_claim` 与
 
 主键 `(kb_id, schema_id)`。
 
-**`graph_extract_task`** —— 抽图任务（**兼容视图**，源表 `task_center.task`）
+**抽图 / 导入任务** —— 数据在 `task_center.task`，没有独立表
 
-字段形状保持 `GraphExtractTaskPO`：`id`、`kb_id`（裸 uuid）、`schema_id`、
-`operator_id`、`file_count`、`status`（`INIT/RUNNING/SUCCESS/FAIL`）、`progress`、
-`error_message`、`result_file_path`、审计与时间线列。只读；写入走
-`task_center.task WHERE task_type='GRAPH_EXTRACT'`。
+`task_type='GRAPH_EXTRACT'`：`kbase_id` 存裸 uuid；`payload` 放 `schemaId` /
+`operatorId` / `fileCount`，`extra` 放 `resultFilePath`。领域状态
+`INIT/RUNNING/SUCCESS/FAIL` 与统一状态的映射在 `graph_extract_store`。
 
-**`graph_import_task`** —— 图谱导入任务（**兼容视图**，源表 `task_center.task`）
-
-字段形状保持原 DTO：`task_id`、`kb_id`（`graph_<uuid>`）、`schema_id`、`status`
-（`PENDING/PROCESSING/COMPLETED/COMPLETED_WITH_ERRORS/FAILED`）、`progress`、
-实体/边六个计数、`failed_records`、`error_message`、审计时间。只读；写入走
-`task_center.task WHERE task_type='GRAPH_IMPORT'`，计数与失败明细在 `extra` jsonb。
+`task_type='GRAPH_IMPORT'`：`kbase_id` 存裸 uuid（对外返回时再拼 `graph_`）；
+`payload` 放 `schemaId` 与 zip 路径，`extra` 放实体/边六个计数与
+`failed_records`。领域状态
+`PENDING/PROCESSING/COMPLETED/COMPLETED_WITH_ERRORS/FAILED` 的映射在
+`graph_import_store`。
 
 ### 3.8 `agent_api_key` —— Agent 接口 API Key
 
@@ -814,6 +841,10 @@ graph_<uuid>_edge   (id BIGSERIAL pk, edge_id unique, edge_type, source_id, targ
 | `task_center.task` 与三个兼容视图 | `deploy/init/pg/10-unify-task-tables.sql`（空卷时在 00 之后自动执行；已有部署手工执行） |
 | 任务管理列/索引（`priority`、`cancel_requested*`、`CANCELLED` 状态） | `deploy/init/pg/16-task-management.sql`（幂等，已有部署手工执行） |
 | 任务尝试历史 `task_center.task_attempt` 与触发器 | `deploy/init/pg/17-task-attempt-history.sql`（幂等，已有部署手工执行） |
+| **Text2SQL 结构**（`text2sql` 18 表 + `text2sql_index` schema + 触发器/发布/归档函数） | `deploy/init/pg/18-text2sql.sql`（首次发布整体建库；结构变更时 DROP SCHEMA 后重跑，不做原地升级） |
+| Text2SQL 数据源扩展列（`query_examples` / `llm_model`） | `deploy/init/pg/29-text2sql-query-examples.sql`、`deploy/init/pg/30-text2sql-datasource-llm.sql`（幂等，已有部署可直接执行） |
+| `text2sql` / `text2sql_index` 的应用角色授权 | `deploy/init/pg/19-text2sql-grants.sh`（空卷，在 18 之后执行） |
+| `task_center.task` 的 `T2S_INDEX` 任务类型 | 已包含在 `deploy/init/pg/10-unify-task-tables.sql` 的 `ck_task_type` |
 | 非 superuser 应用角色 `rag_app` 与对象所有权 | `deploy/init/pg/05-app-role.sh`（空卷） |
 | 动态向量/切片表 | `knowledge_base/repository/ddl.py`，建库时按需创建（新表带 `UNIQUE(node_id)`） |
 | `model_registry` | `model/repository_pg.py` 的 `_ensure_schema`（`CREATE TABLE IF NOT EXISTS`，每进程一次） |

@@ -426,7 +426,8 @@ class TaskEngine:
             self._handle_durable_failure(registration, record, worker_id, error)
         else:
             if kind.status_owner == 'engine':
-                if pg_queue.complete(record.task_id, worker_id):
+                if pg_queue.complete(record.task_id, worker_id,
+                                     extra=record.extra or None):
                     record.status = STATUS_COMPLETED
                     record.end_time = datetime.now()
                     record.error_message = None

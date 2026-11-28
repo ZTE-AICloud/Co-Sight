@@ -8,8 +8,7 @@
 本类保留原有公开方法（``submit_task`` / ``get_task`` / ``statistics`` /
 ``failed_tasks`` / ``shutdown``），供上传、重试与监控接口继续使用。
 
-任务行写**统一任务表** ``task_center.task``（``task_type='FILE_IMPORT'``）；
-``kb_import_task`` 只是它的只读兼容视图。
+任务行写**统一任务表** ``task_center.task``（``task_type='FILE_IMPORT'``）。
 
 几个保持不变的语义：
 
@@ -268,22 +267,27 @@ class FileTaskQueue:
         except Exception:
             log.warning('persist task %s failed', task.task_id, exc_info=True)
 
-    def _persist_task_status(self, task: FileTask) -> None:
+    def _persist_task_status(self, task: FileTask,
+                             extra: Optional[dict] = None) -> None:
         progress = 100 if task.status == STATUS_COMPLETED else 0
         terminal = task.status in (STATUS_COMPLETED, STATUS_FAILED)
+        sets = ['status = %s', 'progress = %s', 'attempt = %s',
+                'error_message = %s', 'start_time = COALESCE(start_time, %s)',
+                'finish_time = %s', 'updated_at = NOW()']
+        params: list = [task.status, progress, task.retry_count + 1,
+                        task.error_message, task.start_time,
+                        task.end_time if terminal else None]
+        if extra is not None:
+            sets.append("extra = COALESCE(extra, '{}'::jsonb) || %s::jsonb")
+            params.append(json.dumps(extra, ensure_ascii=False, default=str))
+        params.extend([task.task_id, TASK_TYPE_FILE_IMPORT])
         try:
             with connection() as conn:
                 with conn.cursor() as cursor:
                     cursor.execute(
-                        f'UPDATE {TASK_TABLE} '
-                        'SET status = %s, progress = %s, attempt = %s, error_message = %s, '
-                        'start_time = COALESCE(start_time, %s), finish_time = %s, '
-                        'updated_at = NOW() '
+                        f'UPDATE {TASK_TABLE} SET {", ".join(sets)} '
                         'WHERE id = %s AND task_type = %s',
-                        (task.status, progress, task.retry_count + 1,
-                         task.error_message, task.start_time,
-                         task.end_time if terminal else None,
-                         task.task_id, TASK_TYPE_FILE_IMPORT),
+                        params,
                     )
         except Exception:
             log.warning('persist task status %s failed', task.task_id, exc_info=True)
@@ -443,7 +447,10 @@ class FileTaskQueue:
             else:
                 self._tasks[task.task_id] = task
         if persist:
-            self._persist_task_status(task)
+            if record.extra:
+                self._persist_task_status(task, extra=record.extra)
+            else:
+                self._persist_task_status(task)
 
     def _discard_task(self, record: TaskRecord) -> None:
         with self._lock:

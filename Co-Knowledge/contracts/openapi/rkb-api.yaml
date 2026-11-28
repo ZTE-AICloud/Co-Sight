@@ -2366,6 +2366,1215 @@ paths:
             schema:
               type: object
               additionalProperties: true
+  /text2sql/datasources:
+    get:
+      summary: List Datasources
+      operationId: list_datasources_api_co_knowledge_v1_text2sql_datasources_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - text2sql
+    post:
+      summary: Create Datasource
+      operationId: create_datasource_api_co_knowledge_v1_text2sql_datasources_post
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - text2sql
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /text2sql/datasources/connection-test:
+    post:
+      summary: Test Connection Payload
+      operationId: test_connection_payload_api_co_knowledge_v1_text2sql_datasources_connection_test_post
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - text2sql
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /text2sql/datasources/{datasource_id}:
+    get:
+      summary: Get Datasource
+      operationId: get_datasource_api_co_knowledge_v1_text2sql_datasources__datasource_id__get
+      parameters:
+      - name: datasource_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Datasource Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - text2sql
+    patch:
+      summary: Update Datasource
+      operationId: update_datasource_api_co_knowledge_v1_text2sql_datasources__datasource_id__patch
+      parameters:
+      - name: datasource_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Datasource Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - text2sql
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+    delete:
+      summary: Delete Datasource
+      operationId: delete_datasource_api_co_knowledge_v1_text2sql_datasources__datasource_id__delete
+      parameters:
+      - name: datasource_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Datasource Id
+      responses:
+        '204':
+          description: No Content
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - text2sql
+  /text2sql/datasources/{datasource_id}/columns/{column_id}:
+    patch:
+      summary: Update Column
+      operationId: update_column_api_co_knowledge_v1_text2sql_datasources__datasource_id__columns__column_id__patch
+      parameters:
+      - name: datasource_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Datasource Id
+      - name: column_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Column Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - text2sql
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /text2sql/datasources/{datasource_id}/connection-test:
+    post:
+      summary: Test Connection
+      operationId: test_connection_api_co_knowledge_v1_text2sql_datasources__datasource_id__connection_test_post
+      parameters:
+      - name: datasource_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Datasource Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - text2sql
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /text2sql/datasources/{datasource_id}/metrics:
+    get:
+      summary: List Metrics
+      operationId: list_metrics_api_co_knowledge_v1_text2sql_datasources__datasource_id__metrics_get
+      parameters:
+      - name: datasource_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Datasource Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - text2sql
+    post:
+      summary: Create Metric
+      operationId: create_metric_api_co_knowledge_v1_text2sql_datasources__datasource_id__metrics_post
+      parameters:
+      - name: datasource_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Datasource Id
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - text2sql
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /text2sql/datasources/{datasource_id}/metrics/{metric_id}:
+    patch:
+      summary: Update Metric
+      operationId: update_metric_api_co_knowledge_v1_text2sql_datasources__datasource_id__metrics__metric_id__patch
+      parameters:
+      - name: datasource_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Datasource Id
+      - name: metric_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Metric Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - text2sql
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+    delete:
+      summary: Delete Metric
+      operationId: delete_metric_api_co_knowledge_v1_text2sql_datasources__datasource_id__metrics__metric_id__delete
+      parameters:
+      - name: datasource_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Datasource Id
+      - name: metric_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Metric Id
+      responses:
+        '204':
+          description: No Content
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - text2sql
+  /text2sql/datasources/{datasource_id}/metrics/{metric_id}/status:
+    post:
+      summary: Set Metric Status
+      operationId: set_metric_status_api_co_knowledge_v1_text2sql_datasources__datasource_id__metrics__metric_id__status_post
+      parameters:
+      - name: datasource_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Datasource Id
+      - name: metric_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Metric Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - text2sql
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /text2sql/datasources/{datasource_id}/publication:
+    post:
+      summary: Publish Version
+      operationId: publish_version_api_co_knowledge_v1_text2sql_datasources__datasource_id__publication_post
+      parameters:
+      - name: datasource_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Datasource Id
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - text2sql
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /text2sql/datasources/{datasource_id}/publications:
+    get:
+      summary: List Publications
+      operationId: list_publications_api_co_knowledge_v1_text2sql_datasources__datasource_id__publications_get
+      parameters:
+      - name: datasource_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Datasource Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - text2sql
+  /text2sql/datasources/{datasource_id}/query:
+    post:
+      summary: Run Query
+      operationId: run_query_api_co_knowledge_v1_text2sql_datasources__datasource_id__query_post
+      parameters:
+      - name: datasource_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Datasource Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - text2sql
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /text2sql/datasources/{datasource_id}/query/stream:
+    post:
+      summary: Run Query Stream
+      description: '查询的 SSE 版：``stage`` 帧上报阶段，``result`` 帧是完整响应体。
+
+
+        与同步 ``/query`` 只差传输方式：语义、落库、响应字段完全一致。
+
+        首字节前的失败（鉴权/请求体）仍是真实状态码 + problem+json；进入流式后
+
+        的失败变成终态 ``event: error``（HTTP 已是 200，不能改状态）。'
+      operationId: run_query_stream_api_co_knowledge_v1_text2sql_datasources__datasource_id__query_stream_post
+      parameters:
+      - name: datasource_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Datasource Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            text/event-stream:
+              schema:
+                type: string
+              description: 'event: stage|result|done|error，data 为 JSON'
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - text2sql
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /text2sql/datasources/{datasource_id}/relations:
+    get:
+      summary: List Relations
+      operationId: list_relations_api_co_knowledge_v1_text2sql_datasources__datasource_id__relations_get
+      parameters:
+      - name: datasource_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Datasource Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - text2sql
+    post:
+      summary: Create Relation
+      operationId: create_relation_api_co_knowledge_v1_text2sql_datasources__datasource_id__relations_post
+      parameters:
+      - name: datasource_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Datasource Id
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - text2sql
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /text2sql/datasources/{datasource_id}/relations/{relation_id}:
+    patch:
+      summary: Update Relation
+      operationId: update_relation_api_co_knowledge_v1_text2sql_datasources__datasource_id__relations__relation_id__patch
+      parameters:
+      - name: datasource_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Datasource Id
+      - name: relation_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Relation Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - text2sql
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+    delete:
+      summary: Delete Relation
+      operationId: delete_relation_api_co_knowledge_v1_text2sql_datasources__datasource_id__relations__relation_id__delete
+      parameters:
+      - name: datasource_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Datasource Id
+      - name: relation_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Relation Id
+      responses:
+        '204':
+          description: No Content
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - text2sql
+  /text2sql/datasources/{datasource_id}/relations/{relation_id}/verification:
+    post:
+      summary: Verify Relation
+      operationId: verify_relation_api_co_knowledge_v1_text2sql_datasources__datasource_id__relations__relation_id__verification_post
+      parameters:
+      - name: datasource_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Datasource Id
+      - name: relation_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Relation Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - text2sql
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /text2sql/datasources/{datasource_id}/scan:
+    post:
+      summary: Scan Datasource
+      operationId: scan_datasource_api_co_knowledge_v1_text2sql_datasources__datasource_id__scan_post
+      parameters:
+      - name: datasource_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Datasource Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - text2sql
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /text2sql/datasources/{datasource_id}/tables:
+    get:
+      summary: List Tables
+      operationId: list_tables_api_co_knowledge_v1_text2sql_datasources__datasource_id__tables_get
+      parameters:
+      - name: datasource_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Datasource Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - text2sql
+  /text2sql/datasources/{datasource_id}/tables/{table_id}:
+    patch:
+      summary: Update Table
+      operationId: update_table_api_co_knowledge_v1_text2sql_datasources__datasource_id__tables__table_id__patch
+      parameters:
+      - name: datasource_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Datasource Id
+      - name: table_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Table Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - text2sql
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /text2sql/datasources/{datasource_id}/values:
+    get:
+      summary: List Values
+      operationId: list_values_api_co_knowledge_v1_text2sql_datasources__datasource_id__values_get
+      parameters:
+      - name: datasource_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Datasource Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - text2sql
+    post:
+      summary: Create Value
+      operationId: create_value_api_co_knowledge_v1_text2sql_datasources__datasource_id__values_post
+      parameters:
+      - name: datasource_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Datasource Id
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - text2sql
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /text2sql/datasources/{datasource_id}/values/{value_id}:
+    patch:
+      summary: Update Value
+      operationId: update_value_api_co_knowledge_v1_text2sql_datasources__datasource_id__values__value_id__patch
+      parameters:
+      - name: datasource_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Datasource Id
+      - name: value_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Value Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - text2sql
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+    delete:
+      summary: Delete Value
+      operationId: delete_value_api_co_knowledge_v1_text2sql_datasources__datasource_id__values__value_id__delete
+      parameters:
+      - name: datasource_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Datasource Id
+      - name: value_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Value Id
+      responses:
+        '204':
+          description: No Content
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - text2sql
+  /text2sql/datasources/{datasource_id}/versions:
+    post:
+      summary: Create Version
+      operationId: create_version_api_co_knowledge_v1_text2sql_datasources__datasource_id__versions_post
+      parameters:
+      - name: datasource_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Datasource Id
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - text2sql
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+    get:
+      summary: List Versions
+      operationId: list_versions_api_co_knowledge_v1_text2sql_datasources__datasource_id__versions_get
+      parameters:
+      - name: datasource_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Datasource Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - text2sql
+  /text2sql/datasources/{datasource_id}/versions/cleanup:
+    post:
+      summary: Cleanup Versions
+      operationId: cleanup_versions_api_co_knowledge_v1_text2sql_datasources__datasource_id__versions_cleanup_post
+      parameters:
+      - name: datasource_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Datasource Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - text2sql
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /text2sql/datasources/{datasource_id}/versions/{version_id}:
+    get:
+      summary: Get Version
+      operationId: get_version_api_co_knowledge_v1_text2sql_datasources__datasource_id__versions__version_id__get
+      parameters:
+      - name: datasource_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Datasource Id
+      - name: version_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Version Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - text2sql
+  /text2sql/datasources/{datasource_id}/versions/{version_id}/build:
+    post:
+      summary: Build Version
+      operationId: build_version_api_co_knowledge_v1_text2sql_datasources__datasource_id__versions__version_id__build_post
+      parameters:
+      - name: datasource_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Datasource Id
+      - name: version_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Version Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - text2sql
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /text2sql/favorites:
+    get:
+      summary: List Favorites
+      operationId: list_favorites_api_co_knowledge_v1_text2sql_favorites_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - text2sql
+    post:
+      summary: Create Favorite
+      operationId: create_favorite_api_co_knowledge_v1_text2sql_favorites_post
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - text2sql
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /text2sql/favorites/{favorite_id}:
+    patch:
+      summary: Update Favorite
+      operationId: update_favorite_api_co_knowledge_v1_text2sql_favorites__favorite_id__patch
+      parameters:
+      - name: favorite_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Favorite Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - text2sql
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+    delete:
+      summary: Delete Favorite
+      operationId: delete_favorite_api_co_knowledge_v1_text2sql_favorites__favorite_id__delete
+      parameters:
+      - name: favorite_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Favorite Id
+      responses:
+        '204':
+          description: No Content
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - text2sql
+  /text2sql/feedback:
+    get:
+      summary: List Feedback
+      operationId: list_feedback_api_co_knowledge_v1_text2sql_feedback_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - text2sql
+  /text2sql/runs:
+    get:
+      summary: List Runs
+      operationId: list_runs_api_co_knowledge_v1_text2sql_runs_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - text2sql
+    delete:
+      summary: Clear Runs
+      operationId: clear_runs_api_co_knowledge_v1_text2sql_runs_delete
+      responses:
+        '204':
+          description: No Content
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - text2sql
+  /text2sql/runs/{run_id}:
+    get:
+      summary: Get Run
+      operationId: get_run_api_co_knowledge_v1_text2sql_runs__run_id__get
+      parameters:
+      - name: run_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Run Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - text2sql
+    delete:
+      summary: Delete Run
+      operationId: delete_run_api_co_knowledge_v1_text2sql_runs__run_id__delete
+      parameters:
+      - name: run_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Run Id
+      responses:
+        '204':
+          description: No Content
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - text2sql
+  /text2sql/runs/{run_id}/feedback:
+    post:
+      summary: Create Feedback
+      operationId: create_feedback_api_co_knowledge_v1_text2sql_runs__run_id__feedback_post
+      parameters:
+      - name: run_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Run Id
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - text2sql
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+  /text2sql/workspace:
+    get:
+      summary: Get Workspace
+      operationId: get_workspace_api_co_knowledge_v1_text2sql_workspace_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - text2sql
+    put:
+      summary: Save Workspace
+      operationId: save_workspace_api_co_knowledge_v1_text2sql_workspace_put
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        4XX:
+          $ref: '#/components/responses/Problem'
+        5XX:
+          $ref: '#/components/responses/Problem'
+      tags:
+      - text2sql
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
   /workflows:
     get:
       summary: Page Workflows

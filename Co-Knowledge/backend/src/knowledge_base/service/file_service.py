@@ -19,6 +19,7 @@ from infrastructure.storage import kb_storage as storage
 from shared.errors.api import (KbApiError, KbLiteralError, KbServerError, KbValidationError,
                                   KbValidatorError, KbWrappedValidatorError)
 from knowledge_base.repository import directory as directory_store
+from knowledge_base.service.directory_service import FILE_LIMIT
 from knowledge_base import graph_bridge as graph_lifecycle
 from knowledge_base.task import queue as task_queue
 from infrastructure.logging.logutil import log
@@ -529,6 +530,9 @@ def upload_files(files: list[UploadedFile], metadata: dict, kbase_id: str,
     if not cover_flag:
         _reject_duplicate_names(kbase_id, directory_id, [f.filename for f in files])
 
+    # 单目录文件数：放在判重之后 —— 同名冲突（409）优先，前端还要靠它弹「是否覆盖」。
+    _check_directory_file_count(kbase_id, directory_id, files, cover_flag)
+
     # ``fileSaveKBase`` → ``getMultipartFiles``：**图谱库直接 return**，不做算子校验
     if run_split_pipeline and metadata.get('category') != CATEGORY_KNOWLEDGE_GRAPH:
         extensions = {Path(item.filename).suffix.lstrip('.').lower() for item in files}
@@ -815,6 +819,24 @@ def _check_kbase_file_count(kbase_id: str, increased: int) -> None:
     limit = _kbase_row(kbase_id).get('file_count_limit')
     if limit and current + increased > limit:
         raise KbApiError('kbase.file.count.exceed', current, increased, limit)
+
+
+def _check_directory_file_count(kbase_id: str, directory_id: str,
+                                files: list[UploadedFile], cover_flag: bool) -> None:
+    """单目录文件数上限（``FILE_LIMIT``，只数文件、不含子文件夹）。
+
+    覆盖上传（``coverFlag``）时同名旧文件会被**替换**，不增加目录里的行数，
+    先把这部分减掉再判 —— 否则「目录正好 500 个文件」时连覆盖重传都做不了。
+    """
+    with directory_store.connection() as conn:
+        with conn.cursor() as cursor:
+            current = directory_store.count_children_files(cursor, kbase_id, directory_id)
+            replaced = 0
+            if cover_flag:
+                replaced = directory_store.count_children_files_by_title(
+                    cursor, kbase_id, directory_id, [f.filename for f in files])
+    if current - replaced + len(files) > FILE_LIMIT:
+        raise KbApiError('directory.file.size.over.limit', FILE_LIMIT)
 
 
 def doc_download_file(kbase_id: str, file_id: str) -> bytes:

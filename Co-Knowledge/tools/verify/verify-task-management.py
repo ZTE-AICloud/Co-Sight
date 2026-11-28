@@ -399,6 +399,46 @@ def test_attempt_history(s):
         execute('DELETE FROM task_center.task WHERE id=%s', (task_id,))
 
 
+def test_result_extra(s):
+    """成功的文件导入要把结果摘要写进 ``extra``（详情页「产出 extra」有内容）。"""
+    name = f'E2E-EXTRA-{uuid.uuid4().hex[:6]}'
+    kb_id = create_doc_kb(s, name)
+    try:
+        dir_id = directory_id(s, kb_id)
+        file_name = f'{name}.md'
+        upload_md(
+            s, kb_id, dir_id, file_name,
+            f'# {name}\n\n用于验证结果摘要：切片、向量与阶段耗时。\n\n## 第二节\n\n正文。')
+        row = wait_file(s, kb_id, file_name)
+        assert row.get('status') == 1, row
+
+        deadline = time.monotonic() + 30
+        detail = None
+        while time.monotonic() < deadline:
+            listing = api(s, 'GET', f'/tasks?keyword={file_name}&size=20')
+            assert listing.status_code == 200, listing.text
+            item = next((row for row in listing.json()['items']
+                         if row.get('fileName') == file_name), None)
+            if item:
+                detail = api(s, 'GET', f"/tasks/{item['id']}").json()
+                if detail.get('status') == 'COMPLETED':
+                    break
+            time.sleep(0.2)
+        assert detail and detail.get('status') == 'COMPLETED', detail
+
+        extra = detail.get('extra') or {}
+        assert int(extra.get('chunkCount') or 0) > 0, extra
+        assert int(extra.get('vectorCount') or 0) > 0, extra
+        assert int(extra.get('indexDocCount') or 0) > 0, extra
+        assert set(extra.get('stageTimingsMs') or {}) >= {
+            'parse', 'split', 'embed'}, extra
+        print('MGMT file result extra OK, chunks=', extra['chunkCount'],
+              'vectors=', extra['vectorCount'])
+    finally:
+        cleanup_kb(s, kb_id)
+        execute('DELETE FROM task_center.task WHERE kbase_id=%s', (kb_id,))
+
+
 def main():
     global EMBEDDING
     s = session()
@@ -410,6 +450,7 @@ def main():
     test_filters_and_errors(s)
     test_cancel_retry_priority(s)
     test_cancel_hook(s)
+    test_result_extra(s)
     test_attempt_history(s)
     after = int(one('SELECT count(*) FROM task_center.task')[0])
     assert after == before, (before, after)

@@ -67,6 +67,12 @@ token 词汇（`--ux-*`/`--ds-*`）或在组件内重定义 `--rs-*`**。全局�
 | `verify-task-management.py` | 统一任务管理面：列表/统计/详情、过滤与错误、取消/重试（含领域回调）、优先级、尝试历史、合成任务清理 | 容器内 Python + `requests` + 运行中的栈 |
 | `verify-task-running-cancel.py` | RUNNING 任务协作式取消：抽图进入 RUNNING → 取消 → 任务/尝试历史落 `CANCELLED`、图谱库落解析失败 | 容器内 Python + `requests` + 真实模型端点 |
 
+## Text2SQL
+
+| 脚本 | 验的是 | 依赖 |
+|---|---|---|
+| `verify-text2sql-e2e.py` | 真实链路：建源/连接测试/扫描、枚举与指标、版本构建发布、NL→SQL 只读执行、SQL 安全拦截、历史/收藏/反馈/工作台 | 容器内 Python + `requests` + PostgreSQL + 真实模型端点；需 `POSTGRES_USER`/`POSTGRES_PASSWORD` 创建演示库 |
+
 ## 图谱
 
 | 脚本 | 验的是 | 依赖 |

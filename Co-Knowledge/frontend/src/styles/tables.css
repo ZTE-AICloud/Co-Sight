@@ -1,6 +1,9 @@
 .list-table { width: 100%; border-collapse: separate; border-spacing: 0; text-align: left; font-size: var(--rs-table-font-size); line-height: 1.5; }
 .list-table th { height: var(--rs-table-header-height); background: var(--rs-bg-soft); color: var(--rs-text-2); font-size: var(--rs-table-header-font-size); font-weight: 600; padding: 10px var(--rs-table-cell-padding); border-bottom: 1px solid var(--rs-border); white-space: nowrap; }
 .list-table td { height: var(--rs-table-row-height); padding: var(--rs-table-cell-padding); border-bottom: 1px solid var(--rs-border-soft); font-size: var(--rs-table-font-size); color: var(--rs-text-2); vertical-align: middle; line-height: 1.5; }
+/* 卡片内的数据表（结果、预览、报告）用紧凑行高，与列表页的 96px 区分。 */
+.list-table--compact th { padding-inline: 12px; }
+.list-table--compact td { height: var(--el-component-size); padding: 8px 12px; }
 .list-table .entity-title { font-size: inherit; font-weight: 650; line-height: 1.5; }
 .list-table .entity-sub { font-size: var(--rs-table-secondary-font-size); margin-top: 4px; line-height: 1.45; }
 /* 知识库名称下方的描述固定单行，超出用省略号；全量文本挂在 title 上。

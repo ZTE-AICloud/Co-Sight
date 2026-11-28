@@ -24,7 +24,7 @@ test.describe('韧性', () => {
 
     // 断网时连 /auth/status 都不可达：守卫 fail-closed，登录页显示「认证服务不可用」，
     // 而不是把服务故障误当成无鉴权放行、或停在白屏。
-    await page.goto(`${env.baseURL}/#/knowledge`)
+    await page.goto(`${env.baseURL}/knowledge`)
     await expect(page.getByText('认证服务不可用')).toBeVisible({ timeout: 30_000 })
 
     await page.unroute(API_GLOB)
@@ -44,7 +44,7 @@ test.describe('韧性', () => {
       await route.abort('timedout')
     })
 
-    const navigation = page.goto(`${env.baseURL}/#/knowledge`)
+    const navigation = page.goto(`${env.baseURL}/knowledge`)
     // 列表加载中由空态行显示「加载中」（原生表格已不再挂 el-loading 遮罩）。
     await expect(page.locator('.empty-row')).toContainText('加载中', { timeout: 10_000 })
     await navigation
@@ -186,8 +186,8 @@ test.describe('韧性', () => {
       })
       const pageA = await contextA.newPage()
       const pageB = await contextB.newPage()
-      await pageA.goto(`${env.baseURL}/#/knowledge`)
-      await pageB.goto(`${env.baseURL}/#/knowledge`)
+      await pageA.goto(`${env.baseURL}/knowledge`)
+      await pageB.goto(`${env.baseURL}/knowledge`)
 
       await expect(pageA.locator('html')).toHaveAttribute('lang', 'en-US')
       await expect(pageB.locator('html')).toHaveAttribute('lang', 'zh-CN')

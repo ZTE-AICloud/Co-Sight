@@ -180,6 +180,10 @@
 
       <footer class="login-footer">
         <span>© {{ new Date().getFullYear() }} Knowledge Studio</span><span class="login-footer-dot">·</span><span>{{ $t('modules.auth.login.footerTagline') }}</span>
+        <template v-if="currentRelease">
+          <span class="login-footer-dot" aria-hidden="true">·</span>
+          <span class="login-version text-code" :title="$t('modules.release.loginVersionTitle', { version: currentRelease.version })">v{{ currentRelease.version }}</span>
+        </template>
       </footer>
     </section>
 
@@ -207,6 +211,7 @@ import { Check, TopRight, ChatDotRound, Compass, Connection, FolderOpened, Hide,
 import BrandMark from '@/shared/ui/BrandMark.vue'
 import LoginIllustration from '@/shared/ui/LoginIllustration.vue'
 import { GlobeIcon } from '@/shared/ui/icons'
+import { currentRelease } from '@/shared/constants/releases'
 import { isChineseLanguage, switchLanguage } from '@/shared/lib/language'
 import { useTheme } from '@/shared/lib/theme'
 import appState from '@/app/state'
@@ -434,6 +439,7 @@ onMounted(() => {
 .login-support{display:flex;justify-content:center;align-items:center;gap:5px;margin:25px 0 0;font-size:var(--rs-font-size-caption);color:var(--rs-text-3)}
 .login-footer{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:12px;color:var(--rs-text-3);font-size:10px;line-height:1.8;padding:12px 0 2px}
 .login-footer-dot{opacity:.5}
+.login-version{color:var(--rs-text-2);font-weight:600}
 .login-spinner{width:15px;height:15px;border:2px solid #ffffff55;border-top-color:#fff;border-radius:50%;animation:login-spin .7s linear infinite}
 .login-help-content{text-align:center;padding:10px 8px}
 .login-help-icon{display:grid;place-items:center;width:48px;height:48px;margin:0 auto;background:var(--rs-bg-selected);color:var(--rs-primary);border-radius:12px}

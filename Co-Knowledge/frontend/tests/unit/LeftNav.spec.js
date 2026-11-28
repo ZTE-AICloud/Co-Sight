@@ -31,12 +31,14 @@ const ZH = {
   documentKb: '文档知识库',
   graphKb: '图谱知识库',
   chat: '对话测试',
+  text2sql: 'Text2SQL',
   extended: '自定义算子',
   model: '模型管理',
   task: '任务管理',
   remote: '远程接入',
   remoteGuide: '接入方法',
   remoteKeys: '密钥管理',
+  release: '版本更新',
   collapse: '收起侧栏',
   expand: '展开侧栏',
   switchLanguage: '切换语言'
@@ -58,7 +60,7 @@ describe('LeftNav', () => {
   })
 
   describe('渲染（真 i18n 词条）', () => {
-    it('四组标题 + 九项叶子菜单都用真文案，没有渲染出 i18n 键名', async () => {
+    it('四组标题 + 十一项叶子菜单都用真文案，没有渲染出 i18n 键名', async () => {
       // Act
       const wrapper = await mountWithPlugins(LeftNav, { route: '/chat' })
 
@@ -74,11 +76,13 @@ describe('LeftNav', () => {
         ZH.graphKb,
         ZH.rag,
         ZH.chat,
+        ZH.text2sql,
         ZH.extended,
         ZH.model,
         ZH.task,
         ZH.remoteGuide,
-        ZH.remoteKeys
+        ZH.remoteKeys,
+        ZH.release
       ])
       expectNoI18nMisses(wrapper)
     })
@@ -87,7 +91,7 @@ describe('LeftNav', () => {
       // Act
       const wrapper = await mountWithPlugins(LeftNav, { route: '/chat' })
 
-      // Assert：侧栏没有折叠子菜单，九个叶子入口始终在 DOM 里
+      // Assert：侧栏没有折叠子菜单，十个叶子入口始终在 DOM 里
       for (const label of [ZH.documentKb, ZH.rag, ZH.extended, ZH.remoteGuide]) {
         const item = findByText(wrapper, label, '.nav-item')
         expect(item, label).not.toBeNull()
@@ -328,6 +332,14 @@ describe('LeftNav', () => {
       expect(activeLabels(wrapper)).toEqual([ZH.remoteKeys])
     })
 
+    it('/release 高亮「版本更新」', async () => {
+      // Act
+      const wrapper = await mountWithPlugins(LeftNav, { route: '/release' })
+
+      // Assert
+      expect(activeLabels(wrapper)).toEqual([ZH.release])
+    })
+
     it('/approve 这种菜单外的路由整条左栏不高亮（有意如此）', async () => {
       // Act
       const wrapper = await mountWithPlugins(LeftNav, { route: '/approve' })
@@ -434,11 +446,14 @@ describe('resolveActiveMenu（纯函数，逐条钉映射表）', () => {
     // 其余 /knowledge/* 子页归文档知识库
     ['/knowledge/detail/9/documents', '/knowledge'],
     ['/chat', '/chat'],
+    ['/text2sql', '/text2sql'],
     ['/flow', '/flow'],
     // 远程接入的子菜单（带尾斜杠也要命中）
     ['/access', '/access'],
     ['/keys', '/keys'],
     ['/keys/', '/keys'],
+    ['/release', '/release'],
+    ['/release/', '/release'],
     // `/remoteAccess` 是已下线的旧前缀；纯函数原样返回，不高亮任何叶子
     ['/remoteAccess', '/remoteAccess'],
     // 菜单外：原样返回，结果是「不高亮」

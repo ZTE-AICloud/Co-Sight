@@ -77,7 +77,7 @@ services:
       RKB_DB_PASSWORD: ${RKB_DB_PASSWORD:-}
     volumes:
       - pgdata:/var/lib/postgresql/data
-      # 空 PGDATA 时自动建 22 张核心静态表 + kb_index schema。
+      # 空 PGDATA 时按序跑 init/pg；00 建 22 张，任务表收敛后 public 剩 19 张 + kb_index schema。
       - ./init/pg:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-rag} -d ${POSTGRES_DB:-rag_studio}"]

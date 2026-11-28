@@ -1,4 +1,4 @@
-import { Document, Share, Search, ChatDotRound, Link, Key, List } from '@element-plus/icons-vue'
+import { CollectionTag, Document, Share, Search, ChatDotRound, Link, Key, List, Coin } from '@element-plus/icons-vue'
 import { CubeIcon, PuzzleIcon } from '@/shared/ui/icons'
 
 /**
@@ -8,7 +8,7 @@ import { CubeIcon, PuzzleIcon } from '@/shared/ui/icons'
  * 知识库组还有「子页归到哪个入口高亮」这层映射（`resolveActiveMenu`），`meta` 表达不了。
  *
  * 左栏路径：
- *   /knowledge、/graph、/flow、/chat、/operators、/models、/tasks、/access、/keys。
+ *   /knowledge、/graph、/flow、/chat、/text2sql、/operators、/models、/tasks、/access、/keys、/release。
  *
  * 分组按用途划分：知识库（构建）、知识应用（使用）、能力配置（配置）、
  * 远程接入（集成）；任务管理是跨知识库的后台任务中心，单独一级。
@@ -64,6 +64,12 @@ export const NAV_MENUS = [
         labelKey: 'nav.chat',
         iconComponent: ChatDotRound,
         route: { path: '/chat' }
+      },
+      {
+        index: '/text2sql',
+        labelKey: 'nav.text2sql',
+        iconComponent: Coin,
+        route: { path: '/text2sql' }
       }
     ]
   },
@@ -115,6 +121,14 @@ export const NAV_MENUS = [
         route: { path: '/keys' }
       }
     ]
+  },
+  {
+    // 版本更新：放在导航最后，与页脚的版本号入口互为补充
+    // （页脚给「当前是什么版本」，菜单给「改过什么」）。
+    index: '/release',
+    labelKey: 'modules.release.pageTitle',
+    iconComponent: CollectionTag,
+    route: { name: 'release' }
   }
 ]
 
@@ -147,6 +161,9 @@ export function resolveActiveMenu (path) {
   }
   if (path === '/tasks' || path.startsWith('/tasks/')) {
     return '/tasks'
+  }
+  if (path === '/release' || path.startsWith('/release/')) {
+    return '/release'
   }
   return path
 }

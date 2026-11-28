@@ -110,10 +110,10 @@
                 </div>
               </div>
             </td>
-            <td class="nowrap">
+            <td class="nowrap endpoint-cell">
               <div class="endpoint-line">
                 <span class="endpoint-icon"><Link /></span>
-                <span>{{ row.baseUrl || '--' }}</span>
+                <span class="endpoint-url">{{ row.baseUrl || '--' }}</span>
                 <button
                   class="icon-button copy"
                   :aria-label="$t('public.copy')"
@@ -191,7 +191,7 @@
             </td>
           </tr>
           <tr v-if="!rows.length">
-            <td colspan="7" class="empty-row">
+            <td colspan="6" class="empty-row">
               {{ $t('modules.modelManagement.empty') }}
             </td>
           </tr>
@@ -684,14 +684,21 @@ defineExpose({ refreshTableData })
 </script>
 
 <style scoped>
-.models-table { min-width: 1220px; }
-.models-table .entity { min-width: 230px; }
-.models-table .entity-title { white-space: nowrap; }
+.models-table { min-width: 0; table-layout: fixed; }
+.models-table .entity { min-width: 0; }
+.models-table .entity-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* 固定布局按表头首行定列宽：勾选列 44px，名称/端点/密钥/状态按比例分，
+   操作列不设宽度，由它吸收百分比之外的余量（余量若没人接，会并进第一列，
+   勾选列被撑到一百多像素，名称列前空出一大块）。 */
+.models-table th:nth-child(1) { width: 44px; }
 .models-table th:nth-child(2) { width: 22%; }
-.models-table th:nth-child(3) { width: 25%; }
-.models-table th:nth-child(4) { width: 12%; }
-.models-table th:nth-child(5) { width: 10%; }
-.endpoint-line { display: flex; gap: 7px; align-items: center; }
+.models-table th:nth-child(3) { width: 32%; }
+.models-table th:nth-child(4) { width: 10%; }
+.models-table th:nth-child(5) { width: 9%; }
+.endpoint-cell { min-width: 0; }
+.endpoint-line { display: flex; gap: 7px; align-items: center; min-width: 0; }
+.endpoint-url { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 1100px) { .models-table { min-width: 980px; } }
 .key-line { display: flex; gap: 6px; align-items: center; }
 .endpoint-icon {
   width: 27px;

@@ -46,6 +46,21 @@ _SUCCESS_STATUS: dict[tuple[str, str], int] = {
     ('post', '/workflows/{workflow_id}/publication'): 201,
     ('delete', '/workflows/{workflow_id}/publication'): 204,
     ('post', '/models'): 201,
+    ('post', '/text2sql/datasources'): 201,
+    ('delete', '/text2sql/datasources/{datasource_id}'): 204,
+    ('post', '/text2sql/datasources/{datasource_id}/relations'): 201,
+    ('delete', '/text2sql/datasources/{datasource_id}/relations/{relation_id}'): 204,
+    ('post', '/text2sql/datasources/{datasource_id}/values'): 201,
+    ('delete', '/text2sql/datasources/{datasource_id}/values/{value_id}'): 204,
+    ('post', '/text2sql/datasources/{datasource_id}/metrics'): 201,
+    ('delete', '/text2sql/datasources/{datasource_id}/metrics/{metric_id}'): 204,
+    ('post', '/text2sql/datasources/{datasource_id}/versions'): 201,
+    ('post', '/text2sql/datasources/{datasource_id}/publication'): 201,
+    ('post', '/text2sql/runs/{run_id}/feedback'): 201,
+    ('post', '/text2sql/favorites'): 201,
+    ('delete', '/text2sql/runs/{run_id}'): 204,
+    ('delete', '/text2sql/runs'): 204,
+    ('delete', '/text2sql/favorites/{favorite_id}'): 204,
     ('post', '/agent-keys'): 201,
     ('post', '/auth/logout'): 204,
     ('post', '/auth/password'): 204,
@@ -601,6 +616,14 @@ def _success_response(method: str, path: str, existing: dict[str, Any]) -> tuple
             'text/event-stream': {
                 'schema': {'type': 'string'},
                 'description': 'event: retrieval|token|done|error，data 为 JSON',
+            },
+        }
+    elif (path == '/text2sql/datasources/{datasource_id}/query/stream'
+          and method == 'post'):
+        response['content'] = {
+            'text/event-stream': {
+                'schema': {'type': 'string'},
+                'description': 'event: stage|result|done|error，data 为 JSON',
             },
         }
     return str(status), response

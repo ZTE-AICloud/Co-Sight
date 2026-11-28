@@ -57,6 +57,14 @@ let app = null
 const base = process.env.BASE_URL
 const ROUTER_MODE = process.env.VUE_APP_ROUTE_MODE
 const mode = ROUTER_MODE
+
+// history 模式下把旧 hash 深链（`#/knowledge`）原地改写为 path 深链，
+// 让仍带 `#/` 的书签和外部链接继续落到同一页面。
+if (mode !== 'hash' && window.location.hash.startsWith('#/')) {
+  const legacyPath = window.location.hash.slice(1)
+  window.history.replaceState(null, '', `${base.replace(/\/$/, '')}${legacyPath}`)
+}
+
 const router = createRouter({
   history: mode === 'hash' ? createWebHashHistory(base) : createWebHistory(base), // 此处代码是根据父应用路由模式变化，也可以固定不变化
   routes: routerConfigs

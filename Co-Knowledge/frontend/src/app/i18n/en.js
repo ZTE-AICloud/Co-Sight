@@ -13,6 +13,7 @@ import kbWorkspace from './en/kbWorkspace';
 import commonUi from './en/commonUi';
 import studioDialogs from './en/studioDialogs';
 import auth from './en/auth';
+import release from './en/release';
 
 export default {
   modules: {
@@ -29,7 +30,8 @@ export default {
     taskManagement,
     remoteAccess,
     studioDialogs,
-    auth
+    auth,
+    release
   },
   nav,
   // Product brand subtitle shared by the sidebar and the login page.

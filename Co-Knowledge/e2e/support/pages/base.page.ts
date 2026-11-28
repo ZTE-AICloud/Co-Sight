@@ -4,22 +4,25 @@ import { expect, type Page } from '@playwright/test'
 export class BasePage {
   constructor (readonly page: Page) {}
 
-  /** hash 路由：传 `/#/knowledge`、`#/knowledge` 或 `/knowledge` 均可。 */
-  async gotoHash (hash: string): Promise<void> {
-    let normalized = hash
+  /** history 路由：传 `/knowledge`、`#/knowledge` 或 `/#/knowledge` 均可（统一归一为 path）。 */
+  async gotoPath (path: string): Promise<void> {
+    let normalized = path
     if (normalized.startsWith('/#')) normalized = normalized.slice(1)
-    else if (!normalized.startsWith('#')) {
-      normalized = `#${normalized.startsWith('/') ? '' : '/'}${normalized}`
-    }
-    await this.page.goto(`/${normalized}`, { waitUntil: 'domcontentloaded' })
+    if (normalized.startsWith('#')) normalized = normalized.slice(1)
+    if (!normalized.startsWith('/')) normalized = `/${normalized}`
+    await this.page.goto(normalized, { waitUntil: 'domcontentloaded' })
   }
 
   async expectRoot (selector: string): Promise<void> {
     await expect(this.page.locator(selector).first()).toBeVisible()
   }
 
-  async expectHash (hash: string): Promise<void> {
-    const escaped = hash.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-    await expect(this.page).toHaveURL(new RegExp(`${escaped}$`))
+  async expectPath (path: string): Promise<void> {
+    let normalized = path
+    if (normalized.startsWith('/#')) normalized = normalized.slice(1)
+    if (normalized.startsWith('#')) normalized = normalized.slice(1)
+    if (!normalized.startsWith('/')) normalized = `/${normalized}`
+    const escaped = normalized.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    await expect(this.page).toHaveURL(new RegExp(`${escaped}(?:[?#].*)?$`))
   }
 }

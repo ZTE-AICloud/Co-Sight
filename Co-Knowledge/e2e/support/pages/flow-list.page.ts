@@ -2,7 +2,7 @@ import { expect } from '@playwright/test'
 import { BasePage } from './base.page'
 import { confirmDeletion } from './delete-confirm.page'
 
-/** 检索编排列表页（`#/flow`）。 */
+/** 检索编排列表页（`/flow`）。 */
 export class FlowListPage extends BasePage {
   readonly root = this.page.locator('.flow-page')
   readonly createButton = this.root.getByRole('button', { name: '新建知识检索' })
@@ -10,7 +10,7 @@ export class FlowListPage extends BasePage {
     .filter({ has: this.page.locator('.entity-title') })
 
   async goto (): Promise<void> {
-    await this.gotoHash('/#/flow')
+    await this.gotoPath('/flow')
     await expect(this.root).toBeVisible()
     await expect(this.createButton).toBeVisible()
   }

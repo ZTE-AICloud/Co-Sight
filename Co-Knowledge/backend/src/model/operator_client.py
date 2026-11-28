@@ -80,11 +80,15 @@ def _prepare_chat_request(endpoint, body: dict, request_headers, timeout: int):
 
 
 def invoke_llm(messages: List, model: str = '', temperature: float = 0.1, request_headers=None,
-               stream: bool = False, endpoint=None):
+               stream: bool = False, endpoint=None, with_usage: bool = False):
     """调用 chat completions。
 
     ``endpoint``（可选）是父进程解析好的端点描述：``{url, model, api_key?,
     thinking_payload?, timeout?}``。缺省时行为保持不变。
+
+    ``with_usage=True`` 时返回 ``(content, usage)``；``usage`` 是端点原样返回的
+    token 统计（OpenAI 兼容字段，可能为空字典）。默认仍是纯 content，
+    以免影响既有调用方。
     """
     if not model:
         raise RuntimeError('LLM model name is None.')
@@ -118,13 +122,14 @@ def invoke_llm(messages: List, model: str = '', temperature: float = 0.1, reques
             check_status_code_ok(response.status_code, 'model-gateway')
             llm_response_data = response.json()
 
+            usage = llm_response_data.get('usage') or {}
             choices = llm_response_data.get('choices')
             if choices:
                 message = choices[0].get('message', {})
                 content = message.get('content')
                 if content is not None:
-                    return content
-            return ''
+                    return (content, usage) if with_usage else content
+            return ('', usage) if with_usage else ''
 
         except _TerminalHttpError as error:
             # 不重试：确定性失败（模型名不存在 / 鉴权失败 / 路径不对）。

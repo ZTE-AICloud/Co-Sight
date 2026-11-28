@@ -6,6 +6,7 @@ export default {
   knowledgeApp: 'Knowledge Applications',
   capabilityConfig: 'Capabilities',
   chat: 'Chat Test',
+  text2sql: 'Text2SQL',
   modelManagement: 'Model Management',
   taskManagement: 'Task Management',
   remoteAccess: 'Remote Access',

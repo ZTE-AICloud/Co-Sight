@@ -91,7 +91,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Document, Share } from '@element-plus/icons-vue'
+import { Coin, Document, Share } from '@element-plus/icons-vue'
 
 import StatusText from '@/shared/ui/StatusText.vue'
 import {
@@ -110,9 +110,9 @@ const props = defineProps({
 const emit = defineEmits(['detail', 'cancel', 'retry', 'priority'])
 const { t } = useI18n()
 
-const taskIcon = computed(() => (
-  props.task.taskType === 'FILE_IMPORT' ? Document : Share
-))
+const TASK_ICONS = { FILE_IMPORT: Document, T2S_INDEX: Coin }
+
+const taskIcon = computed(() => TASK_ICONS[props.task.taskType] || Share)
 
 const primaryTitle = computed(() => (
   props.task.fileName || shortId(props.task.id)

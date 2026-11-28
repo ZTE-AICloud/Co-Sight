@@ -25,56 +25,56 @@ test.describe('@auth 本地账号登录', () => {
   }
 
   test('匿名访问业务页 → 登录 → 回到原地址', async ({ page }) => {
-    await page.goto('/#/knowledge')
+    await page.goto('/knowledge')
 
-    await expect(page).toHaveURL(/#\/login\?redirect=/)
+    await expect(page).toHaveURL(/\/login\?redirect=/)
     await login(page)
 
-    await expect(page).toHaveURL(/#\/knowledge$/)
+    await expect(page).toHaveURL(/\/knowledge$/)
   })
 
   test('错误口令：内联报错且不跳转', async ({ page }) => {
-    await page.goto('/#/login')
+    await page.goto('/login')
     await page.locator('#login-account').fill(env.adminUsername)
     await page.locator('#login-password').fill('definitely-wrong')
     await page.locator('form.login-form button[type="submit"]').click()
 
     await expect(page.locator('#login-password-error')).toContainText('账号或密码不正确')
-    await expect(page).toHaveURL(/#\/login/)
+    await expect(page).toHaveURL(/\/login/)
   })
 
   test('登录后刷新仍保持会话', async ({ page }) => {
-    await page.goto('/#/login')
+    await page.goto('/login')
     await login(page)
-    await expect(page).toHaveURL(/#\/knowledge$/)
+    await expect(page).toHaveURL(/\/knowledge$/)
 
     await page.reload()
 
-    await expect(page).toHaveURL(/#\/knowledge$/)
+    await expect(page).toHaveURL(/\/knowledge$/)
     await expect(page.locator('form.login-form')).toHaveCount(0)
   })
 
   test('深链登录后回到原页面', async ({ page }) => {
-    await page.goto('/#/chat')
+    await page.goto('/chat')
 
-    await expect(page).toHaveURL(/#\/login\?redirect=/)
+    await expect(page).toHaveURL(/\/login\?redirect=/)
     await login(page)
 
-    await expect(page).toHaveURL(/#\/chat$/)
+    await expect(page).toHaveURL(/\/chat$/)
   })
 
   test('退出登录后再次访问被挡回登录页', async ({ page }) => {
-    await page.goto('/#/login')
+    await page.goto('/login')
     await login(page)
-    await expect(page).toHaveURL(/#\/knowledge$/)
+    await expect(page).toHaveURL(/\/knowledge$/)
 
     await page.locator('.user-trigger').click()
     await page.locator('.user-item--danger').click()
 
-    await expect(page).toHaveURL(/#\/login/)
+    await expect(page).toHaveURL(/\/login/)
 
-    await page.goto('/#/knowledge')
-    await expect(page).toHaveURL(/#\/login\?redirect=/)
+    await page.goto('/knowledge')
+    await expect(page).toHaveURL(/\/login\?redirect=/)
   })
 
   test('后端直接访问：业务接口 401 problem+json，健康检查公开', async ({ request }) => {

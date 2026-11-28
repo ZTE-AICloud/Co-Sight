@@ -83,8 +83,10 @@ def submit_update(task_id: str, payload: dict) -> None:
 
 
 def _run(task_id: str, tmp_dir: str, dto: dict, schema_obj: Optional[dict],
-         is_update: bool, cache_schema_id: Optional[str] = None) -> None:
+         is_update: bool, cache_schema_id: Optional[str] = None,
+         file_count: Optional[int] = None) -> None:
     kb_id = dto.get('kbId')
+    stage = 'prepare'
     try:
         cancellation.raise_if_cancelled()
         graph_extract_store.update_task_status(
@@ -125,6 +127,7 @@ def _run(task_id: str, tmp_dir: str, dto: dict, schema_obj: Optional[dict],
         graph_extract_store.update_task_status(
             task_id, graph_extract_store.STATUS_RUNNING, 50)
 
+        stage = 'extract_operator'
         try:
             produced = _call_operator(dto, tmp_dir, schema_id)
         except Exception as error:                                  # noqa: BLE001
@@ -133,7 +136,8 @@ def _run(task_id: str, tmp_dir: str, dto: dict, schema_obj: Optional[dict],
             # 任务行也要落 FAIL；只改库状态就 return，任务行会永远停在
             # RUNNING/50（查询/排障时看不出已经结束）。
             graph_extract_store.update_task_status(
-                task_id, graph_extract_store.STATUS_FAIL, 0, str(error))
+                task_id, graph_extract_store.STATUS_FAIL, 0, str(error),
+                extra={'failedStage': stage})
             kbase_store.update_process(kb_id, STATUS_GENERATING_FAIL, 100)
             kbase_store.update_fail_reason(kb_id, *FAIL_REASON_GENERATE)
             return
@@ -148,20 +152,25 @@ def _run(task_id: str, tmp_dir: str, dto: dict, schema_obj: Optional[dict],
         graph_extract_store.update_task_status(
             task_id, graph_extract_store.STATUS_RUNNING, 90)
 
+        stage = 'resolve_schema'
         actual_schema_id, schema_obj = _resolve_schema(
             task_id, dto, schema_obj, produced, cache_schema_id)
         kbase_store.update_schema(kb_id, actual_schema_id, schema_obj)
 
         cancellation.raise_if_cancelled()
+        stage = 'graph_import'
         try:
             import_task_id = graph_import_engine.import_from_zip(
                 f'{graph_import_store.KB_ID_PREFIX}{kb_id}', actual_schema_id, zip_path,
                 kbase_schema_obj=schema_obj)
         except TaskCancelled:
             raise
-        except Exception:                                          # noqa: BLE001
+        except Exception as error:                                 # noqa: BLE001
             log.exception('graph extract task %s: import stage failed, kbId=%s',
                           task_id, kb_id)
+            graph_extract_store.update_task_status(
+                task_id, graph_extract_store.STATUS_FAIL, 90,
+                f'graph import failed: {error}', extra={'failedStage': stage})
             kbase_store.update_process(kb_id, STATUS_STORING_FAIL, 100)
             return
 
@@ -171,9 +180,13 @@ def _run(task_id: str, tmp_dir: str, dto: dict, schema_obj: Optional[dict],
 
         _skip_vector_stages(kb_id, is_update)
 
+        stage = 'finish'
+        import_row = graph_import_store.select_task(import_task_id) or {}
         graph_extract_store.update_task_status(
-            task_id, graph_extract_store.STATUS_SUCCESS, 100)
-        _settle_kbase_status(import_task_id, kb_id)
+            task_id, graph_extract_store.STATUS_SUCCESS, 100,
+            extra=_result_extra(dto, actual_schema_id, file_count,
+                                import_task_id, import_row))
+        _settle_kbase_status(import_task_id, kb_id, row=import_row)
         log.info('graph extract task %s completed, kbId=%s', task_id, kb_id)
 
     except TaskCancelled:
@@ -185,7 +198,8 @@ def _run(task_id: str, tmp_dir: str, dto: dict, schema_obj: Optional[dict],
     except Exception as error:                                     # noqa: BLE001
         log.exception('graph extract task %s failed, kbId=%s', task_id, kb_id)
         graph_extract_store.update_task_status(
-            task_id, graph_extract_store.STATUS_FAIL, 0, str(error))
+            task_id, graph_extract_store.STATUS_FAIL, 0, str(error),
+            extra={'failedStage': stage})
         kbase_store.update_process(kb_id, STATUS_STORING_FAIL, 100)
         kbase_store.update_fail_reason(kb_id, *FAIL_REASON_STORE)
     finally:
@@ -271,6 +285,28 @@ def _align_schema_id(schema_obj: dict, schema_id: str) -> None:
             schema_obj[key] = schema_id
 
 
+def _result_extra(dto: dict, schema_id: str, file_count: Optional[int],
+                  import_task_id: str, import_row: Optional[dict]) -> dict:
+    """抽图任务的结果摘要：输入规模 + 实际 schema/模型 + 内部导入任务的产出计数。"""
+    kwargs = dto.get('kwargs') or {}
+    fields = {
+        'fileCount': file_count,
+        'operatorId': dto.get('operatorId'),
+        'schemaId': schema_id,
+        'llm': kwargs.get('llm') or kwargs.get('model'),
+        'importTaskId': import_task_id,
+    }
+    for key in ('entity_total', 'entity_success', 'entity_failed',
+                'edge_total', 'edge_success', 'edge_failed',
+                'vector_entities', 'vector_edges', 'vector_chunks'):
+        if key in (import_row or {}):
+            fields[key] = import_row[key]
+    failed_records = (import_row or {}).get('failed_records') or []
+    if failed_records:
+        fields['failedRecordCount'] = len(failed_records)
+    return {key: value for key, value in fields.items() if value is not None}
+
+
 def _skip_vector_stages(kb_id: str, is_update: bool) -> None:
     """记录**文档级向量未写入**这一阶段（实体/边向量已由导入引擎写入）。
 
@@ -285,9 +321,11 @@ def _skip_vector_stages(kb_id: str, is_update: bool) -> None:
              'import engine; document-level vectors are not written by this path', is_update, kb_id)
 
 
-def _settle_kbase_status(import_task_id: str, kb_id: str) -> None:
+def _settle_kbase_status(import_task_id: str, kb_id: str,
+                         row: Optional[dict] = None) -> None:
     """``updateKbaseStatus``：按导入任务的终态把库置成待发布 / 入库失败。"""
-    row = graph_import_store.select_task(import_task_id)
+    if row is None:
+        row = graph_import_store.select_task(import_task_id)
     status = (row or {}).get('status')
     if status in ('COMPLETED', 'COMPLETED_WITH_ERRORS'):
         kbase_store.update_process_with_time(kb_id, STATUS_PENDING, 0)

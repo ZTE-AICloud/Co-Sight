@@ -118,6 +118,20 @@
           <pre class="task-detail-json">{{ prettyJson(task.payload) }}</pre>
         </el-tab-pane>
         <el-tab-pane :label="$t('modules.taskManagement.detailExtra')" name="extra">
+          <section v-if="extraFacts.length" class="task-result">
+            <div class="task-result-title">
+              {{ $t('modules.taskManagement.detailResultSummary') }}
+            </div>
+            <dl class="task-result-grid">
+              <div v-for="fact in extraFacts" :key="fact.label">
+                <dt>{{ fact.label }}</dt>
+                <dd>{{ fact.value }}</dd>
+              </div>
+            </dl>
+          </section>
+          <div v-if="extraFacts.length" class="task-result-title">
+            {{ $t('modules.taskManagement.detailRawJson') }}
+          </div>
           <pre class="task-detail-json">{{ prettyJson(task.extra) }}</pre>
         </el-tab-pane>
         <el-tab-pane
@@ -167,14 +181,15 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import StatusText from '@/shared/ui/StatusText.vue'
 import TableRefreshButton from '@/shared/ui/TableRefreshButton.vue'
 import {
   attemptLabel, attemptTone, canCancel, canPrioritize, canRetry,
-  formatDateTime, formatDuration, prettyJson, statusLabel, statusTone, typeLabel
+  formatDateTime, formatDuration, prettyJson, resultFacts, statusLabel,
+  statusTone, typeLabel
 } from '@/features/tasks/lib/display'
 
 const props = defineProps({
@@ -189,6 +204,7 @@ const emit = defineEmits(['update:modelValue', 'closed', 'cancel', 'retry', 'pri
 
 const { t } = useI18n()
 const activeTab = ref('payload')
+const extraFacts = computed(() => resultFacts(props.task, t))
 
 watch(() => props.modelValue, value => {
   if (value) {
@@ -209,10 +225,17 @@ watch(() => props.modelValue, value => {
 .task-detail-sub { color: var(--rs-text-3); font-size: var(--rs-table-secondary-font-size); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 .task-detail-error { color: var(--rs-text-2); overflow-wrap: anywhere; max-width: 260px; }
 .task-detail-json { margin: 0; padding: 14px; border-radius: var(--rs-radius); border: 1px solid var(--rs-border); background: var(--rs-bg-soft); color: var(--rs-text-2); font-size: 12px; line-height: 1.6; white-space: pre-wrap; word-break: break-all; max-height: 420px; overflow: auto; }
+.task-result { margin-bottom: 18px; }
+.task-result-title { margin-bottom: 10px; color: var(--rs-text-3); font-size: var(--rs-font-size-caption); }
+.task-result-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 20px; margin: 0 0 16px; padding: 16px; border: 1px solid var(--rs-border); border-radius: var(--rs-radius); background: var(--rs-bg-soft); }
+.task-result-grid div { min-width: 0; }
+.task-result-grid dt { color: var(--rs-text-3); font-size: var(--rs-font-size-caption); margin-bottom: 4px; }
+.task-result-grid dd { margin: 0; color: var(--rs-text); overflow-wrap: anywhere; }
 .task-detail-empty { color: var(--rs-text-3); margin: 12px 0; }
 .attempts-table { min-width: 0; }
 .attempts-table th, .attempts-table td { padding-left: 10px; padding-right: 10px; }
 @media (max-width: 900px) {
-  .task-detail-summary { grid-template-columns: 1fr; }
+  .task-detail-summary,
+  .task-result-grid { grid-template-columns: 1fr; }
 }
 </style>

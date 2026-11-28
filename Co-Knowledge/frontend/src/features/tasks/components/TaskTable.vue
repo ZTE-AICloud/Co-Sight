@@ -158,7 +158,7 @@ import { CaretBottom, CaretRight, Collection } from '@element-plus/icons-vue'
 
 import TaskRow from '@/features/tasks/components/TaskRow.vue'
 import {
-  STATUSES, STATUS_TONES, formatDateTime, statusLabel
+  STATUSES, STATUS_TONES, formatDateTime, shortId, statusLabel
 } from '@/features/tasks/lib/display'
 
 const props = defineProps({
@@ -186,7 +186,14 @@ function groupKey (group) {
 }
 
 function groupTitle (group) {
-  return group.kbaseName || group.kbaseId || t('modules.taskManagement.groupUnassigned')
+  if (group.kbaseName) {
+    return group.kbaseName
+  }
+  // Text2SQL 索引任务的 kbase_id 是数据源 id：没有知识库名称，但也不该显示裸 UUID。
+  if ((group.taskTypes || []).includes('T2S_INDEX') && group.kbaseId) {
+    return t('modules.taskManagement.groupDatasource', { id: shortId(group.kbaseId) })
+  }
+  return group.kbaseId ? shortId(group.kbaseId) : t('modules.taskManagement.groupUnassigned')
 }
 
 function groupState (group) {

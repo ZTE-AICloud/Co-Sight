@@ -195,6 +195,7 @@ def import_from_zip(kb_index_name: str, schema_id: str, zip_path: str,
         # （图数据仍然可用），但要把任务标成 COMPLETED_WITH_ERRORS 并写明原因 ——
         # 否则图谱检索又会静默返回空。
         index_error = None
+        index_stats = None
 
         def _on_progress(percent: int) -> None:
             # 5% 一写：整段向量化只在 100 写一次的话，前端永远停在「已创建」。
@@ -235,7 +236,8 @@ def import_from_zip(kb_index_name: str, schema_id: str, zip_path: str,
                          'in graph storage after import',
             })
 
-        store.update_progress(task_id, 100, entity, edge)
+        store.update_progress(task_id, 100, entity, edge,
+                              index_stats=index_stats, index_error=index_error)
         message = index_error
         if not verify_attempted:
             message = '; '.join(part for part in (message,

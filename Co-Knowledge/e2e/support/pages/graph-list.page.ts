@@ -2,7 +2,7 @@ import { expect } from '@playwright/test'
 import { BasePage } from './base.page'
 import { confirmDeletion } from './delete-confirm.page'
 
-/** 图谱知识库列表页（`#/graph`），含「知识图谱 / 知识图谱模版」子页签。 */
+/** 图谱知识库列表页（`/graph`），含「知识图谱 / 知识图谱模版」子页签。 */
 export class GraphListPage extends BasePage {
   readonly shell = this.page.locator('.knowledge-page')
   readonly root = this.page.locator('.graph-list-page')
@@ -15,7 +15,7 @@ export class GraphListPage extends BasePage {
   readonly rows = this.root.locator('tbody tr').filter({ has: this.page.locator('.entity-title') })
 
   async goto (): Promise<void> {
-    await this.gotoHash('/#/graph')
+    await this.gotoPath('/graph')
     await this.expectLoaded()
   }
 

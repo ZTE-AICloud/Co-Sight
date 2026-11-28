@@ -13,13 +13,13 @@
 import { test, expect, type Page } from '@playwright/test'
 
 const ROUTES = [
-  { path: '/#/knowledge', name: 'doc-kb' },
-  { path: '/#/graph', name: 'graph-kb' },
-  { path: '/#/flow', name: 'flow-list' },
-  { path: '/#/models', name: 'model' },
-  { path: '/#/chat', name: 'chat' },
-  { path: '/#/access', name: 'access-guide' },
-  { path: '/#/operators', name: 'operators' }
+  { path: '/knowledge', name: 'doc-kb' },
+  { path: '/graph', name: 'graph-kb' },
+  { path: '/flow', name: 'flow-list' },
+  { path: '/models', name: 'model' },
+  { path: '/chat', name: 'chat' },
+  { path: '/access', name: 'access-guide' },
+  { path: '/operators', name: 'operators' }
 ]
 
 type LightSurface = {
@@ -119,7 +119,7 @@ test.describe('@ui dark theme', () => {
   }
 
   test('UI-DARK 主题切换可持久化', async ({ page }) => {
-    await page.goto('/#/knowledge')
+    await page.goto('/knowledge')
     await page.waitForLoadState('networkidle')
 
     await page.locator('.theme-button').click()
@@ -137,7 +137,7 @@ test.describe('@ui dark theme', () => {
   })
 
   test('UI-DARK 键盘焦点可见', async ({ page }) => {
-    await page.goto('/#/knowledge')
+    await page.goto('/knowledge')
     await page.waitForLoadState('networkidle')
 
     await page.keyboard.press('Tab')

@@ -10,7 +10,8 @@
 
 from __future__ import annotations
 
-from typing import Iterable, Optional
+import json
+from typing import Any, Iterable, Optional
 
 from infrastructure.db.kb import connection
 from infrastructure.db.rows import rows as _rows
@@ -132,17 +133,34 @@ def release(task_id: str, worker_id: str) -> bool:
             return cursor.rowcount > 0
 
 
-def complete(task_id: str, worker_id: str, progress: int = 100) -> bool:
-    """成功完成并释放租约。"""
+def complete(task_id: str, worker_id: str, progress: int = 100,
+            extra: Optional[dict[str, Any]] = None) -> bool:
+    """成功完成并释放租约。
+
+    ``extra`` 是 runner 通过 ``TaskContext.set_result`` 收集的结果摘要；
+    传入时与已有值合并（不覆盖 runner 先前写入的字段）。
+    """
+    sets = [
+        "status = 'COMPLETED'",
+        'progress = %s',
+        'error_message = NULL',
+        'finish_time = now()',
+        'locked_by = NULL',
+        'locked_until = NULL',
+        'heartbeat_at = NULL',
+        'updated_at = now()',
+    ]
+    params: list[Any] = [progress]
+    if extra is not None:
+        sets.append("extra = COALESCE(extra, '{}'::jsonb) || %s::jsonb")
+        params.append(json.dumps(extra, ensure_ascii=False, default=str))
+    params.extend([task_id, worker_id])
     with connection() as conn:
         with conn.cursor() as cursor:
             cursor.execute(
-                f'UPDATE {TASK_TABLE} '
-                "SET status = 'COMPLETED', progress = %s, error_message = NULL, "
-                'finish_time = now(), locked_by = NULL, locked_until = NULL, '
-                'heartbeat_at = NULL, updated_at = now() '
+                f'UPDATE {TASK_TABLE} SET {", ".join(sets)} '
                 "WHERE id = %s AND locked_by = %s AND status = 'RUNNING'",
-                (progress, task_id, worker_id),
+                params,
             )
             return cursor.rowcount > 0
 
